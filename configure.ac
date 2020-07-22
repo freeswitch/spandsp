@@ -274,9 +274,6 @@ if test "${build}" = "${host}"
 then
     case "${host}" in
     x86_64-*)
-        # X86_64 Linux machines may have both 64 bit and 32 bit libraries. We need to choose the right set
-        AX_CHECK_REAL_FILE([${prefix}/lib64], libdir='${exec_prefix}/lib64')
-        AX_CHECK_REAL_FILE([/usr/X11R6/lib64], [TESTLIBS="$TESTLIBS -L/usr/X11R6/lib64"], AC_CHECK_FILE([/usr/X11R6/lib], [TESTLIBS="$TESTLIBS -L/usr/X11R6/lib"]))
         # The very oldest AMD 64 bit chips support SSE2, SSE and MMX
         enable_sse2="yes"
         ;;
