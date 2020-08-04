@@ -635,8 +635,7 @@ AC_CONFIG_FILES([Makefile
                  test-data/itu/tiff-fx/Makefile
                  test-data/local/Makefile
                  tests/Makefile
-                 spandsp.pc
-                 spandsp.spec])
+                 spandsp.pc])
 
 AC_OUTPUT
 
