@@ -1,4 +1,6 @@
-%global pre 21
+# BUILD using: rpmbuild -ba spandsp.spec
+# DOC: https://fedoraproject.org/wiki/Packaging:SourceURL
+%global commit cc098cc12a6fa211f7a69ef238ee225b1a93bc09
 
 Summary: A DSP library for telephony.
 Name: spandsp
@@ -6,8 +8,9 @@ Version: 1.99.0
 Release: 1
 License: LGPLv2 and GPLv2
 Group: System Environment/Libraries
-URL: http://www.soft-switch.org/spandsp
-Source: http://www.soft-switch.org/downloads/spandsp/spandsp-1.99.0.tar.gz
+URL: http://www.soft-switch.org
+%undefine _disable_source_fetch
+Source0: https://github.com/freeswitch/%{name}/archive/%{commit}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires: libtiff-devel%{?_isa}
@@ -46,10 +49,11 @@ Group: Development/Libraries
 SpanDSP API documentation.
 
 %prep
-%setup -q
+%autosetup -n %{name}-%{commit}
 
 %build
-%configure --enable-doc --disable-static --disable-rpath
+autoreconf -i
+%configure --enable-doc --with-pic
 make
 find doc/api -type f | xargs touch -r configure
 
@@ -75,6 +79,7 @@ rm -rf %{buildroot}
 %{_includedir}/spandsp.h
 %{_includedir}/spandsp
 %{_libdir}/libspandsp.so
+%{_libdir}/libspandsp.a
 %{_libdir}/pkgconfig/spandsp.pc
 
 %files apidoc
@@ -86,21 +91,5 @@ rm -rf %{buildroot}
 %postun -p /sbin/ldconfig
 
 %changelog
-* Mon Oct 03 2011 Steve Underwood <steveu@coppice.org> 0.0.6-1
-- Converge with what Fedora do
-
-* Wed Sep 24 2008 Tzafrir Cohen <tzafrir.cohen@xorcom.com> 0.0.5-1
-- Preparing for 0.0.5pre4 release
-- License: LGPL
-
-* Mon Jun 23 2008 Steve Underwood <steveu@coppice.org> 0.0.5-1
-- Cleared out the dependency on libxml2
-
-* Sun Dec 31 2006 Steve Underwood <steveu@coppice.org> 0.0.3-1
-- Preparing for 0.0.3 release
-
-* Sat Oct 16 2004 Steve Underwood <steveu@coppice.org> 0.0.2-1
-- Preparing for 0.0.2 release
-
-* Thu Apr 15 2004 Steve Underwood <steveu@coppice.org> 0.0.1-1
-- Initial version
+* Tue Aug 04 2020 FreeSWITCH Solutions <packages@freeswitch.com> 1.99.0-1
+- Initial release for RPM based distros
