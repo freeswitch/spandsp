@@ -1,0 +1,5 @@
+debian/tmp/usr/include/spandsp3/*/spandsp.h
+debian/tmp/usr/include/spandsp3/spandsp
+debian/tmp/usr/lib/*/spandsp3/libspandsp3.so
+debian/tmp/usr/lib/*/spandsp3/libspandsp3.a
+debian/tmp/usr/lib/*/pkgconfig/spandsp3.pc

@@ -84,7 +84,7 @@ EXTRA_DIST = floating_fudge.h \
 
 AM_CPPFLAGS = -I$(top_builddir)
 
-lib_LTLIBRARIES = libspandsp.la
+lib_LTLIBRARIES = libspandsp3.la
 
 if COND_V32BIS
 V32BIS_SOURCES = v32bis.c
@@ -96,7 +96,7 @@ V34_SOURCES = v34rx.c \
               v34_logging.c
 endif
 
-libspandsp_la_SOURCES = ademco_contactid.c \
+libspandsp3_la_SOURCES = ademco_contactid.c \
                         adsi.c \
                         alloc.c \
                         async.c \
@@ -192,7 +192,7 @@ libspandsp_la_SOURCES = ademco_contactid.c \
                         $(V32BIS_SOURCES) \
                         $(V34_SOURCES)
 
-libspandsp_la_LDFLAGS = -version-info @SPANDSP_LT_CURRENT@:@SPANDSP_LT_REVISION@:@SPANDSP_LT_AGE@ $(COMP_VENDOR_LDFLAGS)
+libspandsp3_la_LDFLAGS = -version-info @SPANDSP_LT_CURRENT@:@SPANDSP_LT_REVISION@:@SPANDSP_LT_AGE@ $(COMP_VENDOR_LDFLAGS)
 
 nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/adsi.h \
@@ -507,7 +507,7 @@ VCPROJ9 = libspandsp.2008.vcproj
 VCPROJ10 = libspandsp.2010.vcproj
 VCPROJ12 = libspandsp.2012.vcxproj
 
-WIN32SOURCES = $(libspandsp_la_SOURCES) .\\msvc\\gettimeofday.c
+WIN32SOURCES = $(libspandsp3_la_SOURCES) .\\msvc\\gettimeofday.c
 WIN32HEADERS = $(nobase_include_HEADERS) spandsp.h
 
 VCPROJOUT8 = | awk '{printf("%s\r\n", $$0)}' >> $(VCPROJ8)
