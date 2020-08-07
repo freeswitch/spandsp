@@ -31,9 +31,9 @@ EXTRA_DIST = autogen.sh \
              debian/compat \
              debian/control \
              debian/copyright \
-             debian/libspandsp6.install \
-             debian/libspandsp-dev.install \
-             debian/libspandsp-doc.install \
+             debian/libspandsp3.install \
+             debian/libspandsp3-dev.install \
+             debian/libspandsp3-doc.install \
              debian/rules \
              debian/watch \
              README.testdata \
