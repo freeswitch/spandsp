@@ -2,7 +2,7 @@
 %:
 	dh $@ --with autoreconf
 
-INC_DIR=$(CURDIR)/debian/tmp/usr/include/spandsp/
+INC_DIR=$(CURDIR)/debian/tmp/usr/include/
 INC_DIR_ARCH=$(INC_DIR)/$(DEB_BUILD_MULTIARCH)/
 
 override_dh_auto_configure:
