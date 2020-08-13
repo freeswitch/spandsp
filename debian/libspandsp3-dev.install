@@ -1,5 +1,5 @@
 debian/tmp/usr/include/spandsp/*/spandsp.h
 debian/tmp/usr/include/spandsp/spandsp
-debian/tmp/usr/lib/*/spandsp/libspandsp.so
-debian/tmp/usr/lib/*/spandsp/libspandsp.a
+debian/tmp/usr/lib/*/libspandsp.so
+debian/tmp/usr/lib/*/libspandsp.a
 debian/tmp/usr/lib/*/pkgconfig/spandsp.pc
