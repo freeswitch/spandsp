@@ -19,7 +19,7 @@ Package: libspandsp3-dev
 Section: libdevel
 Architecture: any
 Depends: libspandsp3 (= ${binary:Version}), libtiff-dev, libjpeg-dev
-Conflicts: libspandsp3-dev
+Conflicts: libspandsp-dev
 Provides: libspandsp-dev
 Description: Telephony signal processing library
  This is a low-level signal processing library that modulate and demodulate
