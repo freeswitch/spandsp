@@ -2,11 +2,11 @@
 %:
 	dh $@ --with autoreconf
 
-INC_DIR=$(CURDIR)/debian/tmp/usr/include/spandsp3/
+INC_DIR=$(CURDIR)/debian/tmp/usr/include/spandsp/
 INC_DIR_ARCH=$(INC_DIR)/$(DEB_BUILD_MULTIARCH)/
 
 override_dh_auto_configure:
-	dh_auto_configure -- --enable-doc --with-pic --prefix=/usr --includedir=/usr/include/spandsp3/ --libdir=/usr/lib/$(DEB_BUILD_MULTIARCH)/spandsp3/
+	dh_auto_configure -- --enable-doc --with-pic --prefix=/usr
 
 override_dh_auto_build:
 	dh_auto_build
@@ -14,10 +14,6 @@ override_dh_auto_build:
 
 override_dh_auto_install:
 	dh_auto_install
-	# spandsp3.pc
-	mkdir -p $(CURDIR)/debian/tmp/usr/lib/$(DEB_BUILD_MULTIARCH)/pkgconfig
-	mv $(CURDIR)/debian/tmp/usr/lib/$(DEB_BUILD_MULTIARCH)/spandsp3/pkgconfig/spandsp.pc $(CURDIR)/debian/tmp/usr/lib/$(DEB_BUILD_MULTIARCH)/pkgconfig/spandsp3.pc
-	sed -i -e 's/Name: spandsp/Name: spandsp3/' -e 's/\-lspandsp/\-lspandsp3/' $(CURDIR)/debian/tmp/usr/lib/$(DEB_BUILD_MULTIARCH)/pkgconfig/spandsp3.pc
 	# spandsp.h
 	mkdir -p $(INC_DIR_ARCH)
 	mv $(INC_DIR)/spandsp.h $(INC_DIR_ARCH)/
