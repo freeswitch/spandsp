@@ -35,7 +35,7 @@ information about these intellectual property issues.
 Summary: SpanDSP development files
 Group: Development/Libraries
 Conflicts: spandsp-devel
-Requires: spandsp%{?_isa} = %{version}-%{release}
+Requires: spandsp3%{?_isa} = %{version}-%{release}
 Requires: libtiff-devel%{?_isa}
 Requires: libjpeg-turbo-devel%{?_isa}
 
