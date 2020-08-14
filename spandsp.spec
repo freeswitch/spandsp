@@ -1,17 +1,17 @@
 # BUILD using: rpmbuild -ba spandsp.spec
 # DOC: https://fedoraproject.org/wiki/Packaging:SourceURL
-%global commit cc098cc12a6fa211f7a69ef238ee225b1a93bc09
+%global commit f995f452ee79d03c4afa90b10e86a5f9c553920c
 
 Summary: A DSP library for telephony.
-Name: spandsp
-Version: 1.99.0
+Name: spandsp3
+Version: 3.0.0
 Release: 1
 License: LGPLv2 and GPLv2
 Group: System Environment/Libraries
 URL: http://www.soft-switch.org
 %undefine _disable_source_fetch
-Source0: https://github.com/freeswitch/%{name}/archive/%{commit}.tar.gz
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+Source0: https://github.com/freeswitch/spandsp/archive/%{commit}.tar.gz
+BuildRoot: %{_tmppath}/spandsp-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires: libtiff-devel%{?_isa}
 BuildRequires: libjpeg-turbo-devel%{?_isa}
@@ -34,6 +34,7 @@ information about these intellectual property issues.
 %package devel
 Summary: SpanDSP development files
 Group: Development/Libraries
+Conflicts: spandsp-devel
 Requires: spandsp%{?_isa} = %{version}-%{release}
 Requires: libtiff-devel%{?_isa}
 Requires: libjpeg-turbo-devel%{?_isa}
@@ -49,11 +50,11 @@ Group: Development/Libraries
 SpanDSP API documentation.
 
 %prep
-%autosetup -n %{name}-%{commit}
+%autosetup -n spandsp-%{commit}
 
 %build
 autoreconf -i
-%configure --enable-doc --with-pic
+%configure --enable-doc --with-pic --prefix=/usr
 make
 find doc/api -type f | xargs touch -r configure
 
@@ -91,5 +92,5 @@ rm -rf %{buildroot}
 %postun -p /sbin/ldconfig
 
 %changelog
-* Tue Aug 04 2020 FreeSWITCH Solutions <packages@freeswitch.com> 1.99.0-1
+* Fri Aug 14 2020 FreeSWITCH Solutions <packages@freeswitch.com> 3.0.0-1
 - Initial release for RPM based distros
