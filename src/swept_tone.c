@@ -42,24 +42,24 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 #include "floating_fudge.h"
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/logging.h"
-#include "spandsp/complex.h"
-#include "spandsp/vector_float.h"
-#include "spandsp/complex_vector_float.h"
-#include "spandsp/vector_int.h"
-#include "spandsp/complex_vector_int.h"
-#include "spandsp/dds.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/logging.h"
+#include "spandsp3/complex.h"
+#include "spandsp3/vector_float.h"
+#include "spandsp3/complex_vector_float.h"
+#include "spandsp3/vector_int.h"
+#include "spandsp3/complex_vector_int.h"
+#include "spandsp3/dds.h"
 
-#include "spandsp/swept_tone.h"
+#include "spandsp3/swept_tone.h"
 
-#include "spandsp/private/logging.h"
-#include "spandsp/private/swept_tone.h"
+#include "spandsp3/private/logging.h"
+#include "spandsp3/private/swept_tone.h"
 
 SPAN_DECLARE(swept_tone_state_t *) swept_tone_init(swept_tone_state_t *s, float start, float end, float level, int duration, int repeating)
 {

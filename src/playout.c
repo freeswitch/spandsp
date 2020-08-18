@@ -42,14 +42,14 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/playout.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/playout.h"
 
-#include "spandsp/private/playout.h"
+#include "spandsp3/private/playout.h"
 
 static playout_frame_t *queue_get(playout_state_t *s, timestamp_t sender_stamp)
 {

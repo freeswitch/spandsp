@@ -45,29 +45,29 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 #include "floating_fudge.h"
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/fast_convert.h"
-#include "spandsp/logging.h"
-#include "spandsp/complex.h"
-#include "spandsp/vector_float.h"
-#include "spandsp/complex_vector_float.h"
-#include "spandsp/vector_int.h"
-#include "spandsp/complex_vector_int.h"
-#include "spandsp/async.h"
-#include "spandsp/dds.h"
-#include "spandsp/power_meter.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/fast_convert.h"
+#include "spandsp3/logging.h"
+#include "spandsp3/complex.h"
+#include "spandsp3/vector_float.h"
+#include "spandsp3/complex_vector_float.h"
+#include "spandsp3/vector_int.h"
+#include "spandsp3/complex_vector_int.h"
+#include "spandsp3/async.h"
+#include "spandsp3/dds.h"
+#include "spandsp3/power_meter.h"
 
-#include "spandsp/v29rx.h"
-#include "spandsp/v22bis.h"
+#include "spandsp3/v29rx.h"
+#include "spandsp3/v22bis.h"
 
-#include "spandsp/private/logging.h"
-#include "spandsp/private/power_meter.h"
-#include "spandsp/private/v22bis.h"
+#include "spandsp3/private/logging.h"
+#include "spandsp3/private/power_meter.h"
+#include "spandsp3/private/v22bis.h"
 
 #if defined(SPANDSP_USE_FIXED_POINT)
 #define FP_SCALE(x)     FP_Q6_10(x)

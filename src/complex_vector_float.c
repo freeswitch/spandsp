@@ -42,18 +42,18 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 #include <assert.h>
 
 #include "floating_fudge.h"
 #include "mmx_sse_decs.h"
 
-#include "spandsp/telephony.h"
-#include "spandsp/logging.h"
-#include "spandsp/complex.h"
-#include "spandsp/vector_float.h"
-#include "spandsp/complex_vector_float.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/logging.h"
+#include "spandsp3/complex.h"
+#include "spandsp3/vector_float.h"
+#include "spandsp3/complex_vector_float.h"
 
 #if defined(__GNUC__)  &&  defined(SPANDSP_USE_SSE3)
 SPAN_DECLARE(void) cvec_mulf(complexf_t z[], const complexf_t x[], const complexf_t y[], int n)

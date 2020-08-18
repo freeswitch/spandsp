@@ -65,7 +65,7 @@ EXTRA_DIST = floating_fudge.h \
              msvc/make_modem_filter.2008.vcproj \
              msvc/msvcproj.head \
              msvc/msvcproj.foot \
-             msvc/spandsp.h \
+             msvc/spandsp3.h \
              msvc/tgmath.h \
              msvc/tiff/cleancount \
              msvc/unistd.h \
@@ -79,12 +79,12 @@ EXTRA_DIST = floating_fudge.h \
              msvc/vc12proj.foot \
              msvc/vc12proj.head \
              msvc/sys/time.h \
-             spandsp/private/README \
-             spandsp/version.h.in
+             spandsp3/private/README \
+             spandsp3/version.h.in
 
 AM_CPPFLAGS = -I$(top_builddir)
 
-lib_LTLIBRARIES = libspandsp.la
+lib_LTLIBRARIES = libspandsp3.la
 
 if COND_V32BIS
 V32BIS_SOURCES = v32bis.c
@@ -96,7 +96,7 @@ V34_SOURCES = v34rx.c \
               v34_logging.c
 endif
 
-libspandsp_la_SOURCES = ademco_contactid.c \
+libspandsp3_la_SOURCES = ademco_contactid.c \
                         adsi.c \
                         alloc.c \
                         async.c \
@@ -192,170 +192,170 @@ libspandsp_la_SOURCES = ademco_contactid.c \
                         $(V32BIS_SOURCES) \
                         $(V34_SOURCES)
 
-libspandsp_la_LDFLAGS = -version-info @SPANDSP_LT_CURRENT@:@SPANDSP_LT_REVISION@:@SPANDSP_LT_AGE@ $(COMP_VENDOR_LDFLAGS)
+libspandsp3_la_LDFLAGS = -version-info @SPANDSP_LT_CURRENT@:@SPANDSP_LT_REVISION@:@SPANDSP_LT_AGE@ $(COMP_VENDOR_LDFLAGS)
 
-nobase_include_HEADERS = spandsp/ademco_contactid.h \
-                         spandsp/adsi.h \
-                         spandsp/alloc.h \
-                         spandsp/async.h \
-                         spandsp/arctan2.h \
-                         spandsp/at_interpreter.h \
-                         spandsp/awgn.h \
-                         spandsp/bell_r2_mf.h \
-                         spandsp/bert.h \
-                         spandsp/biquad.h \
-                         spandsp/bit_operations.h \
-                         spandsp/bitstream.h \
-                         spandsp/crc.h \
-                         spandsp/complex.h \
-                         spandsp/complex_filters.h \
-                         spandsp/complex_vector_float.h \
-                         spandsp/complex_vector_int.h \
-                         spandsp/data_modems.h \
-                         spandsp/dc_restore.h \
-                         spandsp/dds.h \
-                         spandsp/dtmf.h \
-                         spandsp/echo.h \
-                         spandsp/fast_convert.h \
-                         spandsp/fax.h \
-                         spandsp/fax_modems.h \
-                         spandsp/fir.h \
-                         spandsp/fsk.h \
-                         spandsp/g168models.h \
-                         spandsp/g711.h \
-                         spandsp/g722.h \
-                         spandsp/g726.h \
-                         spandsp/gsm0610.h \
-                         spandsp/hdlc.h \
-                         spandsp/ima_adpcm.h \
-                         spandsp/image_translate.h \
-                         spandsp/logging.h \
-                         spandsp/lpc10.h \
-                         spandsp/math_fixed.h \
-                         spandsp/modem_echo.h \
-                         spandsp/modem_connect_tones.h \
-                         spandsp/noise.h \
-                         spandsp/oki_adpcm.h \
-                         spandsp/playout.h \
-                         spandsp/plc.h \
-                         spandsp/power_meter.h \
-                         spandsp/queue.h \
-                         spandsp/saturated.h \
-                         spandsp/schedule.h \
-                         spandsp/stdbool.h \
-                         spandsp/sig_tone.h \
-                         spandsp/silence_gen.h \
-                         spandsp/super_tone_rx.h \
-                         spandsp/super_tone_tx.h \
-                         spandsp/swept_tone.h \
-                         spandsp/t30.h \
-                         spandsp/t30_api.h \
-                         spandsp/t30_fcf.h \
-                         spandsp/t30_logging.h \
-                         spandsp/t31.h \
-                         spandsp/t35.h \
-                         spandsp/t38_core.h \
-                         spandsp/t38_gateway.h \
-                         spandsp/t38_non_ecm_buffer.h \
-                         spandsp/t38_terminal.h \
-                         spandsp/t4_rx.h \
-                         spandsp/t4_tx.h \
-                         spandsp/t4_t6_decode.h \
-                         spandsp/t4_t6_encode.h \
-                         spandsp/t42.h \
-                         spandsp/t43.h \
-                         spandsp/t81_t82_arith_coding.h \
-                         spandsp/t85.h \
-                         spandsp/telephony.h \
-                         spandsp/time_scale.h \
-                         spandsp/timezone.h \
-                         spandsp/timing.h \
-                         spandsp/tone_detect.h \
-                         spandsp/tone_generate.h \
-                         spandsp/v17rx.h \
-                         spandsp/v17tx.h \
-                         spandsp/v18.h \
-                         spandsp/v22bis.h \
-                         spandsp/v27ter_rx.h \
-                         spandsp/v27ter_tx.h \
-                         spandsp/v29rx.h \
-                         spandsp/v29tx.h \
-                         spandsp/v42.h \
-                         spandsp/v42bis.h \
-                         spandsp/v8.h \
-                         spandsp/vector_float.h \
-                         spandsp/vector_int.h \
-                         spandsp/version.h \
-                         spandsp/private/ademco_contactid.h \
-                         spandsp/private/adsi.h \
-                         spandsp/private/async.h \
-                         spandsp/private/at_interpreter.h \
-                         spandsp/private/awgn.h \
-                         spandsp/private/bell_r2_mf.h \
-                         spandsp/private/bert.h \
-                         spandsp/private/bitstream.h \
-                         spandsp/private/data_modems.h \
-                         spandsp/private/dtmf.h \
-                         spandsp/private/echo.h \
-                         spandsp/private/fax.h \
-                         spandsp/private/fax_modems.h \
-                         spandsp/private/fsk.h \
-                         spandsp/private/g711.h \
-                         spandsp/private/g722.h \
-                         spandsp/private/g726.h \
-                         spandsp/private/gsm0610.h \
-                         spandsp/private/hdlc.h \
-                         spandsp/private/ima_adpcm.h \
-                         spandsp/private/image_translate.h \
-                         spandsp/private/logging.h \
-                         spandsp/private/lpc10.h \
-                         spandsp/private/modem_connect_tones.h \
-                         spandsp/private/modem_echo.h \
-                         spandsp/private/noise.h \
-                         spandsp/private/oki_adpcm.h \
-                         spandsp/private/playout.h \
-                         spandsp/private/plc.h \
-                         spandsp/private/power_meter.h \
-                         spandsp/private/queue.h \
-                         spandsp/private/schedule.h \
-                         spandsp/private/sig_tone.h \
-                         spandsp/private/silence_gen.h \
-                         spandsp/private/super_tone_rx.h \
-                         spandsp/private/super_tone_tx.h \
-                         spandsp/private/swept_tone.h \
-                         spandsp/private/t30.h \
-                         spandsp/private/t30_dis_dtc_dcs_bits.h \
-                         spandsp/private/t31.h \
-                         spandsp/private/t38_core.h \
-                         spandsp/private/t38_gateway.h \
-                         spandsp/private/t38_non_ecm_buffer.h \
-                         spandsp/private/t38_terminal.h \
-                         spandsp/private/t4_rx.h \
-                         spandsp/private/t4_tx.h \
-                         spandsp/private/t4_t6_decode.h \
-                         spandsp/private/t4_t6_encode.h \
-                         spandsp/private/t42.h \
-                         spandsp/private/t43.h \
-                         spandsp/private/t81_t82_arith_coding.h \
-                         spandsp/private/t85.h \
-                         spandsp/private/time_scale.h \
-                         spandsp/private/timezone.h \
-                         spandsp/private/tone_detect.h \
-                         spandsp/private/tone_generate.h \
-                         spandsp/private/v17rx.h \
-                         spandsp/private/v17tx.h \
-                         spandsp/private/v18.h \
-                         spandsp/private/v22bis.h \
-                         spandsp/private/v27ter_rx.h \
-                         spandsp/private/v27ter_tx.h \
-                         spandsp/private/v29rx.h \
-                         spandsp/private/v29tx.h \
-                         spandsp/private/v42.h \
-                         spandsp/private/v42bis.h \
-                         spandsp/private/v8.h \
-                         spandsp/expose.h
+nobase_include_HEADERS = spandsp3/ademco_contactid.h \
+                         spandsp3/adsi.h \
+                         spandsp3/alloc.h \
+                         spandsp3/async.h \
+                         spandsp3/arctan2.h \
+                         spandsp3/at_interpreter.h \
+                         spandsp3/awgn.h \
+                         spandsp3/bell_r2_mf.h \
+                         spandsp3/bert.h \
+                         spandsp3/biquad.h \
+                         spandsp3/bit_operations.h \
+                         spandsp3/bitstream.h \
+                         spandsp3/crc.h \
+                         spandsp3/complex.h \
+                         spandsp3/complex_filters.h \
+                         spandsp3/complex_vector_float.h \
+                         spandsp3/complex_vector_int.h \
+                         spandsp3/data_modems.h \
+                         spandsp3/dc_restore.h \
+                         spandsp3/dds.h \
+                         spandsp3/dtmf.h \
+                         spandsp3/echo.h \
+                         spandsp3/fast_convert.h \
+                         spandsp3/fax.h \
+                         spandsp3/fax_modems.h \
+                         spandsp3/fir.h \
+                         spandsp3/fsk.h \
+                         spandsp3/g168models.h \
+                         spandsp3/g711.h \
+                         spandsp3/g722.h \
+                         spandsp3/g726.h \
+                         spandsp3/gsm0610.h \
+                         spandsp3/hdlc.h \
+                         spandsp3/ima_adpcm.h \
+                         spandsp3/image_translate.h \
+                         spandsp3/logging.h \
+                         spandsp3/lpc10.h \
+                         spandsp3/math_fixed.h \
+                         spandsp3/modem_echo.h \
+                         spandsp3/modem_connect_tones.h \
+                         spandsp3/noise.h \
+                         spandsp3/oki_adpcm.h \
+                         spandsp3/playout.h \
+                         spandsp3/plc.h \
+                         spandsp3/power_meter.h \
+                         spandsp3/queue.h \
+                         spandsp3/saturated.h \
+                         spandsp3/schedule.h \
+                         spandsp3/stdbool.h \
+                         spandsp3/sig_tone.h \
+                         spandsp3/silence_gen.h \
+                         spandsp3/super_tone_rx.h \
+                         spandsp3/super_tone_tx.h \
+                         spandsp3/swept_tone.h \
+                         spandsp3/t30.h \
+                         spandsp3/t30_api.h \
+                         spandsp3/t30_fcf.h \
+                         spandsp3/t30_logging.h \
+                         spandsp3/t31.h \
+                         spandsp3/t35.h \
+                         spandsp3/t38_core.h \
+                         spandsp3/t38_gateway.h \
+                         spandsp3/t38_non_ecm_buffer.h \
+                         spandsp3/t38_terminal.h \
+                         spandsp3/t4_rx.h \
+                         spandsp3/t4_tx.h \
+                         spandsp3/t4_t6_decode.h \
+                         spandsp3/t4_t6_encode.h \
+                         spandsp3/t42.h \
+                         spandsp3/t43.h \
+                         spandsp3/t81_t82_arith_coding.h \
+                         spandsp3/t85.h \
+                         spandsp3/telephony.h \
+                         spandsp3/time_scale.h \
+                         spandsp3/timezone.h \
+                         spandsp3/timing.h \
+                         spandsp3/tone_detect.h \
+                         spandsp3/tone_generate.h \
+                         spandsp3/v17rx.h \
+                         spandsp3/v17tx.h \
+                         spandsp3/v18.h \
+                         spandsp3/v22bis.h \
+                         spandsp3/v27ter_rx.h \
+                         spandsp3/v27ter_tx.h \
+                         spandsp3/v29rx.h \
+                         spandsp3/v29tx.h \
+                         spandsp3/v42.h \
+                         spandsp3/v42bis.h \
+                         spandsp3/v8.h \
+                         spandsp3/vector_float.h \
+                         spandsp3/vector_int.h \
+                         spandsp3/version.h \
+                         spandsp3/private/ademco_contactid.h \
+                         spandsp3/private/adsi.h \
+                         spandsp3/private/async.h \
+                         spandsp3/private/at_interpreter.h \
+                         spandsp3/private/awgn.h \
+                         spandsp3/private/bell_r2_mf.h \
+                         spandsp3/private/bert.h \
+                         spandsp3/private/bitstream.h \
+                         spandsp3/private/data_modems.h \
+                         spandsp3/private/dtmf.h \
+                         spandsp3/private/echo.h \
+                         spandsp3/private/fax.h \
+                         spandsp3/private/fax_modems.h \
+                         spandsp3/private/fsk.h \
+                         spandsp3/private/g711.h \
+                         spandsp3/private/g722.h \
+                         spandsp3/private/g726.h \
+                         spandsp3/private/gsm0610.h \
+                         spandsp3/private/hdlc.h \
+                         spandsp3/private/ima_adpcm.h \
+                         spandsp3/private/image_translate.h \
+                         spandsp3/private/logging.h \
+                         spandsp3/private/lpc10.h \
+                         spandsp3/private/modem_connect_tones.h \
+                         spandsp3/private/modem_echo.h \
+                         spandsp3/private/noise.h \
+                         spandsp3/private/oki_adpcm.h \
+                         spandsp3/private/playout.h \
+                         spandsp3/private/plc.h \
+                         spandsp3/private/power_meter.h \
+                         spandsp3/private/queue.h \
+                         spandsp3/private/schedule.h \
+                         spandsp3/private/sig_tone.h \
+                         spandsp3/private/silence_gen.h \
+                         spandsp3/private/super_tone_rx.h \
+                         spandsp3/private/super_tone_tx.h \
+                         spandsp3/private/swept_tone.h \
+                         spandsp3/private/t30.h \
+                         spandsp3/private/t30_dis_dtc_dcs_bits.h \
+                         spandsp3/private/t31.h \
+                         spandsp3/private/t38_core.h \
+                         spandsp3/private/t38_gateway.h \
+                         spandsp3/private/t38_non_ecm_buffer.h \
+                         spandsp3/private/t38_terminal.h \
+                         spandsp3/private/t4_rx.h \
+                         spandsp3/private/t4_tx.h \
+                         spandsp3/private/t4_t6_decode.h \
+                         spandsp3/private/t4_t6_encode.h \
+                         spandsp3/private/t42.h \
+                         spandsp3/private/t43.h \
+                         spandsp3/private/t81_t82_arith_coding.h \
+                         spandsp3/private/t85.h \
+                         spandsp3/private/time_scale.h \
+                         spandsp3/private/timezone.h \
+                         spandsp3/private/tone_detect.h \
+                         spandsp3/private/tone_generate.h \
+                         spandsp3/private/v17rx.h \
+                         spandsp3/private/v17tx.h \
+                         spandsp3/private/v18.h \
+                         spandsp3/private/v22bis.h \
+                         spandsp3/private/v27ter_rx.h \
+                         spandsp3/private/v27ter_tx.h \
+                         spandsp3/private/v29rx.h \
+                         spandsp3/private/v29tx.h \
+                         spandsp3/private/v42.h \
+                         spandsp3/private/v42bis.h \
+                         spandsp3/private/v8.h \
+                         spandsp3/expose.h
 
-nodist_include_HEADERS = spandsp.h
+nodist_include_HEADERS = spandsp3.h
 
 noinst_HEADERS = cielab_luts.h \
                  faxfont.h \
@@ -402,9 +402,9 @@ math_fixed.lo: math_fixed_tables.h
 math_fixed_tables.h: make_math_fixed_tables$(EXEEXT)
 	./make_math_fixed_tables$(EXEEXT) >math_fixed_tables.h
 
-t4_rx.$(OBJEXT): spandsp/version.h
+t4_rx.$(OBJEXT): spandsp3/version.h
 
-t4_rx.lo: spandsp/version.h
+t4_rx.lo: spandsp3/version.h
 
 t42.$(OBJEXT): cielab_luts.h
 
@@ -507,8 +507,8 @@ VCPROJ9 = libspandsp.2008.vcproj
 VCPROJ10 = libspandsp.2010.vcproj
 VCPROJ12 = libspandsp.2012.vcxproj
 
-WIN32SOURCES = $(libspandsp_la_SOURCES) .\\msvc\\gettimeofday.c
-WIN32HEADERS = $(nobase_include_HEADERS) spandsp.h
+WIN32SOURCES = $(libspandsp3_la_SOURCES) .\\msvc\\gettimeofday.c
+WIN32HEADERS = $(nobase_include_HEADERS) spandsp3.h
 
 VCPROJOUT8 = | awk '{printf("%s\r\n", $$0)}' >> $(VCPROJ8)
 VCPROJOUT9 = | awk '{printf("%s\r\n", $$0)}' >> $(VCPROJ9)
@@ -563,20 +563,20 @@ $(VCPROJ12): msvc/vc12proj.head msvc/vc12proj.foot Makefile.am
 	done; \
 	cat $(srcdir)/msvc/vc12proj.foot $(VCPROJOUT12) )
 
-$(srcdir)/msvc/spandsp.h: spandsp.h.in
-	echo "creating $(srcdir)/msvc/spandsp.h"
+$(srcdir)/msvc/spandsp3.h: spandsp3.h.in
+	echo "creating $(srcdir)/msvc/spandsp3.h"
 	@sed -e "s/#define _SPANDSP_H_/#define _SPANDSP_H_\n\n#define __inline__ __inline\n#pragma warning(disable:4200)/" \
 	     -e "s/\@SPANDSP_USE_FIXED_POINT\@/#undef SPANDSP_USE_FIXED_POINT/" \
 	     -e "s/\@SPANDSP_MISALIGNED_ACCESS_FAILS\@/#undef SPANDSP_MISALIGNED_ACCESS_FAILS/" \
 	     -e "s/\@SPANDSP_USE_EXPORT_CAPABILITY\@/#define SPANDSP_USE_EXPORT_CAPABILITY 1/" \
 	     -e "s/\@INSERT_INTTYPES_HEADER\@/#include <msvc\/inttypes.h>/" \
-	     -e "s/\@INSERT_MATH_HEADER\@/#include <math.h>/" $(srcdir)/spandsp.h.in > $(srcdir)/msvc/spandsp.h
+	     -e "s/\@INSERT_MATH_HEADER\@/#include <math.h>/" $(srcdir)/spandsp3.h.in > $(srcdir)/msvc/spandsp3.h
 
-dist-hook: spandsp/version.h
+dist-hook: spandsp3/version.h
 
-spandsp/version.h:
+spandsp3/version.h:
 	mkdir -p $(@D)
 	NOWDATE=`date --utc +"%Y%m%d"` ; \
 	NOWTIME=`date --utc +"%H%M%S"` ; \
 	sed 's/$$SPANDSP_RELEASE_DATE/'$$NOWDATE'/;s/$$SPANDSP_RELEASE_TIME/'$$NOWTIME'/' \
-		<$(srcdir)/spandsp/version.h.in >$@
+		<$(srcdir)/spandsp3/version.h.in >$@

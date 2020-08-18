@@ -43,19 +43,19 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 #include "floating_fudge.h"
 #include <assert.h>
 #include <limits.h>
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/logging.h"
-#include "spandsp/async.h"
-#include "spandsp/silence_gen.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/logging.h"
+#include "spandsp3/async.h"
+#include "spandsp3/silence_gen.h"
 
-#include "spandsp/private/silence_gen.h"
+#include "spandsp3/private/silence_gen.h"
 
 SPAN_DECLARE(int) silence_gen(silence_gen_state_t *s, int16_t *amp, int max_len)
 {

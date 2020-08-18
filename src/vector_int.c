@@ -44,8 +44,8 @@
 #include "floating_fudge.h"
 #include "mmx_sse_decs.h"
 
-#include "spandsp/telephony.h"
-#include "spandsp/vector_int.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/vector_int.h"
 
 SPAN_DECLARE(int32_t) vec_dot_prodi16(const int16_t x[], const int16_t y[], int n)
 {

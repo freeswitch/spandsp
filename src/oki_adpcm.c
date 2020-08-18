@@ -38,10 +38,10 @@
 #include <inttypes.h>
 #include <string.h>
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/oki_adpcm.h"
-#include "spandsp/private/oki_adpcm.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/oki_adpcm.h"
+#include "spandsp3/private/oki_adpcm.h"
 
 /* Routines to convert 12 bit linear samples to the Oki ADPCM coding format,
    widely used in CTI, because Dialogic use it. */

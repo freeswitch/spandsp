@@ -36,8 +36,8 @@
 #include <assert.h>
 #include <memory.h>
 
-#include "spandsp/telephony.h"
-#include "spandsp/bit_operations.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/bit_operations.h"
 
 SPAN_DECLARE(uint16_t) bit_reverse16(uint16_t x)
 {

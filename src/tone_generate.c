@@ -43,14 +43,14 @@
 #endif
 #include "floating_fudge.h"
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/fast_convert.h"
-#include "spandsp/complex.h"
-#include "spandsp/dds.h"
-#include "spandsp/tone_generate.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/fast_convert.h"
+#include "spandsp3/complex.h"
+#include "spandsp3/dds.h"
+#include "spandsp3/tone_generate.h"
 
-#include "spandsp/private/tone_generate.h"
+#include "spandsp3/private/tone_generate.h"
 
 #if !defined(M_PI)
 /* C99 systems may not define M_PI */

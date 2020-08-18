@@ -43,14 +43,14 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/logging.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/logging.h"
 
-#include "spandsp/private/logging.h"
+#include "spandsp3/private/logging.h"
 
 static void default_message_handler(void *user_data, int level, const char *text);
 

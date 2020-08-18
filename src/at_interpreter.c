@@ -46,27 +46,27 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 #include <assert.h>
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/logging.h"
-#include "spandsp/queue.h"
-#include "spandsp/power_meter.h"
-#include "spandsp/complex.h"
-#include "spandsp/tone_generate.h"
-#include "spandsp/async.h"
-#include "spandsp/hdlc.h"
-#include "spandsp/fsk.h"
-#include "spandsp/super_tone_rx.h"
-#include "spandsp/fax_modems.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/logging.h"
+#include "spandsp3/queue.h"
+#include "spandsp3/power_meter.h"
+#include "spandsp3/complex.h"
+#include "spandsp3/tone_generate.h"
+#include "spandsp3/async.h"
+#include "spandsp3/hdlc.h"
+#include "spandsp3/fsk.h"
+#include "spandsp3/super_tone_rx.h"
+#include "spandsp3/fax_modems.h"
 
-#include "spandsp/at_interpreter.h"
+#include "spandsp3/at_interpreter.h"
 
-#include "spandsp/private/logging.h"
-#include "spandsp/private/at_interpreter.h"
+#include "spandsp3/private/logging.h"
+#include "spandsp3/private/at_interpreter.h"
 
 #define MANUFACTURER            "www.soft-switch.org"
 #define SERIAL_NUMBER           "42"

@@ -48,29 +48,29 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 #include "floating_fudge.h"
 #include <tiffio.h>
 #include <assert.h>
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/fast_convert.h"
-#include "spandsp/logging.h"
-#include "spandsp/saturated.h"
-#include "spandsp/async.h"
-#include "spandsp/timezone.h"
-#include "spandsp/t4_rx.h"
-#include "spandsp/t4_tx.h"
-#include "spandsp/t81_t82_arith_coding.h"
-#include "spandsp/t85.h"
-#include "spandsp/t42.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/fast_convert.h"
+#include "spandsp3/logging.h"
+#include "spandsp3/saturated.h"
+#include "spandsp3/async.h"
+#include "spandsp3/timezone.h"
+#include "spandsp3/t4_rx.h"
+#include "spandsp3/t4_tx.h"
+#include "spandsp3/t81_t82_arith_coding.h"
+#include "spandsp3/t85.h"
+#include "spandsp3/t42.h"
 
-#include "spandsp/private/logging.h"
-#include "spandsp/private/t81_t82_arith_coding.h"
-#include "spandsp/private/t85.h"
-#include "spandsp/private/t42.h"
+#include "spandsp3/private/logging.h"
+#include "spandsp3/private/t81_t82_arith_coding.h"
+#include "spandsp3/private/t85.h"
+#include "spandsp3/private/t42.h"
 
 /* The open_memstream() and fmemopen() in older versions of glibc seem quirky */
 #if defined(__GLIBC__)  &&  (__GLIBC__ < 2  ||  (__GLIBC__ == 2  &&  __GLIBC_MINOR__ < 12))

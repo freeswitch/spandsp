@@ -51,8 +51,8 @@
 #include <sys/time.h>
 #include <time.h>
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
 
 #if defined(_MSC_VER)
 #pragma warning(push)

@@ -43,26 +43,26 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 #include "floating_fudge.h"
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/logging.h"
-#include "spandsp/fast_convert.h"
-#include "spandsp/queue.h"
-#include "spandsp/complex.h"
-#include "spandsp/dds.h"
-#include "spandsp/tone_detect.h"
-#include "spandsp/tone_generate.h"
-#include "spandsp/super_tone_rx.h"
-#include "spandsp/dtmf.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/logging.h"
+#include "spandsp3/fast_convert.h"
+#include "spandsp3/queue.h"
+#include "spandsp3/complex.h"
+#include "spandsp3/dds.h"
+#include "spandsp3/tone_detect.h"
+#include "spandsp3/tone_generate.h"
+#include "spandsp3/super_tone_rx.h"
+#include "spandsp3/dtmf.h"
 
-#include "spandsp/private/logging.h"
-#include "spandsp/private/queue.h"
-#include "spandsp/private/tone_generate.h"
-#include "spandsp/private/dtmf.h"
+#include "spandsp3/private/logging.h"
+#include "spandsp3/private/queue.h"
+#include "spandsp3/private/tone_generate.h"
+#include "spandsp3/private/dtmf.h"
 
 #define DEFAULT_DTMF_TX_LEVEL       -10
 #define DEFAULT_DTMF_TX_ON_TIME     50

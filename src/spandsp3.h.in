@@ -28,30 +28,25 @@
 #if !defined(_SPANDSP_H_)
 #define _SPANDSP_H_
 
-#define __inline__ __inline
-#pragma warning(disable:4200)
+@SPANDSP_USE_FIXED_POINT@
+@SPANDSP_MISALIGNED_ACCESS_FAILS@
 
-#undef SPANDSP_USE_FIXED_POINT
-#undef SPANDSP_MISALIGNED_ACCESS_FAILS
+@SPANDSP_USE_EXPORT_CAPABILITY@
 
-#define SPANDSP_USE_EXPORT_CAPABILITY 1
-
-#undef SPANDSP_SUPPORT_T43
-#undef SPANDSP_SUPPORT_V32BIS
-#undef SPANDSP_SUPPORT_V34
-#undef SPANDSP_SUPPORT_TIFF_FX
+@SPANDSP_SUPPORT_T43@
+@SPANDSP_SUPPORT_V32BIS@
+@SPANDSP_SUPPORT_V34@
+@SPANDSP_SUPPORT_TIFF_FX@
 
 #include <stdlib.h>
-#include <msvc/inttypes.h>
+@INSERT_INTTYPES_HEADER@
 #include <string.h>
 #include <limits.h>
 #include <time.h>
-#include <math.h>
+@INSERT_MATH_HEADER@
+@INSERT_STDBOOL_HEADER@
 #include <tiffio.h>
 
-#if !defined(__cplusplus)
-#include <spandsp3/stdbool.h>
-#endif
 #include <spandsp3/telephony.h>
 #include <spandsp3/alloc.h>
 #include <spandsp3/fast_convert.h>

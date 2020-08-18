@@ -42,14 +42,14 @@
 #include "floating_fudge.h"
 #include <limits.h>
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/fast_convert.h"
-#include "spandsp/saturated.h"
-#include "spandsp/vector_int.h"
-#include "spandsp/plc.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/fast_convert.h"
+#include "spandsp3/saturated.h"
+#include "spandsp3/vector_int.h"
+#include "spandsp3/plc.h"
 
-#include "spandsp/private/plc.h"
+#include "spandsp3/private/plc.h"
 
 /* We do a straight line fade to zero volume in 50ms when we are filling in for missing data. */
 #define ATTENUATION_INCREMENT       0.0025f     /* Attenuation per sample */

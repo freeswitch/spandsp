@@ -35,12 +35,12 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 
-#include "spandsp/telephony.h"
-#include "spandsp/crc.h"
-#include "spandsp/bit_operations.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/crc.h"
+#include "spandsp3/bit_operations.h"
 
 static const uint32_t crc_itu32_table[] =
 {

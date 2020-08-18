@@ -43,14 +43,14 @@
 #include <time.h>
 #include <fcntl.h>
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/complex.h"
-#include "spandsp/complex_vector_float.h"
-#include "spandsp/tone_detect.h"
-#include "spandsp/tone_generate.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/complex.h"
+#include "spandsp3/complex_vector_float.h"
+#include "spandsp3/tone_detect.h"
+#include "spandsp3/tone_generate.h"
 
-#include "spandsp/private/tone_detect.h"
+#include "spandsp3/private/tone_detect.h"
 
 #if !defined(M_PI)
 /* C99 systems may not define M_PI */

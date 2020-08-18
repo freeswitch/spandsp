@@ -41,8 +41,8 @@
  #define __inline__ __inline
 #endif
 
-#include "spandsp/telephony.h"
-#include "spandsp/complex.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/complex.h"
 #include "filter_tools.h"
 
 //#define SAMPLE_RATE         8000.0

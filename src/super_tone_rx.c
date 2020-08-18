@@ -44,17 +44,17 @@
 #endif
 #include "floating_fudge.h"
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/fast_convert.h"
-#include "spandsp/complex.h"
-#include "spandsp/vector_float.h"
-#include "spandsp/complex_vector_float.h"
-#include "spandsp/tone_detect.h"
-#include "spandsp/tone_generate.h"
-#include "spandsp/super_tone_rx.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/fast_convert.h"
+#include "spandsp3/complex.h"
+#include "spandsp3/vector_float.h"
+#include "spandsp3/complex_vector_float.h"
+#include "spandsp3/tone_detect.h"
+#include "spandsp3/tone_generate.h"
+#include "spandsp3/super_tone_rx.h"
 
-#include "spandsp/private/super_tone_rx.h"
+#include "spandsp3/private/super_tone_rx.h"
 
 #if defined(SPANDSP_USE_FIXED_POINT)
 #define DETECTION_THRESHOLD         16439           /* -42dBm0 [((SUPER_TONE_BINS*SUPER_TONE_BINS*32768.0/(1.4142*128.0))*10^((-42 - DBM0_MAX_SINE_POWER)/20.0))^2] */

@@ -46,13 +46,13 @@
 #endif
 #include "floating_fudge.h"
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/bit_operations.h"
-#include "spandsp/dc_restore.h"
-#include "spandsp/modem_echo.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/bit_operations.h"
+#include "spandsp3/dc_restore.h"
+#include "spandsp3/modem_echo.h"
 
-#include "spandsp/private/modem_echo.h"
+#include "spandsp3/private/modem_echo.h"
 
 SPAN_DECLARE(void) modem_echo_can_free(modem_echo_can_state_t *ec)
 {

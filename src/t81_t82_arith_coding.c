@@ -36,14 +36,14 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/t81_t82_arith_coding.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/t81_t82_arith_coding.h"
 
-#include "spandsp/private/t81_t82_arith_coding.h"
+#include "spandsp3/private/t81_t82_arith_coding.h"
 
 /* T.82 defines the QM-coder at a level very close to actual code. Therefore
    this file closely mirrors the routine names, variable names, and flow

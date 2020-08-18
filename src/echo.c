@@ -91,22 +91,22 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 #include "floating_fudge.h"
 #include <string.h>
 #include <stdio.h>
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/fast_convert.h"
-#include "spandsp/logging.h"
-#include "spandsp/saturated.h"
-#include "spandsp/dc_restore.h"
-#include "spandsp/bit_operations.h"
-#include "spandsp/echo.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/fast_convert.h"
+#include "spandsp3/logging.h"
+#include "spandsp3/saturated.h"
+#include "spandsp3/dc_restore.h"
+#include "spandsp3/bit_operations.h"
+#include "spandsp3/echo.h"
 
-#include "spandsp/private/echo.h"
+#include "spandsp3/private/echo.h"
 
 #if !defined(NULL)
 #define NULL (void *) 0

@@ -44,16 +44,16 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 #include "floating_fudge.h"
 #include <assert.h>
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/power_meter.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/power_meter.h"
 
-#include "spandsp/private/power_meter.h"
+#include "spandsp3/private/power_meter.h"
 
 SPAN_DECLARE(power_meter_t *) power_meter_init(power_meter_t *s, int shift)
 {

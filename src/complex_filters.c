@@ -31,10 +31,10 @@
 #include <stdio.h>
 #include <inttypes.h>
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/complex.h"
-#include "spandsp/complex_filters.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/complex.h"
+#include "spandsp3/complex_filters.h"
 
 SPAN_DECLARE(filter_t *) filter_create(fspec_t *fs)
 {

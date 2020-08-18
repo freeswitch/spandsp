@@ -38,7 +38,7 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 #if defined(HAVE_STDATOMIC_H)
 #include <stdatomic.h>
@@ -46,11 +46,11 @@
 #include <sys/types.h>
 
 #define SPANDSP_FULLY_DEFINE_QUEUE_STATE_T
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/queue.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/queue.h"
 
-#include "spandsp/private/queue.h"
+#include "spandsp3/private/queue.h"
 
 SPAN_DECLARE(bool) queue_empty(queue_state_t *s)
 {

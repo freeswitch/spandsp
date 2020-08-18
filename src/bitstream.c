@@ -36,14 +36,14 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/bitstream.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/bitstream.h"
 
-#include "spandsp/private/bitstream.h"
+#include "spandsp3/private/bitstream.h"
 
 SPAN_DECLARE(void) bitstream_put(bitstream_state_t *s, uint8_t **c, uint32_t value, int bits)
 {

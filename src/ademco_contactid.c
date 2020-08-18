@@ -42,7 +42,7 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 #include "floating_fudge.h"
 #include <memory.h>
@@ -50,31 +50,31 @@
 #include <limits.h>
 #include <assert.h>
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/fast_convert.h"
-#include "spandsp/logging.h"
-#include "spandsp/queue.h"
-#include "spandsp/complex.h"
-#include "spandsp/dds.h"
-#include "spandsp/power_meter.h"
-#include "spandsp/async.h"
-#include "spandsp/vector_float.h"
-#include "spandsp/complex_vector_float.h"
-#include "spandsp/vector_int.h"
-#include "spandsp/complex_vector_int.h"
-#include "spandsp/tone_detect.h"
-#include "spandsp/tone_generate.h"
-#include "spandsp/super_tone_rx.h"
-#include "spandsp/dtmf.h"
-#include "spandsp/ademco_contactid.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/fast_convert.h"
+#include "spandsp3/logging.h"
+#include "spandsp3/queue.h"
+#include "spandsp3/complex.h"
+#include "spandsp3/dds.h"
+#include "spandsp3/power_meter.h"
+#include "spandsp3/async.h"
+#include "spandsp3/vector_float.h"
+#include "spandsp3/complex_vector_float.h"
+#include "spandsp3/vector_int.h"
+#include "spandsp3/complex_vector_int.h"
+#include "spandsp3/tone_detect.h"
+#include "spandsp3/tone_generate.h"
+#include "spandsp3/super_tone_rx.h"
+#include "spandsp3/dtmf.h"
+#include "spandsp3/ademco_contactid.h"
 
-#include "spandsp/private/logging.h"
-#include "spandsp/private/queue.h"
-#include "spandsp/private/tone_detect.h"
-#include "spandsp/private/tone_generate.h"
-#include "spandsp/private/dtmf.h"
-#include "spandsp/private/ademco_contactid.h"
+#include "spandsp3/private/logging.h"
+#include "spandsp3/private/queue.h"
+#include "spandsp3/private/tone_detect.h"
+#include "spandsp3/private/tone_generate.h"
+#include "spandsp3/private/dtmf.h"
+#include "spandsp3/private/ademco_contactid.h"
 
 /*
 Ademco ContactID Protocol

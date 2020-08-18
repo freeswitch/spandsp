@@ -39,9 +39,9 @@
 #endif
 #include "floating_fudge.h"
 
-#include "spandsp/telephony.h"
-#include "spandsp/complex.h"
-#include "spandsp/dds.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/complex.h"
+#include "spandsp3/dds.h"
 
 #define SLENK       11
 #define SINELEN     (1 << SLENK)

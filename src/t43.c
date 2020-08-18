@@ -42,29 +42,29 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 #include <time.h>
 #include "floating_fudge.h"
 #include <setjmp.h>
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/logging.h"
-#include "spandsp/async.h"
-#include "spandsp/timezone.h"
-#include "spandsp/t4_rx.h"
-#include "spandsp/t4_tx.h"
-#include "spandsp/t81_t82_arith_coding.h"
-#include "spandsp/t85.h"
-#include "spandsp/t42.h"
-#include "spandsp/t43.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/logging.h"
+#include "spandsp3/async.h"
+#include "spandsp3/timezone.h"
+#include "spandsp3/t4_rx.h"
+#include "spandsp3/t4_tx.h"
+#include "spandsp3/t81_t82_arith_coding.h"
+#include "spandsp3/t85.h"
+#include "spandsp3/t42.h"
+#include "spandsp3/t43.h"
 
-#include "spandsp/private/logging.h"
-#include "spandsp/private/t81_t82_arith_coding.h"
-#include "spandsp/private/t85.h"
-#include "spandsp/private/t42.h"
-#include "spandsp/private/t43.h"
+#include "spandsp3/private/logging.h"
+#include "spandsp3/private/t81_t82_arith_coding.h"
+#include "spandsp3/private/t85.h"
+#include "spandsp3/private/t42.h"
+#include "spandsp3/private/t43.h"
 
 #include "t43_gray_code_tables.h"
 #include "t42_t43_local.h"

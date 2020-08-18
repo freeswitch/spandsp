@@ -64,12 +64,12 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 
-#include "spandsp/telephony.h"
-#include "spandsp/bit_operations.h"
-#include "spandsp/t35.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/bit_operations.h"
+#include "spandsp3/t35.h"
 
 /*! NSF pattern for FAX machine identification */
 typedef struct

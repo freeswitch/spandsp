@@ -36,17 +36,17 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/logging.h"
-#include "spandsp/async.h"
-#include "spandsp/bert.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/logging.h"
+#include "spandsp3/async.h"
+#include "spandsp3/bert.h"
 
-#include "spandsp/private/logging.h"
-#include "spandsp/private/bert.h"
+#include "spandsp3/private/logging.h"
+#include "spandsp3/private/bert.h"
 
 #define MEASUREMENT_STEP    100
 

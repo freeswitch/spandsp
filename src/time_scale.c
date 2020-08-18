@@ -45,18 +45,18 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 #include "floating_fudge.h"
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/fast_convert.h"
-#include "spandsp/vector_int.h"
-#include "spandsp/saturated.h"
-#include "spandsp/time_scale.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/fast_convert.h"
+#include "spandsp3/vector_int.h"
+#include "spandsp3/saturated.h"
+#include "spandsp3/time_scale.h"
 
-#include "spandsp/private/time_scale.h"
+#include "spandsp3/private/time_scale.h"
 
 /*
     Time scaling for speech, based on the Pointer Interval Controlled

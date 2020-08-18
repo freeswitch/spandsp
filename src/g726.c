@@ -67,19 +67,19 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 #include "floating_fudge.h"
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/bitstream.h"
-#include "spandsp/bit_operations.h"
-#include "spandsp/g711.h"
-#include "spandsp/g726.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/bitstream.h"
+#include "spandsp3/bit_operations.h"
+#include "spandsp3/g711.h"
+#include "spandsp3/g726.h"
 
-#include "spandsp/private/bitstream.h"
-#include "spandsp/private/g726.h"
+#include "spandsp3/private/bitstream.h"
+#include "spandsp3/private/g726.h"
 
 /*
  * Maps G.726_16 code word to reconstructed scale factor normalized log

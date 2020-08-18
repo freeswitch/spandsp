@@ -34,16 +34,16 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/logging.h"
-#include "spandsp/schedule.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/logging.h"
+#include "spandsp3/schedule.h"
 
-#include "spandsp/private/logging.h"
-#include "spandsp/private/schedule.h"
+#include "spandsp3/private/logging.h"
+#include "spandsp3/private/schedule.h"
 
 SPAN_DECLARE(int) span_schedule_event(span_sched_state_t *s, int us, span_sched_callback_func_t function, void *user_data)
 {

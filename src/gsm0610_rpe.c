@@ -45,11 +45,11 @@
 
 #include "mmx_sse_decs.h"
 
-#include "spandsp/telephony.h"
-#include "spandsp/fast_convert.h"
-#include "spandsp/bitstream.h"
-#include "spandsp/saturated.h"
-#include "spandsp/gsm0610.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/fast_convert.h"
+#include "spandsp3/bitstream.h"
+#include "spandsp3/saturated.h"
+#include "spandsp3/gsm0610.h"
 
 #include "gsm0610_local.h"
 

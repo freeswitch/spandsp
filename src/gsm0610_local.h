@@ -33,7 +33,7 @@
 
 #define GSM0610_MAGIC                   0xD
 
-#include "spandsp/private/gsm0610.h"
+#include "spandsp3/private/gsm0610.h"
 
 static __inline__ int16_t gsm_add(int16_t a, int16_t b)
 {

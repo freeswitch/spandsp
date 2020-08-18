@@ -45,21 +45,21 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 #include "floating_fudge.h"
 #include <assert.h>
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/logging.h"
-#include "spandsp/queue.h"
-#include "spandsp/dc_restore.h"
-#include "spandsp/bit_operations.h"
-#include "spandsp/async.h"
-#include "spandsp/t38_non_ecm_buffer.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/logging.h"
+#include "spandsp3/queue.h"
+#include "spandsp3/dc_restore.h"
+#include "spandsp3/bit_operations.h"
+#include "spandsp3/async.h"
+#include "spandsp3/t38_non_ecm_buffer.h"
 
-#include "spandsp/private/t38_non_ecm_buffer.h"
+#include "spandsp3/private/t38_non_ecm_buffer.h"
 
 /* Phases */
 enum

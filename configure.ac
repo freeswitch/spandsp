@@ -194,7 +194,7 @@ AC_CHECK_HEADERS([socket.h])
 AC_CHECK_HEADERS([inttypes.h], [INSERT_INTTYPES_HEADER="#include <inttypes.h>"])
 AC_CHECK_HEADERS([stdint.h], [INSERT_STDINT_HEADER="#include <stdint.h>"])
 AC_CHECK_HEADERS([stdatomic.h])
-AC_CHECK_HEADERS([stdbool.h], [INSERT_STDBOOL_HEADER="#include <stdbool.h>"], [INSERT_STDBOOL_HEADER="#include <spandsp/stdbool.h>"])
+AC_CHECK_HEADERS([stdbool.h], [INSERT_STDBOOL_HEADER="#include <stdbool.h>"], [INSERT_STDBOOL_HEADER="#include <spandsp3/stdbool.h>"])
 AC_CHECK_HEADERS([stdfix.h])
 AC_CHECK_HEADERS([unistd.h])
 AC_CHECK_HEADERS([stdlib.h])
@@ -625,7 +625,7 @@ AC_CONFIG_FILES([Makefile
                  doc/Makefile
                  doc/doxygen
                  src/Makefile
-                 src/spandsp.h
+                 src/spandsp3.h
                  spandsp-sim/Makefile
                  test-data/Makefile
                  test-data/etsi/Makefile
@@ -635,7 +635,7 @@ AC_CONFIG_FILES([Makefile
                  test-data/itu/tiff-fx/Makefile
                  test-data/local/Makefile
                  tests/Makefile
-                 spandsp.pc])
+                 spandsp3.pc])
 
 AC_OUTPUT
 

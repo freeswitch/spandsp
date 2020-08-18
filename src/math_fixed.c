@@ -46,9 +46,9 @@
 
 #include "math_fixed_tables.h"
 
-#include "spandsp/telephony.h"
-#include "spandsp/bit_operations.h"
-#include "spandsp/math_fixed.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/bit_operations.h"
+#include "spandsp3/math_fixed.h"
 
 #if defined(SPANDSP_USE_FIXED_POINT)
 SPAN_DECLARE(uint16_t) sqrtu32_u16(uint32_t x)

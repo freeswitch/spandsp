@@ -7,6 +7,6 @@ Name: spandsp
 Description: A DSP library for telephony.
 Requires:
 Version: @VERSION@
-Libs: -L${libdir} -lspandsp
+Libs: -L${libdir} -lspandsp3
 Libs.private: -ltiff -lm
 Cflags: -I${includedir}

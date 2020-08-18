@@ -44,8 +44,8 @@
 #include "floating_fudge.h"
 #include "mmx_sse_decs.h"
 
-#include "spandsp/telephony.h"
-#include "spandsp/vector_float.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/vector_float.h"
 
 #if defined(__GNUC__)  &&  defined(SPANDSP_USE_SSE2)
 SPAN_DECLARE(void) vec_copyf(float z[], const float x[], int n)

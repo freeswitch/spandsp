@@ -42,13 +42,13 @@
 #endif
 #include "floating_fudge.h"
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/fast_convert.h"
-#include "spandsp/saturated.h"
-#include "spandsp/noise.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/fast_convert.h"
+#include "spandsp3/saturated.h"
+#include "spandsp3/noise.h"
 
-#include "spandsp/private/noise.h"
+#include "spandsp3/private/noise.h"
 
 SPAN_DECLARE(int16_t) noise(noise_state_t *s)
 {

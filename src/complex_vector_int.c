@@ -42,18 +42,18 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 #include <assert.h>
 
 #include "floating_fudge.h"
 #include "mmx_sse_decs.h"
 
-#include "spandsp/telephony.h"
-#include "spandsp/logging.h"
-#include "spandsp/complex.h"
-#include "spandsp/vector_int.h"
-#include "spandsp/complex_vector_int.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/logging.h"
+#include "spandsp3/complex.h"
+#include "spandsp3/vector_int.h"
+#include "spandsp3/complex_vector_int.h"
 
 SPAN_DECLARE(complexi32_t) cvec_dot_prodi16(const complexi16_t x[], const complexi16_t y[], int n)
 {

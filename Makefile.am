@@ -61,7 +61,7 @@ SUBDIRS = src $(MAYBE_DOC) $(MAYBE_TESTS)
 DIST_SUBDIRS = src doc test-data spandsp-sim tests
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = spandsp.pc
+pkgconfig_DATA = spandsp3.pc
 
 faq: faq.xml
 	cd faq ; xsltproc ../wrapper.xsl ../faq.xml

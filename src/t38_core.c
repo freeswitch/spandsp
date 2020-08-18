@@ -44,21 +44,21 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 #include "floating_fudge.h"
 #include <assert.h>
 #include <memory.h>
 #include <tiffio.h>
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/logging.h"
-#include "spandsp/bit_operations.h"
-#include "spandsp/t38_core.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/logging.h"
+#include "spandsp3/bit_operations.h"
+#include "spandsp3/t38_core.h"
 
-#include "spandsp/private/logging.h"
-#include "spandsp/private/t38_core.h"
+#include "spandsp3/private/logging.h"
+#include "spandsp3/private/t38_core.h"
 
 #define ACCEPTABLE_SEQ_NO_OFFSET    2000
 

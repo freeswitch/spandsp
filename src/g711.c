@@ -34,11 +34,11 @@
 #include <string.h>
 #include <assert.h>
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/bit_operations.h"
-#include "spandsp/g711.h"
-#include "spandsp/private/g711.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/bit_operations.h"
+#include "spandsp3/g711.h"
+#include "spandsp3/private/g711.h"
 
 /* Copied from the CCITT G.711 specification */
 static const uint8_t ulaw_to_alaw_table[256] =

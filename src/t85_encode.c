@@ -36,22 +36,22 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/logging.h"
-#include "spandsp/async.h"
-#include "spandsp/timezone.h"
-#include "spandsp/t4_rx.h"
-#include "spandsp/t4_tx.h"
-#include "spandsp/t81_t82_arith_coding.h"
-#include "spandsp/t85.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/logging.h"
+#include "spandsp3/async.h"
+#include "spandsp3/timezone.h"
+#include "spandsp3/t4_rx.h"
+#include "spandsp3/t4_tx.h"
+#include "spandsp3/t81_t82_arith_coding.h"
+#include "spandsp3/t85.h"
 
-#include "spandsp/private/logging.h"
-#include "spandsp/private/t81_t82_arith_coding.h"
-#include "spandsp/private/t85.h"
+#include "spandsp3/private/logging.h"
+#include "spandsp3/private/t81_t82_arith_coding.h"
+#include "spandsp3/private/t85.h"
 
 /* Image length update status */
 enum

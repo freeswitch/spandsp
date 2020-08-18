@@ -44,14 +44,14 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 #include "floating_fudge.h"
 
-#include "spandsp/telephony.h"
-#include "spandsp/fast_convert.h"
-#include "spandsp/lpc10.h"
-#include "spandsp/private/lpc10.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/fast_convert.h"
+#include "spandsp3/lpc10.h"
+#include "spandsp3/private/lpc10.h"
 
 #include "lpc10_encdecs.h"
 

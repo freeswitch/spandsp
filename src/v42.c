@@ -41,21 +41,21 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 #include <assert.h>
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/logging.h"
-#include "spandsp/bit_operations.h"
-#include "spandsp/async.h"
-#include "spandsp/hdlc.h"
-#include "spandsp/v42.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/logging.h"
+#include "spandsp3/bit_operations.h"
+#include "spandsp3/async.h"
+#include "spandsp3/hdlc.h"
+#include "spandsp3/v42.h"
 
-#include "spandsp/private/logging.h"
-#include "spandsp/private/hdlc.h"
-#include "spandsp/private/v42.h"
+#include "spandsp3/private/logging.h"
+#include "spandsp3/private/hdlc.h"
+#include "spandsp3/private/v42.h"
 
 /* Detection phase timer */
 #define T_400                           750

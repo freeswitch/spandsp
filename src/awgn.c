@@ -55,17 +55,17 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 #include "floating_fudge.h"
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/fast_convert.h"
-#include "spandsp/saturated.h"
-#include "spandsp/awgn.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/fast_convert.h"
+#include "spandsp3/saturated.h"
+#include "spandsp3/awgn.h"
 
-#include "spandsp/private/awgn.h"
+#include "spandsp3/private/awgn.h"
 
 /* Random number generator constants */
 #define M1 259200

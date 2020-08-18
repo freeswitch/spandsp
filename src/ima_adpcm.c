@@ -41,12 +41,12 @@
 #endif
 #include "floating_fudge.h"
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/fast_convert.h"
-#include "spandsp/saturated.h"
-#include "spandsp/ima_adpcm.h"
-#include "spandsp/private/ima_adpcm.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/fast_convert.h"
+#include "spandsp3/saturated.h"
+#include "spandsp3/ima_adpcm.h"
+#include "spandsp3/private/ima_adpcm.h"
 
 /*
  * Intel/DVI ADPCM coder/decoder.

@@ -40,18 +40,18 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/logging.h"
-#include "spandsp/bit_operations.h"
-#include "spandsp/async.h"
-#include "spandsp/v42bis.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/logging.h"
+#include "spandsp3/bit_operations.h"
+#include "spandsp3/async.h"
+#include "spandsp3/v42bis.h"
 
-#include "spandsp/private/logging.h"
-#include "spandsp/private/v42bis.h"
+#include "spandsp3/private/logging.h"
+#include "spandsp3/private/v42bis.h"
 
 /* Fixed parameters from the spec. */
 /* Character size (bits) */

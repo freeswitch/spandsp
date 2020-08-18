@@ -47,15 +47,15 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 #include <assert.h>
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/timezone.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/timezone.h"
 
-#include "spandsp/private/timezone.h"
+#include "spandsp3/private/timezone.h"
 
 #define SECS_PER_MIN            60
 #define MINS_PER_HOUR           60

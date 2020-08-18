@@ -56,28 +56,28 @@
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
-#include "spandsp/stdbool.h"
+#include "spandsp3/stdbool.h"
 #endif
 #include "floating_fudge.h"
 #include <stdio.h>
 
-#include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
-#include "spandsp/fast_convert.h"
-#include "spandsp/logging.h"
-#include "spandsp/complex.h"
-#include "spandsp/dds.h"
-#include "spandsp/tone_detect.h"
-#include "spandsp/tone_generate.h"
-#include "spandsp/super_tone_rx.h"
-#include "spandsp/power_meter.h"
-#include "spandsp/async.h"
-#include "spandsp/fsk.h"
-#include "spandsp/modem_connect_tones.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/alloc.h"
+#include "spandsp3/fast_convert.h"
+#include "spandsp3/logging.h"
+#include "spandsp3/complex.h"
+#include "spandsp3/dds.h"
+#include "spandsp3/tone_detect.h"
+#include "spandsp3/tone_generate.h"
+#include "spandsp3/super_tone_rx.h"
+#include "spandsp3/power_meter.h"
+#include "spandsp3/async.h"
+#include "spandsp3/fsk.h"
+#include "spandsp3/modem_connect_tones.h"
 
-#include "spandsp/private/power_meter.h"
-#include "spandsp/private/fsk.h"
-#include "spandsp/private/modem_connect_tones.h"
+#include "spandsp3/private/power_meter.h"
+#include "spandsp3/private/fsk.h"
+#include "spandsp3/private/modem_connect_tones.h"
 
 #define HDLC_FRAMING_OK_THRESHOLD       5
 

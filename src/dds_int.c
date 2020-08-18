@@ -38,9 +38,9 @@
 #endif
 #include "floating_fudge.h"
 
-#include "spandsp/telephony.h"
-#include "spandsp/complex.h"
-#include "spandsp/dds.h"
+#include "spandsp3/telephony.h"
+#include "spandsp3/complex.h"
+#include "spandsp3/dds.h"
 
 /* In a A-law or u-law channel, a fairly coarse step sine table is adequate to keep the spectral
    mess due to the DDS at a similar level to the spectral mess due to the A-law or u-law
