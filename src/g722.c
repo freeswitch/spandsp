@@ -415,13 +415,13 @@ SPAN_DECLARE(int) g722_decode(g722_decode_state_t *s, int16_t amp[], const uint8
             if (s->eight_k)
             {
                 /* We shift by 1 to allow for the 15 bit input to the G.722 algorithm. */
-                amp[outlen++] = (int16_t) (rlow << 1);
+                amp[outlen++] = saturate (rlow << 1);
             }
             else
             {
                 /* Apply the QMF to build the final signal */
-                s->x[s->ptr] = (int16_t) (rlow + rhigh);
-                s->y[s->ptr] = (int16_t) (rlow - rhigh);
+                s->x[s->ptr] = saturate (rlow + rhigh);
+                s->y[s->ptr] = saturate (rlow - rhigh);
                 if (++s->ptr >= 12)
                     s->ptr = 0;
                 /* We shift by 12 to allow for the QMF filters (DC gain = 4096), less 1
