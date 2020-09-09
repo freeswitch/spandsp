@@ -1,0 +1,56 @@
+---
+kind: pipeline
+name: scan-build
+
+steps:
+    - name: bootstrap
+      image: signalwire/freeswitch-public-base:stretch
+      pull: true
+      commands:
+      - ./bootstrap.sh
+
+    - name: configure
+      image: signalwire/freeswitch-public-base:stretch
+      pull: true
+      commands:
+      - apt-get update && apt-get install -y libtiff-dev libjpeg-dev dpatch doxygen autotools-dev xsltproc
+      - ./configure --with-pic
+
+    - name: scan-build
+      image: signalwire/freeswitch-public-base:stretch
+      pull: true
+      commands:
+      - apt-get update && apt-get install -y libtiff-dev libjpeg-dev dpatch doxygen autotools-dev xsltproc
+      - mkdir -p scan-build
+      - echo '#!/bin/bash\nscan-build-4.0 -o ./scan-build/ make -j`nproc --all` |& tee ./scan-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./scan-build-status.txt\n' > scan.sh
+      - chmod +x scan.sh
+      - ./scan.sh
+      - exitstatus=`cat ./scan-build-status.txt`
+      - echo "*** Exit status is $exitstatus"
+
+    - name: notify
+      image: signalwire/public-freeswitch-scan-build-notify
+      pull: true
+      environment:
+        GITHUB_CI_APP_PEM:
+          from_secret: github_ci_app_pem
+        SSH_KEY:
+          from_secret: public_artifacts_ssh_key
+        SLACK_WEBHOOK_URL:
+          from_secret: slack_webhook_url
+      commands:
+      - /root/notify.sh
+
+      
+trigger:
+  branch:
+  - drone
+  event:
+  - pull_request
+  - push
+
+---
+kind: signature
+hmac: fa3d6ef48ee3e92173d3894c8ce6ff357b582a49183c645be61c3cebb7d8af55
+
+...
