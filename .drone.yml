@@ -44,13 +44,13 @@ steps:
       
 trigger:
   branch:
-  - drone
+  - master
   event:
   - pull_request
   - push
 
 ---
 kind: signature
-hmac: fa3d6ef48ee3e92173d3894c8ce6ff357b582a49183c645be61c3cebb7d8af55
+hmac: e995fbc0f019801dfe39d7fd1a9b43df61499b45626c11613d4ebcd51fbcd35e
 
 ...
