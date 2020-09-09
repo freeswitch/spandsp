@@ -108,7 +108,12 @@ version_compare()
 
 mkdir config
 
-if [ "x$UNAME" = "xFreeBSD" ]; then
+
+if [ "x$UNAME" = "xDarwin" ]; then
+version_compare glibtoolize 1 5 16 || exit 1
+version_compare automake 1 9 5 || exit 1
+version_compare autoconf 2 59 || exit 1
+elif [ "x$UNAME" = "xFreeBSD" ]; then
 version_compare libtoolize 1 5 16 || exit 1
 version_compare automake19 1 9 5 || exit 1
 version_compare autoconf259 2 59 || exit 1
