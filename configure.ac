@@ -486,35 +486,27 @@ armv7[bl] | armv7-*)
 x86_64-* | i386-* | i686-*)
     if test "$enable_avx2" = "yes" ; then
         AC_DEFINE([SPANDSP_USE_AVX2], [1], [Use the AVX2 instruction set (i386 and x86_64 only).])
-        enable_avx="yes"
     fi
     if test "$enable_avx" = "yes" ; then
         AC_DEFINE([SPANDSP_USE_AVX], [1], [Use the AVX instruction set (i386 and x86_64 only).])
-        enable_sse4_2="yes"
     fi
     if test "$enable_sse4_2" = "yes" ; then
         AC_DEFINE([SPANDSP_USE_SSE4_2], [1], [Use the SSE4.2 instruction set (i386 and x86_64 only).])
-        enable_sse4_1="yes"
     fi
     if test "$enable_sse4_1" = "yes" ; then
         AC_DEFINE([SPANDSP_USE_SSE4_1], [1], [Use the SSE4.1 instruction set (i386 and x86_64 only).])
-        enable_ssse3="yes"
     fi
     if test "$enable_ssse3" = "yes" ; then
         AC_DEFINE([SPANDSP_USE_SSSE3], [1], [Use the SSSE3 instruction set (i386 and x86_64 only).])
-        enable_sse3="yes"
     fi
     if test "$enable_sse3" = "yes" ; then
         AC_DEFINE([SPANDSP_USE_SSE3], [1], [Use the SSE3 instruction set (i386 and x86_64 only).])
-        enable_sse2="yes"
     fi
     if test "$enable_sse2" = "yes" ; then
         AC_DEFINE([SPANDSP_USE_SSE2], [1], [Use the SSE2 instruction set (i386 and x86_64 only).])
-        enable_sse="yes"
     fi
     if test "$enable_sse" = "yes" ; then
         AC_DEFINE([SPANDSP_USE_SSE], [1], [Use the SSE instruction set (i386 and x86_64 only).])
-        enable_mmx="yes"
     fi
     if test "$enable_mmx" = "yes" ; then
         AC_DEFINE([SPANDSP_USE_MMX], [1], [Use the MMX instruction set (i386 and x86_64 only).])
