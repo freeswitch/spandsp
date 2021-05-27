@@ -4,25 +4,25 @@ name: scan-build
 
 steps:
     - name: bootstrap
-      image: signalwire/freeswitch-public-base:stretch
+      image: signalwire/freeswitch-public-base
       pull: true
       commands:
       - ./bootstrap.sh
 
     - name: configure
-      image: signalwire/freeswitch-public-base:stretch
+      image: signalwire/freeswitch-public-base
       pull: true
       commands:
       - apt-get update && apt-get install -y libtiff-dev libjpeg-dev dpatch doxygen autotools-dev xsltproc
       - ./configure --with-pic
 
     - name: scan-build
-      image: signalwire/freeswitch-public-base:stretch
+      image: signalwire/freeswitch-public-base
       pull: true
       commands:
       - apt-get update && apt-get install -y libtiff-dev libjpeg-dev dpatch doxygen autotools-dev xsltproc
       - mkdir -p scan-build
-      - echo '#!/bin/bash\nscan-build-4.0 -o ./scan-build/ make -j`nproc --all` |& tee ./scan-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./scan-build-status.txt\n' > scan.sh
+      - echo '#!/bin/bash\nscan-build-7 -o ./scan-build/ make -j`nproc --all` |& tee ./scan-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./scan-build-status.txt\n' > scan.sh
       - chmod +x scan.sh
       - ./scan.sh
       - exitstatus=`cat ./scan-build-status.txt`
@@ -48,6 +48,6 @@ trigger:
 
 ---
 kind: signature
-hmac: 793faee250352d4b9806f9f41f428a7aa56993002258fefbe717a7f4a36b0f49
+hmac: 04e7e145127e73df6fe85fcace5d77e1e18b4a0f91f82628666f42ca039342f3
 
 ...
