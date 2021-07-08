@@ -738,7 +738,7 @@ static int get_tiff_total_pages(t4_tx_state_t *s)
 
 static int open_tiff_input_file(t4_tx_state_t *s, const char *file)
 {
-    if ((s->tiff.tiff_file = TIFFOpen(file, "r")) == NULL)
+    if ((s->tiff.tiff_file = TIFFOpen(file, "rm")) == NULL)
         return -1;
     return 0;
 }
