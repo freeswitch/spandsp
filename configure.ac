@@ -147,7 +147,10 @@ AC_ARG_ENABLE(v34,          [  --enable-v34         Enable V.34 support])
 
 # The following is for MSVC, where we may be using a local copy of libtiff, built alongside spandsp
 AC_ARG_ENABLE(builtin_tiff,
-    [AC_HELP_STRING([--enable-builtin-tiff],[build with builtin libtiff])],[enable_builtin_tiff="$enableval"],[enable_builtin_tiff="no"])
+    [AC_HELP_STRING([--enable-builtin-tiff],[Build with builtin libtiff])],[enable_builtin_tiff="$enableval"],[enable_builtin_tiff="no"])
+
+AC_ARG_ENABLE(docbook-cdn,
+    [AC_HELP_STRING([--enable-docbook-cdn],[Build docs with 'cdn.docbook.org' URL])],[enable_docbook_cdn="yes"],[enable_docbook_cdn="no"])
 
 AC_FUNC_ERROR_AT_LINE
 AC_FUNC_VPRINTF
@@ -584,6 +587,35 @@ else
 fi
 
 AM_CONDITIONAL([COND_DOC], [test "$enable_doc" = yes])
+AM_CONDITIONAL([HAVE_XML_CATALOG_FILES], false)
+AM_CONDITIONAL([USE_DOCBOOK_CDN], false)
+
+AS_IF([test "$enable_doc" != "no"], [
+  AC_CHECK_PROG([have_xsltproc], xsltproc, true, false)
+  XML_CATALOG_FILES=
+  if $have_xsltproc; then
+    catalog_prefix=""
+    AC_CHECK_PROG([have_brew], brew, true, false)
+    if $have_brew; then
+      catalog_prefix=$(brew --prefix)
+    fi
+    catalog_file=$catalog_prefix/etc/xml/catalog
+    if test -f $catalog_file; then
+      AM_CONDITIONAL([HAVE_XML_CATALOG_FILES], true)
+      XML_CATALOG_FILES=file:$catalog_file
+    else
+      AC_MSG_WARN([Missing file $catalog_file.])
+    fi
+    AC_SUBST([XML_CATALOG_FILES])
+    AM_CONDITIONAL([USE_DOCBOOK_CDN], [test "$enable_docbook_cdn" = yes])
+  else
+    AS_IF([test "x$enable_doc" != xcheck], [
+      AC_MSG_FAILURE(
+        [--enable-doc was given, but test for xsltproc failed])
+    ])
+  fi
+])
+
 AM_CONDITIONAL([COND_TESTS], [test "$enable_tests" = yes])
 AM_CONDITIONAL([COND_MMX], [test "$enable_mmx" = yes])
 AM_CONDITIONAL([COND_SSE], [test "$enable_sse" = yes])
