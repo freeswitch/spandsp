@@ -64,7 +64,16 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = spandsp.pc
 
 faq: faq.xml
+if USE_DOCBOOK_CDN
+	sed -i 's/docbook.sourceforge.net/cdn.docbook.org/g' wrapper.xsl
+else
+	sed -i 's/cdn.docbook.org/docbook.sourceforge.net/g' wrapper.xsl
+endif
+if HAVE_XML_CATALOG_FILES
+	cd faq ; XML_CATALOG_FILES=$(XML_CATALOG_FILES) xsltproc --verbose --nonet ../wrapper.xsl ../faq.xml
+else
 	cd faq ; xsltproc ../wrapper.xsl ../faq.xml
+endif
 
 rpm: rpm-build
 

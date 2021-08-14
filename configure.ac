@@ -584,6 +584,37 @@ else
 fi
 
 AM_CONDITIONAL([COND_DOC], [test "$enable_doc" = yes])
+AM_CONDITIONAL([HAVE_XML_CATALOG_FILES], false)
+AM_CONDITIONAL([USE_DOCBOOK_CDN], false)
+
+AS_IF([test "$enable_doc" != "no"], [
+  AC_CHECK_PROG([have_xsltproc], xsltproc, true, false)
+  XML_CATALOG_FILES=
+  if $have_xsltproc; then
+    prefix=""
+    AC_CHECK_PROG([have_brew], brew, true, false)
+    if $have_brew; then
+      prefix=$(brew --prefix)
+    fi
+    catalog_file=$prefix/etc/xml/catalog
+    if test -f $catalog_file; then
+      AM_CONDITIONAL([HAVE_XML_CATALOG_FILES], true)
+      XML_CATALOG_FILES=file:$catalog_file
+      if grep -q "cdn.docbook.org" $prefix/etc/xml/catalog; then
+        AM_CONDITIONAL([USE_DOCBOOK_CDN], true)
+      fi
+    else
+      AC_MSG_WARN([Missing file $catalog_file.])
+    fi
+    AC_SUBST([XML_CATALOG_FILES])
+  else
+    AS_IF([test "x$enable_doc" != xcheck], [
+      AC_MSG_FAILURE(
+        [--enable-doc was given, but test for xsltproc failed])
+    ])
+  fi
+])
+
 AM_CONDITIONAL([COND_TESTS], [test "$enable_tests" = yes])
 AM_CONDITIONAL([COND_MMX], [test "$enable_mmx" = yes])
 AM_CONDITIONAL([COND_SSE], [test "$enable_sse" = yes])

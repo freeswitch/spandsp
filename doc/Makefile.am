@@ -32,7 +32,16 @@ doxydocs:
 	doxygen doxygen
 
 t38_manual/index.html: t38_manual.xml
+if USE_DOCBOOK_CDN
+	sed -i 's/docbook.sourceforge.net/cdn.docbook.org/g' wrapper.xsl
+else
+	sed -i 's/cdn.docbook.org/docbook.sourceforge.net/g' wrapper.xsl
+endif
+if HAVE_XML_CATALOG_FILES
+	cd t38_manual ; XML_CATALOG_FILES=$(XML_CATALOG_FILES) xsltproc --verbose --nonet ../wrapper.xsl ../t38_manual.xml
+else
 	cd t38_manual ; xsltproc ../wrapper.xsl ../t38_manual.xml
+endif
 
 clean:
 	cd t38_manual ; rm *.html ; cd ../api ; rm -rf html
