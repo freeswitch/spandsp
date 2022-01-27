@@ -3572,6 +3572,17 @@ static void process_rx_fcd(t30_state_t *s, const uint8_t *msg, int len)
 {
     int frame_no;
 
+    if (len < 4)
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "Bad length for FCD frame - %d\n", len);
+        /* This frame didn't get corrupted in transit, because its CRC is OK. It was sent bad
+        and there is little possibility that causing a retransmission will help. It is best
+        to just give up. */
+        t30_set_status(s, T30_ERR_TX_ECMPHD);
+        terminate_call(s);
+        return;
+    }
+    /*endif*/
     /* Facsimile coded data */
     switch (s->state)
     {
