@@ -5,20 +5,20 @@ name: scan-build
 steps:
     - name: bootstrap
       image: signalwire/freeswitch-public-base:stretch
-      pull: true
+      pull: always
       commands:
       - ./bootstrap.sh
 
     - name: configure
       image: signalwire/freeswitch-public-base:stretch
-      pull: true
+      pull: always
       commands:
       - apt-get update && apt-get install -y libtiff-dev libjpeg-dev dpatch doxygen autotools-dev xsltproc
       - ./configure --with-pic
 
     - name: scan-build
       image: signalwire/freeswitch-public-base:stretch
-      pull: true
+      pull: always
       commands:
       - apt-get update && apt-get install -y libtiff-dev libjpeg-dev dpatch doxygen autotools-dev xsltproc
       - mkdir -p scan-build
@@ -30,7 +30,7 @@ steps:
 
     - name: notify
       image: signalwire/drone-notify
-      pull: true
+      pull: always
       environment:
         SLACK_WEBHOOK_URL:
           from_secret: slack_webhook_url
@@ -48,6 +48,6 @@ trigger:
 
 ---
 kind: signature
-hmac: 793faee250352d4b9806f9f41f428a7aa56993002258fefbe717a7f4a36b0f49
+hmac: 477f5d0b0d3b165e82cc918634d575f8f5f5f0a44ef732ad660f1f3e80e49b0f
 
 ...
