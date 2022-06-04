@@ -344,10 +344,7 @@ SPAN_DECLARE(void) at_call_event(at_state_t *s, int event)
         break;
     case AT_CALL_EVENT_HANGUP:
         span_log(&s->logging, SPAN_LOG_FLOW, "Hangup... at_rx_mode %d\n", s->at_rx_mode);
-        if (s->transmit)
-            at_put_response_code(s, AT_RESPONSE_CODE_NO_CARRIER);
-        at_modem_control(s, AT_MODEM_CONTROL_ONHOOK, NULL);
-        if (s->dte_is_waiting)
+        if (s->dte_is_waiting || s->transmit)
         {
             if (s->ok_is_pending)
             {
@@ -371,6 +368,7 @@ SPAN_DECLARE(void) at_call_event(at_state_t *s, int event)
         if (s->at_rx_mode != AT_MODE_OFFHOOK_COMMAND  &&  s->at_rx_mode != AT_MODE_ONHOOK_COMMAND)
             at_put_response_code(s, AT_RESPONSE_CODE_NO_CARRIER);
         s->rx_signal_present = false;
+        at_modem_control(s, AT_MODEM_CONTROL_ONHOOK, NULL);
         at_modem_control(s, AT_MODEM_CONTROL_RNG, (void *) 0);
         at_set_at_rx_mode(s, AT_MODE_ONHOOK_COMMAND);
         break;
