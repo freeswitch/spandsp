@@ -344,7 +344,7 @@ SPAN_DECLARE(void) at_call_event(at_state_t *s, int event)
         break;
     case AT_CALL_EVENT_HANGUP:
         span_log(&s->logging, SPAN_LOG_FLOW, "Hangup... at_rx_mode %d\n", s->at_rx_mode);
-        if (s->dte_is_waiting || s->transmit)
+        if (s->dte_is_waiting)
         {
             if (s->ok_is_pending)
             {

@@ -2393,7 +2393,6 @@ static __inline__ void dle_unstuff(t31_state_t *s, const char *stuffed, int len)
             if (stuffed[i] == ETX)
             {
                 s->non_ecm_tx.final = true;
-                t31_set_at_rx_mode(s, AT_MODE_OFFHOOK_COMMAND);
                 return;
             }
             /*endif*/
