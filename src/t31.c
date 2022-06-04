@@ -1782,14 +1782,14 @@ static void hdlc_rx_status(void *user_data, int status)
                 {
                     /* Report CONNECT as soon as possible to avoid a timeout. */
                     at_put_response_code(&s->at_state, AT_RESPONSE_CODE_CONNECT);
-                    s->rx_frame_received = true;
-                    s->audio.modems.rx_frame_received = true;
                 }
                 else
                 {
                     buf[0] = AT_RESPONSE_CODE_CONNECT;
                     queue_write_msg(s->rx_queue, buf, 1);
                 }
+                s->rx_frame_received = true;
+                s->audio.modems.rx_frame_received = true;
                 /*endif*/
             }
             /*endif*/
@@ -1826,14 +1826,14 @@ static void hdlc_accept_frame(void *user_data, const uint8_t *msg, int len, int 
         {
             /* Report CONNECT as soon as possible to avoid a timeout. */
             at_put_response_code(&s->at_state, AT_RESPONSE_CODE_CONNECT);
-            s->rx_frame_received = true;
-            s->audio.modems.rx_frame_received = true;
         }
         else
         {
             buf[0] = AT_RESPONSE_CODE_CONNECT;
             queue_write_msg(s->rx_queue, buf, 1);
         }
+        s->rx_frame_received = true;
+        s->audio.modems.rx_frame_received = true;
         /*endif*/
     }
     /*endif*/
@@ -2542,6 +2542,13 @@ static int process_class1_cmd(void *user_data, int direction, int operation, int
                     }
                     /*endif*/
                     at_put_response_code(&s->at_state, msg[0]);
+                    if (msg[0] == AT_RESPONSE_CODE_CONNECT)
+                    {
+                        /* If we end our loop on a lone queued CONNECT message,
+                           then we need to prevent additional CONNECT messages. */
+                        s->rx_frame_received = true;
+                        s->audio.modems.rx_frame_received = true;
+                    }
                 }
                 else
                 {
