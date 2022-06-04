@@ -963,8 +963,6 @@ static const char *at_cmd_D(at_state_t *s, const char *t)
                 break;
             case '+':
                 /* V.250 6.3.1.1 International access code */
-                /* TODO: */
-                break;
             case ',':
                 /* V.250 6.3.1.2 Pause */
                 /* Pass these through to the application to handle. */
