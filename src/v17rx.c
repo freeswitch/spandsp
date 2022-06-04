@@ -1064,10 +1064,10 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
             s->carrier_track_i = 100.0f;
             s->carrier_track_p = 500000.0f;
 #endif
-            /* TODO: This was increased by a factor of 10 after studying real world failures.
-                     However, it is not clear why this is an improvement, If something gives
-                     a huge training error, surely it shouldn't decode too well? */
-            if (s->training_error < (V17_TRAINING_SHORT_SEG_2_LEN - 8)*FP_SCALE(4.0f)*FP_SCALE(1.0f)*constellation_spacing[s->space_map])
+            /* We need to be liberally accepting of poor fast-train training errors here.
+               Doing this affords the DTE the opportunity to make some use of whatever
+               valid Phase C data can be decoded. */
+            if (s->training_error < (V17_TRAINING_SHORT_SEG_2_LEN - 8)*FP_SCALE(10.0f)*FP_SCALE(1.0f)*constellation_spacing[s->space_map])
             {
                 s->training_count = 0;
                 if (s->bits_per_symbol == 2)
