@@ -775,7 +775,7 @@ SPAN_DECLARE(void) t30_set_tx_file(t30_state_t *s, const char *file, int start_p
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t30_set_iaf_mode(t30_state_t *s, bool iaf)
+SPAN_DECLARE(void) t30_set_iaf_mode(t30_state_t *s, int iaf)
 {
     s->iaf = iaf;
 }

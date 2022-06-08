@@ -454,8 +454,8 @@ SPAN_DECLARE(void) t30_set_tx_file(t30_state_t *s, const char *file, int start_p
 /*! Set Internet aware FAX (IAF) mode.
     \brief Set Internet aware FAX (IAF) mode.
     \param s The T.30 context.
-    \param iaf True for IAF, or false for non-IAF. */
-SPAN_DECLARE(void) t30_set_iaf_mode(t30_state_t *s, bool iaf);
+    \param iaf Bitmap for IAF values. */
+SPAN_DECLARE(void) t30_set_iaf_mode(t30_state_t *s, int iaf);
 
 /*! Specify if error correction mode (ECM) is allowed by a T.30 context.
     \brief Select ECM capability.
