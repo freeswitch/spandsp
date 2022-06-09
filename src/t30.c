@@ -6270,7 +6270,7 @@ static void decode_url_msg(t30_state_t *s, char *msg, const uint8_t *pkt, int le
     if (msg == NULL)
         msg = text;
     /*endif*/
-    if (len < 3  ||  len > 77 + 3  ||  len != pkt[2] + 3)
+    if (len < 4  ||  len > 77 + 4  ||  len != pkt[3] + 4)
     {
         unexpected_frame_length(s, pkt, len);
         msg[0] = '\0';
@@ -6294,8 +6294,8 @@ static void decode_url_msg(t30_state_t *s, char *msg, const uint8_t *pkt, int le
             Bit 7 = 1 for more follows, 0 for last packet in the sequence.
             Bits 6-0 = length
      */
-    memcpy(msg, &pkt[3], len - 3);
-    msg[len - 3] = '\0';
+    memcpy(msg, &pkt[4], len - 4);
+    msg[len - 4] = '\0';
     span_log(&s->logging, SPAN_LOG_FLOW, "Remote fax gave %s as: %d, %d, \"%s\"\n", t30_frametype(pkt[0]), pkt[0], pkt[1], msg);
 }
 /*- End of function --------------------------------------------------------*/
