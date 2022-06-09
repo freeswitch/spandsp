@@ -748,6 +748,43 @@ static int parse_string_list_out(at_state_t *s, const char **t, int *target, int
 }
 /*- End of function --------------------------------------------------------*/
 
+static int parse_string_out(at_state_t *s, const char **t, char **target, const char *prefix)
+{
+    char buf[100];
+
+    switch (*(*t)++)
+    {
+    case '=':
+        switch (**t)
+        {
+        case '?':
+            /* Show possible values */
+            (*t)++;
+            snprintf(buf, sizeof(buf), "%s", (prefix)  ?  prefix  :  "");
+            at_put_response(s, buf);
+            break;
+        default:
+            /* Set value */
+            if (*target)
+                span_free(*target);
+            /* If this strdup fails, it should be harmless */
+            *target = strdup(*t);
+            break;
+        }
+        break;
+    case '?':
+        /* Show current index value */
+        at_put_response(s, (*target)  ?  *target  :  "");
+        break;
+    default:
+        return false;
+    }
+    while (**t)
+        (*t)++;
+    return true;
+}
+/*- End of function --------------------------------------------------------*/
+
 static const char *s_reg_handler(at_state_t *s, const char *t, int reg)
 {
     int val;
@@ -5012,31 +5049,10 @@ static const char *at_cmd_plus_VSID(at_state_t *s, const char *t)
 {
     /* Extension of V.253 +VCID, Set calling number ID */
     t += 5;
-    switch (*t)
-    {
-    case '=':
-        switch (*(t+1))
-        {
-        case '?':
-            /* Show possible values */
-            at_put_response(s, "");
-            break;
-        default:
-            /* Set value */
-            s->local_id = strdup(t + 1);
-            if (at_modem_control(s, AT_MODEM_CONTROL_SETID, s->local_id) < 0)
-                return NULL;
-            break;
-        }
-        break;
-    case '?':
-        /* Show current index value */
-        at_put_response(s, (s->local_id)  ?  s->local_id  :  "");
-        break;
-    default:
+    if (!parse_string_out(s, &t, &s->local_id, NULL))
         return NULL;
-    }
-    while (*t) t++;
+    if (at_modem_control(s, AT_MODEM_CONTROL_SETID, s->local_id) < 0)
+        return NULL;
     return t;
 }
 /*- End of function --------------------------------------------------------*/
