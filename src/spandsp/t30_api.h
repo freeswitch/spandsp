@@ -464,6 +464,12 @@ SPAN_DECLARE(void) t30_set_iaf_mode(t30_state_t *s, int iaf);
     \return 0 if OK, else -1. */
 SPAN_DECLARE(int) t30_set_ecm_capability(t30_state_t *s, bool enabled);
 
+/*! Specify if page retransmission is allowed by a T.30 context.
+    \brief Select page regtransmission capable.
+    \param s The T.30 context.
+    \param enabled True for retransmit capable, or false for not retransmit capable. */
+SPAN_DECLARE(void) t30_set_retransmit_capable(t30_state_t *s, bool enabled);
+
 /*! Specify the output encoding for TIFF files created during FAX reception.
     \brief Specify the output encoding for TIFF files created during FAX reception.
     \param s The T.30 context.

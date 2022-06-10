@@ -789,6 +789,12 @@ SPAN_DECLARE(int) t30_set_ecm_capability(t30_state_t *s, bool enabled)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(void) t30_set_retransmit_capable(t30_state_t *s, bool enabled)
+{
+    s->retransmit_capable = enabled;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(void) t30_set_keep_bad_quality_pages(t30_state_t *s, bool keep_bad_pages)
 {
     s->keep_bad_pages = keep_bad_pages;
