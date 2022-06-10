@@ -4718,6 +4718,7 @@ static void process_state_ii_q(t30_state_t *s, const uint8_t *msg, int len)
             }
             else
             {
+                t30_set_status(s, T30_ERR_RETRYDCN);
                 send_dcn(s);
             }
             /*endif*/
