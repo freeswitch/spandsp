@@ -2512,8 +2512,16 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
 
 static void send_dcn(t30_state_t *s)
 {
-    queue_phase(s, T30_PHASE_D_TX);
-    set_state(s, T30_STATE_C);
+    if (s->state == T30_STATE_R)
+    {
+        /* We need to wait until after TCF. */
+        queue_phase(s, T30_PHASE_IDLE);
+    }
+    else
+    {
+        queue_phase(s, T30_PHASE_D_TX);
+        set_state(s, T30_STATE_C);
+    }
     send_simple_frame(s, T30_DCN);
 }
 /*- End of function --------------------------------------------------------*/
@@ -6356,7 +6364,13 @@ static void t30_non_ecm_rx_status(void *user_data, int status)
                to the tail end of any slow modem signal. If there was a genuine data signal
                which we failed to train on it should not matter. If things are that bad, we
                do not stand much chance of good quality communications. */
-            if (was_trained)
+            if (s->current_status != T30_ERR_OK)
+            {
+                /* We encountered some terminal problem in Phase B and will be sending DCN. */
+                queue_phase(s, T30_PHASE_D_TX);
+                set_state(s, T30_STATE_C);
+            }
+            else if (was_trained)
             {
                 /* Although T.30 says the training test should be 1.5s of all 0's, some FAX
                    machines send a burst of all 1's before the all 0's. Tolerate this. */
