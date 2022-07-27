@@ -149,6 +149,7 @@ libspandsp_la_SOURCES = ademco_contactid.c \
                         schedule.c \
                         sig_tone.c \
                         silence_gen.c \
+                        sslfax.c \
                         super_tone_rx.c \
                         super_tone_tx.c \
                         swept_tone.c \
@@ -245,6 +246,7 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/stdbool.h \
                          spandsp/sig_tone.h \
                          spandsp/silence_gen.h \
+                         spandsp/sslfax.h \
                          spandsp/super_tone_rx.h \
                          spandsp/super_tone_tx.h \
                          spandsp/swept_tone.h \
@@ -320,6 +322,7 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/private/schedule.h \
                          spandsp/private/sig_tone.h \
                          spandsp/private/silence_gen.h \
+                         spandsp/private/sslfax.h \
                          spandsp/private/super_tone_rx.h \
                          spandsp/private/super_tone_tx.h \
                          spandsp/private/swept_tone.h \

@@ -65,6 +65,7 @@
 #include "spandsp/v27ter_rx.h"
 #include "spandsp/v27ter_tx.h"
 #include "spandsp/timezone.h"
+#include "spandsp/sslfax.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
 #include "spandsp/image_translate.h"
@@ -82,6 +83,7 @@
 
 #include "spandsp/private/logging.h"
 #include "spandsp/private/timezone.h"
+#include "spandsp/private/sslfax.h"
 #include "spandsp/private/t81_t82_arith_coding.h"
 #include "spandsp/private/t85.h"
 #include "spandsp/private/t42.h"
@@ -775,7 +777,7 @@ SPAN_DECLARE(void) t30_set_tx_file(t30_state_t *s, const char *file, int start_p
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t30_set_iaf_mode(t30_state_t *s, bool iaf)
+SPAN_DECLARE(void) t30_set_iaf_mode(t30_state_t *s, int iaf)
 {
     s->iaf = iaf;
 }
@@ -786,6 +788,12 @@ SPAN_DECLARE(int) t30_set_ecm_capability(t30_state_t *s, bool enabled)
     s->ecm_allowed = enabled;
     t30_build_dis_or_dtc(s);
     return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) t30_set_retransmit_capable(t30_state_t *s, bool enabled)
+{
+    s->retransmit_capable = enabled;
 }
 /*- End of function --------------------------------------------------------*/
 

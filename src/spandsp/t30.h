@@ -28,6 +28,8 @@
 #if !defined(_SPANDSP_T30_H_)
 #define _SPANDSP_T30_H_
 
+#include "spandsp/sslfax.h"
+
 /*! \page t30_page T.30 FAX protocol handling
 
 \section t30_page_sec_1 What does it do?

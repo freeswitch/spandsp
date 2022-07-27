@@ -85,6 +85,7 @@
 #include <spandsp/private/data_modems.h>
 #include <spandsp/private/fax_modems.h>
 #include <spandsp/private/timezone.h>
+#include <spandsp/private/sslfax.h>
 #include <spandsp/private/image_translate.h>
 #include <spandsp/private/t4_t6_decode.h>
 #include <spandsp/private/t4_t6_encode.h>

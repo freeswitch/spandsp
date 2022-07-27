@@ -28,6 +28,8 @@
 #if !defined(_SPANDSP_PRIVATE_T30_H_)
 #define _SPANDSP_PRIVATE_T30_H_
 
+#include "spandsp/private/sslfax.h"
+
 /*!
     T.30 FAX channel descriptor. This defines the state of a single working
     instance of a T.30 FAX channel.
@@ -51,6 +53,8 @@ struct t30_state_s
 
     /*! \brief Internet aware FAX mode bit mask. */
     int iaf;
+    /*! \brief SSL Fax context. */
+    sslfax_state_t sslfax;
     /*! \brief A bit mask of the currently supported modem types. */
     int supported_modems;
     /*! \brief A bit mask of the currently supported image compression modes for use
