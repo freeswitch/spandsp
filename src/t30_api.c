@@ -65,6 +65,7 @@
 #include "spandsp/v27ter_rx.h"
 #include "spandsp/v27ter_tx.h"
 #include "spandsp/timezone.h"
+#include "spandsp/sslfax.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
 #include "spandsp/image_translate.h"
@@ -82,6 +83,7 @@
 
 #include "spandsp/private/logging.h"
 #include "spandsp/private/timezone.h"
+#include "spandsp/private/sslfax.h"
 #include "spandsp/private/t81_t82_arith_coding.h"
 #include "spandsp/private/t85.h"
 #include "spandsp/private/t42.h"

@@ -109,6 +109,7 @@
 #include <spandsp/v42bis.h>
 #include <spandsp/v18.h>
 #include <spandsp/timezone.h>
+#include <spandsp/sslfax.h>
 #include <spandsp/t4_rx.h>
 #include <spandsp/t4_tx.h>
 #include <spandsp/image_translate.h>
