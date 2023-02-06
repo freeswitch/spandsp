@@ -543,7 +543,7 @@ if test "$enable_builtin_tiff" = "yes" ; then
     AC_DEFINE([HAVE_LIBTIFF], [1], [Define to 1 if you have the `tiff' library (-ltiff).])
 else
     AC_CHECK_HEADERS([tiffio.h])
-    AC_CHECK_LIB([tiff], [TIFFOpen], , AC_MSG_ERROR("Cannot build without libtiff (does your system require a libtiff-devel package?)"), -lm)
+    AC_CHECK_LIB([tiff], [TIFFOpen], , AC_CHECK_LIB([libtiff-4], [TIFFOpen], , AC_MSG_ERROR("Cannot build without libtiff (does your system require a libtiff-devel package?)"), -lm), -lm)
 fi
 
 AC_CHECK_LIB([tiff], [TIFFCreateCustomDirectory], [
