@@ -69,7 +69,7 @@ Freq (Hz)  Spectral     Bandwidth       Total power in
 6300        -1.3        31.7            30.4
 8000        -6.6        32.7            26.0
 
-The tolerance for each 1/3rd octave band is กำ3dB.
+The tolerance for each 1/3rd octave band is > 3dB.
 
 \section awgn_page_sec_2 How does it work?
 The central limit theorem says if you add a few random numbers together,
