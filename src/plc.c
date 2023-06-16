@@ -63,6 +63,7 @@ static void save_history(plc_state_t *s, int16_t *buf, int len)
         s->buf_ptr = 0;
         return;
     }
+    /*endif*/
     if (s->buf_ptr + len > PLC_HISTORY_LEN)
     {
         /* Wraps around - must break into two sections */
@@ -72,6 +73,7 @@ static void save_history(plc_state_t *s, int16_t *buf, int len)
         s->buf_ptr = len;
         return;
     }
+    /*endif*/
     /* Can use just one section */
     vec_copyi16(&s->history[s->buf_ptr], buf, len);
     s->buf_ptr += len;
@@ -84,6 +86,7 @@ static __inline__ void normalise_history(plc_state_t *s)
 
     if (s->buf_ptr == 0)
         return;
+    /*endif*/
     vec_copyi16(tmp, s->history, s->buf_ptr);
     vec_movei16(s->history, &s->history[s->buf_ptr], PLC_HISTORY_LEN - s->buf_ptr);
     vec_copyi16(&s->history[PLC_HISTORY_LEN - s->buf_ptr], tmp, s->buf_ptr);
@@ -106,12 +109,15 @@ static __inline__ int amdf_pitch(int min_pitch, int max_pitch, int16_t amp[], in
         acc = 0;
         for (j = 0;  j < len;  j++)
             acc += abs(amp[i + j] - amp[j]);
+        /*endfor*/
         if (acc < min_acc)
         {
             min_acc = acc;
             pitch = i;
         }
+        /*endif*/
     }
+    /*endfor*/
     return pitch;
 }
 /*- End of function --------------------------------------------------------*/
@@ -136,9 +142,11 @@ SPAN_DECLARE(int) plc_rx(plc_state_t *s, int16_t amp[], int len)
         pitch_overlap = s->pitch >> 2;
         if (pitch_overlap > len)
             pitch_overlap = len;
+        /*endif*/
         gain = 1.0f - s->missing_samples*ATTENUATION_INCREMENT;
         if (gain < 0.0f)
             gain = 0.0f;
+        /*endif*/
         new_step = 1.0f/pitch_overlap;
         old_step = new_step*gain;
         new_weight = new_step;
@@ -148,13 +156,17 @@ SPAN_DECLARE(int) plc_rx(plc_state_t *s, int16_t amp[], int len)
             amp[i] = fsaturate(old_weight*s->pitchbuf[s->pitch_offset] + new_weight*amp[i]);
             if (++s->pitch_offset >= s->pitch)
                 s->pitch_offset = 0;
+            /*endif*/
             new_weight += new_step;
             old_weight -= old_step;
             if (old_weight < 0.0f)
                 old_weight = 0.0f;
+            /*endif*/
         }
+        /*endfor*/
         s->missing_samples = 0;
     }
+    /*endif*/
     save_history(s, amp, len);
     return len;
 }
@@ -185,6 +197,7 @@ SPAN_DECLARE(int) plc_fillin(plc_state_t *s, int16_t amp[], int len)
         /* The first 3/4 of the cycle is a simple copy */
         for (i = 0;  i < s->pitch - pitch_overlap;  i++)
             s->pitchbuf[i] = s->history[PLC_HISTORY_LEN - s->pitch + i];
+        /*endfor*/
         /* The last 1/4 of the cycle is overlapped with the end of the previous cycle */
         new_step = 1.0f/pitch_overlap;
         new_weight = new_step;
@@ -193,6 +206,7 @@ SPAN_DECLARE(int) plc_fillin(plc_state_t *s, int16_t amp[], int len)
             s->pitchbuf[i] = s->history[PLC_HISTORY_LEN - s->pitch + i]*(1.0f - new_weight) + s->history[PLC_HISTORY_LEN - 2*s->pitch + i]*new_weight;
             new_weight += new_step;
         }
+        /*endfor*/
         /* We should now be ready to fill in the gap with repeated, decaying cycles
            of what is in pitchbuf */
 
@@ -204,6 +218,10 @@ SPAN_DECLARE(int) plc_fillin(plc_state_t *s, int16_t amp[], int len)
         old_step = new_step;
         new_weight = new_step;
         old_weight = 1.0f - new_step;
+        /* Ensure we never copy too much to the output buffer. */
+        if (pitch_overlap > len)
+            pitch_overlap = len;
+        /*endif*/
         for (i = 0;  i < pitch_overlap;  i++)
         {
             amp[i] = fsaturate(old_weight*s->history[PLC_HISTORY_LEN - 1 - i] + new_weight*s->pitchbuf[i]);
@@ -211,7 +229,9 @@ SPAN_DECLARE(int) plc_fillin(plc_state_t *s, int16_t amp[], int len)
             old_weight -= old_step;
             if (old_weight < 0.0f)
                 old_weight = 0.0f;
+            /*endif*/
         }
+        /*endfor*/
         s->pitch_offset = i;
     }
     else
@@ -219,15 +239,19 @@ SPAN_DECLARE(int) plc_fillin(plc_state_t *s, int16_t amp[], int len)
         gain = 1.0f - s->missing_samples*ATTENUATION_INCREMENT;
         i = 0;
     }
+    /*endif*/
     for (  ;  gain > 0.0f  &&  i < len;  i++)
     {
         amp[i] = (int16_t) (s->pitchbuf[s->pitch_offset]*gain);
         gain -= ATTENUATION_INCREMENT;
         if (++s->pitch_offset >= s->pitch)
             s->pitch_offset = 0;
+        /*endif*/
     }
+    /*endfor*/
     for (  ;  i < len;  i++)
         amp[i] = 0;
+    /*endif*/
     s->missing_samples += orig_len;
     save_history(s, amp, len);
     return len;
@@ -240,7 +264,9 @@ SPAN_DECLARE(plc_state_t *) plc_init(plc_state_t *s)
     {
         if ((s = (plc_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     return s;
 }
@@ -256,6 +282,7 @@ SPAN_DECLARE(int) plc_free(plc_state_t *s)
 {
     if (s)
         span_free(s);
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
