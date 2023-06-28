@@ -149,6 +149,7 @@ libspandsp_la_SOURCES = ademco_contactid.c \
                         schedule.c \
                         sig_tone.c \
                         silence_gen.c \
+                        sprt.c \
                         super_tone_rx.c \
                         super_tone_tx.c \
                         swept_tone.c \
@@ -175,6 +176,8 @@ libspandsp_la_SOURCES = ademco_contactid.c \
                         timezone.c \
                         tone_detect.c \
                         tone_generate.c \
+                        v150_1.c \
+                        v150_1_sse.c \
                         v17rx.c \
                         v17tx.c \
                         v18.c \
@@ -245,6 +248,7 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/stdbool.h \
                          spandsp/sig_tone.h \
                          spandsp/silence_gen.h \
+                         spandsp/sprt.h \
                          spandsp/super_tone_rx.h \
                          spandsp/super_tone_tx.h \
                          spandsp/swept_tone.h \
@@ -273,6 +277,8 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/tone_detect.h \
                          spandsp/tone_generate.h \
                          spandsp/unaligned.h \
+                         spandsp/v150_1.h \
+                         spandsp/v150_1_sse.h \
                          spandsp/v17rx.h \
                          spandsp/v17tx.h \
                          spandsp/v18.h \
@@ -321,6 +327,7 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/private/schedule.h \
                          spandsp/private/sig_tone.h \
                          spandsp/private/silence_gen.h \
+                         spandsp/private/sprt.h \
                          spandsp/private/super_tone_rx.h \
                          spandsp/private/super_tone_tx.h \
                          spandsp/private/swept_tone.h \
@@ -343,6 +350,8 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/private/timezone.h \
                          spandsp/private/tone_detect.h \
                          spandsp/private/tone_generate.h \
+                         spandsp/private/v150_1.h \
+                         spandsp/private/v150_1_sse.h \
                          spandsp/private/v17rx.h \
                          spandsp/private/v17tx.h \
                          spandsp/private/v18.h \

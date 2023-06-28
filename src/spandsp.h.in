@@ -143,6 +143,9 @@
 #include <spandsp/gsm0610.h>
 #include <spandsp/plc.h>
 #include <spandsp/playout.h>
+#include <spandsp/sprt.h>
+#include <spandsp/v150_1.h>
+#include <spandsp/v150_1_sse.h>
 
 #endif
 

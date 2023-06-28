@@ -112,6 +112,8 @@ noinst_PROGRAMS =   ademco_contactid_tests \
                     saturated_tests \
                     schedule_tests \
                     sig_tone_tests \
+                    sprt_decode \
+                    sprt_tests \
                     super_tone_rx_tests \
                     super_tone_tx_tests \
                     swept_tone_tests \
@@ -153,6 +155,7 @@ noinst_HEADERS =    echo_monitor.h \
                     modem_monitor.h \
                     pcap_parse.h \
                     pseudo_terminals.h \
+                    socket_dgram_harness.h \
                     socket_harness.h \
                     udptl.h
 
@@ -317,6 +320,12 @@ schedule_tests_LDADD = $(LIBDIR) -lspandsp
 
 sig_tone_tests_SOURCES = sig_tone_tests.c
 sig_tone_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp 
+
+sprt_decode_SOURCES = sprt_decode.c pcap_parse.c
+sprt_decode_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
+
+sprt_tests_SOURCES = sprt_tests.c socket_dgram_harness.c pseudo_terminals.c
+sprt_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp -luv
 
 super_tone_rx_tests_SOURCES = super_tone_rx_tests.c
 super_tone_rx_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp

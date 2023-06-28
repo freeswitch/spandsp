@@ -303,10 +303,33 @@ static int slave(void)
 
 int main(int argc, char *argv[])
 {
-    if (argc < 2)
-        master();
-    else
+    int opt;
+    bool calling_party;
+
+    calling_party = false;
+    while ((opt = getopt(argc, argv, "ac")) != -1)
+    {
+        switch (opt)
+        {
+        case 'a':
+            calling_party = false;
+            break;
+        case 'c':
+            calling_party = true;
+            break;
+        default:
+            //usage();
+            exit(2);
+            break;
+        }
+        /*endswitch*/
+    }
+    /*endwhile*/
+
+    if (calling_party)
         slave();
+    else
+        master();
     /*endif*/
     return 0;
 }
