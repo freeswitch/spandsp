@@ -115,33 +115,33 @@ SPAN_DECLARE(int) gsm0610_encode(gsm0610_state_t *s, uint8_t code[], const int16
     \return The number of samples returned. */
 SPAN_DECLARE(int) gsm0610_decode(gsm0610_state_t *s, int16_t amp[], const uint8_t code[], int len);
 
-SPAN_DECLARE(int) gsm0610_pack_none(uint8_t c[], const gsm0610_frame_t *s);
+SPAN_DECLARE(int) gsm0610_pack_none(uint8_t c[76], const gsm0610_frame_t *s);
 
 /*! Pack a pair of GSM 06.10 frames in the format used for wave files (wave type 49).
     \param c The buffer for the packed data. This must be at least 65 bytes long.
     \param s A pointer to the frames to be packed.
     \return The number of bytes generated. */
-SPAN_DECLARE(int) gsm0610_pack_wav49(uint8_t c[], const gsm0610_frame_t *s);
+SPAN_DECLARE(int) gsm0610_pack_wav49(uint8_t c[65], const gsm0610_frame_t *s);
 
 /*! Pack a GSM 06.10 frames in the format used for VoIP.
     \param c The buffer for the packed data. This must be at least 33 bytes long.
     \param s A pointer to the frame to be packed.
     \return The number of bytes generated. */
-SPAN_DECLARE(int) gsm0610_pack_voip(uint8_t c[], const gsm0610_frame_t *s);
+SPAN_DECLARE(int) gsm0610_pack_voip(uint8_t c[33], const gsm0610_frame_t *s);
 
-SPAN_DECLARE(int) gsm0610_unpack_none(gsm0610_frame_t *s, const uint8_t c[]);
+SPAN_DECLARE(int) gsm0610_unpack_none(gsm0610_frame_t *s, const uint8_t c[76]);
 
 /*! Unpack a pair of GSM 06.10 frames from the format used for wave files (wave type 49).
     \param s A pointer to a buffer into which the frames will be packed.
     \param c The buffer containing the data to be unpacked. This must be at least 65 bytes long.
     \return The number of bytes absorbed. */
-SPAN_DECLARE(int) gsm0610_unpack_wav49(gsm0610_frame_t *s, const uint8_t c[]);
+SPAN_DECLARE(int) gsm0610_unpack_wav49(gsm0610_frame_t *s, const uint8_t c[65]);
 
 /*! Unpack a GSM 06.10 frame from the format used for VoIP.
     \param s A pointer to a buffer into which the frame will be packed.
     \param c The buffer containing the data to be unpacked. This must be at least 33 bytes long.
     \return The number of bytes absorbed. */
-SPAN_DECLARE(int) gsm0610_unpack_voip(gsm0610_frame_t *s, const uint8_t c[]);
+SPAN_DECLARE(int) gsm0610_unpack_voip(gsm0610_frame_t *s, const uint8_t c[33]);
 
 #if defined(__cplusplus)
 }

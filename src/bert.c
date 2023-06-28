@@ -78,6 +78,7 @@ SPAN_DECLARE(const char *) bert_event_to_str(int event)
     case BERT_REPORT_LT_10_7:
         return "error rate < 1 in 10^7";
     }
+    /*endswitch*/
     return "???";
 }
 /*- End of function --------------------------------------------------------*/
@@ -88,6 +89,7 @@ SPAN_DECLARE(int) bert_get_bit(bert_state_t *s)
 
     if (s->limit  &&  s->tx.bits >= s->limit)
         return SIG_STATUS_END_OF_DATA;
+    /*endif*/
     bit = 0;
     switch (s->pattern_class)
     {
@@ -108,12 +110,15 @@ SPAN_DECLARE(int) bert_get_bit(bert_state_t *s)
                     s->tx.zeros = 0;
                     bit ^= 1;
                 }
+                /*endif*/
             }
             else
             {
                 s->tx.zeros = 0;
             }
+            /*endif*/
         }
+        /*endif*/
         bit ^= s->invert;
         break;
     case 2:
@@ -126,12 +131,15 @@ SPAN_DECLARE(int) bert_get_bit(bert_state_t *s)
                 s->tx.reg = 'V';
                 s->tx.step = 1;
             }
+            /*endif*/
         }
+        /*endif*/
         bit = s->tx.reg & 1;
         s->tx.reg >>= 1;
         s->tx.step_bit--;
         break;
     }
+    /*endswitch*/
     s->tx.bits++;
     return bit;
 }
@@ -154,38 +162,48 @@ static void assess_error_rate(bert_state_t *s)
     {
         if (++s->decade_ptr[i] < 10)
             break;
+        /*endif*/
         /* This decade has reached 10 snapshots, so we need to touch the next decade */
         s->decade_ptr[i] = 0;
         /* Sum the last 10 snapshots from this decade, to see if we overflow into the next decade */
         for (sum = 0, j = 0;  j < 10;  j++)
             sum += s->decade_bad[i][j];
+        /*endfor*/
         if (test  &&  sum > 10)
         {
             /* We overflow into the next decade */
             test = false;
             if (s->error_rate != i  &&  s->reporter)
                 s->reporter(s->user_data, BERT_REPORT_GT_10_2 + i - 2, &s->results);
+            /*endif*/
             s->error_rate = i;
         }
+        /*endif*/
         s->decade_bad[i][0] = 0;
         if (i < 7)
             s->decade_bad[i + 1][s->decade_ptr[i + 1]] = sum;
+        /*endif*/
     }
+    /*endfor*/
     if (i > 7)
     {
         if (s->decade_ptr[i] >= 10)
             s->decade_ptr[i] = 0;
+        /*endif*/
         if (test)
         {
             if (s->error_rate != i  &&  s->reporter)
                 s->reporter(s->user_data, BERT_REPORT_GT_10_2 + i - 2, &s->results);
+            /*endif*/
             s->error_rate = i;
         }
+        /*endif*/
     }
     else
     {
         s->decade_bad[i][s->decade_ptr[i]] = 0;
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -197,6 +215,7 @@ SPAN_DECLARE(void) bert_put_bit(bert_state_t *s, int bit)
         printf("Status is %s (%d)\n", signal_status_to_str(bit), bit);
         return;
     }
+    /*endif*/
     bit = (bit & 1) ^ s->invert;
     s->rx.bits++;
     switch (s->pattern_class)
@@ -213,21 +232,26 @@ SPAN_DECLARE(void) bert_put_bit(bert_state_t *s, int bit)
                     s->rx.resync = 0;
                     if (s->reporter)
                         s->reporter(s->user_data, BERT_REPORT_SYNCED, &s->results);
+                    /*endif*/
                 }
+                /*endif*/
             }
             else
             {
                 s->rx.resync = 2;
                 s->rx.ref_reg = s->rx.master_reg;
             }
+            /*endif*/
         }
         else
         {
             s->results.total_bits++;
             if ((bit ^ s->rx.ref_reg) & 1)
                 s->results.bad_bits++;
+            /*endif*/
             s->rx.ref_reg = (s->rx.ref_reg >> 1) | ((s->rx.ref_reg & 1) << s->shift2);
         }
+        /*endif*/
         break;
     case 1:
         if (s->rx.resync)
@@ -244,13 +268,16 @@ SPAN_DECLARE(void) bert_put_bit(bert_state_t *s, int bit)
                     s->rx.resync = 0;
                     if (s->reporter)
                         s->reporter(s->user_data, BERT_REPORT_SYNCED, &s->results);
+                    /*endif*/
                 }
+                /*endif*/
             }
             else
             {
                 s->rx.resync = 2;
                 s->rx.reg ^= s->mask;
             }
+            /*endif*/
         }
         else
         {
@@ -265,24 +292,29 @@ SPAN_DECLARE(void) bert_put_bit(bert_state_t *s, int bit)
                         s->rx.zeros = 0;
                         bit ^= 1;
                     }
+                    /*endif*/
                 }
                 else
                 {
                     s->rx.zeros = 0;
                 }
+                /*endif*/
             }
+            /*endif*/
             if (bit != (int) ((s->rx.reg >> s->shift) & 1))
             {
                 s->results.bad_bits++;
                 s->rx.resync_bad_bits++;
                 s->decade_bad[2][s->decade_ptr[2]]++;
             }
+            /*endif*/
             if (--s->rx.measurement_step <= 0)
             {
                 /* Every hundred bits we need to do the error rate measurement */
                 s->rx.measurement_step = MEASUREMENT_STEP;
                 assess_error_rate(s);
             }
+            /*endif*/
             if (--s->rx.resync_cnt <= 0)
             {
                 /* Check if there were enough bad bits during this period to
@@ -293,11 +325,15 @@ SPAN_DECLARE(void) bert_put_bit(bert_state_t *s, int bit)
                     s->results.resyncs++;
                     if (s->reporter)
                         s->reporter(s->user_data, BERT_REPORT_UNSYNCED, &s->results);
+                    /*endif*/
                 }
+                /*endif*/
                 s->rx.resync_cnt = s->rx.resync_len;
                 s->rx.resync_bad_bits = 0;
             }
+            /*endif*/
         }
+        /*endif*/
         s->rx.reg = (s->rx.reg >> 1) | (((s->rx.reg ^ (s->rx.reg >> s->shift)) & 1) << s->shift2);
         break;
     case 2:
@@ -312,21 +348,28 @@ SPAN_DECLARE(void) bert_put_bit(bert_state_t *s, int bit)
                    error rate, and see it a resync is needed. etc. */
                 s->results.bad_bits++;
             }
+            /*endif*/
             if (qbf[++s->rx.step] == '\0')
                 s->rx.step = 0;
+            /*endif*/
         }
+        /*endif*/
         s->results.total_bits++;
         break;
     }
+    /*endswitch*/
     if (s->report_frequency > 0)
     {
         if (--s->rx.report_countdown <= 0)
         {
             if (s->reporter)
                 s->reporter(s->user_data, BERT_REPORT_REGULAR, &s->results);
+            /*endif*/
             s->rx.report_countdown = s->report_frequency;
         }
+        /*endif*/
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -358,7 +401,9 @@ SPAN_DECLARE(bert_state_t *) bert_init(bert_state_t *s, int limit, int pattern, 
     {
         if ((s = (bert_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
 
     s->pattern = pattern;
@@ -461,6 +506,7 @@ SPAN_DECLARE(bert_state_t *) bert_init(bert_state_t *s, int limit, int pattern, 
         s->max_zeros = 0;
         break;
     }
+    /*endswitch*/
     s->tx.bits = 0;
     s->tx.step = 0;
     s->tx.step_bit = 0;
@@ -489,8 +535,10 @@ SPAN_DECLARE(bert_state_t *) bert_init(bert_state_t *s, int limit, int pattern, 
     {
         for (j = 0;  j < 10;  j++)
             s->decade_bad[i][j] = 0;
+        /*endfor*/
         s->decade_ptr[i] = 0;
     }
+    /*endfor*/
     s->error_rate = 8;
     s->rx.measurement_step = MEASUREMENT_STEP;
 

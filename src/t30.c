@@ -2523,7 +2523,7 @@ static void return_to_phase_b(t30_state_t *s, int with_fallback)
     /* This is what we do after things like T30_EOM is exchanged. */
     span_log(&s->logging, SPAN_LOG_PROTOCOL_WARNING, "Returning to phase B\n");
     /* Run the T1 timer, like we do on first detecting the far end. */
-    s->timer_t0_t1 = ms_to_samples(DEFAULT_TIMER_T1);
+    s->timer_t0_t1 = milliseconds_to_samples(DEFAULT_TIMER_T1);
     set_state(s, (s->calling_party)  ?  T30_STATE_T  :  T30_STATE_R);
 }
 /*- End of function --------------------------------------------------------*/
@@ -3572,26 +3572,26 @@ static void process_rx_fcd(t30_state_t *s, const uint8_t *msg, int len)
 {
     int frame_no;
 
+    /* Facsimile coded data */
     if (len < 4)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Bad length for FCD frame - %d\n", len);
         /* This frame didn't get corrupted in transit, because its CRC is OK. It was sent bad
-        and there is little possibility that causing a retransmission will help. It is best
-        to just give up. */
+           and there is little possibility that causing a retransmission will help. It is best
+           to just give up. */
         t30_set_status(s, T30_ERR_TX_ECMPHD);
         terminate_call(s);
         return;
     }
     /*endif*/
-    /* Facsimile coded data */
     switch (s->state)
     {
     case T30_STATE_F_DOC_ECM:
         if (len > 4 + 256)
         {
-            /* For other frame types we kill the call on an unexpected frame length. For FCD frames it is better to just ignore
-               the frame, and let retries sort things out. */
-            span_log(&s->logging, SPAN_LOG_FLOW, "Unexpected %s frame length - %d\n", t30_frametype(msg[0]), len);
+            /* For other frame types we kill the call on an unexpected frame length. For FCD frames it is
+               better to just ignore an overly long frame, and let retries sort things out. */
+            span_log(&s->logging, SPAN_LOG_FLOW, "Unexpected FCD frame length - %d\n", len);
         }
         else
         {
@@ -4533,7 +4533,7 @@ static void process_state_ii_q(t30_state_t *s, const uint8_t *msg, int len)
             if (s->phase_d_handler)
             {
                 s->phase_d_handler(s->phase_d_user_data, fcf);
-                s->timer_t3 = ms_to_samples(DEFAULT_TIMER_T3);
+                s->timer_t3 = milliseconds_to_samples(DEFAULT_TIMER_T3);
             }
             /*endif*/
         }
@@ -4640,7 +4640,7 @@ static void process_state_ii_q(t30_state_t *s, const uint8_t *msg, int len)
             if (s->phase_d_handler)
             {
                 s->phase_d_handler(s->phase_d_user_data, fcf);
-                s->timer_t3 = ms_to_samples(DEFAULT_TIMER_T3);
+                s->timer_t3 = milliseconds_to_samples(DEFAULT_TIMER_T3);
             }
             /*endif*/
         }
@@ -4718,6 +4718,9 @@ static void process_state_ii_q(t30_state_t *s, const uint8_t *msg, int len)
             }
             else
             {
+                if (s->tx_page_number == 0)
+                    t30_set_status(s, T30_ERR_RETRYDCN);
+                /*endif*/
                 send_dcn(s);
             }
             /*endif*/
@@ -4914,7 +4917,7 @@ static void process_state_iv_pps_null(t30_state_t *s, const uint8_t *msg, int le
         break;
     case T30_RNR:
         if (s->timer_t5 == 0)
-            s->timer_t5 = ms_to_samples(DEFAULT_TIMER_T5);
+            s->timer_t5 = milliseconds_to_samples(DEFAULT_TIMER_T5);
         /*endif*/
         queue_phase(s, T30_PHASE_D_TX);
         set_state(s, T30_STATE_IV_PPS_RNR);
@@ -4964,7 +4967,7 @@ static void process_state_iv_pps_q(t30_state_t *s, const uint8_t *msg, int len)
             if (s->phase_d_handler)
             {
                 s->phase_d_handler(s->phase_d_user_data, fcf);
-                s->timer_t3 = ms_to_samples(DEFAULT_TIMER_T3);
+                s->timer_t3 = milliseconds_to_samples(DEFAULT_TIMER_T3);
             }
             /*endif*/
         }
@@ -5036,7 +5039,7 @@ static void process_state_iv_pps_q(t30_state_t *s, const uint8_t *msg, int len)
         break;
     case T30_RNR:
         if (s->timer_t5 == 0)
-            s->timer_t5 = ms_to_samples(DEFAULT_TIMER_T5);
+            s->timer_t5 = milliseconds_to_samples(DEFAULT_TIMER_T5);
         /*endif*/
         queue_phase(s, T30_PHASE_D_TX);
         set_state(s, T30_STATE_IV_PPS_RNR);
@@ -5075,7 +5078,7 @@ static void process_state_iv_pps_q(t30_state_t *s, const uint8_t *msg, int len)
             if (s->phase_d_handler)
             {
                 s->phase_d_handler(s->phase_d_user_data, fcf);
-                s->timer_t3 = ms_to_samples(DEFAULT_TIMER_T3);
+                s->timer_t3 = milliseconds_to_samples(DEFAULT_TIMER_T3);
             }
             /*endif*/
         }
@@ -5105,7 +5108,7 @@ static void process_state_iv_pps_rnr(t30_state_t *s, const uint8_t *msg, int len
             if (s->phase_d_handler)
             {
                 s->phase_d_handler(s->phase_d_user_data, fcf);
-                s->timer_t3 = ms_to_samples(DEFAULT_TIMER_T3);
+                s->timer_t3 = milliseconds_to_samples(DEFAULT_TIMER_T3);
             }
             /*endif*/
         }
@@ -5177,7 +5180,7 @@ static void process_state_iv_pps_rnr(t30_state_t *s, const uint8_t *msg, int len
         break;
     case T30_RNR:
         if (s->timer_t5 == 0)
-            s->timer_t5 = ms_to_samples(DEFAULT_TIMER_T5);
+            s->timer_t5 = milliseconds_to_samples(DEFAULT_TIMER_T5);
         /*endif*/
         queue_phase(s, T30_PHASE_D_TX);
         set_state(s, T30_STATE_IV_PPS_RNR);
@@ -5212,7 +5215,7 @@ static void process_state_iv_pps_rnr(t30_state_t *s, const uint8_t *msg, int len
             if (s->phase_d_handler)
             {
                 s->phase_d_handler(s->phase_d_user_data, fcf);
-                s->timer_t3 = ms_to_samples(DEFAULT_TIMER_T3);
+                s->timer_t3 = milliseconds_to_samples(DEFAULT_TIMER_T3);
             }
             /*endif*/
         }
@@ -5267,7 +5270,7 @@ static void process_state_iv_eor(t30_state_t *s, const uint8_t *msg, int len)
     {
     case T30_RNR:
         if (s->timer_t5 == 0)
-            s->timer_t5 = ms_to_samples(DEFAULT_TIMER_T5);
+            s->timer_t5 = milliseconds_to_samples(DEFAULT_TIMER_T5);
         /*endif*/
         queue_phase(s, T30_PHASE_D_TX);
         set_state(s, T30_STATE_IV_EOR_RNR);
@@ -5292,7 +5295,7 @@ static void process_state_iv_eor(t30_state_t *s, const uint8_t *msg, int len)
             if (s->phase_d_handler)
             {
                 s->phase_d_handler(s->phase_d_user_data, fcf);
-                s->timer_t3 = ms_to_samples(DEFAULT_TIMER_T3);
+                s->timer_t3 = milliseconds_to_samples(DEFAULT_TIMER_T3);
             }
             /*endif*/
         }
@@ -5316,7 +5319,7 @@ static void process_state_iv_eor_rnr(t30_state_t *s, const uint8_t *msg, int len
     {
     case T30_RNR:
         if (s->timer_t5 == 0)
-            s->timer_t5 = ms_to_samples(DEFAULT_TIMER_T5);
+            s->timer_t5 = milliseconds_to_samples(DEFAULT_TIMER_T5);
         /*endif*/
         queue_phase(s, T30_PHASE_D_TX);
         set_state(s, T30_STATE_IV_EOR_RNR);
@@ -5345,7 +5348,7 @@ static void process_state_iv_eor_rnr(t30_state_t *s, const uint8_t *msg, int len
             if (s->phase_d_handler)
             {
                 s->phase_d_handler(s->phase_d_user_data, fcf);
-                s->timer_t3 = ms_to_samples(DEFAULT_TIMER_T3);
+                s->timer_t3 = milliseconds_to_samples(DEFAULT_TIMER_T3);
             }
             /*endif*/
         }
@@ -5739,7 +5742,7 @@ static void set_phase(t30_state_t *s, int phase)
         if (!s->far_end_detected  &&  s->timer_t0_t1 > 0)
         {
             /* Switch from T0 to T1 */
-            s->timer_t0_t1 = ms_to_samples(DEFAULT_TIMER_T1);
+            s->timer_t0_t1 = milliseconds_to_samples(DEFAULT_TIMER_T1);
             s->far_end_detected = true;
         }
         /*endif*/
@@ -5939,7 +5942,7 @@ static void repeat_last_command(t30_state_t *s)
 static void timer_t2_start(t30_state_t *s)
 {
     span_log(&s->logging, SPAN_LOG_FLOW, "Start T2\n");
-    s->timer_t2_t4 = ms_to_samples(DEFAULT_TIMER_T2);
+    s->timer_t2_t4 = milliseconds_to_samples(DEFAULT_TIMER_T2);
     s->timer_t2_t4_is = TIMER_IS_T2;
 }
 /*- End of function --------------------------------------------------------*/
@@ -5952,13 +5955,13 @@ static void timer_t2_flagged_start(t30_state_t *s)
     if (s->phase == T30_PHASE_C_ECM_RX)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Start T1A\n");
-        s->timer_t2_t4 = ms_to_samples(DEFAULT_TIMER_T1A);
+        s->timer_t2_t4 = milliseconds_to_samples(DEFAULT_TIMER_T1A);
         s->timer_t2_t4_is = TIMER_IS_T1A;
     }
     else
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Start T2-flagged\n");
-        s->timer_t2_t4 = ms_to_samples(DEFAULT_TIMER_T2_FLAGGED);
+        s->timer_t2_t4 = milliseconds_to_samples(DEFAULT_TIMER_T2_FLAGGED);
         s->timer_t2_t4_is = TIMER_IS_T2_FLAGGED;
     }
     /*endif*/
@@ -5968,7 +5971,7 @@ static void timer_t2_flagged_start(t30_state_t *s)
 static void timer_t2_dropped_start(t30_state_t *s)
 {
     span_log(&s->logging, SPAN_LOG_FLOW, "Start T2-dropped\n");
-    s->timer_t2_t4 = ms_to_samples(DEFAULT_TIMER_T2_DROPPED);
+    s->timer_t2_t4 = milliseconds_to_samples(DEFAULT_TIMER_T2_DROPPED);
     s->timer_t2_t4_is = TIMER_IS_T2_DROPPED;
 }
 /*- End of function --------------------------------------------------------*/
@@ -5976,7 +5979,7 @@ static void timer_t2_dropped_start(t30_state_t *s)
 static void timer_t4_start(t30_state_t *s)
 {
     span_log(&s->logging, SPAN_LOG_FLOW, "Start T4\n");
-    s->timer_t2_t4 = ms_to_samples(DEFAULT_TIMER_T4);
+    s->timer_t2_t4 = milliseconds_to_samples(DEFAULT_TIMER_T4);
     s->timer_t2_t4_is = TIMER_IS_T4;
 }
 /*- End of function --------------------------------------------------------*/
@@ -5984,7 +5987,7 @@ static void timer_t4_start(t30_state_t *s)
 static void timer_t4_flagged_start(t30_state_t *s)
 {
     span_log(&s->logging, SPAN_LOG_FLOW, "Start T4-flagged\n");
-    s->timer_t2_t4 = ms_to_samples(DEFAULT_TIMER_T4_FLAGGED);
+    s->timer_t2_t4 = milliseconds_to_samples(DEFAULT_TIMER_T4_FLAGGED);
     s->timer_t2_t4_is = TIMER_IS_T4_FLAGGED;
 }
 /*- End of function --------------------------------------------------------*/
@@ -5992,7 +5995,7 @@ static void timer_t4_flagged_start(t30_state_t *s)
 static void timer_t4_dropped_start(t30_state_t *s)
 {
     span_log(&s->logging, SPAN_LOG_FLOW, "Start T4-dropped\n");
-    s->timer_t2_t4 = ms_to_samples(DEFAULT_TIMER_T4_DROPPED);
+    s->timer_t2_t4 = milliseconds_to_samples(DEFAULT_TIMER_T4_DROPPED);
     s->timer_t2_t4_is = TIMER_IS_T4_DROPPED;
 }
 /*- End of function --------------------------------------------------------*/
@@ -6105,7 +6108,7 @@ static void timer_t2_expired(t30_state_t *s)
                to proceed to phase B, and pretty much act like its the beginning of a call. */
             span_log(&s->logging, SPAN_LOG_FLOW, "Returning to phase B after %s\n", t30_frametype(s->next_rx_step));
             /* Run the T1 timer, like we do on first detecting the far end. */
-            s->timer_t0_t1 = ms_to_samples(DEFAULT_TIMER_T1);
+            s->timer_t0_t1 = milliseconds_to_samples(DEFAULT_TIMER_T1);
             s->dis_received = false;
             set_phase(s, T30_PHASE_B_TX);
             timer_t2_start(s);
@@ -6270,7 +6273,7 @@ static void decode_url_msg(t30_state_t *s, char *msg, const uint8_t *pkt, int le
     if (msg == NULL)
         msg = text;
     /*endif*/
-    if (len < 3  ||  len > 77 + 3  ||  len != pkt[2] + 3)
+    if (len < 4  ||  len > 77 + 4  ||  len != pkt[3] + 4)
     {
         unexpected_frame_length(s, pkt, len);
         msg[0] = '\0';
@@ -6294,8 +6297,8 @@ static void decode_url_msg(t30_state_t *s, char *msg, const uint8_t *pkt, int le
             Bit 7 = 1 for more follows, 0 for last packet in the sequence.
             Bits 6-0 = length
      */
-    memcpy(msg, &pkt[3], len - 3);
-    msg[len - 3] = '\0';
+    memcpy(msg, &pkt[4], len - 4);
+    msg[len - 4] = '\0';
     span_log(&s->logging, SPAN_LOG_FLOW, "Remote fax gave %s as: %d, %d, \"%s\"\n", t30_frametype(pkt[0]), pkt[0], pkt[1], msg);
 }
 /*- End of function --------------------------------------------------------*/
@@ -6691,7 +6694,7 @@ static void t30_hdlc_rx_status(void *user_data, int status)
         if (!s->far_end_detected  &&  s->timer_t0_t1 > 0)
         {
             /* Switch from T0 to T1 */
-            s->timer_t0_t1 = ms_to_samples(DEFAULT_TIMER_T1);
+            s->timer_t0_t1 = milliseconds_to_samples(DEFAULT_TIMER_T1);
             s->far_end_detected = true;
             if (s->phase == T30_PHASE_A_CED  ||  s->phase == T30_PHASE_A_CNG)
                 set_phase(s, T30_PHASE_B_RX);
@@ -7330,7 +7333,7 @@ SPAN_DECLARE(int) t30_restart(t30_state_t *s, bool calling_party)
     s->local_interrupt_pending = false;
     s->far_end_detected = false;
     s->end_of_procedure_detected = false;
-    s->timer_t0_t1 = ms_to_samples(DEFAULT_TIMER_T0);
+    s->timer_t0_t1 = milliseconds_to_samples(DEFAULT_TIMER_T0);
     if (s->calling_party)
     {
         set_state(s, T30_STATE_T);
@@ -7343,6 +7346,12 @@ SPAN_DECLARE(int) t30_restart(t30_state_t *s, bool calling_party)
     }
     /*endif*/
     return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) t30_call_active(t30_state_t *s)
+{
+    return (s->phase != T30_PHASE_CALL_FINISHED);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -7410,12 +7419,6 @@ SPAN_DECLARE(int) t30_free(t30_state_t *s)
     t30_release(s);
     span_free(s);
     return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) t30_call_active(t30_state_t *s)
-{
-    return (s->phase != T30_PHASE_CALL_FINISHED);
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

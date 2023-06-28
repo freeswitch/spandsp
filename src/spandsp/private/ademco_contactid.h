@@ -34,7 +34,7 @@ struct ademco_contactid_receiver_state_s
     void *callback_user_data;
 
     int step;
-    int remaining_samples;
+    span_sample_timer_t remaining_samples;
     uint32_t tone_phase;
     int32_t tone_phase_rate;
     int16_t tone_level;
@@ -49,11 +49,11 @@ struct ademco_contactid_receiver_state_s
 
 struct ademco_contactid_sender_state_s
 {
-    tone_report_func_t callback;
+    span_tone_report_func_t callback;
     void *callback_user_data;
 
     int step;
-    int remaining_samples;
+    span_sample_timer_t remaining_samples;
 
     dtmf_tx_state_t dtmf;
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -83,7 +83,7 @@ struct ademco_contactid_sender_state_s
     int last_hit;
     int in_tone;
     int clear_to_send;
-    int timer;
+    span_sample_timer_t timer;
 
     int busy;
 

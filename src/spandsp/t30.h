@@ -240,7 +240,7 @@ typedef int (*t30_document_put_handler_t)(void *user_data, const uint8_t msg[], 
 /*!
     T.30 protocol completion codes, at phase E.
 */
-enum
+enum t30_err_e
 {
     T30_ERR_OK = 0,             /*! OK */
 
@@ -323,7 +323,7 @@ enum
     These are allocated such that the lower 4 bits represents the variant of the modem - e.g. the
     particular bit rate selected.
 */
-enum
+enum t30_modem_e
 {
     T30_MODEM_NONE = 0,
     T30_MODEM_PAUSE,
@@ -392,7 +392,7 @@ enum
     T30_SUPPORT_COMMAND_REPEAT = 0x800
 };
 
-enum
+enum t30_iaf_mode_e
 {
     T30_IAF_MODE_T37 = 0x01,
     T30_IAF_MODE_T38 = 0x02,

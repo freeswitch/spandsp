@@ -51,6 +51,237 @@
 #include "spandsp.h"
 #include "spandsp/g1050.h"
 
+/*
+G.1050 2005 [2007] Appendix II
+
+Packet delay and loss algorithms
+
+II.1    General IP network model
+
+The IP network is modelled as a concatenation of five segments: local LAN segment, local access
+link segment, core IP network segment, remote access link segment, remote LAN segment. Each
+segment introduces packet loss with some probability and a time-varying delay. The input to the
+model is a set of segment parameters (LAN and access rates, occupancy and a set of core network
+metrics), packet size(s), packet rate and the total number of packets to be passed from end to end.
+Time slices of 1 ms are assigned a delay value and loss probability using the model parameters.
+When a packet arrives, it is assigned the delay value and loss probability of the millisecond in
+which it arrives. The output is the total delay value for each packet and an indication of whether or
+not a packet was lost.
+
+[2007: Some IP applications (e.g., IPTV, Internet access) do not involve the full generality of all five
+segments. These "core-to-LAN" models include the core IP network segment, one access link
+segment, and one LAN segment.]
+
+II.2    Packet loss model
+
+II.2.1  Bursty packet loss model
+
+It is well known that packet loss in IP networks is bursty in nature. Within the context of this model
+the definition of "burst" is a period of time bounded by lost packets during which the packet loss
+rate is high.
+[2005: This is distinguished from a "consecutive loss period", which is a period of time bounded
+by lost packets during which all packets are lost.]
+[2007: Such a burst may include sequential lost packets.]
+
+Bursty packet loss is modelled with a two-state model, a Gilbert-Elliott model, which switches
+between a high-loss-rate state (HIGH_LOSS state) and a low-loss-rate state (LOW_LOSS state).
+The Gilbert-Elliott model has four parameters per segment: loss probability in the HIGH_LOSS
+state, loss probability in the LOW_LOSS state, the probability of transitioning from the
+HIGH_LOSS to the LOW_LOSS state, and the probability of transitioning from the LOW_LOSS to
+the HIGH_LOSS state. Loss rates of the core network are given parameters. Loss rates of LAN and
+access links depend on LAN and access link occupancy parameters. Pseudo-code for such a model
+is shown below:
+
+    if rand() < loss_probability[LOSS_STATE]
+        loss = TRUE
+    else
+        loss = FALSE
+    endif
+    if rand() < transition_probability[LOSS_STATE]
+        if LOSS_STATE == HIGH_LOSS
+            LOSS_STATE = LOW_LOSS
+        else
+            LOSS_STATE = HIGH_LOSS
+        endif
+    endif
+
+[2005: II.2.2  Consecutive packet loss]
+[2007: II.2.2  Link failure model]
+
+Link failure is another source of loss in the core network. This leads to [2005: consecutive] [2007: sequential] packet loss for
+some period of time. This is modelled with two parameters, a periodic link failure rate together with
+a duration of link outage once it occurs.
+
+II.3    Delay variation model
+
+Time series models are used to represent the characteristics of sequences that have some properties
+that vary in time. They typically comprise one or more filter functions driven by a combination of
+noise and some underlying signal or periodic element.
+
+The "spiky" nature of delay traces suggests that jitter can be modelled using an impulse noise
+sequence. The delay encountered by a packet at some specific stage in the network should be a
+function of the serialization delay of interfering traffic and the volume of traffic. The height of the
+impulses should therefore be a function of serialization delay and the frequency a function of
+congestion level. LAN congestion tends to occur in short bursts - with Ethernet's CSMA/CD
+algorithm one packet may be delayed, however the next may gain access to the LAN immediately;
+this suggests a short filter response time. Access link congestion tends to be associated with
+short-term delay variations due to the queue in the edge router filling; this suggests a longer filter
+response time. Pseudo-code for delay variation is shown below:
+
+    if rand() < impulse_probability
+        i = impulse_height
+    else
+        i = 0
+    endif
+    d(n) = d(n-1) * (TC) + i * (1-TC)
+
+where d(n) = delay of packet n, and TC represents the filter time constant.
+
+II.3.1  LAN and access link jitter
+
+Jitter in the LAN and access links is modelled with per-millisecond delay values created by passing
+impulses through a one-pole filter. Within each segment, for each millisecond an impulse or a zero
+is input to the filter based on some probability. The filter output is then computed and the result
+becomes the delay value for that millisecond. Delay values are applied to packets based on the
+current values in the millisecond during which the packet arrives, but arrival packet order is
+maintained. The amplitude of the impulses is proportional to the serialization delay of that segment.
+The probability of occurrence of an impulse is proportional to the congestion level for that segment.
+For the LAN segments no filter is used; delay comes directly from the impulses. For the access link
+segments, a filter with a time constant is used to scale the values for 1 ms intervals.
+[2007: Also, for LAN segments a random delay value between 0 and 1.5 ms is added.]
+
+II.3.2  Core network jitter
+
+The core network jitter is modelled differently. For each packet, a random delay is added. This delay
+is uniformly distributed from 0 to the core network jitter parameter value.
+
+II.3.3  Core network base delay and route flapping
+
+A base delay parameter is associated with the core network. Another source of delay variation is
+route flapping in the core network. This is modelled by change in the base delay of the core
+network. A periodic route flap rate is a given parameter. When a route flap occurs, the model will
+add or subtract the route flap delay hit to or from the core network delay. For each route flap, the
+model toggles between adding and subtracting the route flap delay.
+
+II.4    Core packet reordering
+
+In the model, only the core is allowed to reorder packets based on delays. Each time-slice has a
+delay value. When a packet arrives, the current delay value is applied to that packet. The core
+segment is the only segment that allows reordering. In the other segments, packets are transmitted
+in the order they arrive, regardless of the delay values assigned.
+
+II.5    Model output
+
+If a packet is marked as lost in any segment, then it is lost.
+
+The total delay added to a packet is the sum of the delay from each segment. There may be
+out-of-order packets due to delay variations. LAN and access links should not cause packet
+reordering. Therefore, delay due to LAN and access links is summed together first and delays are
+adjusted to keep packets in order. Then delay due to the core network is added. This may result in
+out-of-order packets.
+
+II.6    Model parameters
+
+[2007: Figure II.1 represents the five components of the end-to-end network and the associated modules in
+the simulation/emulation algorithm. The values from Table 5 through Table 10 and Table 14
+provide the inputs to the modules. The outputs of the algorithm are the impairments to be emulated.]
+
+The following is a list of model input parameters and how those parameters are used.
+
+II.6.1  Local and remote LAN segment parameters
+
+[2005: Input parameters from Tables 5 and 6:]
+[2007: Input parameters from Tables 5, 6 and 7:]
+
+[2005:  1)  LAN speed. This speed is used to compute LAN segment delay.]
+[2007:  1)  LAN rate. This speed is used to compute LAN segment delay.]
+
+2)  LAN percent occupancy.
+
+Derived parameters:
+
+1)  LAN loss probability. One value for each loss state. Current values:
+        For the low loss state, the probability is 0.
+[2005:  For the high loss state, it is 0.004 × percent occupancy.]
+[2007:  For the high loss state, it is 0.000025 × percent occupancy.]
+
+2)  LAN loss state transition probability. One value for each loss state. Current values:
+[2005:  The probability of transitioning from the low loss to the high loss state is 0.004 × percent occupancy.]
+[2007:  The probability of transitioning from the low loss to the high loss state is 0.0001 × percent occupancy.]
+        The probability of the reverse transition is 0.1.
+
+3)  LAN jitter filter impulse height. One value for each loss state. Current values:
+        Max impulse height = (MTU - size bit times) × (1 + (percent occupancy/40)).
+[2005:  The value for the low loss state is a random variable uniformly distributed from 0 to Max impulse height.
+        The value for the high loss state is Max impulse height.]
+[2007:  The value for the low loss state is 0
+        The value for the high loss state is a random variable uniformly distributed from 0 to Max impulse height.]
+
+4)  LAN jitter filter impulse probability. Current values:
+        The value for the low loss state is 0.
+        The value for the high loss state is 0.5.
+
+5)  LAN jitter filter coefficients. The filter output is the delay value for the current packet. This
+    delay is A × (impulse height) + (1 - A) × (previous delay). Current value: A = 1 (i.e., no
+    filtering).
+
+II.6.2  Local and remote link segment parameters
+
+[2005:  1)  Link speed. This speed is used to compute LAN segment delay.]
+[2007:  1)  Link rate. This rate is used to compute LAN segment delay.]
+
+2)  Link percent occupancy.
+
+3)  Link MTU size.
+
+4)  Link loss state transition probability. One value for each loss state. Current values:
+[2005:  The probability of transitioning from the low loss to the high loss state is 0.0003 × (percent occupancy).]
+[2007:  The probability of transitioning from the low loss to the high loss state is 0.0002 × (percent occupancy).]
+        The probability of the reverse transition is 0.2/(1 + (percent occupancy)).
+
+5)  Link jitter filter impulse height. One value for each loss state. Current values:
+[2005:  Max impulse height = (MTU-size bit times) × (1 + (percent occupancy/40)).]
+[2007:  Max impulse height = A × (MTU-size bit times) × (1 + (percent occupancy/40)).]
+        The value for the low loss state is a random variable uniformly distributed from 0 to Max impulse height.
+        The value for the high loss state is Max impulse height.
+[2007:  Current value: A = 0.25.]
+
+6)  Link jitter filter impulse probability. Current values:
+        The value for the low loss state is 0.001 + (percent occupancy)/2000.
+        The value for the high loss state is 0.3 + 0.4 × (percent occupancy)/100.
+
+7)  Link jitter filter coefficients. The filter output is the delay value for the current packet. This
+    delay is A × (impulse height) + (1 - A) × (previous delay). Current value: A = 0.25.
+[2007: (same A as in item 5)]
+
+8)  Link loss probability. One value for each loss state. Current values:
+        For the low loss state, the probability is 0.
+        For the high loss state, the probability is 0.0005 × percent occupancy.
+
+9)  Link base delay. This is packet-size bit times. It is assumed that the packet size is fixed
+    based on the application.
+
+II.6.3  Core IP network segment parameters
+
+1)  Delay.
+
+2)  Packet loss. There is only one loss state. The loss probability is just the given core network
+    loss probability parameter.
+
+3)  Jitter. The jitter in the core network is modelled as added delay uniformly distributed
+    between 0 and the core network jitter parameter value.
+
+4)  Route flap interval.
+
+5)  Route flap delay.
+
+6)  Link failure interval.
+
+7)  Link failure duration.
+
+8)  Reorder percentage.
+*/
+
 #define PACKET_LOSS_TIME    -1
 
 g1050_constants_t g1050_constants[1] =
@@ -727,7 +958,7 @@ static void g1050_segment_init(g1050_segment_state_t *s,
         s->prob_loss_rate_change[1] = scale_probability(constants->prob_loss_rate_change[1], 1.0/packet_interval);
         s->prob_impulse[0] = constants->prob_impulse[0][0];
         s->prob_impulse[1] = constants->prob_impulse[1][0];
-        s->impulse_coeff = constants->impulse_coeff;
+        s->impulse_decay_coeff = constants->impulse_decay_coeff;
         s->impulse_height = parms->mtu*(8.0/bit_rate)*(1.0 + parms->percentage_occupancy/constants->impulse_height);
     }
     else if (link_type == G1050_ACCESS_LINK)
@@ -735,10 +966,11 @@ static void g1050_segment_init(g1050_segment_state_t *s,
         s->prob_loss_rate_change[1] = scale_probability(constants->prob_loss_rate_change[1]/(1.0 + parms->percentage_occupancy), 1.0/packet_interval);
         s->prob_impulse[0] = scale_probability(constants->prob_impulse[0][0] + (parms->percentage_occupancy/2000.0), 1.0/packet_interval);
         s->prob_impulse[1] = scale_probability(constants->prob_impulse[1][0] + (constants->prob_impulse[1][1]*parms->percentage_occupancy/100.0), 1.0/packet_interval);
-        s->impulse_coeff = 1.0 - scale_probability(1.0 - constants->impulse_coeff, 1.0/packet_interval);
-        x = (1.0 - constants->impulse_coeff)/(1.0 - s->impulse_coeff);
+        s->impulse_decay_coeff = 1.0 - scale_probability(1.0 - constants->impulse_decay_coeff, 1.0/packet_interval);
+        x = (1.0 - constants->impulse_decay_coeff)/(1.0 - s->impulse_decay_coeff);
         s->impulse_height = x*parms->mtu*(8.0/bit_rate)*(1.0 + parms->percentage_occupancy/constants->impulse_height);
     }
+    /*endif*/
 
     /* The following are calculated the same way for LAN and access links */
     s->prob_packet_loss = constants->prob_packet_loss*parms->percentage_occupancy;
@@ -819,23 +1051,29 @@ static void g1050_segment_model(g1050_segment_state_t *s, double delays[], int l
             /* Toggle between the low-loss and high-loss states, based on the transition probability. */
             if (q1050_rand() < s->prob_loss_rate_change[was_high_loss])
                 s->high_loss = !s->high_loss;
+            /*endif*/
             impulse = 0.0;
             if (q1050_rand() < s->prob_impulse[was_high_loss])
             {
                 impulse = s->impulse_height;
                 if (!was_high_loss  ||  s->link_type == G1050_LAN_LINK)
                     impulse *= q1050_rand();
+                /*endif*/
             }
+            /*endif*/
 
             if (was_high_loss  &&  q1050_rand() < s->prob_packet_loss)
                 lose = true;
+            /*endif*/
             /* Single pole LPF for the congestion delay impulses. */
-            s->congestion_delay = s->congestion_delay*s->impulse_coeff + impulse*(1.0 - s->impulse_coeff);
+            s->congestion_delay = s->congestion_delay*s->impulse_decay_coeff + impulse*(1.0 - s->impulse_decay_coeff);
             slice_delay += s->congestion_delay;
         }
+        /*endif*/
         /* If duplex mismatch on LAN, packet loss based on loss probability. */
         if (s->multiple_access  &&  (q1050_rand() < s->prob_packet_collision_loss))
             lose = true;
+        /*endif*/
         /* Put computed delay into time slice array. */
         if (lose)
         {
@@ -846,7 +1084,9 @@ static void g1050_segment_model(g1050_segment_state_t *s, double delays[], int l
         {
             delays[i] = slice_delay;
         }
+        /*endif*/
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -867,8 +1107,10 @@ static void g1050_core_model(g1050_core_state_t *s, double delays[], int len)
             s->delay_delta = s->route_flap_delta - s->delay_delta;
             s->route_flap_counter = s->route_flap_interval;
         }
+        /*endif*/
         if (q1050_rand() < s->prob_packet_loss)
             lose = true;
+        /*endif*/
         /* Link failures */
         if (--s->link_failure_counter <= 0)
         {
@@ -881,7 +1123,9 @@ static void g1050_core_model(g1050_core_state_t *s, double delays[], int len)
                 s->link_recovery_counter = s->link_failure_duration_ticks;
                 lose = false;
             }
+            /*endif*/
         }
+        /*endif*/
         if (lose)
         {
             delays[i] = PACKET_LOSS_TIME;
@@ -891,7 +1135,9 @@ static void g1050_core_model(g1050_core_state_t *s, double delays[], int len)
         {
             delays[i] = jitter_delay + s->delay_delta;
         }
+        /*endif*/
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -927,8 +1173,11 @@ static int g1050_segment_delay(g1050_segment_state_t *s,
                 arrival_times[i] = s->last_arrival_time;
             else
                 s->last_arrival_time = arrival_times[i];
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endfor*/
     return lost_packets;
 }
 /*- End of function --------------------------------------------------------*/
@@ -982,14 +1231,18 @@ static int g1050_segment_delay_preserve_order(g1050_segment_state_t *s,
                     {
                         if ((arrival_times_a[i] - arrival_times_a[j]) > SEARCHBACK_PERIOD)
                             break;
+                        /*endif*/
                         if ((arrival_times_a[j] > arrival_times_a[i])
                             &&
                             (arrival_times_b[j] < arrival_times_b[i]))
                         {
                             arrival_times_b[j] = arrival_times_b[i];
                         }
+                        /*endif*/
                     }
+                    /*endif*/
                 }
+                /*endfor*/
             }
             else
             {
@@ -998,9 +1251,13 @@ static int g1050_segment_delay_preserve_order(g1050_segment_state_t *s,
                     arrival_times_b[i] = last_arrival_time_temp;
                 else
                     last_arrival_time_temp = arrival_times_b[i];
+                /*endif*/
             }
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endfor*/
     return lost_packets;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1040,14 +1297,18 @@ static int g1050_core_delay(g1050_core_state_t *s,
                 /* Do we allow it to stay out of order? */
                 if (q1050_rand() >= s->prob_oos)
                     arrival_times[i] = s->last_arrival_time;
+                /*endif*/
             }
             else
             {
                 /* Packet is in the correct order, relative to the last one. */
                 s->last_arrival_time = arrival_times[i];
             }
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endfor*/
     return lost_packets;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1080,6 +1341,7 @@ static void g1050_simulate_chunk(g1050_state_t *s)
         s->arrival_times_1[2*s->packet_rate + i] = s->base_time + 2.0 + (double) i/(double) s->packet_rate;
         s->arrival_times_2[2*s->packet_rate + i] = 0.0;
     }
+    /*endfor*/
 
     s->segment[0].lost_packets_2 += g1050_segment_delay(&s->segment[0], s->base_time, s->arrival_times_1, s->segment[0].delays, s->packet_rate);
     s->segment[1].lost_packets_2 += g1050_segment_delay(&s->segment[1], s->base_time, s->arrival_times_1, s->segment[1].delays, s->packet_rate);
@@ -1106,11 +1368,15 @@ SPAN_DECLARE(g1050_state_t *) g1050_init(int model,
     {
         if (q1050_rand() != 0.0)
             break;
+        /*endif*/
     }
+    /*endfor*/
     if (i >= 10)
         q1050_rand_init();
+    /*endif*/
     if ((s = (g1050_state_t *) malloc(sizeof(*s))) == NULL)
         return NULL;
+    /*endif*/
     memset(s, 0, sizeof(*s));
 
     constants = &g1050_constants[0];
@@ -1175,6 +1441,7 @@ SPAN_DECLARE(g1050_state_t *) g1050_init(int model,
         s->arrival_times_1[i] = s->base_time + (double) i/(double)s->packet_rate;
         s->arrival_times_2[i] = 0.0;
     }
+    /*endfor*/
 
     s->segment[0].lost_packets_2 += g1050_segment_delay(&s->segment[0], s->base_time, s->arrival_times_1, s->segment[0].delays, s->packet_rate);
     s->segment[1].lost_packets_2 += g1050_segment_delay(&s->segment[1], s->base_time, s->arrival_times_1, s->segment[1].delays, s->packet_rate);
@@ -1223,14 +1490,17 @@ SPAN_DECLARE(int) g1050_put(g1050_state_t *s, const uint8_t buf[], int len, int 
 
     while (departure_time >= s->base_time + 1.0)
         g1050_simulate_chunk(s);
+    /*endwhile*/
     arrival_time = s->arrival_times_1[(int) ((departure_time - s->base_time)*(double) s->packet_rate + 0.5)];
     if (arrival_time < 0)
     {
         /* This packet is lost */
         return 0;
     }
+    /*endif*/
     if ((element = (g1050_queue_element_t *) malloc(sizeof(*element) + len)) == NULL)
         return -1;
+    /*endif*/
     element->next = NULL;
     element->prev = NULL;
     element->seq_no = seq_no;
@@ -1251,7 +1521,9 @@ SPAN_DECLARE(int) g1050_put(g1050_state_t *s, const uint8_t buf[], int len, int 
         {
             if (e->arrival_time <= arrival_time)
                 break;
+            /*endif*/
         }
+        /*endfor*/
         if (e)
         {
             element->next = e->next;
@@ -1263,11 +1535,14 @@ SPAN_DECLARE(int) g1050_put(g1050_state_t *s, const uint8_t buf[], int len, int 
             element->next = s->first;
             s->first = element;
         }
+        /*endif*/
         if (element->next)
             element->next->prev = element;
         else
             s->last = element;
+        /*endif*/
     }
+    /*endif*/
     //printf(">> Seq %d, departs %f, arrives %f\n", seq_no, departure_time, arrival_time);
     return len;
 }
@@ -1283,39 +1558,52 @@ SPAN_DECLARE(int) g1050_get(g1050_state_t *s, uint8_t buf[], int max_len, double
     {
         if (seq_no)
             *seq_no = -1;
+        /*endif*/
         if (departure_time)
             *departure_time = -1;
+        /*endif*/
         if (arrival_time)
             *arrival_time = -1;
+        /*endif*/
         return -1;
     }
+    /*endif*/
     if (element->arrival_time > current_time)
     {
         if (seq_no)
             *seq_no = element->seq_no;
+        /*endif*/
         if (departure_time)
             *departure_time = element->departure_time;
+        /*endif*/
         if (arrival_time)
             *arrival_time = element->arrival_time;
+        /*endif*/
         return -1;
     }
+    /*endif*/
     /* Return the first packet in the queue */
     len = element->len;
     memcpy(buf, element->pkt, len);
     if (seq_no)
         *seq_no = element->seq_no;
+    /*endif*/
     if (departure_time)
         *departure_time = element->departure_time;
+    /*endif*/
     if (arrival_time)
         *arrival_time = element->arrival_time;
+    /*endif*/
     //printf("<< Seq %d, arrives %f (%f)\n", element->seq_no, element->arrival_time, current_time);
 
     /* Remove it from the queue */
     if (s->first == s->last)
         s->last = NULL;
+    /*endif*/
     s->first = element->next;
     if (element->next)
         element->next->prev = NULL;
+    /*endif*/
     free(element);
     return len;
 }
@@ -1328,9 +1616,11 @@ SPAN_DECLARE(void) g1050_queue_dump(g1050_state_t *s)
     printf("Queue scanned forewards\n");
     for (e = s->first;  e;  e = e->next)
         printf("Seq %5d, arrival %10.4f, len %3d\n", e->seq_no, e->arrival_time, e->len);
+    /*endfor*/
     printf("Queue scanned backwards\n");
     for (e = s->last;  e;  e = e->prev)
         printf("Seq %5d, arrival %10.4f, len %3d\n", e->seq_no, e->arrival_time, e->len);
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

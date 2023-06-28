@@ -78,9 +78,11 @@ static void make_tx_filter(int coeff_sets,
     floating_gain = 0.0;
     for (i = coeff_sets/2;  i < total_coeffs;  i += coeff_sets)
         floating_gain += coeffs[i];
+    /*endfor*/
     /* Normalise the gain to 1.0 */
     for (i = 0;  i < total_coeffs;  i++)
         coeffs[i] /= floating_gain;
+    /*endfor*/
     floating_gain = 1.0;
     fixed_gain = 1.0;
 
@@ -89,13 +91,16 @@ static void make_tx_filter(int coeff_sets,
     {
         if (fabs(coeffs[i]) > peak)
             peak = fabs(coeffs[i]);
+        /*endif*/
     }
+    /*endfor*/
     fixed_scaling = 32767.0f;
     if (peak >= 1.0)
     {
         fixed_scaling /= peak;
         fixed_gain = 1.0/peak;
     }
+    /*endif*/
 
     /* Churn out the data as a C source code header file, which can be directly included by the
        modem code. */
@@ -133,13 +138,16 @@ static void make_tx_filter(int coeff_sets,
             x = i*coeff_sets + j;
             printf("        TX_PULSESHAPER%s_SCALE(%15.10ff),\n", tag, coeffs[x]);
         }
+        /*endfor*/
         x = i*coeff_sets + j;
         printf("        TX_PULSESHAPER%s_SCALE(%15.10ff)\n", tag, coeffs[x]);
         if (j < coeff_sets - 1)
             printf("    },\n");
         else
             printf("    }\n");
+        /*endif*/
     }
+    /*endfor*/
     printf("};\n");
 }
 /*- End of function --------------------------------------------------------*/
@@ -177,9 +185,11 @@ static void make_rx_filter(int coeff_sets,
     floating_gain = 0.0;
     for (i = coeff_sets/2;  i < total_coeffs;  i += coeff_sets)
         floating_gain += coeffs[i];
+    /*endfor*/
     /* Normalise the gain to 1.0 */
     for (i = 0;  i < total_coeffs;  i++)
         coeffs[i] /= floating_gain;
+    /*endfor*/
     floating_gain = 1.0;
     fixed_gain = 1.0;
 
@@ -188,13 +198,16 @@ static void make_rx_filter(int coeff_sets,
     {
         if (fabs(coeffs[i]) > peak)
             peak = fabs(coeffs[i]);
+        /*endif*/
     }
+    /*endfor*/
     fixed_scaling = 32767.0f;
     if (peak >= 1.0)
     {
         fixed_scaling /= peak;
         fixed_gain = 1.0/peak;
     }
+    /*endif*/
 
     /* Churn out the data as a C source code header file, which can be directly included by the
        modem code. */
@@ -237,19 +250,24 @@ static void make_rx_filter(int coeff_sets,
                     cox[i] = coeffs[x]*cos(carrier*m);
                 else
                     cox[i] = coeffs[x]*sin(carrier*m);
+                /*endif*/
             }
+            /*endfor*/
             printf("    {\n");
             printf("        RX_PULSESHAPER%s_SCALE(%15.10ff),     /* Filter %d */\n", tag, cox[0], j);
             for (i = 1;  i < coeffs_per_filter - 1;  i++)
-                    printf("        RX_PULSESHAPER%s_SCALE(%15.10ff),\n", tag, cox[i]);
+                printf("        RX_PULSESHAPER%s_SCALE(%15.10ff),\n", tag, cox[i]);
             printf("        RX_PULSESHAPER%s_SCALE(%15.10ff)\n", tag, cox[i]);
             if (j < coeff_sets - 1)
                 printf("    },\n");
             else
                 printf("    }\n");
+            /*endif*/
         }
+        /*endfor*/
         printf("};\n");
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -266,7 +284,7 @@ int main(int argc, char **argv)
     int tx_coeff_sets;
     int tx_coeffs_per_filter;
     int opt;
-    int transmit_modem;
+    bool transmit_modem;
     double carrier;
     double baud_rate;
     double rx_excess_bandwidth;
@@ -295,7 +313,9 @@ int main(int argc, char **argv)
             exit(2);
             break;
         }
+        /*endswitch*/
     }
+    /*endwhile*/
     if (strcmp(modem, "V.17") == 0  ||  strcmp(modem, "V.32bis") == 0)
     {
         /* This applies to V.32bis as well as V.17 */
@@ -541,6 +561,7 @@ int main(int argc, char **argv)
         usage();
         exit(2);
     }
+    /*endif*/
     if (transmit_modem)
     {
         make_tx_filter(tx_coeff_sets,
@@ -559,6 +580,7 @@ int main(int argc, char **argv)
                        rx_excess_bandwidth,
                        rx_tag);
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

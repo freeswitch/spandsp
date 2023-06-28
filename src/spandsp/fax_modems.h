@@ -90,9 +90,9 @@ SPAN_DECLARE(void) fax_modems_start_slow_modem(fax_modems_state_t *s, int which)
 
 SPAN_DECLARE(void) fax_modems_set_tep_mode(fax_modems_state_t *s, int use_tep);
 
-SPAN_DECLARE(void) fax_modems_set_put_bit(fax_modems_state_t *s, put_bit_func_t put_bit, void *user_data);
+SPAN_DECLARE(void) fax_modems_set_put_bit(fax_modems_state_t *s, span_put_bit_func_t put_bit, void *user_data);
 
-SPAN_DECLARE(void) fax_modems_set_get_bit(fax_modems_state_t *s, get_bit_func_t get_bit, void *user_data);
+SPAN_DECLARE(void) fax_modems_set_get_bit(fax_modems_state_t *s, span_get_bit_func_t get_bit, void *user_data);
 
 SPAN_DECLARE(void) fax_modems_set_rx_handler(fax_modems_state_t *s,
                                              span_rx_handler_t rx_handler,
@@ -121,9 +121,9 @@ SPAN_DECLARE(fax_modems_state_t *) fax_modems_init(fax_modems_state_t *s,
                                                    int use_tep,
                                                    hdlc_frame_handler_t hdlc_accept,
                                                    hdlc_underflow_handler_t hdlc_tx_underflow,
-                                                   put_bit_func_t non_ecm_put_bit,
-                                                   get_bit_func_t non_ecm_get_bit,
-                                                   tone_report_func_t tone_callback,
+                                                   span_put_bit_func_t non_ecm_put_bit,
+                                                   span_get_bit_func_t non_ecm_get_bit,
+                                                   span_tone_report_func_t tone_callback,
                                                    void *user_data);
 
 SPAN_DECLARE(int) fax_modems_release(fax_modems_state_t *s);

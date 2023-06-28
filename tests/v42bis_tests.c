@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
     int in_fd;
     int v42bis_fd;
     int out_fd;
-    int do_compression;
+    bool do_compression;
     bool do_decompression;
     bool stutter_compression;
     int stutter_time;

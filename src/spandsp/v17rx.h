@@ -233,7 +233,7 @@ extern "C"
     \param put_bit The callback routine used to put the received data.
     \param user_data An opaque pointer passed to the put_bit routine.
     \return A pointer to the modem context, or NULL if there was a problem. */
-SPAN_DECLARE(v17_rx_state_t *) v17_rx_init(v17_rx_state_t *s, int bit_rate, put_bit_func_t put_bit, void *user_data);
+SPAN_DECLARE(v17_rx_state_t *) v17_rx_init(v17_rx_state_t *s, int bit_rate, span_put_bit_func_t put_bit, void *user_data);
 
 /*! Reinitialise an existing V.17 modem receive context.
     \brief Reinitialise an existing V.17 modem receive context.
@@ -268,14 +268,14 @@ SPAN_DECLARE(logging_state_t *) v17_rx_get_logging_state(v17_rx_state_t *s);
     \param s The modem context.
     \param put_bit The callback routine used to handle received bits.
     \param user_data An opaque pointer. */
-SPAN_DECLARE(void) v17_rx_set_put_bit(v17_rx_state_t *s, put_bit_func_t put_bit, void *user_data);
+SPAN_DECLARE(void) v17_rx_set_put_bit(v17_rx_state_t *s, span_put_bit_func_t put_bit, void *user_data);
 
 /*! Change the modem status report function associated with a V.17 modem receive context.
     \brief Change the modem status report function associated with a V.17 modem receive context.
     \param s The modem context.
     \param handler The callback routine used to report modem status changes.
     \param user_data An opaque pointer. */
-SPAN_DECLARE(void) v17_rx_set_modem_status_handler(v17_rx_state_t *s, modem_status_func_t handler, void *user_data);
+SPAN_DECLARE(void) v17_rx_set_modem_status_handler(v17_rx_state_t *s, span_modem_status_func_t handler, void *user_data);
 
 /*! Process a block of received V.17 modem audio samples.
     \brief Process a block of received V.17 modem audio samples.
@@ -324,7 +324,7 @@ SPAN_DECLARE(float) v17_rx_signal_power(v17_rx_state_t *s);
 /*! Set the power level at which the carrier detection will cut in
     \param s The modem context.
     \param cutoff The signal cutoff power, in dBm0. */
-SPAN_DECLARE(void) v17_rx_signal_cutoff(v17_rx_state_t *s, float cutoff);
+SPAN_DECLARE(void) v17_rx_set_signal_cutoff(v17_rx_state_t *s, float cutoff);
 
 /*! Set a handler routine to process QAM status reports
     \param s The modem context.

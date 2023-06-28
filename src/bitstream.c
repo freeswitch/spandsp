@@ -55,12 +55,14 @@ SPAN_DECLARE(void) bitstream_put(bitstream_state_t *s, uint8_t **c, uint32_t val
             s->bitstream |= (value << s->residue);
             s->residue += bits;
         }
+        /*endif*/
         while (s->residue >= 8)
         {
             s->residue -= 8;
             *(*c)++ = (uint8_t) (s->bitstream & 0xFF);
             s->bitstream >>= 8;
         }
+        /*endwhile*/
     }
     else
     {
@@ -69,12 +71,15 @@ SPAN_DECLARE(void) bitstream_put(bitstream_state_t *s, uint8_t **c, uint32_t val
             s->bitstream = (s->bitstream << bits) | value;
             s->residue += bits;
         }
+        /*endif*/
         while (s->residue >= 8)
         {
             s->residue -= 8;
             *(*c)++ = (uint8_t) ((s->bitstream >> s->residue) & 0xFF);
         }
+        /*endwhile*/
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -89,7 +94,9 @@ SPAN_DECLARE(void) bitstream_emit(bitstream_state_t *s, uint8_t **c)
             *(*c) = (uint8_t) bitstream;
         else
             *(*c) = (uint8_t) (bitstream << (8 - s->residue));
+        /*endif*/
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -101,6 +108,7 @@ SPAN_DECLARE(void) bitstream_flush(bitstream_state_t *s, uint8_t **c)
         (*c)++;
         s->residue = 0;
     }
+    /*endif*/
     s->bitstream = 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -116,6 +124,7 @@ SPAN_DECLARE(uint32_t) bitstream_get(bitstream_state_t *s, const uint8_t **c, in
             s->bitstream |= (((uint32_t) *(*c)++) << s->residue);
             s->residue += 8;
         }
+        /*endwhile*/
         s->residue -= bits;
         x = s->bitstream & ((1 << bits) - 1);
         s->bitstream >>= bits;
@@ -127,9 +136,11 @@ SPAN_DECLARE(uint32_t) bitstream_get(bitstream_state_t *s, const uint8_t **c, in
             s->bitstream = (s->bitstream << 8) | ((uint32_t) *(*c)++);
             s->residue += 8;
         }
+        /*endwhile*/
         s->residue -= bits;
         x = (s->bitstream >> s->residue) & ((1 << bits) - 1);
     }
+    /*endif*/
     return x;
 }
 /*- End of function --------------------------------------------------------*/
@@ -140,7 +151,9 @@ SPAN_DECLARE(bitstream_state_t *) bitstream_init(bitstream_state_t *s, int lsb_f
     {
         if ((s = (bitstream_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     s->bitstream = 0;
     s->residue = 0;
     s->lsb_first = lsb_first;
@@ -158,6 +171,7 @@ SPAN_DECLARE(int) bitstream_free(bitstream_state_t *s)
 {
     if (s)
         span_free(s);
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

@@ -63,7 +63,9 @@ SPAN_DECLARE(uint16_t) sqrtu32_u16(uint32_t x)
         zz = z | i;
         if (((int32_t) zz*zz) <= x)
             z = zz;
+        /*endif*/
     }
+    /*endfor*/
     return z;
 }
 /*- End of function --------------------------------------------------------*/
@@ -76,6 +78,7 @@ SPAN_DECLARE(uint16_t) fixed_reciprocal16(uint16_t x, int *shift)
         *shift = 0;
         return 0xFFFF;
     }
+    /*endif*/
     *shift = 15 - top_bit(x);
     x <<= *shift;
     return fixed_reciprocal_table[((x + 0x80) >> 8) - 128];
@@ -90,6 +93,7 @@ SPAN_DECLARE(uint16_t) fixed_divide16(uint16_t y, uint16_t x)
 
     if (x == 0)
         return 0xFFFF;
+    /*endif*/
     recip = fixed_reciprocal16(x, &shift);
     z = (((uint32_t) y*recip) >> 15) << shift;
     return z;
@@ -104,6 +108,7 @@ SPAN_DECLARE(uint16_t) fixed_divide32(uint32_t y, uint16_t x)
 
     if (x == 0)
         return 0xFFFF;
+    /*endif*/
     recip = fixed_reciprocal16(x, &shift);
     z = (((uint32_t) y*recip) >> 15) << shift;
     return z;
@@ -116,6 +121,7 @@ SPAN_DECLARE(int16_t) fixed_log10_16(uint16_t x)
 
     if (x == 0)
         return 0;
+    /*endif*/
     shift = 14 - top_bit(x);
     x <<= shift;
     return (fixed_log10_table[((x + 0x40) >> 7) - 128] >> 3) - shift*1233;
@@ -128,6 +134,7 @@ SPAN_DECLARE(int32_t) fixed_log10_32(uint32_t x)
 
     if (x == 0)
         return 0;
+    /*endif*/
     shift = 30 - top_bit(x);
     x <<= shift;
     return (fixed_log10_table[((x + 0x400000) >> 23) - 128] >> 3) - shift*1233;
@@ -140,6 +147,7 @@ SPAN_DECLARE(uint16_t) fixed_sqrt16(uint16_t x)
 
     if (x == 0)
         return 0;
+    /*endif*/
     shift = 14 - (top_bit(x) & ~1);
     x <<= shift;
     //return fixed_sqrt_table[(((x + 0x80) >> 8) & 0xFF) - 64] >> (shift >> 1);
@@ -153,6 +161,7 @@ SPAN_DECLARE(uint16_t) fixed_sqrt32(uint32_t x)
 
     if (x == 0)
         return 0;
+    /*endif*/
     shift = 30 - (top_bit(x) & ~1);
     x <<= shift;
     //return fixed_sqrt_table[(((x + 0x800000) >> 24) & 0xFF) - 64] >> (shift >> 1);
@@ -178,9 +187,11 @@ SPAN_DECLARE(int16_t) fixed_sin(uint16_t x)
     {
         step_after = step + 1;
     }
+    /*endif*/
     z = fixed_sine_table[step] + ((frac*(fixed_sine_table[step_after] - fixed_sine_table[step])) >> 6);
     if ((x & 0x8000))
         z = -z;
+    /*endif*/
     return z;
 }
 /*- End of function --------------------------------------------------------*/
@@ -204,9 +215,11 @@ SPAN_DECLARE(int16_t) fixed_cos(uint16_t x)
     {
         step_after = step + 1;
     }
+    /*endif*/
     z = fixed_sine_table[step] + ((frac*(fixed_sine_table[step_after] - fixed_sine_table[step])) >> 6);
     if ((x & 0x8000))
         z = -z;
+    /*endif*/
     return z;
 }
 /*- End of function --------------------------------------------------------*/
@@ -223,8 +236,10 @@ SPAN_DECLARE(uint16_t) fixed_atan2(int16_t y, int16_t x)
 
     if (y == 0)
         return (x & 0x8000);
+    /*endif*/
     if (x == 0)
         return ((y & 0x8000) | 0x4000);
+    /*endif*/
     abs_x = abs(x);
     abs_y = abs(y);
 
@@ -242,13 +257,16 @@ SPAN_DECLARE(uint16_t) fixed_atan2(int16_t y, int16_t x)
         step = z >> 7;
         angle = 0x4000 - fixed_arctan_table[step];
     }
+    /*endif*/
     /* If we are in quadrant II or III, flip things around */
     if (x < 0)
         angle = 0x8000 - angle;
+    /*endif*/
     /* If we are in quadrant III or IV, negate to return an
        answer in the full circle range. */
     if (y < 0)
         angle = -angle;
+    /*endif*/
     return (uint16_t) angle;
 }
 /*- End of function --------------------------------------------------------*/

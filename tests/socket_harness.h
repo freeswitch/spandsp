@@ -27,20 +27,23 @@ typedef int (*termio_update_func_t)(void *user_data, struct termios *termios);
 
 typedef int (*put_msg_free_space_func_t)(void *user_data);
 
+typedef void (*span_timer_handler_t)(void *user_data);
+
 typedef struct socket_harness_state_s
 {
     void *user_data;
 
-    put_msg_func_t terminal_callback;
+    span_put_msg_func_t terminal_callback;
     termio_update_func_t termios_callback;
-    modem_status_func_t hangup_callback;
+    span_modem_status_func_t hangup_callback;
     put_msg_free_space_func_t terminal_free_space_callback;
 
     span_rx_handler_t rx_callback;
     span_rx_fillin_handler_t rx_fillin_callback;
     span_tx_handler_t tx_callback;
+    span_timer_handler_t timer_callback;
 
-    int audio_fd;
+    int net_fd;
     int pty_fd;
     logging_state_t logging;
     struct termios termios;
@@ -50,20 +53,22 @@ typedef struct socket_harness_state_s
     unsigned pty_closed;
     unsigned close_count;
     
-    modem_t modem;
+    pseudo_terminal_state_t pty;
 } socket_harness_state_t;
+
+span_timestamp_t now_us(void);
 
 int socket_harness_run(socket_harness_state_t *s, int kick);
 
-int terminal_write(void *user_data, const char *buf, int len);
+int socket_harness_terminal_write(void *user_data, const uint8_t *buf, size_t len);
 
 socket_harness_state_t *socket_harness_init(socket_harness_state_t *s,
                                             const char *socket_name,
                                             const char *tag,
                                             int caller,
-                                            put_msg_func_t terminal_callback,
+                                            span_put_msg_func_t terminal_callback,
                                             termio_update_func_t termios_callback,
-                                            modem_status_func_t hangup_callback,
+                                            span_modem_status_func_t hangup_callback,
                                             put_msg_free_space_func_t terminal_free_space_callback,
                                             span_rx_handler_t rx_callback,
                                             span_rx_fillin_handler_t rx_fillin_callback,

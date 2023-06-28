@@ -108,7 +108,6 @@ version_compare()
 
 mkdir config
 
-
 if [ "x$UNAME" = "xDarwin" ]; then
 version_compare glibtoolize 1 5 16 || exit 1
 version_compare automake 1 9 5 || exit 1

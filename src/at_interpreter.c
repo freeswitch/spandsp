@@ -217,16 +217,19 @@ SPAN_DECLARE(void) at_set_at_rx_mode(at_state_t *s, int new_mode)
 SPAN_DECLARE(void) at_put_response(at_state_t *s, const char *t)
 {
     uint8_t buf[3];
-   
-    if (!s) return; 
 
-    buf[0] = s->p.s_regs[3];
-    buf[1] = s->p.s_regs[4];
-    buf[2] = '\0';
-    if (s->p.result_code_format == ASCII_RESULT_CODES)
+    if (s)
+    {
+        buf[0] = s->p.s_regs[3];
+        buf[1] = s->p.s_regs[4];
+        buf[2] = '\0';
+        if (s->p.result_code_format == ASCII_RESULT_CODES)
+            s->at_tx_handler(s->at_tx_user_data, buf, 2);
+        /*endif*/
+        s->at_tx_handler(s->at_tx_user_data, (uint8_t *) t, strlen(t));
         s->at_tx_handler(s->at_tx_user_data, buf, 2);
-    s->at_tx_handler(s->at_tx_user_data, (uint8_t *) t, strlen(t));
-    s->at_tx_handler(s->at_tx_user_data, buf, 2);
+    }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -257,6 +260,7 @@ SPAN_DECLARE(void) at_put_response_code(at_state_t *s, int code)
         /* No result codes */
         break;
     }
+    /*endswitch*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -264,6 +268,7 @@ static int answer_call(at_state_t *s)
 {
     if (at_modem_control(s, AT_MODEM_CONTROL_ANSWER, NULL) < 0)
         return false;
+    /*endif*/
     /* Answering should now be in progress. No AT response should be
        issued at this point. */
     s->do_hangup = false;
@@ -280,12 +285,14 @@ SPAN_DECLARE(void) at_call_event(at_state_t *s, int event)
         at_modem_control(s, AT_MODEM_CONTROL_RNG, (void *) 1);
         if (s->display_call_info  &&  !s->call_info_displayed)
             at_display_call_info(s);
+        /*endif*/
         at_put_response_code(s, AT_RESPONSE_CODE_RING);
         if ((++s->rings_indicated) >= s->p.s_regs[0]  &&  s->p.s_regs[0])
         {
             /* The modem is set to auto-answer now */
             answer_call(s);
         }
+        /*endif*/
         break;
     case AT_CALL_EVENT_ANSWERED:
         at_modem_control(s, AT_MODEM_CONTROL_RNG, (void *) 0);
@@ -301,6 +308,7 @@ SPAN_DECLARE(void) at_call_event(at_state_t *s, int event)
             at_set_at_rx_mode(s, AT_MODE_DELIVERY);
             at_modem_control(s, AT_MODEM_CONTROL_RESTART, (void *) FAX_MODEM_CED_TONE_TX);
         }
+        /*endif*/
         break;
     case AT_CALL_EVENT_CONNECTED:
         span_log(&s->logging, SPAN_LOG_FLOW, "Dial call - connected. FCLASS=%d\n", s->fclass_mode);
@@ -326,9 +334,12 @@ SPAN_DECLARE(void) at_call_event(at_state_t *s, int event)
                     at_modem_control(s, AT_MODEM_CONTROL_RESTART, (void *) FAX_MODEM_NOCNG_TONE_TX);
                 else
                     at_modem_control(s, AT_MODEM_CONTROL_RESTART, (void *) FAX_MODEM_CNG_TONE_TX);
+                /*endif*/
                 s->dte_is_waiting = true;
             }
+            /*endif*/
         }
+        /*endif*/
         break;
     case AT_CALL_EVENT_BUSY:
         at_set_at_rx_mode(s, AT_MODE_ONHOOK_COMMAND);
@@ -356,6 +367,7 @@ SPAN_DECLARE(void) at_call_event(at_state_t *s, int event)
             {
                 at_put_response_code(s, AT_RESPONSE_CODE_NO_CARRIER);
             }
+            /*endif*/
             s->dte_is_waiting = false;
             at_set_at_rx_mode(s, AT_MODE_ONHOOK_COMMAND);
         }
@@ -366,8 +378,10 @@ SPAN_DECLARE(void) at_call_event(at_state_t *s, int event)
             s->at_tx_handler(s->at_tx_user_data, s->rx_data, s->rx_data_bytes);
             s->rx_data_bytes = 0;
         }
+        /*endif*/
         if (s->at_rx_mode != AT_MODE_OFFHOOK_COMMAND  &&  s->at_rx_mode != AT_MODE_ONHOOK_COMMAND)
             at_put_response_code(s, AT_RESPONSE_CODE_NO_CARRIER);
+        /*endif*/
         s->rx_signal_present = false;
         at_modem_control(s, AT_MODEM_CONTROL_RNG, (void *) 0);
         at_set_at_rx_mode(s, AT_MODE_ONHOOK_COMMAND);
@@ -376,6 +390,7 @@ SPAN_DECLARE(void) at_call_event(at_state_t *s, int event)
         span_log(&s->logging, SPAN_LOG_WARNING, "Invalid call event %d received.\n", event);
         break;
     }
+    /*endswitch*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -389,6 +404,7 @@ SPAN_DECLARE(void) at_reset_call_info(at_state_t *s)
         next = call_id->next;
         span_free(call_id);
     }
+    /*endfor*/
     s->call_id = NULL;
     s->rings_indicated = 0;
     s->call_info_displayed = false;
@@ -403,6 +419,7 @@ SPAN_DECLARE(void) at_set_call_info(at_state_t *s, char const *id, char const *v
     /* TODO: We should really not merely ignore a failure to allocate */
     if ((new_call_id = (at_call_id_t *) span_alloc(sizeof(*new_call_id))) == NULL)
         return;
+    /*endif*/
     call_id = s->call_id;
     /* If these strdups fail its pretty harmless. We just appear to not
        have the relevant field. */
@@ -414,12 +431,14 @@ SPAN_DECLARE(void) at_set_call_info(at_state_t *s, char const *id, char const *v
     {
         while (call_id->next)
             call_id = call_id->next;
+        /*endwhile*/
         call_id->next = new_call_id;
     }
     else
     {
         s->call_id = new_call_id;
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -438,6 +457,7 @@ SPAN_DECLARE(void) at_display_call_info(at_state_t *s)
         at_put_response(s, buf);
         call_id = call_id->next;
     }
+    /*endwhile*/
     s->call_info_displayed = true;
 }
 /*- End of function --------------------------------------------------------*/
@@ -453,8 +473,10 @@ static int parse_num(const char **s, int max_value)
         i = i*10 + ((**s) - '0');
         (*s)++;
     }
+    /*endwhile*/
     if (i > max_value)
         i = -1;
+    /*endif*/
     return i;
 }
 /*- End of function --------------------------------------------------------*/
@@ -471,6 +493,7 @@ static int parse_hex_num(const char **s, int max_value)
         i = **s - 'A';
     else
         return -1;
+    /*endif*/
     (*s)++;
 
     if (isdigit((int) **s))
@@ -479,9 +502,11 @@ static int parse_hex_num(const char **s, int max_value)
         i = (i << 4)  | (**s - 'A');
     else
         return -1;
+    /*endif*/
     (*s)++;
     if (i > max_value)
         i = -1;
+    /*endif*/
     return i;
 }
 /*- End of function --------------------------------------------------------*/
@@ -500,15 +525,19 @@ static int match_element(const char **variant, const char *variants)
             len = t - s;
         else
             len = strlen(s);
+        /*endif*/
         if (len == (int) strlen(*variant)  &&  memcmp(*variant, s, len) == 0)
         {
             *variant += len;
             return i;
         }
+        /*endif*/
         s += len;
         if (*s == ',')
             s++;
+        /*endif*/
     }
+    /*endfor*/
     return -1;
 }
 /*- End of function --------------------------------------------------------*/
@@ -533,10 +562,13 @@ static int parse_out(at_state_t *s, const char **t, int *target, int max_value, 
             /* Set value */
             if ((val = parse_num(t, max_value)) < 0)
                 return false;
+            /*endif*/
             if (target)
                 *target = val;
+            /*endif*/
             break;
         }
+        /*endswitch*/
         break;
     case '?':
         /* Show current value */
@@ -547,6 +579,7 @@ static int parse_out(at_state_t *s, const char **t, int *target, int max_value, 
     default:
         return false;
     }
+    /*endswitch*/
     return true;
 }
 /*- End of function --------------------------------------------------------*/
@@ -572,18 +605,24 @@ static int parse_2_out(at_state_t *s, const char **t, int *target1, int max_valu
             /* Set value */
             if ((val1 = parse_num(t, max_value1)) < 0)
                 return false;
+            /*endif*/
             if (target1)
                 *target1 = val1;
+            /*endif*/
             if (**t == ',')
             {
                 (*t)++;
                 if ((val2 = parse_num(t, max_value2)) < 0)
                     return false;
+                /*endif*/
                 if (target2)
                     *target2 = val2;
+                /*endif*/
             }
+            /*endif*/
             break;
         }
+        /*endswitch*/
         break;
     case '?':
         /* Show current value */
@@ -595,6 +634,7 @@ static int parse_2_out(at_state_t *s, const char **t, int *target1, int max_valu
     default:
         return false;
     }
+    /*endswitch*/
     return true;
 }
 /*- End of function --------------------------------------------------------*/
@@ -629,14 +669,19 @@ static int parse_n_out(at_state_t *s,
             {
                 if ((val = parse_num(t, max_values[i])) < 0)
                     return false;
+                /*endif*/
                 if (targets[i])
                     *targets[i] = val;
+                /*endif*/
                 if (**t != ',')
                     break;
+                /*endif*/
                 (*t)++;
             }
+            /*endfor*/
             break;
         }
+        /*endswitch*/
         break;
     case '?':
         /* Show current value */
@@ -645,14 +690,17 @@ static int parse_n_out(at_state_t *s,
         {
             if (i > 0)
                 len += snprintf(&buf[len], sizeof(buf) - len, ",");
+            /*endif*/
             val = (targets[i])  ?  *targets[i]  :  0;
             len += snprintf(&buf[len], sizeof(buf) - len, "%d", val);
         }
+        /*endfor*/
         at_put_response(s, buf);
         break;
     default:
         return false;
     }
+    /*endswitch*/
     return true;
 }
 /*- End of function --------------------------------------------------------*/
@@ -677,10 +725,13 @@ static int parse_hex_out(at_state_t *s, const char **t, int *target, int max_val
             /* Set value */
             if ((val = parse_hex_num(t, max_value)) < 0)
                 return false;
+            /*endif*/
             if (target)
                 *target = val;
+            /*endif*/
             break;
         }
+        /*endswitch*/
         break;
     case '?':
         /* Show current value */
@@ -691,6 +742,7 @@ static int parse_hex_out(at_state_t *s, const char **t, int *target, int max_val
     default:
         return false;
     }
+    /*endswitch*/
     return true;
 }
 /*- End of function --------------------------------------------------------*/
@@ -717,33 +769,40 @@ static int parse_string_list_out(at_state_t *s, const char **t, int *target, int
             /* Set value */
             if ((val = match_element(t, def)) < 0)
                 return false;
+            /*endif*/
             if (target)
                 *target = val;
+            /*endif*/
             break;
         }
+        /*endswitch*/
         break;
     case '?':
         /* Show current index value from def */
         val = (target)  ?  *target  :  0;
         while (val--  &&  (def = strchr(def, ',')))
             def++;
+        /*endwhile*/
         if (def)
         {
             if ((tmp = strchr(def, ',')))
                 len = tmp - def;
             else
                 len = strlen(def);
+            /*endif*/
             snprintf(buf, sizeof(buf), "%s%.*s", (prefix)  ?  prefix  :  "", (int) len, def);
         }
         else
         {
             buf[0] = '\0';
         }
+        /*endif*/
         at_put_response(s, buf);
         break;
     default:
         return false;
     }
+    /*endswitch*/
     return true;
 }
 /*- End of function --------------------------------------------------------*/
@@ -767,10 +826,12 @@ static int parse_string_out(at_state_t *s, const char **t, char **target, const 
             /* Set value */
             if (*target)
                 span_free(*target);
+            /*endif*/
             /* If this strdup fails, it should be harmless */
             *target = strdup(*t);
             break;
         }
+        /*endswitch*/
         break;
     case '?':
         /* Show current index value */
@@ -779,8 +840,10 @@ static int parse_string_out(at_state_t *s, const char **t, char **target, const 
     default:
         return false;
     }
+    /*endswitch*/
     while (**t)
         (*t)++;
+    /*endwhile*/
     return true;
 }
 /*- End of function --------------------------------------------------------*/
@@ -805,9 +868,11 @@ static const char *s_reg_handler(at_state_t *s, const char *t, int reg)
         default:
             if ((val = parse_num(&t, 255)) < 0)
                 return NULL;
+            /*endif*/
             s->p.s_regs[reg] = (uint8_t) val;
             break;
         }
+        /*endswitch*/
         break;
     case '?':
         snprintf(buf, sizeof(buf), "%3.3d", s->p.s_regs[reg]);
@@ -816,6 +881,7 @@ static const char *s_reg_handler(at_state_t *s, const char *t, int reg)
     case '.':
         if ((b = parse_num(&t, 7)) < 0)
             return NULL;
+        /*endif*/
         switch (*t++)
         {
         case '=':
@@ -828,12 +894,15 @@ static const char *s_reg_handler(at_state_t *s, const char *t, int reg)
             default:
                 if ((val = parse_num(&t, 1)) < 0)
                     return NULL;
+                /*endif*/
                 if (val)
                     s->p.s_regs[reg] |= (1 << b);
                 else
                     s->p.s_regs[reg] &= ~(1 << b);
+                /*endif*/
                 break;
             }
+            /*endswitch*/
             break;
         case '?':
             at_put_numeric_response(s, (int) ((s->p.s_regs[reg] >> b) & 1));
@@ -841,10 +910,12 @@ static const char *s_reg_handler(at_state_t *s, const char *t, int reg)
         default:
             return NULL;
         }
+        /*endswitch*/
         break;
     default:
         return NULL;
     }
+    /*endswitch*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -873,23 +944,28 @@ static int process_class1_cmd(at_state_t *s, const char **t)
         allowed = "24,48,72,73,74,96,97,98,121,122,145,146";
         break;
     }
+    /*endswitch*/
 
     val = -1;
     if (!parse_out(s, t, &val, 255, NULL, allowed))
         return true;
+    /*endif*/
     if (val < 0)
     {
         /* It was just a query */
         return true;
     }
+    /*endif*/
     /* All class 1 FAX commands are supposed to give an ERROR response, if the phone
        is on-hook. */
     if (s->at_rx_mode == AT_MODE_ONHOOK_COMMAND)
         return false;
+    /*endif*/
 
     result = true;
     if (s->class1_handler)
         result = s->class1_handler(s->class1_user_data, direction, operation, val);
+    /*endif*/
     switch (result)
     {
     case 0:
@@ -899,6 +975,7 @@ static int process_class1_cmd(at_state_t *s, const char **t)
     case -1:
         return false;
     }
+    /*endswitch*/
     return true;
 }
 /*- End of function --------------------------------------------------------*/
@@ -915,6 +992,7 @@ static const char *at_cmd_A(at_state_t *s, const char *t)
     /* V.250 6.3.5 - Answer (abortable) */
     if (!answer_call(s))
         return NULL;
+    /*endif*/
     return (const char *) -1;
 }
 /*- End of function --------------------------------------------------------*/
@@ -954,6 +1032,7 @@ static const char *at_cmd_D(at_state_t *s, const char *t)
                 /* V.250 6.3.1.1 Full DTMF repertoire */
                 if (!s->p.pulse_dial)
                     *u++ = ch;
+                /*endif*/
                 break;
             case ' ':
             case '-':
@@ -963,7 +1042,8 @@ static const char *at_cmd_D(at_state_t *s, const char *t)
                 break;
             case '+':
                 /* V.250 6.3.1.1 International access code */
-                /* TODO: */
+                /* Pass these through to the application to handle. */
+                *u++ = ch;
                 break;
             case ',':
                 /* V.250 6.3.1.2 Pause */
@@ -1019,11 +1099,15 @@ static const char *at_cmd_D(at_state_t *s, const char *t)
             default:
                 return NULL;
             }
+            /*endswitch*/
         }
+        /*endif*/
     }
+    /*endfor*/
     *u = '\0';
     if (at_modem_control(s, AT_MODEM_CONTROL_CALL, num) < 0)
         return NULL;
+    /*endif*/
     /* Dialing should now be in progress. No AT response should be
        issued at this point. */
     return (const char *) -1;
@@ -1038,6 +1122,7 @@ static const char *at_cmd_E(at_state_t *s, const char *t)
     t += 1;
     if ((val = parse_num(&t, 1)) < 0)
         return NULL;
+    /*endif*/
     s->p.echo = val;
     return t;
 }
@@ -1051,15 +1136,18 @@ static const char *at_cmd_H(at_state_t *s, const char *t)
     t += 1;
     if ((val = parse_num(&t, 1)) < 0)
         return NULL;
+    /*endif*/
     if (val)
     {
         /* Take the receiver off-hook, effectively busying-out the modem. */
         if (s->at_rx_mode != AT_MODE_ONHOOK_COMMAND  &&  s->at_rx_mode != AT_MODE_OFFHOOK_COMMAND)
             return NULL;
+        /*endif*/
         at_modem_control(s, AT_MODEM_CONTROL_OFFHOOK, NULL);
         at_set_at_rx_mode(s, AT_MODE_OFFHOOK_COMMAND);
         return t;
     }
+    /*endif*/
     at_reset_call_info(s);
     if (s->at_rx_mode != AT_MODE_ONHOOK_COMMAND  &&  s->at_rx_mode != AT_MODE_OFFHOOK_COMMAND)
     {
@@ -1069,6 +1157,7 @@ static const char *at_cmd_H(at_state_t *s, const char *t)
         at_set_at_rx_mode(s, AT_MODE_CONNECTED);
         return (const char *) -1;
     }
+    /*endif*/
     at_modem_control(s, AT_MODEM_CONTROL_HANGUP, NULL);
     at_set_at_rx_mode(s, AT_MODE_ONHOOK_COMMAND);
     return t;
@@ -1095,6 +1184,7 @@ static const char *at_cmd_I(at_state_t *s, const char *t)
     default:
         return NULL;
     }
+    /*endswitch*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1108,6 +1198,7 @@ static const char *at_cmd_L(at_state_t *s, const char *t)
     t += 1;
     if ((val = parse_num(&t, 255)) < 0)
         return NULL;
+    /*endif*/
     s->speaker_volume = val;
     return t;
 }
@@ -1122,6 +1213,7 @@ static const char *at_cmd_M(at_state_t *s, const char *t)
     t += 1;
     if ((val = parse_num(&t, 255)) < 0)
         return NULL;
+    /*endif*/
     s->speaker_mode = val;
     return t;
 }
@@ -1135,11 +1227,13 @@ static const char *at_cmd_O(at_state_t *s, const char *t)
     t += 1;
     if ((val = parse_num(&t, 1)) < 0)
         return NULL;
+    /*endif*/
     if (val == 0)
     {
         at_set_at_rx_mode(s, AT_MODE_CONNECTED);
         at_put_response_code(s, AT_RESPONSE_CODE_CONNECT);
     }
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1161,6 +1255,7 @@ static const char *at_cmd_Q(at_state_t *s, const char *t)
     t += 1;
     if ((val = parse_num(&t, 1)) < 0)
         return NULL;
+    /*endif*/
     switch (val)
     {
     case 0:
@@ -1170,6 +1265,7 @@ static const char *at_cmd_Q(at_state_t *s, const char *t)
         s->p.result_code_format = NO_RESULT_CODES;
         break;
     }
+    /*endswitch*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1255,9 +1351,11 @@ static const char *at_cmd_V(at_state_t *s, const char *t)
     t += 1;
     if ((val = parse_num(&t, 1)) < 0)
         return NULL;
+    /*endif*/
     s->p.verbose = val;
     if (s->p.result_code_format != NO_RESULT_CODES)
         s->p.result_code_format = (s->p.verbose)  ?  ASCII_RESULT_CODES  :  NUMERIC_RESULT_CODES;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1280,6 +1378,7 @@ static const char *at_cmd_X(at_state_t *s, const char *t)
     t += 1;
     if ((val = parse_num(&t, 4)) < 0)
         return NULL;
+    /*endif*/
     s->result_code_mode = val;
     return t;
 }
@@ -1293,6 +1392,7 @@ static const char *at_cmd_Z(at_state_t *s, const char *t)
     t += 1;
     if ((val = parse_num(&t, sizeof(profiles)/sizeof(profiles[0]) - 1)) < 0)
         return NULL;
+    /*endif*/
     /* Just make sure we are on hook */
     at_modem_control(s, AT_MODEM_CONTROL_HANGUP, NULL);
     at_set_at_rx_mode(s, AT_MODE_ONHOOK_COMMAND);
@@ -1311,6 +1411,7 @@ static const char *at_cmd_amp_C(at_state_t *s, const char *t)
     t += 2;
     if ((val = parse_num(&t, 1)) < 0)
         return NULL;
+    /*endif*/
     s->rlsd_behaviour = val;
     return t;
 }
@@ -1324,6 +1425,7 @@ static const char *at_cmd_amp_D(at_state_t *s, const char *t)
     t += 2;
     if ((val = parse_num(&t, 2)) < 0)
         return NULL;
+    /*endif*/
     /* TODO: We have no DTR pin, but we need this to get into online
              command state. */
     s->dtr_behaviour = val;
@@ -1390,12 +1492,16 @@ static const char *at_cmd_plus_A8E(at_state_t *s, const char *t)
     t += 4;
     if (!parse_out(s, &t, &val, 6, "+A8E:", "(0-6),(0-5),(00-FF)"))
         return NULL;
+    /*endif*/
     if (*t != ',')
         return t;
+    /*endif*/
     if ((val = parse_num(&t, 5)) < 0)
         return NULL;
+    /*endif*/
     if (*t != ',')
         return t;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1453,31 +1559,42 @@ static const char *at_cmd_plus_A8T(at_state_t *s, const char *t)
     t += 4;
     if (!parse_out(s, &t, &val, 10, "+A8T:", "(0-10)"))
         return NULL;
+    /*endif*/
     s->v8bis_signal = val;
     if (*t != ',')
         return t;
+    /*endif*/
     if ((val = parse_num(&t, 255)) < 0)
         return NULL;
+    /*endif*/
     s->v8bis_1st_message = val;
     if (*t != ',')
         return t;
+    /*endif*/
     if ((val = parse_num(&t, 255)) < 0)
         return NULL;
+    /*endif*/
     s->v8bis_2nd_message = val;
     if (*t != ',')
         return t;
+    /*endif*/
     if ((val = parse_num(&t, 255)) < 0)
         return NULL;
+    /*endif*/
     s->v8bis_sig_en = val;
     if (*t != ',')
         return t;
+    /*endif*/
     if ((val = parse_num(&t, 255)) < 0)
         return NULL;
+    /*endif*/
     s->v8bis_msg_en = val;
     if (*t != ',')
         return t;
+    /*endif*/
     if ((val = parse_num(&t, 255)) < 0)
         return NULL;
+    /*endif*/
     s->v8bis_supp_delay = val;
     return t;
 }
@@ -1490,6 +1607,7 @@ static const char *at_cmd_plus_ASTO(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+ASTO:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1501,6 +1619,7 @@ static const char *at_cmd_plus_CAAP(at_state_t *s, const char *t)
     t += 5;
     if (!parse_2_out(s, &t, NULL, 65535, NULL, 65535, "+CAAP:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1512,6 +1631,7 @@ static const char *at_cmd_plus_CACM(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CACM:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1523,6 +1643,7 @@ static const char *at_cmd_plus_CACSP(at_state_t *s, const char *t)
     t += 6;
     if (!parse_out(s, &t, NULL, 1, "+CACSP:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1543,6 +1664,7 @@ static const char *at_cmd_plus_CAEMLPP(at_state_t *s, const char *t)
     t += 8;
     if (!parse_out(s, &t, NULL, 1, "+CAEMLPP:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1554,6 +1676,7 @@ static const char *at_cmd_plus_CAHLD(at_state_t *s, const char *t)
     t += 6;
     if (!parse_out(s, &t, NULL, 1, "+CAHLD:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1565,6 +1688,7 @@ static const char *at_cmd_plus_CAJOIN(at_state_t *s, const char *t)
     t += 7;
     if (!parse_out(s, &t, NULL, 1, "+CAJOIN:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1576,6 +1700,7 @@ static const char *at_cmd_plus_CALA(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CALA:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1587,6 +1712,7 @@ static const char *at_cmd_plus_CALCC(at_state_t *s, const char *t)
     t += 6;
     if (!parse_out(s, &t, NULL, 1, "+CALCC:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1598,6 +1724,7 @@ static const char *at_cmd_plus_CALD(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CALD:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1609,6 +1736,7 @@ static const char *at_cmd_plus_CALM(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CALM:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1620,6 +1748,7 @@ static const char *at_cmd_plus_CAMM(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CAMM:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1631,6 +1760,7 @@ static const char *at_cmd_plus_CANCHEV(at_state_t *s, const char *t)
     t += 8;
     if (!parse_out(s, &t, NULL, 1, "+CANCHEV:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1642,6 +1772,7 @@ static const char *at_cmd_plus_CAOC(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CAOC:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1653,6 +1784,7 @@ static const char *at_cmd_plus_CAPD(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CAPD:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1664,6 +1796,7 @@ static const char *at_cmd_plus_CAPTT(at_state_t *s, const char *t)
     t += 6;
     if (!parse_out(s, &t, NULL, 1, "+CAPTT:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1675,6 +1808,7 @@ static const char *at_cmd_plus_CAREJ(at_state_t *s, const char *t)
     t += 6;
     if (!parse_out(s, &t, NULL, 1, "+CAREJ:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1686,6 +1820,7 @@ static const char *at_cmd_plus_CAULEV(at_state_t *s, const char *t)
     t += 7;
     if (!parse_out(s, &t, NULL, 1, "+CAULEV:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1697,6 +1832,7 @@ static const char *at_cmd_plus_CBC(at_state_t *s, const char *t)
     t += 4;
     if (!parse_out(s, &t, NULL, 1, "+CBC:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1708,6 +1844,7 @@ static const char *at_cmd_plus_CBCS(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CBCS:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1728,6 +1865,7 @@ static const char *at_cmd_plus_CBST(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CBST:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1739,6 +1877,7 @@ static const char *at_cmd_plus_CCFC(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CCFC:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1750,6 +1889,7 @@ static const char *at_cmd_plus_CCLK(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CCLK:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1770,6 +1910,7 @@ static const char *at_cmd_plus_CCUG(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CCUG:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1781,6 +1922,7 @@ static const char *at_cmd_plus_CCWA(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CCWA:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1792,6 +1934,7 @@ static const char *at_cmd_plus_CCWE(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CCWE:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1803,6 +1946,7 @@ static const char *at_cmd_plus_CDIP(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CDIP:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1814,6 +1958,7 @@ static const char *at_cmd_plus_CDIS(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CDIS:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1834,6 +1979,7 @@ static const char *at_cmd_plus_CEER(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CEER:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1854,6 +2000,7 @@ static const char *at_cmd_plus_CFCS(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CFCS:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1874,6 +2021,7 @@ static const char *at_cmd_plus_CFUN(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CFUN:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1885,6 +2033,7 @@ static const char *at_cmd_plus_CGACT(at_state_t *s, const char *t)
     t += 6;
     if (!parse_out(s, &t, NULL, 1, "+CGACT:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1896,6 +2045,7 @@ static const char *at_cmd_plus_CGANS(at_state_t *s, const char *t)
     t += 6;
     if (!parse_out(s, &t, NULL, 1, "+CGANS:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1907,6 +2057,7 @@ static const char *at_cmd_plus_CGATT(at_state_t *s, const char *t)
     t += 6;
     if (!parse_out(s, &t, NULL, 1, "+CGATT:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1918,6 +2069,7 @@ static const char *at_cmd_plus_CGAUTO(at_state_t *s, const char *t)
     t += 7;
     if (!parse_out(s, &t, NULL, 1, "+CGAUTO:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1938,6 +2090,7 @@ static const char *at_cmd_plus_CGCLASS(at_state_t *s, const char *t)
     t += 8;
     if (!parse_out(s, &t, NULL, 1, "+CGCLASS:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1949,6 +2102,7 @@ static const char *at_cmd_plus_CGCLOSP(at_state_t *s, const char *t)
     t += 8;
     if (!parse_out(s, &t, NULL, 1, "+CGCLOSP:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1960,6 +2114,7 @@ static const char *at_cmd_plus_CGCLPAD(at_state_t *s, const char *t)
     t += 8;
     if (!parse_out(s, &t, NULL, 1, "+CGCLPAD:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1971,6 +2126,7 @@ static const char *at_cmd_plus_CGCMOD(at_state_t *s, const char *t)
     t += 7;
     if (!parse_out(s, &t, NULL, 1, "+CGCMOD:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1982,6 +2138,7 @@ static const char *at_cmd_plus_CGCS(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CGCS:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1993,6 +2150,7 @@ static const char *at_cmd_plus_CGDATA(at_state_t *s, const char *t)
     t += 7;
     if (!parse_out(s, &t, NULL, 1, "+CGDATA:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2004,6 +2162,7 @@ static const char *at_cmd_plus_CGDCONT(at_state_t *s, const char *t)
     t += 8;
     if (!parse_out(s, &t, NULL, 1, "+CGDCONT:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2015,6 +2174,7 @@ static const char *at_cmd_plus_CGDSCONT(at_state_t *s, const char *t)
     t += 9;
     if (!parse_out(s, &t, NULL, 1, "+CGDSCONT:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2026,6 +2186,7 @@ static const char *at_cmd_plus_CGEQMIN(at_state_t *s, const char *t)
     t += 8;
     if (!parse_out(s, &t, NULL, 1, "+CGEQMIN:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2037,6 +2198,7 @@ static const char *at_cmd_plus_CGEQNEG(at_state_t *s, const char *t)
     t += 8;
     if (!parse_out(s, &t, NULL, 1, "+CGEQNEG:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2048,6 +2210,7 @@ static const char *at_cmd_plus_CGEQREQ(at_state_t *s, const char *t)
     t += 8;
     if (!parse_out(s, &t, NULL, 1, "+CGEQREQ:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2059,6 +2222,7 @@ static const char *at_cmd_plus_CGEREP(at_state_t *s, const char *t)
     t += 7;
     if (!parse_out(s, &t, NULL, 1, "+CGEREP:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2070,6 +2234,7 @@ static const char *at_cmd_plus_CGMI(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CGMI:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2081,6 +2246,7 @@ static const char *at_cmd_plus_CGMM(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CGMM:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2092,6 +2258,7 @@ static const char *at_cmd_plus_CGMR(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CGMR:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2112,6 +2279,7 @@ static const char *at_cmd_plus_CGPADDR(at_state_t *s, const char *t)
     t += 8;
     if (!parse_out(s, &t, NULL, 1, "+CGPADDR:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2123,6 +2291,7 @@ static const char *at_cmd_plus_CGQMIN(at_state_t *s, const char *t)
     t += 7;
     if (!parse_out(s, &t, NULL, 1, "+CGQMIN:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2134,6 +2303,7 @@ static const char *at_cmd_plus_CGQREQ(at_state_t *s, const char *t)
     t += 7;
     if (!parse_out(s, &t, NULL, 1, "+CGQREQ:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2145,6 +2315,7 @@ static const char *at_cmd_plus_CGREG(at_state_t *s, const char *t)
     t += 6;
     if (!parse_out(s, &t, NULL, 1, "+CGREG:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2156,6 +2327,7 @@ static const char *at_cmd_plus_CGSMS(at_state_t *s, const char *t)
     t += 6;
     if (!parse_out(s, &t, NULL, 1, "+CGSMS:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2167,6 +2339,7 @@ static const char *at_cmd_plus_CGSN(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CGSN:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2178,6 +2351,7 @@ static const char *at_cmd_plus_CGTFT(at_state_t *s, const char *t)
     t += 6;
     if (!parse_out(s, &t, NULL, 1, "+CGTFT:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2189,6 +2363,7 @@ static const char *at_cmd_plus_CHLD(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CHLD:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2200,6 +2375,7 @@ static const char *at_cmd_plus_CHSA(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CHSA:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2211,6 +2387,7 @@ static const char *at_cmd_plus_CHSC(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CHSC:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2222,6 +2399,7 @@ static const char *at_cmd_plus_CHSD(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CHSD:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2233,6 +2411,7 @@ static const char *at_cmd_plus_CHSN(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CHSN:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2244,6 +2423,7 @@ static const char *at_cmd_plus_CHSR(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CHSR:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2255,6 +2435,7 @@ static const char *at_cmd_plus_CHST(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CHST:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2266,6 +2447,7 @@ static const char *at_cmd_plus_CHSU(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CHSU:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2277,6 +2459,7 @@ static const char *at_cmd_plus_CHUP(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CHUP:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2297,6 +2480,7 @@ static const char *at_cmd_plus_CIMI(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CIMI:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2308,6 +2492,7 @@ static const char *at_cmd_plus_CIND(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CIND:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2328,6 +2513,7 @@ static const char *at_cmd_plus_CKPD(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CKPD:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2339,6 +2525,7 @@ static const char *at_cmd_plus_CLAC(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CLAC:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2350,6 +2537,7 @@ static const char *at_cmd_plus_CLAE(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CLAE:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2361,6 +2549,7 @@ static const char *at_cmd_plus_CLAN(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CLAN:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2372,6 +2561,7 @@ static const char *at_cmd_plus_CLCC(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CLCC:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2383,6 +2573,7 @@ static const char *at_cmd_plus_CLCK(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CLCK:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2394,6 +2585,7 @@ static const char *at_cmd_plus_CLIP(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CLIP:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2409,6 +2601,7 @@ static const char *at_cmd_plus_CLIR(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CLIR:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2420,6 +2613,7 @@ static const char *at_cmd_plus_CLVL(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CLVL:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2431,6 +2625,7 @@ static const char *at_cmd_plus_CMAR(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CMAR:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2442,6 +2637,7 @@ static const char *at_cmd_plus_CMEC(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CMEC:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2462,6 +2658,7 @@ static const char *at_cmd_plus_CMER(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CMER:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2563,6 +2760,7 @@ static const char *at_cmd_plus_CMOD(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CMOD:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2583,6 +2781,7 @@ static const char *at_cmd_plus_CMUT(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CMUT:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2612,6 +2811,7 @@ static const char *at_cmd_plus_CMUX(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CMUX:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2623,6 +2823,7 @@ static const char *at_cmd_plus_CNUM(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CNUM:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2634,6 +2835,7 @@ static const char *at_cmd_plus_COLP(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+COLP:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2645,6 +2847,7 @@ static const char *at_cmd_plus_COPN(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+COPN:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2656,6 +2859,7 @@ static const char *at_cmd_plus_COPS(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+COPS:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2676,6 +2880,7 @@ static const char *at_cmd_plus_COTDI(at_state_t *s, const char *t)
     t += 6;
     if (!parse_out(s, &t, NULL, 1, "+COTDI:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2687,6 +2892,7 @@ static const char *at_cmd_plus_CPAS(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CPAS:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2698,6 +2904,7 @@ static const char *at_cmd_plus_CPBF(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CPBF:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2709,6 +2916,7 @@ static const char *at_cmd_plus_CPBR(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CPBR:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2720,6 +2928,7 @@ static const char *at_cmd_plus_CPBS(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CPBS:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2731,6 +2940,7 @@ static const char *at_cmd_plus_CPBW(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CPBW:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2742,6 +2952,7 @@ static const char *at_cmd_plus_CPIN(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CPIN:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2753,6 +2964,7 @@ static const char *at_cmd_plus_CPLS(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CPLS:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2773,6 +2985,7 @@ static const char *at_cmd_plus_CPOL(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CPOL:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2784,6 +2997,7 @@ static const char *at_cmd_plus_CPPS(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CPPS:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2795,6 +3009,7 @@ static const char *at_cmd_plus_CPROT(at_state_t *s, const char *t)
     t += 6;
     if (!parse_out(s, &t, NULL, 1, "+CPROT:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2806,6 +3021,7 @@ static const char *at_cmd_plus_CPUC(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CPUC:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2817,6 +3033,7 @@ static const char *at_cmd_plus_CPWC(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CPWC:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2828,6 +3045,7 @@ static const char *at_cmd_plus_CPWD(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CPWD:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2848,6 +3066,7 @@ static const char *at_cmd_plus_CR(at_state_t *s, const char *t)
     t += 3;
     if (!parse_out(s, &t, NULL, 1, "+CR:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2859,6 +3078,7 @@ static const char *at_cmd_plus_CRC(at_state_t *s, const char *t)
     t += 4;
     if (!parse_out(s, &t, NULL, 1, "+CRC:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2870,6 +3090,7 @@ static const char *at_cmd_plus_CREG(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CREG:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2881,6 +3102,7 @@ static const char *at_cmd_plus_CRES(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CRLP:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2892,6 +3114,7 @@ static const char *at_cmd_plus_CRLP(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CRLP:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2912,6 +3135,7 @@ static const char *at_cmd_plus_CRMC(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CRMC:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2923,6 +3147,7 @@ static const char *at_cmd_plus_CRMP(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CRMP:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2934,6 +3159,7 @@ static const char *at_cmd_plus_CRSL(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CRSL:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2945,6 +3171,7 @@ static const char *at_cmd_plus_CRSM(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CRSM:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2983,6 +3210,7 @@ static const char *at_cmd_plus_CSCC(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CSCC:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2994,6 +3222,7 @@ static const char *at_cmd_plus_CSCS(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CSCS:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3005,6 +3234,7 @@ static const char *at_cmd_plus_CSDF(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CSDF:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3025,6 +3255,7 @@ static const char *at_cmd_plus_CSGT(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CSGT:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3036,6 +3267,7 @@ static const char *at_cmd_plus_CSIL(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CSIL:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3047,6 +3279,7 @@ static const char *at_cmd_plus_CSIM(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CSIM:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3076,6 +3309,7 @@ static const char *at_cmd_plus_CSNS(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CSNS:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3087,6 +3321,7 @@ static const char *at_cmd_plus_CSQ(at_state_t *s, const char *t)
     t += 4;
     if (!parse_out(s, &t, NULL, 1, "+CSQ:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3107,6 +3342,7 @@ static const char *at_cmd_plus_CSSN(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CSSN:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3118,6 +3354,7 @@ static const char *at_cmd_plus_CSTA(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CSTA:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3129,6 +3366,7 @@ static const char *at_cmd_plus_CSTF(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CSTF:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3140,6 +3378,7 @@ static const char *at_cmd_plus_CSVM(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CSVM:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3169,6 +3408,7 @@ static const char *at_cmd_plus_CTFR(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CTFR:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3180,6 +3420,7 @@ static const char *at_cmd_plus_CTZR(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CTZR:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3191,6 +3432,7 @@ static const char *at_cmd_plus_CTZU(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CTZU:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3202,6 +3444,7 @@ static const char *at_cmd_plus_CUSD(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CUSD:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3213,6 +3456,7 @@ static const char *at_cmd_plus_CUUS1(at_state_t *s, const char *t)
     t += 6;
     if (!parse_out(s, &t, NULL, 1, "+CUUS1:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3224,6 +3468,7 @@ static const char *at_cmd_plus_CV120(at_state_t *s, const char *t)
     t += 6;
     if (!parse_out(s, &t, NULL, 1, "+CV120:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3235,6 +3480,7 @@ static const char *at_cmd_plus_CVHU(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CVHU:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3246,6 +3492,7 @@ static const char *at_cmd_plus_CVIB(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+CVIB:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3266,6 +3513,7 @@ static const char *at_cmd_plus_DR(at_state_t *s, const char *t)
     t += 3;
     if (!parse_out(s, &t, NULL, 1, "+DR:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3277,6 +3525,7 @@ static const char *at_cmd_plus_DS(at_state_t *s, const char *t)
     t += 3;
     if (!parse_out(s, &t, NULL, 1, "+DS:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3297,6 +3546,7 @@ static const char *at_cmd_plus_EB(at_state_t *s, const char *t)
     t += 3;
     if (!parse_out(s, &t, NULL, 1, "+EB:", ""))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3308,6 +3558,7 @@ static const char *at_cmd_plus_EFCS(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 2, "+EFCS:", "(0-2)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3319,6 +3570,7 @@ static const char *at_cmd_plus_EFRAM(at_state_t *s, const char *t)
     t += 6;
     if (!parse_2_out(s, &t, NULL, 65535, NULL, 65535, "+EFRAM:", "(1-65535),(1-65535)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3332,6 +3584,7 @@ static const char *at_cmd_plus_ER(at_state_t *s, const char *t)
     t += 3;
     if (!parse_out(s, &t, NULL, 1, "+ER:", "(0,1)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3388,6 +3641,7 @@ static const char *at_cmd_plus_ES(at_state_t *s, const char *t)
     locations[2] = NULL;
     if (!parse_n_out(s, &t, locations, maxes, 3, "+ES:", "(0-7),(0-4),(0-9)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3406,8 +3660,10 @@ static const char *at_cmd_plus_ESA(at_state_t *s, const char *t)
     t += 4;
     for (i = 0;  i < 8;  i++)
         locations[i] = NULL;
+    /*endfor*/
     if (!parse_n_out(s, &t, locations, maxes, 8, "+ESA:", "(0-2),(0-1),(0-1),(0-1),(0-2),(0-1),(0-255),(0-255)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3428,6 +3684,7 @@ static const char *at_cmd_plus_ETBM(at_state_t *s, const char *t)
     t += 5;
     if (!parse_2_out(s, &t, NULL, 2, NULL, 2, "+ETBM:", "(0-2),(0-2),(0-30)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3439,6 +3696,7 @@ static const char *at_cmd_plus_EWIND(at_state_t *s, const char *t)
     t += 6;
     if (!parse_2_out(s, &t, &s->rx_window, 127, &s->tx_window, 127, "+EWIND:", "(1-127),(1-127)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3458,8 +3716,10 @@ static const char *at_cmd_plus_F34(at_state_t *s, const char *t)
     t += 4;
     for (i = 0;  i < 5;  i++)
         locations[i] = NULL;
+    /*endfor*/
     if (!parse_n_out(s, &t, locations, maxes, 5, "+F34:", "(0-14),(0-14),(0-2),(0-14),(0-14)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3488,6 +3748,7 @@ static const char *at_cmd_plus_FAR(at_state_t *s, const char *t)
     t += 4;
     if (!parse_out(s, &t, &s->p.adaptive_receive, 1, NULL, "0,1"))
          return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3534,6 +3795,7 @@ static const char *at_cmd_plus_FCL(at_state_t *s, const char *t)
     t += 4;
     if (!parse_out(s, &t, &s->carrier_loss_timeout, 255, NULL, "(0-255)"))
          return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3547,6 +3809,7 @@ static const char *at_cmd_plus_FCLASS(at_state_t *s, const char *t)
        that may be expecting a pre-T.31 modem. */
     if (!parse_string_list_out(s, &t, &s->fclass_mode, 1, NULL, "0,1,1.0"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3593,6 +3856,7 @@ static const char *at_cmd_plus_FDD(at_state_t *s, const char *t)
     t += 4;
     if (!parse_out(s, &t, &s->p.double_escape, 1, NULL, "(0,1)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3683,6 +3947,7 @@ static const char *at_cmd_plus_FIT(at_state_t *s, const char *t)
     t += 4;
     if (!parse_2_out(s, &t, &s->dte_inactivity_timeout, 255, &s->dte_inactivity_action, 1, "+FIT:", "(0-255),(0-1)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3716,6 +3981,7 @@ static const char *at_cmd_plus_FLO(at_state_t *s, const char *t)
     span_log(&s->logging, SPAN_LOG_FLOW, "+FLO received\n");
     if (!parse_out(s, &t, &s->dte_dce_flow_control, 2, "+FLO:", "(0-2)"))
         return NULL;
+    /*endif*/
     s->dce_dte_flow_control = s->dte_dce_flow_control;
     return t;
 }
@@ -3739,6 +4005,7 @@ static const char *at_cmd_plus_FMI(at_state_t *s, const char *t)
         at_put_response(s, manufacturer);
         t += 1;
     }
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3752,6 +4019,7 @@ static const char *at_cmd_plus_FMM(at_state_t *s, const char *t)
         at_put_response(s, model);
         t += 1;
     }
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3765,6 +4033,7 @@ static const char *at_cmd_plus_FMR(at_state_t *s, const char *t)
         at_put_response(s, revision);
         t += 1;
     }
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3832,6 +4101,7 @@ static const char *at_cmd_plus_FPR(at_state_t *s, const char *t)
     t += 4;
     if (!parse_out(s, &t, &s->dte_rate, 115200, NULL, "115200"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3857,6 +4127,7 @@ static const char *at_cmd_plus_FRH(at_state_t *s, const char *t)
     /* T.31 8.3.6 - HDLC receive */
     if (!process_class1_cmd(s, &t))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3866,6 +4137,7 @@ static const char *at_cmd_plus_FRM(at_state_t *s, const char *t)
     /* T.31 8.3.4 - Facsimile receive */
     if (!process_class1_cmd(s, &t))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3884,6 +4156,7 @@ static const char *at_cmd_plus_FRS(at_state_t *s, const char *t)
     /* T.31 8.3.2 - Receive silence */
     if (!process_class1_cmd(s, &t))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3920,6 +4193,7 @@ static const char *at_cmd_plus_FTH(at_state_t *s, const char *t)
     /* T.31 8.3.5 - HDLC transmit */
     if (!process_class1_cmd(s, &t))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3929,6 +4203,7 @@ static const char *at_cmd_plus_FTM(at_state_t *s, const char *t)
     /* T.31 8.3.3 - Facsimile transmit */
     if (!process_class1_cmd(s, &t))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3938,6 +4213,7 @@ static const char *at_cmd_plus_FTS(at_state_t *s, const char *t)
     /* T.31 8.3.1 - Transmit silence */
     if (!process_class1_cmd(s, &t))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3958,6 +4234,7 @@ static const char *at_cmd_plus_GCAP(at_state_t *s, const char *t)
         at_put_response(s, "+GCAP:+FCLASS");
         t += 1;
     }
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3968,6 +4245,7 @@ static const char *at_cmd_plus_GCI(at_state_t *s, const char *t)
     t += 4;
     if (!parse_hex_out(s, &t, &s->country_of_installation, 255, "+GCI:", "(00-FF)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3981,6 +4259,7 @@ static const char *at_cmd_plus_GMI(at_state_t *s, const char *t)
         at_put_response(s, manufacturer);
         t += 1;
     }
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3994,6 +4273,7 @@ static const char *at_cmd_plus_GMM(at_state_t *s, const char *t)
         at_put_response(s, model);
         t += 1;
     }
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4007,6 +4287,7 @@ static const char *at_cmd_plus_GMR(at_state_t *s, const char *t)
         at_put_response(s, revision);
         t += 1;
     }
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4021,6 +4302,7 @@ static const char *at_cmd_plus_GOI(at_state_t *s, const char *t)
         at_put_response(s, GLOBAL_OBJECT_IDENTITY);
         t += 1;
     }
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4035,6 +4317,7 @@ static const char *at_cmd_plus_GSN(at_state_t *s, const char *t)
         at_put_response(s, SERIAL_NUMBER);
         t += 1;
     }
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4064,8 +4347,10 @@ static const char *at_cmd_plus_IBC(at_state_t *s, const char *t)
        1: enabled */
     for (i = 0;  i < 13;  i++)
         locations[i] = NULL;
+    /*endfor*/
     if (!parse_n_out(s, &t, locations, maxes, 13, "+IBC:", "(0-2),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0.1),(0,1)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4101,6 +4386,7 @@ static const char *at_cmd_plus_IBM(at_state_t *s, const char *t)
     locations[2] = NULL;
     if (!parse_n_out(s, &t, locations, maxes, 3, "+IBM:", "(0-7),(0-255),(0-255)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4125,6 +4411,7 @@ static const char *at_cmd_plus_ICF(at_state_t *s, const char *t)
         3:  Space */
     if (!parse_2_out(s, &t, &s->dte_char_format, 6, &s->dte_parity, 3, "+ICF:", "(0-6),(0-3)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4135,6 +4422,7 @@ static const char *at_cmd_plus_ICLOK(at_state_t *s, const char *t)
     t += 6;
     if (!parse_out(s, &t, &s->sync_tx_clock_source, 2, "+ICLOK:", "(0-2)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4145,6 +4433,7 @@ static const char *at_cmd_plus_IDSR(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, &s->dsr_option, 2, "+IDSR:", "(0-2)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4159,6 +4448,7 @@ static const char *at_cmd_plus_IFC(at_state_t *s, const char *t)
     t += 4;
     if (!parse_2_out(s, &t, &s->dte_dce_flow_control, 2, &s->dce_dte_flow_control, 2, "+IFC:", "(0-2),(0-2)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4178,6 +4468,7 @@ static const char *at_cmd_plus_ILSD(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, &s->long_space_disconnect_option, 2, "+ILSD:", "(0,1)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4189,6 +4480,7 @@ static const char *at_cmd_plus_IPR(at_state_t *s, const char *t)
     t += 4;
     if (!parse_out(s, &t, &s->dte_rate, 115200, "+IPR:", "(115200),(115200)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4199,6 +4491,7 @@ static const char *at_cmd_plus_IRTS(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+IRTS:", "(0,1)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4230,6 +4523,7 @@ static const char *at_cmd_plus_MR(at_state_t *s, const char *t)
     t += 3;
     if (!parse_out(s, &t, NULL, 1, "+MR:", "(0,1)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4252,6 +4546,7 @@ static const char *at_cmd_plus_MSC(at_state_t *s, const char *t)
     t += 4;
     if (!parse_out(s, &t, NULL, 1, "+MSC:", "(0,1)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4278,6 +4573,7 @@ static const char *at_cmd_plus_MV18P(at_state_t *s, const char *t)
     t += 6;
     if (!parse_out(s, &t, NULL, 7, "+MV18P:", "(2-7)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4289,6 +4585,7 @@ static const char *at_cmd_plus_MV18R(at_state_t *s, const char *t)
     t += 6;
     if (!parse_out(s, &t, NULL, 1, "+MV18R:", "(0,1)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4578,6 +4875,7 @@ static const char *at_cmd_plus_TAL(at_state_t *s, const char *t)
     t += 4;
     if (!parse_2_out(s, &t, NULL, 1, NULL, 1, "+TAL:", "(0,1),(0,1)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4593,6 +4891,7 @@ static const char *at_cmd_plus_TALS(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 3, "+TALS:", "(0-3)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4609,6 +4908,7 @@ static const char *at_cmd_plus_TDLS(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 3, "+TDLS:", "(0-4)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4622,6 +4922,7 @@ static const char *at_cmd_plus_TE140(at_state_t *s, const char *t)
     t += 6;
     if (!parse_out(s, &t, NULL, 1, "+TE140:", "(0,1)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4635,6 +4936,7 @@ static const char *at_cmd_plus_TE141(at_state_t *s, const char *t)
     t += 6;
     if (!parse_out(s, &t, NULL, 1, "+TE141:", "(0,1)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4648,6 +4950,7 @@ static const char *at_cmd_plus_TEPAL(at_state_t *s, const char *t)
     t += 6;
     if (!parse_out(s, &t, NULL, 1, "+TEPAL:", "(0,1)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4661,6 +4964,7 @@ static const char *at_cmd_plus_TEPDL(at_state_t *s, const char *t)
     t += 6;
     if (!parse_out(s, &t, NULL, 1, "+TEPDL:", "(0,1)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4674,6 +4978,7 @@ static const char *at_cmd_plus_TERDL(at_state_t *s, const char *t)
     t += 6;
     if (!parse_out(s, &t, NULL, 1, "+TERDL:", "(0,1)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4687,6 +4992,7 @@ static const char *at_cmd_plus_TLDL(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+TLDL:", "(0,1)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4707,6 +5013,7 @@ static const char *at_cmd_plus_TMODE(at_state_t *s, const char *t)
     t += 6;
     if (!parse_out(s, &t, NULL, 1, "+TMODE:", "(0,1)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4729,6 +5036,7 @@ static const char *at_cmd_plus_TRDL(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+TRDL:", "(0,1)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4752,6 +5060,7 @@ static const char *at_cmd_plus_TRES(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+TRES:", "(0-2)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4765,6 +5074,7 @@ static const char *at_cmd_plus_TSELF(at_state_t *s, const char *t)
     t += 6;
     if (!parse_out(s, &t, NULL, 1, "+TSELF:", "(0,1)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4776,6 +5086,7 @@ static const char *at_cmd_plus_TTER(at_state_t *s, const char *t)
     t += 5;
     if (!parse_2_out(s, &t, NULL, 65535, NULL, 65535, "+TTER:", "(0-65535),(0-65535)"))
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4812,6 +5123,7 @@ static const char *at_cmd_plus_VCID(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, &s->display_call_info, 1, NULL, "0,1"))
          return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -5005,8 +5317,10 @@ static const char *at_cmd_plus_VRID(at_state_t *s, const char *t)
     val = 0;
     if (!parse_out(s, &t, &val, 1, NULL, "0,1"))
          return NULL;
+    /*endif*/
     if (val == 1)
         at_display_call_info(s);
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -5053,8 +5367,10 @@ static const char *at_cmd_plus_VSID(at_state_t *s, const char *t)
     t += 5;
     if (!parse_string_out(s, &t, &s->local_id, NULL))
         return NULL;
+    /*endif*/
     if (at_modem_control(s, AT_MODEM_CONTROL_SETID, s->local_id) < 0)
         return NULL;
+    /*endif*/
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -5427,10 +5743,13 @@ static int command_search(const char *u, int *matched)
         entry = command_trie[ptr++];
         if (index < first  ||  index > last)
             break;
+        /*endif*/
         if ((ptr = command_trie[ptr + index - first]) == 0)
             break;
+        /*endif*/
         ptr--;
     }
+    /*endfor*/
     *matched = i;
     return entry;
 }
@@ -5480,6 +5799,7 @@ SPAN_DECLARE(void) at_interpreter(at_state_t *s, const char *cmd, int len)
 
     if (s->p.echo)
         s->at_tx_handler(s->at_tx_user_data, (uint8_t *) cmd, len);
+    /*endif*/
 
     for (i = 0;  i < len;  i++)
     {
@@ -5514,7 +5834,9 @@ SPAN_DECLARE(void) at_interpreter(at_state_t *s, const char *cmd, int len)
                 {
                     s->line_ptr = 0;
                 }
+                /*endif*/
             }
+            /*endif*/
         }
         else
         {
@@ -5524,6 +5846,7 @@ SPAN_DECLARE(void) at_interpreter(at_state_t *s, const char *cmd, int len)
                 /* Add a new char */
                 if (s->line_ptr < (int) (sizeof(s->line) - 1))
                     s->line[s->line_ptr++] = (char) toupper(c);
+                /*endif*/
             }
             else if (c == s->p.s_regs[3])
             {
@@ -5538,27 +5861,35 @@ SPAN_DECLARE(void) at_interpreter(at_state_t *s, const char *cmd, int len)
                     {
                         if ((entry = command_search(t, &matched)) <= 0)
                             break;
+                        /*endif*/
                         /* The following test shouldn't be needed, but let's keep it here for completeness. */
                         if (entry > sizeof(at_commands)/sizeof(at_commands[0]))
                             break;
+                        /*endif*/
                         if ((t = at_commands[entry - 1](s, t)) == NULL)
                             break;
+                        /*endif*/
                         if (t == (const char *) -1)
                             break;
+                        /*endif*/
                     }
+                    /*endwhile*/
                     if (t != (const char *) -1)
                     {
                         if (t == NULL)
                             at_put_response_code(s, AT_RESPONSE_CODE_ERROR);
                         else
                             at_put_response_code(s, AT_RESPONSE_CODE_OK);
+                        /*endif*/
                     }
+                    /*endif*/
                 }
                 else if (s->line_ptr == 2)
                 {
                     /* It's just an empty "AT" command, return OK. */
                     at_put_response_code(s, AT_RESPONSE_CODE_OK);
                 }
+                /*endif*/
                 s->line_ptr = 0;
             }
             else if (c == s->p.s_regs[5])
@@ -5566,6 +5897,7 @@ SPAN_DECLARE(void) at_interpreter(at_state_t *s, const char *cmd, int len)
                 /* Command line editing character (backspace) */
                 if (s->line_ptr > 0)
                     s->line_ptr--;
+                /*endif*/
             }
             else
             {
@@ -5575,8 +5907,11 @@ SPAN_DECLARE(void) at_interpreter(at_state_t *s, const char *cmd, int len)
                    before it to also be ignored. */
                 s->line_ptr = 0;
             }
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -5621,7 +5956,9 @@ SPAN_DECLARE(at_state_t *) at_init(at_state_t *s,
     {
         if ((s = (at_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, '\0', sizeof(*s));
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "AT");
@@ -5645,6 +5982,7 @@ SPAN_DECLARE(int) at_release(at_state_t *s)
     at_reset_call_info(s);
     if (s->local_id)
         span_free(s->local_id);
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

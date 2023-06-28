@@ -454,8 +454,8 @@ SPAN_DECLARE(void) t30_set_tx_file(t30_state_t *s, const char *file, int start_p
 /*! Set Internet aware FAX (IAF) mode.
     \brief Set Internet aware FAX (IAF) mode.
     \param s The T.30 context.
-    \param iaf True for IAF, or false for non-IAF. */
-SPAN_DECLARE(void) t30_set_iaf_mode(t30_state_t *s, bool iaf);
+    \param iaf Bitmap of values from enum t30_iaf_mode_e. */
+SPAN_DECLARE(void) t30_set_iaf_mode(t30_state_t *s, int iaf);
 
 /*! Specify if error correction mode (ECM) is allowed by a T.30 context.
     \brief Select ECM capability.
@@ -463,6 +463,12 @@ SPAN_DECLARE(void) t30_set_iaf_mode(t30_state_t *s, bool iaf);
     \param enabled True for ECM capable, or false for not ECM capable.
     \return 0 if OK, else -1. */
 SPAN_DECLARE(int) t30_set_ecm_capability(t30_state_t *s, bool enabled);
+
+/*! Specify if page retransmission is allowed by a T.30 context.
+    \brief Select page regtransmission capable.
+    \param s The T.30 context.
+    \param enabled True for retransmit capable, or false for not retransmit capable. */
+SPAN_DECLARE(void) t30_set_retransmit_capable(t30_state_t *s, bool enabled);
 
 /*! Specify the output encoding for TIFF files created during FAX reception.
     \brief Specify the output encoding for TIFF files created during FAX reception.

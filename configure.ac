@@ -18,8 +18,8 @@
 
 # @start 1
 
-AC_PREREQ([2.59])
-AC_INIT([spandsp], [3.0.0])
+AC_PREREQ([2.71])
+AC_INIT([spandsp],[3.0.0])
 
 CFLAGS="$CFLAGS $CONFIGURE_CFLAGS"
 CXXFLAGS="$CXXFLAGS $CONFIGURE_CXXFLAGS"
@@ -37,7 +37,7 @@ m4_include(m4/ax_c99_features.m4)
 m4_include(m4/ax_check_export_capability.m4)
 m4_include(m4/ax_check_arm_neon.m4)
 m4_include(m4/ax_func_aligned_alloc.m4)
-m4_include(m4/ac_func_memmove.m4)
+m4_include(m4/ax_func_memmove.m4)
 
 AC_CONFIG_SRCDIR([src/tone_generate.c])
 AC_CONFIG_AUX_DIR([config])
@@ -50,7 +50,7 @@ AC_CANONICAL_HOST
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_GCC_TRADITIONAL
-AC_PROG_LIBTOOL
+LT_INIT
 AC_LANG([C])
 
 AX_COMPILER_VENDOR
@@ -127,8 +127,6 @@ AC_C_VOLATILE
 AC_CHECK_TYPES(long long)
 AC_CHECK_TYPES(long double)
 
-AC_TYPE_SIGNAL
-
 AC_ARG_ENABLE(doc,          [  --enable-doc         Build the documentation])
 AC_ARG_ENABLE(tests,        [  --enable-tests       Build the test programs])
 AC_ARG_ENABLE(mmx,          [  --enable-mmx         Enable MMX support])
@@ -147,13 +145,16 @@ AC_ARG_ENABLE(v34,          [  --enable-v34         Enable V.34 support])
 
 # The following is for MSVC, where we may be using a local copy of libtiff, built alongside spandsp
 AC_ARG_ENABLE(builtin_tiff,
-    [AC_HELP_STRING([--enable-builtin-tiff],[build with builtin libtiff])],[enable_builtin_tiff="$enableval"],[enable_builtin_tiff="no"])
+    [AS_HELP_STRING([--enable-builtin-tiff],[build with builtin libtiff])],[enable_builtin_tiff="$enableval"],[enable_builtin_tiff="no"])
 
 AC_FUNC_ERROR_AT_LINE
 AC_FUNC_VPRINTF
 AC_FUNC_MEMCMP
-AC_FUNC_MEMMOVE
-
+AX_FUNC_MEMMOVE
+if test "${ax_cv_c_compiler_vendor}" = "gnu"; then
+    AC_FUNC_REALLOC
+    AC_FUNC_MALLOC
+fi
 AC_FUNC_SELECT_ARGTYPES
 
 AX_C99_FUNC_LRINT
@@ -185,9 +186,7 @@ AC_CHECK_FUNCS([strtol])
 AC_CHECK_FUNCS([gettimeofday])
 AC_CHECK_FUNCS([drand48])
 
-AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
-AC_HEADER_TIME
 
 # Check for header files.
 AC_CHECK_HEADERS([socket.h])
@@ -235,20 +234,15 @@ fi
 AC_MSG_CHECKING(for libxml/xmlmemory.h)
 
 # Can we include headers using system include dirs?
-AC_TRY_COMPILE([#include <libxml/xmlmemory.h>], [int a = 1;],
-    XML2_INCLUDE=" ",
-    XML2_INCLUDE=
-)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <libxml/xmlmemory.h>]], [[int a = 1;]])],[XML2_INCLUDE=" "],[XML2_INCLUDE=])
 
 # Hunt through several possible directories to find the includes for libxml2
 if test "x$XML2_INCLUDE" = "x"; then
     old_CPPFLAGS="$CPPFLAGS"
     for i in $xml2_include_dir /usr/include /usr/local/include /usr/include/libxml2 /usr/local/include/libxml2 ; do
         CPPFLAGS="$old_CPPFLAGS -I$i"
-        AC_TRY_COMPILE([#include <libxml/xmlmemory.h>], [int a = 1;],
-            XML2_INCLUDE="-I$i",
-            XML2_INCLUDE=
-        )
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <libxml/xmlmemory.h>]], [[int a = 1;]])],[XML2_INCLUDE="-I$i"],[XML2_INCLUDE=
+        ])
         if test "x$XML2_INCLUDE" != "x"; then
             break;
         fi
@@ -274,6 +268,9 @@ if test "${build}" = "${host}"
 then
     case "${host}" in
     x86_64-*)
+        # X86_64 Linux machines may have both 64 bit and 32 bit libraries. We need to choose the right set
+        AX_CHECK_REAL_FILE([${prefix}/lib64], libdir='${exec_prefix}/lib64')
+        AX_CHECK_REAL_FILE([/usr/X11R6/lib64], [TESTLIBS="$TESTLIBS -L/usr/X11R6/lib64"], AC_CHECK_FILE([/usr/X11R6/lib], [TESTLIBS="$TESTLIBS -L/usr/X11R6/lib"]))
         # The very oldest AMD 64 bit chips support SSE2, SSE and MMX
         enable_sse2="yes"
         ;;
@@ -339,7 +336,7 @@ AC_CACHE_CHECK([whether compiler supports -Wunused-but-set-variable], [ac_cv_gcc
     # We need to add -Werror here or clang doesn't fail (it just warns), even though it doesn't understand the
     # -Wunused-but-set-variable tag
     CFLAGS="$CFLAGS -Werror -Wunused-but-set-variable"
-    AC_TRY_COMPILE([],[return 0;],[ac_cv_gcc_unused_but_set_variable=yes],[ac_cv_gcc_unused_but_set_variable=no])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[return 0;]])],[ac_cv_gcc_unused_but_set_variable=yes],[ac_cv_gcc_unused_but_set_variable=no])
     ])
 AC_MSG_RESULT($ac_cv_gcc_unused_but_set_variable)
 CFLAGS="$saved_CFLAGS"
@@ -353,7 +350,7 @@ gnu)
     AX_CHECK_ARM_NEON([$host],
         [AC_DEFINE([SPANDSP_USE_ARM_NEON], [1], [Use the ARM NEON instruction set])])
     if test "$enable_neon" = "yes" ; then
-        COMP_VENDOR_CFLAGS="-mfpu=neon $COMP_VENDOR_CFLAGS"
+        COMP_VENDOR_CFLAGS="-mfpu=neon -mfloat-abi=hard $COMP_VENDOR_CFLAGS"
     fi
     if test "$enable_avx2" = "yes" ; then
         COMP_VENDOR_CFLAGS="-mavx2 $COMP_VENDOR_CFLAGS"
@@ -553,21 +550,18 @@ AC_CHECK_LIB([tiff], [TIFFCreateCustomDirectory], [
     else
         SPANDSP_SUPPORT_TIFF_FX="#undef SPANDSP_SUPPORT_TIFF_FX"
     fi
-], [SPANDSP_SUPPORT_TIFF_FX="#undef SPANDSP_SUPPORT_TIFF_FX"], -lm)
+    AC_DEFINE([SPANDSP_SUPPORT_T43], [1], [Support T.43 JBIG gray and colour compression])
+    SPANDSP_SUPPORT_T43="#define SPANDSP_SUPPORT_T43 1"
+ ], [SPANDSP_SUPPORT_TIFF_FX="#undef SPANDSP_SUPPORT_TIFF_FX"
+    SPANDSP_SUPPORT_T43="#undef SPANDSP_SUPPORT_T43"
+ ], -lm)
 
 AC_CHECK_HEADERS([jpeglib.h])
-AC_CHECK_LIB([jpeg], [jpeg_start_compress], [JPEG_LIBS="-ljpeg"], AC_MSG_ERROR("Cannot build without libtiff (does your system require a libjpeg-devel or libjpeg-turbo-devel package?)"))
+AC_CHECK_LIB([jpeg], [jpeg_start_compress], [JPEG_LIBS="-ljpeg"], AC_MSG_ERROR("Cannot build without libjpeg (does your system require a libjpeg-devel or libjpeg-turbo-devel package?)"))
 
 LIBS="$LIBS $TIFF_LIBS $JPEG_LIBS"
 
 TESTLIBS="$SIMLIBS $TESTLIBS"
-
-if test "$enable_t43" = "yes" ; then
-    AC_DEFINE([SPANDSP_SUPPORT_T43], [1], [Support T.43 JBIG gray and colour compression])
-    SPANDSP_SUPPORT_T43="#define SPANDSP_SUPPORT_T43 1"
-else
-    SPANDSP_SUPPORT_T43="#undef SPANDSP_SUPPORT_T43"
-fi
 
 if test "$enable_v32bis" = "yes" ; then
     AC_DEFINE([SPANDSP_SUPPORT_V32BIS], [1], [Support the V.32bis modem])
@@ -595,9 +589,8 @@ AM_CONDITIONAL([COND_SSE4_2], [test "$enable_sse4_2" = yes])
 AM_CONDITIONAL([COND_AVX], [test "$enable_avx" = yes])
 AM_CONDITIONAL([COND_AVX2], [test "$enable_avx2" = yes])
 AM_CONDITIONAL([COND_NEON], [test "$enable_neon" = yes])
-
-AM_CONDITIONAL([COND_V32BIS], [test yes = xyes])
-AM_CONDITIONAL([COND_V34], [test yes = xyes])
+AM_CONDITIONAL([COND_V32BIS], [test "$enable_v32bis" = yes])
+AM_CONDITIONAL([COND_V34], [test "$enable_v34" = yes])
 
 AC_SUBST(SPANDSP_LT_CURRENT)
 AC_SUBST(SPANDSP_LT_REVISION)
@@ -636,6 +629,7 @@ AC_CONFIG_FILES([Makefile
                  test-data/local/Makefile
                  tests/Makefile
                  spandsp.pc])
+#                spandsp.spec])
 
 AC_OUTPUT
 

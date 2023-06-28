@@ -199,7 +199,7 @@ static void log_supported_modulations(data_modems_state_t *s, int modulation_sch
     span_log(&s->logging, SPAN_LOG_FLOW, "    ");
     for (i = 0;  i < 32;  i++)
     {
-        if ((modulation_schemes & (1 << i)))
+        if ((modulation_schemes & (1U << i)))
         {
             span_log(&s->logging, SPAN_LOG_FLOW | SPAN_LOG_SUPPRESS_LABELLING, "%s%s", comma, v8_modulation_to_str(modulation_schemes & (1 << i)));
             comma = ", ";
@@ -240,17 +240,17 @@ static void v8_handler(void *user_data, v8_parms_t *result)
     /*endswitch*/
 
     span_log(&s->logging, SPAN_LOG_FLOW, "  Modem connect tone '%s' (%d)\n", modem_connect_tone_to_str(result->modem_connect_tone), result->modem_connect_tone);
-    span_log(&s->logging, SPAN_LOG_FLOW, "  Call function '%s' (%d)\n", v8_call_function_to_str(result->call_function), result->call_function);
-    span_log(&s->logging, SPAN_LOG_FLOW, "  Far end modulations 0x%X\n", result->modulations);
-    log_supported_modulations(s, result->modulations);
-    span_log(&s->logging, SPAN_LOG_FLOW, "  Protocol '%s' (%d)\n", v8_protocol_to_str(result->protocol), result->protocol);
-    span_log(&s->logging, SPAN_LOG_FLOW, "  PSTN access '%s' (%d)\n", v8_pstn_access_to_str(result->pstn_access), result->pstn_access);
-    span_log(&s->logging, SPAN_LOG_FLOW, "  PCM modem availability '%s' (%d)\n", v8_pcm_modem_availability_to_str(result->pcm_modem_availability), result->pcm_modem_availability);
-    if (result->t66 >= 0)
-        span_log(&s->logging, SPAN_LOG_FLOW, "  T.66 '%s' (%d)\n", v8_t66_to_str(result->t66), result->t66);
+    span_log(&s->logging, SPAN_LOG_FLOW, "  Call function '%s' (%d)\n", v8_call_function_to_str(result->jm_cm.call_function), result->jm_cm.call_function);
+    span_log(&s->logging, SPAN_LOG_FLOW, "  Far end modulations 0x%X\n", result->jm_cm.modulations);
+    log_supported_modulations(s, result->jm_cm.modulations);
+    span_log(&s->logging, SPAN_LOG_FLOW, "  Protocol '%s' (%d)\n", v8_protocol_to_str(result->jm_cm.protocols), result->jm_cm.protocols);
+    span_log(&s->logging, SPAN_LOG_FLOW, "  PSTN access '%s' (%d)\n", v8_pstn_access_to_str(result->jm_cm.pstn_access), result->jm_cm.pstn_access);
+    span_log(&s->logging, SPAN_LOG_FLOW, "  PCM modem availability '%s' (%d)\n", v8_pcm_modem_availability_to_str(result->jm_cm.pcm_modem_availability), result->jm_cm.pcm_modem_availability);
+    if (result->jm_cm.t66 >= 0)
+        span_log(&s->logging, SPAN_LOG_FLOW, "  T.66 '%s' (%d)\n", v8_t66_to_str(result->jm_cm.t66), result->jm_cm.t66);
     /*endif*/
-    if (result->nsf >= 0)
-        span_log(&s->logging, SPAN_LOG_FLOW, "  NSF %d\n", result->nsf);
+    if (result->jm_cm.nsf >= 0)
+        span_log(&s->logging, SPAN_LOG_FLOW, "  NSF %d\n", result->jm_cm.nsf);
     /*endif*/
 
     switch (result->status)
@@ -261,41 +261,41 @@ static void v8_handler(void *user_data, v8_parms_t *result)
         /* We now need to edit the offered list of usable modem modulations to reflect
            the set of modulations both ends share */
         //result->call_function = V8_CALL_T30_TX;
-        result->modulations &= (V8_MOD_V21
-                              | V8_MOD_V22
-                              | V8_MOD_V23HDX
-                              | V8_MOD_V23
+        result->jm_cm.modulations &= (V8_MOD_V21
+                                    | V8_MOD_V22
+                                    | V8_MOD_V23HDX
+                                    | V8_MOD_V23
 #if defined(SPANDSP_SUPPORT_V32BIS)
-                              | V8_MOD_V32
+                                    | V8_MOD_V32
 #endif
 #if defined(SPANDSP_SUPPORT_V34)
-                              | V8_MOD_V34
+                                    | V8_MOD_V34
 #endif
-                              | 0);
-        span_log(&s->logging, SPAN_LOG_FLOW, "  Mutual modulations 0x%X\n", result->modulations);
-        log_supported_modulations(s, result->modulations);
+                                    | 0);
+        span_log(&s->logging, SPAN_LOG_FLOW, "  Mutual modulations 0x%X\n", result->jm_cm.modulations);
+        log_supported_modulations(s, result->jm_cm.modulations);
         break;
     case V8_STATUS_V8_CALL:
         span_log(&s->logging, SPAN_LOG_FLOW, "  Call\n");
-        if (result->call_function == V8_CALL_V_SERIES)
+        if (result->jm_cm.call_function == V8_CALL_V_SERIES)
         {
             /* Negotiations OK */
-            if (result->protocol == V8_PROTOCOL_LAPM_V42)
+            if (result->jm_cm.protocols == V8_PROTOCOL_LAPM_V42)
             {
             }
             /*endif*/
 
 #if defined(SPANDSP_SUPPORT_V34)
-            if ((result->modulations & V8_MOD_V34))
+            if ((result->jm_cm.modulations & V8_MOD_V34))
             {
                 s->queued_baud_rate = 2400;
-                s->queued_bit_rate = 28800;
+                s->queued_bit_rate = 21600;
                 s->queued_modem = DATA_MODEM_V34;
             }
             else
 #endif
 #if defined(SPANDSP_SUPPORT_V32BIS)
-            if ((result->modulations & V8_MOD_V32))
+            if ((result->jm_cm.modulations & V8_MOD_V32))
             {
                 s->queued_baud_rate = 2400;
                 s->queued_bit_rate = 14400;
@@ -303,13 +303,13 @@ static void v8_handler(void *user_data, v8_parms_t *result)
             }
             else
 #endif
-            if ((result->modulations & V8_MOD_V22))
+            if ((result->jm_cm.modulations & V8_MOD_V22))
             {
                 s->queued_baud_rate = 600;
                 s->queued_bit_rate = 2400;
                 s->queued_modem = DATA_MODEM_V22BIS;
             }
-            else if ((result->modulations & V8_MOD_V21))
+            else if ((result->jm_cm.modulations & V8_MOD_V21))
             {
                 s->queued_baud_rate = 300;
                 s->queued_bit_rate = 300;
@@ -338,23 +338,40 @@ static void v8_handler(void *user_data, v8_parms_t *result)
 
 SPAN_DECLARE(void) data_modems_set_async_mode(data_modems_state_t *s,
                                               int data_bits,
-                                              int parity_bit,
+                                              int parity,
                                               int stop_bits)
 {
+    s->data_bits = data_bits;
+    s->parity = parity;
+    s->stop_bits = stop_bits;
+
     async_tx_init(&s->async_tx,
-                  data_bits,
-                  parity_bit,
-                  stop_bits,
+                  s->data_bits,
+                  s->parity,
+                  s->stop_bits,
                   s->use_v14,
                   &async_get_byte,
                   s);
     async_rx_init(&s->async_rx,
-                  data_bits,
-                  parity_bit,
-                  stop_bits,
+                  s->data_bits,
+                  s->parity,
+                  s->stop_bits,
                   s->use_v14,
                   &async_put_byte,
                   s);
+    switch (s->current_modem)
+    {
+    case DATA_MODEM_BELL103:
+    case DATA_MODEM_V21:
+    case DATA_MODEM_BELL202:
+    case DATA_MODEM_V23:
+        fsk_rx_set_frame_parameters(&s->modems.fsk.rx,
+                                    s->data_bits,
+                                    s->parity,
+                                    s->stop_bits);
+        break;
+    }
+    /*endswitch*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -401,38 +418,38 @@ SPAN_DECLARE(void) data_modems_set_modem_type(data_modems_state_t *s, int which,
         /*endif*/
         v8_parms.send_ci = false;
         v8_parms.v92 = -1;
-        v8_parms.call_function = V8_CALL_V_SERIES;
+        v8_parms.jm_cm.call_function = V8_CALL_V_SERIES;
 #if 0
-        v8_parms.modulations = V8_MOD_V17
-                             | V8_MOD_V21
-                             | V8_MOD_V22
-                             | V8_MOD_V23HDX
-                             | V8_MOD_V23
-                             | V8_MOD_V27TER
-                             | V8_MOD_V29
+        v8_parms.jm_cm.modulations = V8_MOD_V17
+                                   | V8_MOD_V21
+                                   | V8_MOD_V22
+                                   | V8_MOD_V23HDX
+                                   | V8_MOD_V23
+                                   | V8_MOD_V27TER
+                                   | V8_MOD_V29
 #if defined(SPANDSP_SUPPORT_V34)
-                             | V8_MOD_V34HDX
+                                   | V8_MOD_V34HDX
 #endif
-                             | 0;
-        v8_parms.protocol = V8_PROTOCOL_LAPM_V42;
+                                   | 0;
+        v8_parms.jm_cm.protocols = V8_PROTOCOL_LAPM_V42;
 #elif 1
-        v8_parms.modulations = V8_MOD_V21
-                             | V8_MOD_V22
-                             | V8_MOD_V23HDX
-                             | V8_MOD_V23
+        v8_parms.jm_cm.modulations = V8_MOD_V21
+                                   | V8_MOD_V22
+                                   | V8_MOD_V23HDX
+                                   | V8_MOD_V23
 #if defined(SPANDSP_SUPPORT_V32BIS)
-                             | V8_MOD_V32
+                                   | V8_MOD_V32
 #endif
 #if defined(SPANDSP_SUPPORT_V34)
-                             | V8_MOD_V34
+                                   | V8_MOD_V34
 #endif
-                             | 0;
-        v8_parms.protocol = V8_PROTOCOL_LAPM_V42;
+                                   | 0;
+        v8_parms.jm_cm.protocols = V8_PROTOCOL_LAPM_V42;
 #endif
-        v8_parms.pcm_modem_availability = 0;
-        v8_parms.pstn_access = 0;
-        v8_parms.nsf = -1;
-        v8_parms.t66 = -1;
+        v8_parms.jm_cm.pcm_modem_availability = 0;
+        v8_parms.jm_cm.pstn_access = 0;
+        v8_parms.jm_cm.nsf = -1;
+        v8_parms.jm_cm.t66 = -1;
         v8_init(&s->modems.v8, s->calling_party, &v8_parms, v8_handler, (void *) s);
         logging = v8_get_logging_state(&s->modems.v8);
         level = span_log_get_level(&s->logging);
@@ -456,7 +473,8 @@ SPAN_DECLARE(void) data_modems_set_modem_type(data_modems_state_t *s, int which,
             fsk_tx_spec = &preset_fsk_specs[FSK_BELL103CH2];
         }
         /*endif*/
-        fsk_rx_init(&s->modems.fsk.rx, fsk_rx_spec, FSK_FRAME_MODE_SYNC, s->put_bit, s->put_user_data);
+        fsk_rx_init(&s->modems.fsk.rx, fsk_rx_spec, FSK_FRAME_MODE_FRAMED, s->put_bit, s->put_user_data);
+        fsk_rx_set_frame_parameters(&s->modems.fsk.rx, s->data_bits, s->parity, s->stop_bits);
         fsk_tx_init(&s->modems.fsk.tx, fsk_tx_spec, s->get_bit, s->get_user_data);
         break;
     case DATA_MODEM_V21:
@@ -476,7 +494,8 @@ SPAN_DECLARE(void) data_modems_set_modem_type(data_modems_state_t *s, int which,
             fsk_tx_spec = &preset_fsk_specs[FSK_V21CH2];
         }
         /*endif*/
-        fsk_rx_init(&s->modems.fsk.rx, fsk_rx_spec, FSK_FRAME_MODE_SYNC, s->put_bit, s->put_user_data);
+        fsk_rx_init(&s->modems.fsk.rx, fsk_rx_spec, FSK_FRAME_MODE_FRAMED, s->put_bit, s->put_user_data);
+        fsk_rx_set_frame_parameters(&s->modems.fsk.rx, s->data_bits, s->parity, s->stop_bits);
         fsk_tx_init(&s->modems.fsk.tx, fsk_tx_spec, s->get_bit, s->get_user_data);
         break;
     case DATA_MODEM_BELL202:
@@ -487,7 +506,8 @@ SPAN_DECLARE(void) data_modems_set_modem_type(data_modems_state_t *s, int which,
         s->tx_user_data = &s->modems.fsk.tx;
         fsk_rx_spec = &preset_fsk_specs[FSK_BELL202];
         fsk_tx_spec = &preset_fsk_specs[FSK_BELL202];
-        fsk_rx_init(&s->modems.fsk.rx, fsk_rx_spec, FSK_FRAME_MODE_SYNC, s->put_bit, s->put_user_data);
+        fsk_rx_init(&s->modems.fsk.rx, fsk_rx_spec, FSK_FRAME_MODE_FRAMED, s->put_bit, s->put_user_data);
+        fsk_rx_set_frame_parameters(&s->modems.fsk.rx, s->data_bits, s->parity, s->stop_bits);
         fsk_tx_init(&s->modems.fsk.tx, fsk_tx_spec, s->get_bit, s->get_user_data);
         break;
     case DATA_MODEM_V23:
@@ -507,7 +527,8 @@ SPAN_DECLARE(void) data_modems_set_modem_type(data_modems_state_t *s, int which,
             fsk_tx_spec = &preset_fsk_specs[FSK_V23CH2];
         }
         /*endif*/
-        fsk_rx_init(&s->modems.fsk.rx, fsk_rx_spec, FSK_FRAME_MODE_SYNC, s->put_bit, s->put_user_data);
+        fsk_rx_init(&s->modems.fsk.rx, fsk_rx_spec, FSK_FRAME_MODE_FRAMED, s->put_bit, s->put_user_data);
+        fsk_rx_set_frame_parameters(&s->modems.fsk.rx, s->data_bits, s->parity, s->stop_bits);
         fsk_tx_init(&s->modems.fsk.tx, fsk_tx_spec, s->get_bit, s->get_user_data);
         break;
     case DATA_MODEM_V22BIS:
@@ -646,8 +667,8 @@ SPAN_DECLARE(data_modems_state_t *) data_modems_init(data_modems_state_t *s,
                                                      void *at_tx_user_data,
                                                      data_modems_control_handler_t modem_control_handler,
                                                      void *modem_control_user_data,
-                                                     put_msg_func_t put_msg,
-                                                     get_msg_func_t get_msg,
+                                                     span_put_msg_func_t put_msg,
+                                                     span_get_msg_func_t get_msg,
                                                      void *user_data)
 {
     if (at_tx_handler == NULL  ||  modem_control_handler == NULL)
@@ -675,9 +696,9 @@ SPAN_DECLARE(data_modems_state_t *) data_modems_init(data_modems_state_t *s,
     s->user_data = user_data;
 
     v42bis_init(&s->v42bis, 3, 512, 6, NULL, s, 512, put_msg, s, 512);
-    v42_init(&s->v42, true, true, NULL, (put_msg_func_t) v42bis_decompress, &s->v42bis);
+    v42_init(&s->v42, true, true, NULL, (span_put_msg_func_t) v42bis_decompress, &s->v42bis);
 
-    data_modems_set_async_mode(s, 8, 1, 1);
+    data_modems_set_async_mode(s, 8, ASYNC_PARITY_NONE, 1);
 
     at_init(&s->at_state, at_tx_handler, at_tx_user_data, data_modems_control_handler, s);
 

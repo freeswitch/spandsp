@@ -66,6 +66,7 @@ SPAN_DECLARE(complexi32_t) cvec_dot_prodi16(const complexi16_t x[], const comple
         z.re += ((int32_t) x[i].re*(int32_t) y[i].re - (int32_t) x[i].im*(int32_t) y[i].im);
         z.im += ((int32_t) x[i].re*(int32_t) y[i].im + (int32_t) x[i].im*(int32_t) y[i].re);
     }
+    /*endfor*/
     return z;
 }
 /*- End of function --------------------------------------------------------*/
@@ -81,6 +82,7 @@ SPAN_DECLARE(complexi32_t) cvec_dot_prodi32(const complexi32_t x[], const comple
         z.re += (x[i].re*y[i].re - x[i].im*y[i].im);
         z.im += (x[i].re*y[i].im + x[i].im*y[i].re);
     }
+    /*endfor*/
     return z;
 }
 /*- End of function --------------------------------------------------------*/
@@ -106,6 +108,7 @@ SPAN_DECLARE(void) cvec_lmsi16(const complexi16_t x[], complexi16_t y[], int n, 
         y[i].re += (int16_t) (((int32_t) x[i].im*(int32_t) error->im + (int32_t) x[i].re*(int32_t) error->re) >> 12);
         y[i].im += (int16_t) (((int32_t) x[i].re*(int32_t) error->im - (int32_t) x[i].im*(int32_t) error->re) >> 12);
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 

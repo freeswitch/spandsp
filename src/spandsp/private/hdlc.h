@@ -40,7 +40,7 @@ struct hdlc_rx_state_s
     /*! \brief An opaque parameter passed to the frame callback routine. */
     void *frame_user_data;
     /*! \brief The callback routine called to report status changes. */
-    modem_status_func_t status_handler;
+    span_modem_status_func_t status_handler;
     /*! \brief An opaque parameter passed to the status callback routine. */
     void *status_user_data;
     /*! \brief True if bad frames are to be reported. */

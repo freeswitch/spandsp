@@ -42,9 +42,9 @@ struct modem_connect_tones_tx_state_s
     uint32_t tone_phase;
     int16_t level;
     /*! \brief Countdown to the next phase hop */
-    int hop_timer;
+    span_sample_timer_t hop_timer;
     /*! \brief Maximum duration timer */
-    int duration_timer;
+    span_sample_timer_t duration_timer;
     uint32_t mod_phase;
     int32_t mod_phase_rate;
     int16_t mod_level;
@@ -58,8 +58,9 @@ struct modem_connect_tones_rx_state_s
 {
     /*! \brief The tone type being detected. */
     int tone_type;
+    bool real_time_reports;
     /*! \brief Callback routine, using to report detection of the tone. */
-    tone_report_func_t tone_callback;
+    span_tone_report_func_t tone_callback;
     /*! \brief An opaque pointer passed to tone_callback. */
     void *callback_data;
 

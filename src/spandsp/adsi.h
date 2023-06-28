@@ -406,7 +406,7 @@ SPAN_DECLARE(logging_state_t *) adsi_rx_get_logging_state(adsi_rx_state_t *s);
 */
 SPAN_DECLARE(adsi_rx_state_t *) adsi_rx_init(adsi_rx_state_t *s,
                                              int standard,
-                                             put_msg_func_t put_msg,
+                                             span_put_msg_func_t put_msg,
                                              void *user_data);
 
 /*! \brief Release an ADSI receive context.

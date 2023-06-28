@@ -49,7 +49,9 @@ SPAN_DECLARE(filter_t *) filter_create(fspec_t *fs)
         fi->ptr = 0;
         for (i = 0;  i <= fi->fs->np;  i++)
             fi->v[i] = 0.0;
+        /*endfor*/
     }
+    /*endif*/
     return fi;
 }
 /*- End of function --------------------------------------------------------*/
@@ -58,6 +60,7 @@ SPAN_DECLARE(void) filter_delete(filter_t *fi)
 {
     if (fi)
         span_free(fi);
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -78,13 +81,16 @@ SPAN_DECLARE(cfilter_t *) cfilter_create(fspec_t *fs)
             span_free(cfi);
             return NULL;
         }
+        /*endif*/
         if ((cfi->imf = filter_create(fs)) == NULL)
         {
             span_free(cfi->ref);
             span_free(cfi);
             return NULL;
         }
+        /*endif*/
     }
+    /*endif*/
     return cfi;
 }
 /*- End of function --------------------------------------------------------*/
@@ -96,6 +102,7 @@ SPAN_DECLARE(void) cfilter_delete(cfilter_t *cfi)
         filter_delete(cfi->ref);
         filter_delete(cfi->imf);
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 

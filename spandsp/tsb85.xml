@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <!DOCTYPE fax-tests SYSTEM "./fax-tests.dtd">
 <fax-tests>
-<config>
+  <config>
     <path type="IMAGE" value="../test-data/etsi/fax"/>
-</config>
-<messages>
+  </config>
+  <messages>
     <!-- TCF = 2700 bytes at 14400, 2250 at 12000, 1800 at 9600, 1350 at 7200, 900 at 4800 or 450 at 2400 -->
     <!-- Bad TCF == 10101010.... -->
     <!-- slow HDLC preamble == 37 flag bytes -->
@@ -16,8 +16,8 @@
     <!-- STAIRSTEP image is 1728x1728 pixels. It is about 15k, so an average of 68.2 bits per row. To
          cook it as a 31k page requires a min_bits of 141. To cook it as a 63k page requires a min_bits of
          286. To cook it as a 64k page requires a min_bits of 291 -->
-</messages>
-<test-group name="Annex A - Receive test procedures">
+  </messages>
+  <test-group name="Annex A - Receive test procedures">
     <test name="MRGN01">
         <!-- Tester calls DUT and sends 2 WHITE pages. DUT should send CSI for this test procedure. -->
         <step type="CALL"/>
@@ -1174,8 +1174,8 @@
         <step dir="R" type="CLEAR" timein="0" timeout="100"/>
         <step type="STATUS" value="OK"/>
     </test>
-</test-group>
-<test-group name="Annex B - Capability receive test procedures">
+  </test-group>
+  <test-group name="Annex B - Capability receive test procedures">
     <test name="ORGC01">
         <!-- Tester calls DUT and sends DIAG_1 and DIAG_2 pages. -->
         <step type="CALL"/>
@@ -1313,8 +1313,8 @@
         <step dir="R" type="CLEAR" timein="0" timeout="100"/>
         <step type="STATUS" value="OK"/>
     </test>
-</test-group>
-<test-group name="Annex C - ECM receive test procedures">
+  </test-group>
+  <test-group name="Annex C - ECM receive test procedures">
     <test name="OREN01">
         <!-- Tester calls DUT and sends one 31k byte STAIRSTEP page and one 15k byte STAIRSTEP page. -->
         <step type="CALL"/>
@@ -2389,8 +2389,8 @@
         <step dir="R" type="CLEAR" timein="0" timeout="100"/>
         <step type="STATUS" value="OK"/>
     </test>
-</test-group>
-<test-group name="Annex D - Exception receive test procedures">
+  </test-group>
+  <test-group name="Annex D - Exception receive test procedures">
     <test name="MRGX01">
         <!-- Tester calls DUT -->
         <step type="CALL"/>
@@ -2937,8 +2937,8 @@
         <step dir="R" type="CLEAR" timein="0" timeout="100"/>
         <step type="STATUS" value="OK"/>
     </test>
-</test-group>
-<test-group name="Annex E - Polling receive test procedures">
+  </test-group>
+  <test-group name="Annex E - Polling receive test procedures">
     <test name="MTGP01">
         <!-- DUT is set up for polling reception. DUT calls tester. -->
         <step type="ANSWER"/>
@@ -3076,8 +3076,8 @@
         <step dir="R" type="CLEAR" timein="0" timeout="100"/>
         <step type="STATUS" value="OK"/>
     </test>
-</test-group>
-<test-group name="Annex F - Transmit test procedures">
+  </test-group>
+  <test-group name="Annex F - Transmit test procedures">
     <test name="MTGN01">
         <!-- DUT calls tester and sends 1 IMPRESS and 1 WHITE page. DUT should send CNG and TSI. -->
         <step type="ANSWER" value="etsi_300_242_a4_impress_white.tif"/>
@@ -4329,8 +4329,8 @@
         <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
         <step type="STATUS" value="OK"/>
     </test>
-</test-group>
-<test-group name="Annex G - Capability transmit tests">
+  </test-group>
+  <test-group name="Annex G - Capability transmit tests">
     <test name="OTGC01">
         <!-- DUT calls tester and sends 1 IMPRESS and 1 WHITE page. -->
         <step type="ANSWER" value="etsi_300_242_a4_impress_white.tif"/>
@@ -5300,8 +5300,8 @@
         <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
         <step type="STATUS" value="OK"/>
     </test>
-</test-group>
-<test-group name="Annex H - ECM transmit test procedures">
+  </test-group>
+  <test-group name="Annex H - ECM transmit test procedures">
     <test name="OTEN01">
         <!-- DUT calls tester and sends 1 IMPRESS and 1 WHITE page. -->
         <step type="ANSWER" value="etsi_300_242_a4_impress_white.tif"/>
@@ -5695,8 +5695,8 @@
         <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
         <step type="STATUS" value="OK"/>
     </test>
-</test-group>
-<test-group name="Annex I - Exception transmit test procedures">
+  </test-group>
+  <test-group name="Annex I - Exception transmit test procedures">
     <test name="MTGX01">
         <!-- DUT calls tester and is prepared to send 1 WHITE page. Tester sends CED/DIS
              29999ms after going off hook -->
@@ -6560,8 +6560,8 @@
         <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
         <step type="STATUS" value="OK"/>
     </test>
-</test-group>
-<test-group name="Annex J - Polling transmit test procedures">
+  </test-group>
+  <test-group name="Annex J - Polling transmit test procedures">
     <test name="MRGP01">
         <!-- DUT has been prepared with 2 WHITE pages, which are available for polling without a password. Tester calls DUT.
              DUT should send TSI for this test procedure. -->
@@ -6996,5 +6996,5 @@
         <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
         <step type="STATUS" value="OK"/>
     </test>
-</test-group>
+  </test-group>
 </fax-tests>

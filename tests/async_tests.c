@@ -67,40 +67,46 @@ int v14_test_async_tx_get_bit(void *user_data)
     s = (async_tx_state_t *) user_data;
     if (s->bitpos == 0)
     {
-        s->byte_in_progress = s->get_byte(s->user_data);
-        s->byte_in_progress &= (0xFFFF >> (16 - s->data_bits));
+        s->frame_in_progress = s->get_byte(s->user_data);
+        s->frame_in_progress &= (0xFFFF >> (16 - s->data_bits));
         if (s->parity)
         {
-            parity_bit = parity8(s->byte_in_progress);
+            parity_bit = parity8(s->frame_in_progress);
             if (s->parity == ASYNC_PARITY_ODD)
                 parity_bit ^= 1;
-            s->byte_in_progress |= (parity_bit << s->data_bits);
-            s->byte_in_progress |= (0xFFFF << (s->data_bits + 1));
+            /*endif*/
+            s->frame_in_progress |= (parity_bit << s->data_bits);
+            s->frame_in_progress |= (0xFFFF << (s->data_bits + 1));
         }
         else
         {
-            s->byte_in_progress |= (0xFFFF << s->data_bits);
+            s->frame_in_progress |= (0xFFFF << s->data_bits);
         }
+        /*endif*/
         /* Start bit */
         bit = 0;
         s->bitpos++;
     }
     else
     {
-        bit = s->byte_in_progress & 1;
-        s->byte_in_progress >>= 1;
+        bit = s->frame_in_progress & 1;
+        s->frame_in_progress >>= 1;
         /* Drop the stop bit on every fourth character for V.14 simulation */
         if ((++destuff & 3) == 0)
         {
             if (++s->bitpos > s->total_bits - 1)
                 s->bitpos = 0;
+            /*endif*/
         }
         else
         {
             if (++s->bitpos > s->total_bits)
                 s->bitpos = 0;
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endif*/
     return bit;
 }
 /*- End of function --------------------------------------------------------*/
@@ -119,6 +125,7 @@ static void test_put_async_byte(void *user_data, int byte)
 {
     if ((rx_async_chars & rx_async_char_mask) != byte)
         printf("Received byte is 0x%X (expected 0x%X)\n", byte, rx_async_chars);
+    /*endif*/
     rx_async_chars++;
 }
 /*- End of function --------------------------------------------------------*/
@@ -138,6 +145,7 @@ int main(int argc, char *argv[])
         bit = async_tx_get_bit(&tx_async);
         async_rx_put_bit(&rx_async, bit);
     }
+    /*endwhile*/
     printf("Chars=%d/%d, PE=%d, FE=%d\n", tx_async_chars, rx_async_chars, rx_async.parity_errors, rx_async.framing_errors);
     if (tx_async_chars != rx_async_chars
         ||
@@ -148,6 +156,55 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    /*endif*/
+
+    printf("Test with async 8M1\n");
+    async_tx_init(&tx_async, 8, ASYNC_PARITY_MARK, 1, false, test_get_async_byte, NULL);
+    async_rx_init(&rx_async, 8, ASYNC_PARITY_MARK, 1, false, test_put_async_byte, NULL);
+    tx_async_chars = 0;
+    rx_async_chars = 0;
+    rx_async_char_mask = 0xFF;
+    while (rx_async_chars < 1000)
+    {
+        bit = async_tx_get_bit(&tx_async);
+        async_rx_put_bit(&rx_async, bit);
+    }
+    /*endwhile*/
+    printf("Chars=%d/%d, PE=%d, FE=%d\n", tx_async_chars, rx_async_chars, rx_async.parity_errors, rx_async.framing_errors);
+    if (tx_async_chars != rx_async_chars
+        ||
+        rx_async.parity_errors
+        ||
+        rx_async.framing_errors)
+    {
+        printf("Test failed.\n");
+        exit(2);
+    }
+    /*endif*/
+
+    printf("Test with async 8S1\n");
+    async_tx_init(&tx_async, 8, ASYNC_PARITY_SPACE, 1, false, test_get_async_byte, NULL);
+    async_rx_init(&rx_async, 8, ASYNC_PARITY_SPACE, 1, false, test_put_async_byte, NULL);
+    tx_async_chars = 0;
+    rx_async_chars = 0;
+    rx_async_char_mask = 0xFF;
+    while (rx_async_chars < 1000)
+    {
+        bit = async_tx_get_bit(&tx_async);
+        async_rx_put_bit(&rx_async, bit);
+    }
+    /*endwhile*/
+    printf("Chars=%d/%d, PE=%d, FE=%d\n", tx_async_chars, rx_async_chars, rx_async.parity_errors, rx_async.framing_errors);
+    if (tx_async_chars != rx_async_chars
+        ||
+        rx_async.parity_errors
+        ||
+        rx_async.framing_errors)
+    {
+        printf("Test failed.\n");
+        exit(2);
+    }
+    /*endif*/
 
     printf("Test with async 7E1\n");
     async_tx_init(&tx_async, 7, ASYNC_PARITY_EVEN, 1, false, test_get_async_byte, NULL);
@@ -160,6 +217,7 @@ int main(int argc, char *argv[])
         bit = async_tx_get_bit(&tx_async);
         async_rx_put_bit(&rx_async, bit);
     }
+    /*endwhile*/
     printf("Chars=%d/%d, PE=%d, FE=%d\n", tx_async_chars, rx_async_chars, rx_async.parity_errors, rx_async.framing_errors);
     if (tx_async_chars != rx_async_chars
         ||
@@ -170,6 +228,7 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    /*endif*/
 
     printf("Test with async 8O1\n");
     async_tx_init(&tx_async, 8, ASYNC_PARITY_ODD, 1, false, test_get_async_byte, NULL);
@@ -182,6 +241,7 @@ int main(int argc, char *argv[])
         bit = async_tx_get_bit(&tx_async);
         async_rx_put_bit(&rx_async, bit);
     }
+    /*endwhile*/
     printf("Chars=%d/%d, PE=%d, FE=%d\n", tx_async_chars, rx_async_chars, rx_async.parity_errors, rx_async.framing_errors);
     if (tx_async_chars != rx_async_chars
         ||
@@ -192,6 +252,7 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    /*endif*/
 
     printf("Test with async 8O1 and V.14\n");
     async_tx_init(&tx_async, 8, ASYNC_PARITY_ODD, 1, true, test_get_async_byte, NULL);
@@ -204,6 +265,7 @@ int main(int argc, char *argv[])
         bit = v14_test_async_tx_get_bit(&tx_async);
         async_rx_put_bit(&rx_async, bit);
     }
+    /*endwhile*/
     printf("Chars=%d/%d, PE=%d, FE=%d\n", tx_async_chars, rx_async_chars, rx_async.parity_errors, rx_async.framing_errors);
     if (tx_async_chars != rx_async_chars
         ||
@@ -214,6 +276,7 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    /*endif*/
 
     printf("Test with async 5N2\n");
     async_tx_init(&tx_async, 5, ASYNC_PARITY_NONE, 2, false, test_get_async_byte, NULL);
@@ -226,6 +289,7 @@ int main(int argc, char *argv[])
         bit = async_tx_get_bit(&tx_async);
         async_rx_put_bit(&rx_async, bit);
     }
+    /*endwhile*/
     printf("Chars=%d/%d, PE=%d, FE=%d\n", tx_async_chars, rx_async_chars, rx_async.parity_errors, rx_async.framing_errors);
     if (tx_async_chars != rx_async_chars
         ||
@@ -236,6 +300,7 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    /*endif*/
 
     printf("Tests passed.\n");
     return 0;

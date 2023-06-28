@@ -83,6 +83,7 @@ SPAN_DECLARE(bool) span_log_test(logging_state_t *s, int level)
 {
     if (s  &&  (s->level & SPAN_LOG_SEVERITY_MASK) >= (level & SPAN_LOG_SEVERITY_MASK))
         return true;
+    /*endif*/
     return false;
 }
 /*- End of function --------------------------------------------------------*/
@@ -168,11 +169,14 @@ SPAN_DECLARE(int) span_log_buf(logging_state_t *s, int level, const char *tag, c
         msg_len = 0;
         if (tag)
             msg_len += snprintf(msg + msg_len, 1024 - msg_len, "%s", tag);
+        /*endif*/
         for (i = 0;  i < len  &&  msg_len < 800;  i++)
             msg_len += snprintf(msg + msg_len, 1024 - msg_len, " %02x", buf[i]);
+        /*endfor*/
         snprintf(msg + msg_len, 1024 - msg_len, "\n");
         return span_log(s, level, msg);
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -235,6 +239,14 @@ SPAN_DECLARE(int) span_log_bump_samples(logging_state_t *s, int samples)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(int) span_log_bump_time(logging_state_t *s, int milliseconds)
+{
+    s->elapsed_samples += 8*milliseconds;
+
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(void) span_log_set_message_handler(logging_state_t *s, message_handler_func_t func, void *user_data)
 {
     s->span_message = func;
@@ -255,7 +267,9 @@ SPAN_DECLARE(logging_state_t *) span_log_init(logging_state_t *s, int level, con
     {
         if ((s = (logging_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     s->span_message = __span_message;
     s->level = level;
     s->tag = tag;
@@ -277,6 +291,7 @@ SPAN_DECLARE(int) span_log_free(logging_state_t *s)
 {
     if (s)
         span_free(s);
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

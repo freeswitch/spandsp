@@ -195,7 +195,7 @@ static __inline__ int diff_and_convolutional_encode(v17_tx_state_t *s, int q)
         {2, 3, 0, 1},
         {3, 0, 1, 2}
     };
-    static const uint8_t v17_convolutional_coder[8][4] =
+    static const uint8_t v17_convolutional_encoder[8][4] =
     {
         {0, 2, 3, 1},
         {4, 7, 5, 6},
@@ -218,7 +218,7 @@ static __inline__ int diff_and_convolutional_encode(v17_tx_state_t *s, int q)
     s->diff = v17_differential_encoder[s->diff][q & 0x03];
 
     /* Convolutionally encode the redundant bit */
-    s->convolution = v17_convolutional_coder[s->convolution][s->diff];
+    s->convolution = v17_convolutional_encoder[s->convolution][s->diff];
 
     /* The final result is the combination of some uncoded bits, 2 differentially
        encoded bits, and the convolutionally encoded redundant bit. */
@@ -366,7 +366,7 @@ SPAN_DECLARE(void) v17_tx_power(v17_tx_state_t *s, float power)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) v17_tx_set_get_bit(v17_tx_state_t *s, get_bit_func_t get_bit, void *user_data)
+SPAN_DECLARE(void) v17_tx_set_get_bit(v17_tx_state_t *s, span_get_bit_func_t get_bit, void *user_data)
 {
     if (s->get_bit == s->current_get_bit)
         s->current_get_bit = get_bit;
@@ -375,7 +375,7 @@ SPAN_DECLARE(void) v17_tx_set_get_bit(v17_tx_state_t *s, get_bit_func_t get_bit,
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) v17_tx_set_modem_status_handler(v17_tx_state_t *s, modem_status_func_t handler, void *user_data)
+SPAN_DECLARE(void) v17_tx_set_modem_status_handler(v17_tx_state_t *s, span_modem_status_func_t handler, void *user_data)
 {
     s->status_handler = handler;
     s->status_user_data = user_data;
@@ -441,7 +441,7 @@ SPAN_DECLARE(int) v17_tx_restart(v17_tx_state_t *s, int bit_rate, bool tep, bool
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(v17_tx_state_t *) v17_tx_init(v17_tx_state_t *s, int bit_rate, bool tep, get_bit_func_t get_bit, void *user_data)
+SPAN_DECLARE(v17_tx_state_t *) v17_tx_init(v17_tx_state_t *s, int bit_rate, bool tep, span_get_bit_func_t get_bit, void *user_data)
 {
     switch (bit_rate)
     {

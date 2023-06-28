@@ -53,7 +53,7 @@ executive override tone, confirmation tone).
 */
 
 /*! Tone detection indication callback routine */
-typedef void (*tone_report_func_t)(void *user_data, int code, int level, int delay);
+typedef void (*span_tone_report_func_t)(void *user_data, int code, int level, int delay);
 
 typedef void (*tone_segment_func_t)(void *data, int f1, int f2, int duration);
 
@@ -112,7 +112,7 @@ SPAN_DECLARE(int) super_tone_rx_add_element(super_tone_rx_descriptor_t *desc,
 */
 SPAN_DECLARE(super_tone_rx_state_t *) super_tone_rx_init(super_tone_rx_state_t *s,
                                                          super_tone_rx_descriptor_t *desc,
-                                                         tone_report_func_t callback,
+                                                         span_tone_report_func_t callback,
                                                          void *user_data);
 
 /*! Release a supervisory tone detector.
@@ -135,7 +135,7 @@ SPAN_DECLARE(int) super_tone_rx_free(super_tone_rx_state_t *s);
     \param user_data An opaque pointer passed when calling the callback routine.
 */
 SPAN_DECLARE(void) super_tone_rx_tone_callback(super_tone_rx_state_t *s,
-                                               tone_report_func_t callback,
+                                               span_tone_report_func_t callback,
                                                void *user_data);
 
 /*! Define a callback routine to be called each time a tone pattern element is complete. This is

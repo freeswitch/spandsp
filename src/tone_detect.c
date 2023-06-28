@@ -75,7 +75,9 @@ SPAN_DECLARE(goertzel_state_t *) goertzel_init(goertzel_state_t *s,
     {
         if ((s = (goertzel_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
 #if defined(SPANDSP_USE_FIXED_POINT)
     s->v2 =
     s->v3 = 0;
@@ -100,6 +102,7 @@ SPAN_DECLARE(int) goertzel_free(goertzel_state_t *s)
 {
     if (s)
         span_free(s);
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -131,6 +134,7 @@ SPAN_DECLARE(int) goertzel_update(goertzel_state_t *s,
 
     if (samples > s->samples - s->current_sample)
         samples = s->samples - s->current_sample;
+    /*endif*/
     for (i = 0;  i < samples;  i++)
     {
         v1 = s->v2;
@@ -214,6 +218,7 @@ SPAN_DECLARE(complexf_t) periodogram(const complexf_t coeffs[], const complexf_t
         x.re += (coeffs[i].re*sum.re - coeffs[i].im*diff.im);
         x.im += (coeffs[i].re*sum.im + coeffs[i].im*diff.re);
     }
+    /*endfor*/
     return x;
 }
 /*- End of function --------------------------------------------------------*/
@@ -227,6 +232,7 @@ SPAN_DECLARE(int) periodogram_prepare(complexf_t sum[], complexf_t diff[], const
         sum[i] = complex_addf(&amp[i], &amp[len - 1 - i]);
         diff[i] = complex_subf(&amp[i], &amp[len - 1 - i]);
     }
+    /*endfor*/
     return len/2;
 }
 /*- End of function --------------------------------------------------------*/
@@ -242,6 +248,7 @@ SPAN_DECLARE(complexf_t) periodogram_apply(const complexf_t coeffs[], const comp
         x.re += (coeffs[i].re*sum[i].re - coeffs[i].im*diff[i].im);
         x.im += (coeffs[i].re*sum[i].im + coeffs[i].im*diff[i].re);
     }
+    /*endfor*/
     return x;
 }
 /*- End of function --------------------------------------------------------*/
@@ -263,6 +270,7 @@ SPAN_DECLARE(int) periodogram_generate_coeffs(complexf_t coeffs[], float freq, i
         coeffs[i].im = -sinf(x)*window;
         sum += window;
     }
+    /*endfor*/
     /* Rescale for unity gain in the periodogram. The 2.0 factor is to allow for the full window,
        rather than just the half over which we have summed the coefficients. */
     sum = 1.0f/(2.0f*sum);
@@ -271,6 +279,7 @@ SPAN_DECLARE(int) periodogram_generate_coeffs(complexf_t coeffs[], float freq, i
         coeffs[i].re *= sum;
         coeffs[i].im *= sum;
     }
+    /*endfor*/
     return window_len/2;
 }
 /*- End of function --------------------------------------------------------*/

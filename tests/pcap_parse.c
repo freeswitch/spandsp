@@ -52,10 +52,13 @@
 
 #include <netinet/in.h>
 #include <netinet/udp.h>
+#include <arpa/inet.h>
 #include <time.h>
 
-#include "udptl.h"
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+
 #include "spandsp.h"
+#include "udptl.h"
 #include "pcap_parse.h"
 
 #if defined(__HPUX)  ||  defined(__DARWIN)  ||  defined(__CYGWIN__)  ||  defined(__FreeBSD__)
@@ -113,10 +116,11 @@ typedef struct _ipv6_hdr
 char errbuf[PCAP_ERRBUF_SIZE];
 
 int pcap_scan_pkts(const char *file,
-                   uint32_t src_addr,
+                   const uint8_t src_addr[INET6_ADDRSTRLEN],
                    uint16_t src_port,
-                   uint32_t dest_addr,
+                   const uint8_t dest_addr[INET6_ADDRSTRLEN],
                    uint16_t dest_port,
+                   bool bothways,
                    pcap_timing_update_handler_t *timing_update_handler,
                    pcap_packet_handler_t *packet_handler,
                    void *user_data)
@@ -139,14 +143,23 @@ int pcap_scan_pkts(const char *file,
     struct udphdr *udphdr;
     int datalink;
     int packet_type;
+    struct in_addr *in;
+    uint32_t src_addr_uint32;
+    uint32_t dest_addr_uint32;
+    bool forward;
+
+    in = (struct in_addr *) src_addr;
+    src_addr_uint32 = in->s_addr;
+    in = (struct in_addr *) dest_addr;
+    dest_addr_uint32 = in->s_addr;
 
     total_pkts = 0;
-    if ((pcap = pcap_open_offline(file, errbuf)) == NULL)
+    if ((pcap = pcap_open_offline_with_tstamp_precision(file, PCAP_TSTAMP_PRECISION_NANO, errbuf)) == NULL)
     {
         fprintf(stderr, "Can't open PCAP file: %s\n", errbuf);
         return -1;
     }
-    //printf("PCAP file version %d.%d\n", pcap_major_version(pcap), pcap_minor_version(pcap));
+    printf("PCAP file version %d.%d\n", pcap_major_version(pcap), pcap_minor_version(pcap));
     datalink = pcap_datalink(pcap);
     /* DLT_EN10MB seems to apply to all forms of ethernet, not just the 10MB kind. */
     switch (datalink)
@@ -269,25 +282,53 @@ int pcap_scan_pkts(const char *file,
 #endif
         }
 
-        timing_update_handler(user_data, &pkthdr->ts);
+        /* Update timing on any packet, even if its not part of the stream being inspected */
+        if (timing_update_handler)
+            timing_update_handler(user_data, &pkthdr->ts);
 
-        if (src_addr  &&  ntohl(iphdr->saddr) != src_addr)
-            continue;
+        if ((src_addr_uint32 == 0  ||  src_addr_uint32 == iphdr->saddr)
+            &&
 #if defined(__DARWIN)  ||  defined(__CYGWIN__)  ||  defined(__FreeBSD__)
-        if (src_port  &&  ntohs(udphdr->uh_sport) != src_port)
+            (src_port == 0  ||  src_port == ntohs(udphdr->uh_sport))
 #else
-        if (src_port  &&  ntohs(udphdr->source) != src_port)
+            (src_port == 0  ||  src_port == ntohs(udphdr->source))
 #endif
-            continue;
-        if (dest_addr  &&  ntohl(iphdr->daddr) != dest_addr)
-            continue;
+            &&
+            (dest_addr_uint32 == 0  ||  dest_addr_uint32 == iphdr->daddr)
+            &&
 #if defined(__DARWIN)  ||  defined(__CYGWIN__)  ||  defined(__FreeBSD__)
-        if (dest_port  &&  ntohs(udphdr->uh_dport) != dest_port)
+            (dest_port == 0  ||  dest_port == ntohs(udphdr->uh+_dport)))
 #else
-        if (dest_port  &&  ntohs(udphdr->dest) != dest_port)
+            (dest_port == 0  ||  dest_port == ntohs(udphdr->dest)))
 #endif
+        {
+            forward = true;
+        }
+        else if (bothways
+                 &&
+                 (dest_addr_uint32 == 0  ||  dest_addr_uint32 == iphdr->saddr)
+                 &&
+#if defined(__DARWIN)  ||  defined(__CYGWIN__)  ||  defined(__FreeBSD__)
+                 (dest_port == 0  ||  dest_port == ntohs(udphdr->uh_sport)
+#else
+                 (dest_port == 0  ||  dest_port == ntohs(udphdr->source))
+#endif
+                 &&
+                 (src_addr_uint32 == 0  ||  src_addr_uint32 == iphdr->daddr)
+                 &&
+#if defined(__DARWIN)  ||  defined(__CYGWIN__)  ||  defined(__FreeBSD__)
+                 (src_port == 0  ||  src_port == ntohs(udphdr->uh_dport)))
+#else
+                 (src_port == 0  ||  src_port == ntohs(udphdr->dest)))
+#endif
+        {
+            forward = false;
+        }
+        else
+        {
             continue;
-
+        }
+        /*endif*/
         if (pkthdr->len != pkthdr->caplen)
         {
             fprintf(stderr, "Truncated packet - total len = %d, captured len = %d\n", pkthdr->len, pkthdr->caplen);
@@ -299,7 +340,8 @@ int pcap_scan_pkts(const char *file,
         body = (const uint8_t *) udphdr;
         body += sizeof(struct udphdr);
         body_len = pktlen - sizeof(struct udphdr);
-        packet_handler(user_data, body, body_len);
+        if (packet_handler)
+            packet_handler(user_data, body, body_len, forward);
 
         total_pkts++;
     }

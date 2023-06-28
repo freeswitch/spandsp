@@ -196,8 +196,8 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
     {
         constel_point.re = constel->re/V17_CONSTELLATION_SCALING_FACTOR;
         constel_point.im = constel->im/V17_CONSTELLATION_SCALING_FACTOR;
-        target_point.re = target->re/V17_CONSTELLATION_SCALING_FACTOR,
-        target_point.im = target->im/V17_CONSTELLATION_SCALING_FACTOR,
+        target_point.re = target->re/V17_CONSTELLATION_SCALING_FACTOR;
+        target_point.im = target->im/V17_CONSTELLATION_SCALING_FACTOR;
         fpower = (constel_point.re - target_point.re)*(constel_point.re - target_point.re)
                + (constel_point.im - target_point.im)*(constel_point.im - target_point.im);
         smooth_power = 0.95f*smooth_power + 0.05f*fpower;

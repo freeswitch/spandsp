@@ -66,11 +66,15 @@ SPAN_DECLARE(int) silence_gen(silence_gen_state_t *s, int16_t *amp, int max_len)
             max_len = s->remaining_samples;
             if (max_len  &&  s->status_handler)
                 s->status_handler(s->status_user_data, SIG_STATUS_SHUTDOWN_COMPLETE);
+            /*endif*/
         }
+        /*endif*/
         s->remaining_samples -= max_len;
     }
+    /*endif*/
     if (INT_MAX - s->total_samples >= max_len)
         s->total_samples += max_len;
+    /*endif*/
     memset(amp, 0, max_len*sizeof(int16_t));
     return max_len;
 }
@@ -82,52 +86,56 @@ SPAN_DECLARE(void) silence_gen_always(silence_gen_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) silence_gen_set(silence_gen_state_t *s, int silent_samples)
+SPAN_DECLARE(void) silence_gen_set(silence_gen_state_t *s, span_sample_timer_t silent_samples)
 {
     s->remaining_samples = silent_samples;
     s->total_samples = 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) silence_gen_alter(silence_gen_state_t *s, int silent_samples)
+SPAN_DECLARE(void) silence_gen_alter(silence_gen_state_t *s, span_sample_timer_t silent_samples)
 {
     /* Block negative silences */
     if (silent_samples < 0)
     {
         if (-silent_samples > s->remaining_samples)
             silent_samples = -s->remaining_samples;
+        /*endif*/
     }
+    /*endif*/
     s->remaining_samples += silent_samples;
     s->total_samples += silent_samples;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) silence_gen_remainder(silence_gen_state_t *s)
+SPAN_DECLARE(span_sample_timer_t) silence_gen_remainder(silence_gen_state_t *s)
 {
     return s->remaining_samples;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) silence_gen_generated(silence_gen_state_t *s)
+SPAN_DECLARE(span_sample_timer_t) silence_gen_generated(silence_gen_state_t *s)
 {
     return s->total_samples;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) silence_gen_status_handler(silence_gen_state_t *s, modem_status_func_t handler, void *user_data)
+SPAN_DECLARE(void) silence_gen_status_handler(silence_gen_state_t *s, span_modem_status_func_t handler, void *user_data)
 {
     s->status_handler = handler;
     s->status_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(silence_gen_state_t *) silence_gen_init(silence_gen_state_t *s, int silent_samples)
+SPAN_DECLARE(silence_gen_state_t *) silence_gen_init(silence_gen_state_t *s, span_sample_timer_t silent_samples)
 {
     if (s == NULL)
     {
         if ((s = (silence_gen_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     s->remaining_samples = silent_samples;
     return s;
@@ -144,6 +152,7 @@ SPAN_DECLARE(int) silence_gen_free(silence_gen_state_t *s)
 {
     if (s)
         span_free(s);
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

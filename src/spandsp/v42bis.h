@@ -121,10 +121,10 @@ SPAN_DECLARE(v42bis_state_t *) v42bis_init(v42bis_state_t *s,
                                            int negotiated_p0,
                                            int negotiated_p1,
                                            int negotiated_p2,
-                                           put_msg_func_t encode_handler,
+                                           span_put_msg_func_t encode_handler,
                                            void *encode_user_data,
                                            int max_encode_len,
-                                           put_msg_func_t decode_handler,
+                                           span_put_msg_func_t decode_handler,
                                            void *decode_user_data,
                                            int max_decode_len);
 

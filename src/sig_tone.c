@@ -139,13 +139,13 @@ static const sig_tone_descriptor_t sig_tones[3] =
     {
         /* 2280Hz (e.g. AC15, and many other European protocols) */
         {2280,  0},
-        {{-10, -20}, {0, 0}},       /* -10+-1 dBm0 and -20+-1 dBm0 */
-        ms_to_samples(400),         /* High to low timout - 300ms to 550ms */
-        ms_to_samples(225),         /* Sharp to flat timeout */
-        ms_to_samples(225),         /* Notch insertion timeout */
+        {{-10, -20}, {0, 0}},               /* -10+-1 dBm0 and -20+-1 dBm0 */
+        milliseconds_to_samples(400),       /* High to low timout - 300ms to 550ms */
+        milliseconds_to_samples(225),       /* Sharp to flat timeout */
+        milliseconds_to_samples(225),       /* Notch insertion timeout */
 
-        ms_to_samples(3),           /* Tone on persistence check */
-        ms_to_samples(8),           /* Tone off persistence check */
+        milliseconds_to_samples(3),         /* Tone on persistence check */
+        milliseconds_to_samples(8),         /* Tone off persistence check */
 
         1,
         {
@@ -168,12 +168,12 @@ static const sig_tone_descriptor_t sig_tones[3] =
         /* 2600Hz (e.g. many US protocols) */
         {2600, 0},
         {{-8, -8}, {0, 0}},
-        ms_to_samples(0),
-        ms_to_samples(0),
-        ms_to_samples(225),
+        milliseconds_to_samples(0),
+        milliseconds_to_samples(0),
+        milliseconds_to_samples(225),
 
-        ms_to_samples(3),
-        ms_to_samples(8),
+        milliseconds_to_samples(3),
+        milliseconds_to_samples(8),
 
         1,
         {
@@ -196,12 +196,12 @@ static const sig_tone_descriptor_t sig_tones[3] =
         /* 2400Hz/2600Hz (e.g. SS5 and SS5bis) */
         {2400, 2600},
         {{-8, -8}, {-8, -8}},
-        ms_to_samples(0),
-        ms_to_samples(0),
-        ms_to_samples(225),
+        milliseconds_to_samples(0),
+        milliseconds_to_samples(0),
+        milliseconds_to_samples(225),
 
-        ms_to_samples(3),
-        ms_to_samples(8),
+        milliseconds_to_samples(3),
+        milliseconds_to_samples(8),
 
         2,
         {
@@ -267,6 +267,7 @@ SPAN_DECLARE(int) sig_tone_tx(sig_tone_tx_state_t *s, int16_t amp[], int len)
                 n = len - i;
                 need_update = false;
             }
+            /*endif*/
             s->current_tx_timeout -= n;
         }
         else
@@ -274,6 +275,7 @@ SPAN_DECLARE(int) sig_tone_tx(sig_tone_tx_state_t *s, int16_t amp[], int len)
             n = len - i;
             need_update = false;
         }
+        /*endif*/
         if (!(s->current_tx_tone & SIG_TONE_TX_PASSTHROUGH))
             vec_zeroi16(&amp[i], n);
         /*endif*/
@@ -288,6 +290,7 @@ SPAN_DECLARE(int) sig_tone_tx(sig_tone_tx_state_t *s, int16_t amp[], int len)
             {
                 if (n > s->high_low_timer)
                     n = s->high_low_timer;
+                /*endif*/
                 s->high_low_timer -= n;
                 high_low = 0;
             }
@@ -333,14 +336,16 @@ SPAN_DECLARE(void) sig_tone_tx_set_mode(sig_tone_tx_state_t *s, int mode, int du
     /* If a tone is being turned on, let's start the phase from zero */
     if ((mode & SIG_TONE_1_PRESENT)  &&  !(s->current_tx_tone & SIG_TONE_1_PRESENT))
         s->phase_acc[0] = 0;
+    /*endif*/
     if ((mode & SIG_TONE_2_PRESENT)  &&  !(s->current_tx_tone & SIG_TONE_2_PRESENT))
         s->phase_acc[1] = 0;
+    /*endif*/
     s->current_tx_tone = mode;
     s->current_tx_timeout = duration;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(sig_tone_tx_state_t *) sig_tone_tx_init(sig_tone_tx_state_t *s, int tone_type, tone_report_func_t sig_update, void *user_data)
+SPAN_DECLARE(sig_tone_tx_state_t *) sig_tone_tx_init(sig_tone_tx_state_t *s, int tone_type, span_tone_report_func_t sig_update, void *user_data)
 {
     int i;
 
@@ -352,7 +357,9 @@ SPAN_DECLARE(sig_tone_tx_state_t *) sig_tone_tx_init(sig_tone_tx_state_t *s, int
     {
         if ((s = (sig_tone_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
 
     s->sig_update = sig_update;
@@ -366,9 +373,11 @@ SPAN_DECLARE(sig_tone_tx_state_t *) sig_tone_tx_init(sig_tone_tx_state_t *s, int
             s->phase_rate[i] = dds_phase_rate((float) s->desc->tone_freq[i]);
         else
             s->phase_rate[i] = 0;
+        /*endif*/
         s->tone_scaling[i][0] = dds_scaling_dbm0((float) s->desc->tone_amp[i][0]);
         s->tone_scaling[i][1] = dds_scaling_dbm0((float) s->desc->tone_amp[i][1]);
     }
+    /*endfor*/
     return s;
 }
 /*- End of function --------------------------------------------------------*/
@@ -383,6 +392,7 @@ SPAN_DECLARE(int) sig_tone_tx_free(sig_tone_tx_state_t *s)
 {
     if (s)
         span_free(s);
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -416,6 +426,7 @@ SPAN_DECLARE(int) sig_tone_rx(sig_tone_rx_state_t *s, int16_t amp[], int len)
     l = s->desc->tones;
     if (l == 2)
         l = 3;
+    /*endif*/
     notch_power[1] =
     notch_power[2] = INT32_MAX;
     for (i = 0;  i < len;  i++)
@@ -469,7 +480,9 @@ SPAN_DECLARE(int) sig_tone_rx(sig_tone_rx_state_t *s, int16_t amp[], int len)
             notch_power[j] = power_meter_update(&s->tone[j].power, notched_signal[j]);
             if (j == 1)
                 signal = notched_signal[j];
+            /*endif*/
         }
+        /*endfor*/
         if ((s->signalling_state & (SIG_TONE_1_PRESENT | SIG_TONE_2_PRESENT)))
         {
             if (s->flat_mode_timeout  &&  --s->flat_mode_timeout == 0)
@@ -514,6 +527,7 @@ SPAN_DECLARE(int) sig_tone_rx(sig_tone_rx_state_t *s, int16_t amp[], int len)
                 bandpass_signal = v;
 #endif
             }
+            /*endif*/
             flat_power = power_meter_update(&s->flat_power, bandpass_signal);
 
             /* For the flat receiver we use a simple power threshold! */
@@ -564,7 +578,9 @@ SPAN_DECLARE(int) sig_tone_rx(sig_tone_rx_state_t *s, int16_t amp[], int len)
                     immediate = m;
                 else if ((notch_power[2] >> 6)*s->detection_ratio < (flat_power >> 7))
                     immediate = 2;
+                /*endif*/
             }
+            /*endif*/
             //printf("Immediate = %d  %d   %d\n", immediate, s->signalling_state, s->tone_persistence_timeout);
             if ((s->signalling_state & (SIG_TONE_1_PRESENT | SIG_TONE_2_PRESENT)))
             {
@@ -653,7 +669,7 @@ SPAN_DECLARE(void) sig_tone_rx_set_mode(sig_tone_rx_state_t *s, int mode, int du
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(sig_tone_rx_state_t *) sig_tone_rx_init(sig_tone_rx_state_t *s, int tone_type, tone_report_func_t sig_update, void *user_data)
+SPAN_DECLARE(sig_tone_rx_state_t *) sig_tone_rx_init(sig_tone_rx_state_t *s, int tone_type, span_tone_report_func_t sig_update, void *user_data)
 {
     int i;
 #if !defined(SPANDSP_USE_FIXED_POINT)
@@ -668,7 +684,9 @@ SPAN_DECLARE(sig_tone_rx_state_t *) sig_tone_rx_init(sig_tone_rx_state_t *s, int
     {
         if ((s = (sig_tone_rx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
 #if !defined(SPANDSP_USE_FIXED_POINT)
     for (j = 0;  j < 3;  j++)
@@ -678,9 +696,12 @@ SPAN_DECLARE(sig_tone_rx_state_t *) sig_tone_rx_init(sig_tone_rx_state_t *s, int
             s->tone[j].notch_z1[i] = 0.0f;
             s->tone[j].notch_z2[i] = 0.0f;
         }
+        /*endfor*/
     }
+    /*endfor*/
     for (i = 0;  i < 2;  i++)
         s->flat_z[i] = 0.0f;
+    /*endfor*/
 #endif
     s->last_sample_tone_present = -1;
 
@@ -691,6 +712,7 @@ SPAN_DECLARE(sig_tone_rx_state_t *) sig_tone_rx_init(sig_tone_rx_state_t *s, int
 
     for (i = 0;  i < 3;  i++)
         power_meter_init(&s->tone[i].power, 5);
+    /*endfor*/
     power_meter_init(&s->flat_power, 5);
 
     s->flat_detection_threshold = power_meter_level_dbm0(s->desc->flat_detection_threshold);
@@ -711,6 +733,7 @@ SPAN_DECLARE(int) sig_tone_rx_free(sig_tone_rx_state_t *s)
 {
     if (s)
         span_free(s);
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

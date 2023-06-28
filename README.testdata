@@ -32,6 +32,11 @@ site, and place it in this directory. Then run
 
 ./unpack_g726_data.sh
 
+For the V.42bis tests, obtain the file T-REC-V.56ter-199608-I!!ZPF-E.zip from the ITU web
+site, and place it in this directory. Then run
+
+./unpack_t56ter_data.sh
+
 For the GSM 06.10 tests, obtain the file en_300961v080101p0.zip from the ETSI web site,
 and place it in this directory. If you are able to run .exe (i.e. MS DOS or Windows)
 files you can simply run

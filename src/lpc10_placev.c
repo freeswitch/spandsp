@@ -56,9 +56,8 @@
 #define subsc(x,y) (((x) << 1) + (y))
 
 void lpc10_placea(int32_t *ipitch,
-                  int32_t voibuf[3][2],
+                  int32_t voibuf[4][2],
                   int32_t *obound,
-                  int32_t af,
                   int32_t vwin[3][2],
                   int32_t awin[3][2],
                   int32_t ewin[3][2],
@@ -75,8 +74,8 @@ void lpc10_placea(int32_t *ipitch,
     bool ephase;
     int32_t lrange;
 
-    lrange = (af - 2)*lframe + 1;
-    hrange = af*lframe;
+    lrange = lframe + 1;
+    hrange = 3*lframe;
 
     /* Place the analysis window based on the voicing window placement,
        onsets, tentative voicing decision, and pitch. */
@@ -89,7 +88,7 @@ void lpc10_placea(int32_t *ipitch,
        a phase-synchronous placement which does not overlap these onsets. */
 
     /* Case 2:  Voiced transition
-       If at least one voicing decision in AF is voicied, and there are no
+       If at least one voicing decision in AF is voiced, and there are no
        onsets, then the window is placed as in case 1. */
 
     /* Case 3:  Unvoiced speech or onsets
@@ -101,86 +100,92 @@ void lpc10_placea(int32_t *ipitch,
        of phase-synchronous placement. */
 
     /* Check for case 1 and case 2 */
-    allv = voibuf[af - 2][1] == 1
+    allv = voibuf[1][1] == 1
            &&
-           voibuf[af - 1][0] == 1
+           voibuf[2][0] == 1
            &&
-           voibuf[af - 1][1] == 1
+           voibuf[2][1] == 1
            &&
-           voibuf[af][0] == 1
+           voibuf[3][0] == 1
            &&
-           voibuf[af][1] == 1;
-    winv = voibuf[af][0] == 1  ||  voibuf[af][1] == 1;
+           voibuf[3][1] == 1;
+    winv = voibuf[3][0] == 1  ||  voibuf[3][1] == 1;
     if (allv  ||  (winv  &&  *obound == 0))
     {
         /* APHASE:  Phase synchronous window placement. */
         /* Get minimum lower index of the window. */
-        i = (lrange + *ipitch - 1 - awin[af - 2][0]) / *ipitch;
+        i = (lrange + *ipitch - 1 - awin[1][0]) / *ipitch;
         i *= *ipitch;
-        i += awin[af - 2][0];
+        i += awin[1][0];
         /* l = the actual length of this frame's analysis window. */
         l = maxwin;
         /* Calculate the location where a perfectly centered window would start. */
-        k = (vwin[af - 1][0] + vwin[af - 1][1] + 1 - l)/2;
+        k = (vwin[2][0] + vwin[2][1] + 1 - l)/2;
         /* Choose the actual location to be the pitch multiple closest to this */
-        awin[af - 1][0] = i + ((int) floorf((float) (k - i)/(float) *ipitch + 0.5f))*(*ipitch);
-        awin[af - 1][1] = awin[af - 1][0] + l - 1;
+        awin[2][0] = i + ((int) floorf((float) (k - i)/(float) *ipitch + 0.5f))*(*ipitch);
+        awin[2][1] = awin[2][0] + l - 1;
         /* If there is an onset bounding the right of the voicing window and the
            analysis window overlaps that, then move the analysis window backward
            to avoid this onset. */
-        if (*obound >= 2  &&  awin[af - 1][1] > vwin[af - 1][1])
+        if (*obound >= 2  &&  awin[2][1] > vwin[2][1])
         {
-            awin[af - 1][0] -= *ipitch;
-            awin[af - 1][1] -= *ipitch;
+            awin[2][0] -= *ipitch;
+            awin[2][1] -= *ipitch;
         }
+        /*endif*/
         /* Similarly for the left of the voicing window. */
-        if ((*obound == 1  ||  *obound == 3)  &&  awin[af - 1][0] < vwin[af - 1][0])
+        if ((*obound == 1  ||  *obound == 3)  &&  awin[2][0] < vwin[2][0])
         {
-            awin[af - 1][0] += *ipitch;
-            awin[af - 1][1] += *ipitch;
+            awin[2][0] += *ipitch;
+            awin[2][1] += *ipitch;
         }
+        /*endif*/
         /* If this placement puts the analysis window above HRANGE, then
            move it backward an integer number of pitch periods. */
-        while (awin[af - 1][1] > hrange)
+        while (awin[2][1] > hrange)
         {
-            awin[af - 1][0] -= *ipitch;
-            awin[af - 1][1] -= *ipitch;
+            awin[2][0] -= *ipitch;
+            awin[2][1] -= *ipitch;
         }
+        /*endwhile*/
         /* Similarly if the placement puts the analysis window below LRANGE. */
-        while (awin[af - 1][0] < lrange)
+        while (awin[2][0] < lrange)
         {
-            awin[af - 1][0] += *ipitch;
-            awin[af - 1][1] += *ipitch;
+            awin[2][0] += *ipitch;
+            awin[2][1] += *ipitch;
         }
+        /*endwhile*/
         /* Make energy window be phase-synchronous. */
         ephase = true;
     }
     else
     {
         /* Case 3 */
-        awin[af - 1][0] = vwin[af - 1][0];
-        awin[af - 1][1] = vwin[af - 1][1];
+        awin[2][0] = vwin[2][0];
+        awin[2][1] = vwin[2][1];
         ephase = false;
     }
+    /*endif*/
     /* RMS is computed over an integer number of pitch periods in the analysis
        window.  When it is not placed phase-synchronously, it is placed as close
        as possible to onsets. */
-    j = (awin[af - 1][1] - awin[af - 1][0] + 1) / *ipitch * *ipitch;
+    j = (awin[2][1] - awin[2][0] + 1) / *ipitch * *ipitch;
     if (j == 0  ||  !winv)
     {
-        ewin[af - 1][0] = vwin[af - 1][0];
-        ewin[af - 1][1] = vwin[af - 1][1];
+        ewin[2][0] = vwin[2][0];
+        ewin[2][1] = vwin[2][1];
     }
     else if (!ephase  &&  *obound == 2)
     {
-        ewin[af - 1][0] = awin[af - 1][1] - j + 1;
-        ewin[af - 1][1] = awin[af - 1][1];
+        ewin[2][0] = awin[2][1] - j + 1;
+        ewin[2][1] = awin[2][1];
     }
     else
     {
-        ewin[af - 1][0] = awin[af - 1][0];
-        ewin[af - 1][1] = awin[af - 1][0] + j - 1;
+        ewin[2][0] = awin[2][0];
+        ewin[2][1] = awin[2][0] + j - 1;
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -189,7 +194,6 @@ void lpc10_placev(int32_t *osbuf,
                   int32_t oslen,
                   int32_t *obound,
                   int32_t vwin[3][2],
-                  int32_t af,
                   int32_t lframe,
                   int32_t minwin,
                   int32_t maxwin,
@@ -259,24 +263,26 @@ void lpc10_placev(int32_t *osbuf,
     /* Compute the placement range */
 
     /* Computing MAX */
-    i1 = vwin[af - 2][1] + 1;
-    i2 = (af - 2)*lframe + 1;
+    i1 = vwin[1][1] + 1;
+    i2 = lframe + 1;
     lrange = max(i1, i2);
-    hrange = af*lframe;
+    hrange = 3*lframe;
     /* Compute OSPTR1, so the following code only looks at relevant onsets. */
     for (osptr1 = *osptr - 1;  osptr1 >= 1;  osptr1--)
     {
         if (osbuf[osptr1 - 1] <= hrange)
             break;
+        /*endif*/
     }
+    /*endfor*/
     osptr1++;
     /* Check for case 1 first (fast case) */
     if (osptr1 <= 1  ||  osbuf[osptr1 - 2] < lrange)
     {
         /* Compute max */
-        i1 = vwin[af - 2][1] + 1;
-        vwin[af - 1][0] = max(i1, dvwinl);
-        vwin[af - 1][1] = vwin[af - 1][0] + maxwin - 1;
+        i1 = vwin[1][1] + 1;
+        vwin[2][0] = max(i1, dvwinl);
+        vwin[2][1] = vwin[2][0] + maxwin - 1;
         *obound = 0;
     }
     else
@@ -287,7 +293,9 @@ void lpc10_placev(int32_t *osbuf,
         {
             if (osbuf[q - 1] < lrange)
                 break;
+            /*endif*/
         }
+        /*endfor*/
         q++;
         /* Check for case 2 (placement before onset): */
         /* Check for critical region exception: */
@@ -299,40 +307,45 @@ void lpc10_placev(int32_t *osbuf,
                 crit = true;
                 break;
             }
+            /*endif*/
         }
+        /*endfor*/
         /* Compute max */
-        i1 = (af - 1)*lframe;
+        i1 = 2*lframe;
         i2 = lrange + minwin - 1;
         if (!crit  &&  osbuf[q - 1] > max(i1, i2))
         {
-            vwin[af - 1][1] = osbuf[q - 1] - 1;
+            vwin[2][1] = osbuf[q - 1] - 1;
             /* Compute max */
-            i2 = vwin[af - 1][1] - maxwin + 1;
-            vwin[af - 1][0] = max(lrange, i2);
+            i2 = vwin[2][1] - maxwin + 1;
+            vwin[2][0] = max(lrange, i2);
             *obound = 2;
         }
         else
         {
             /* Case 3 (placement after onset) */
-            vwin[af - 1][0] = osbuf[q - 1];
+            vwin[2][0] = osbuf[q - 1];
             do
             {
                 if (++q >= osptr1
                     ||
-                    osbuf[q - 1] > vwin[af - 1][0] + maxwin)
+                    osbuf[q - 1] > vwin[2][0] + maxwin)
                 {
                     /* Compute min */
-                    i1 = vwin[af - 1][0] + maxwin - 1;
-                    vwin[af - 1][1] = min(i1, hrange);
+                    i1 = vwin[2][0] + maxwin - 1;
+                    vwin[2][1] = min(i1, hrange);
                     *obound = 1;
                     return;
                 }
+                /*endif*/
             }
-            while (osbuf[q - 1] < vwin[af - 1][0] + minwin);
-            vwin[af - 1][1] = osbuf[q - 1] - 1;
+            while (osbuf[q - 1] < vwin[2][0] + minwin);
+            vwin[2][1] = osbuf[q - 1] - 1;
             *obound = 3;
         }
+        /*endif*/
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

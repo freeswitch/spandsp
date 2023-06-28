@@ -50,6 +50,7 @@
 
 #include "spandsp/telephony.h"
 #include "spandsp/alloc.h"
+#include "spandsp/unaligned.h"
 #include "spandsp/logging.h"
 #include "spandsp/async.h"
 #include "spandsp/timezone.h"
@@ -88,47 +89,12 @@ SPAN_DECLARE(const char *) t43_image_type_to_str(int type)
     case T43_IMAGE_TYPE_COLOUR:
         return "Continuous-tone colour image (CIELAB)";
     }
+    /*endswitch*/
     return "???";
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ uint16_t pack_16(const uint8_t *s)
-{
-    uint16_t value;
-
-    value = ((uint16_t) s[0] << 8) | (uint16_t) s[1];
-    return value;
-}
-/*- End of function --------------------------------------------------------*/
-
-static __inline__ uint32_t pack_32(const uint8_t *s)
-{
-    uint32_t value;
-
-    value = ((uint32_t) s[0] << 24) | ((uint32_t) s[1] << 16) | ((uint32_t) s[2] << 8) | (uint32_t) s[3];
-    return value;
-}
-/*- End of function --------------------------------------------------------*/
-
 #if 0
-static __inline__ int unpack_16(uint8_t *s, uint16_t value)
-{
-    s[0] = (value >> 8) & 0xFF;
-    s[1] = value & 0xFF;
-    return sizeof(uint16_t);
-}
-/*- End of function --------------------------------------------------------*/
-
-static __inline__ int unpack_32(uint8_t *s, uint32_t value)
-{
-    s[0] = (value >> 24) & 0xFF;
-    s[1] = (value >> 16) & 0xFF;
-    s[2] = (value >> 8) & 0xFF;
-    s[3] = value & 0xFF;
-    return sizeof(uint16_t);
-}
-/*- End of function --------------------------------------------------------*/
-
 static int t43_create_header(t43_encode_state_t *s, uint8_t data[], size_t len)
 {
     int pos;
@@ -138,19 +104,19 @@ static int t43_create_header(t43_encode_state_t *s, uint8_t data[], size_t len)
 #endif
 
     pos = 0;
-    unpack_16(data, 0xFFA8);
+    put_net_unaligned_uint16(data, 0xFFA8);
     pos += 2;
 
     span_log(&s->logging, SPAN_LOG_FLOW, "Putting G3FAX0\n");
-    unpack_16(&data[pos], 0xFFE1);
+    put_net_unaligned_uint16(&data[pos], 0xFFE1);
     pos += 2;
-    unpack_16(&data[pos], 2 + 6 + 10);
+    put_net_unaligned_uint16(&data[pos], 2 + 6 + 10);
     pos += 2;
     memcpy(&data[pos], "G3FAX\0", 6);
     pos += 6;
-    unpack_16(&data[pos], 1997);
+    put_net_unaligned_uint16(&data[pos], 1997);
     pos += 2;
-    unpack_16(&data[pos], s->spatial_resolution);
+    put_net_unaligned_uint16(&data[pos], s->spatial_resolution);
     pos += 2;
     /* JBIG coding method (0) is the only possible value here */
     data[pos] = 0;
@@ -179,30 +145,31 @@ static int t43_create_header(t43_encode_state_t *s, uint8_t data[], size_t len)
         s->lab.range_b != 200)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Putting G3FAX1\n");
-        unpack_16(&data[pos], 0xFFE1);
+        put_net_unaligned_uint16(&data[pos], 0xFFE1);
         pos += 2;
-        unpack_16(&data[pos], 2 + 6 + 12);
+        put_net_unaligned_uint16(&data[pos], 2 + 6 + 12);
         pos += 2;
         memcpy(&data[pos], "G3FAX\1", 6);
         pos += 6;
         get_lab_gamut2(&s->lab, &val[0], &val[1], &val[2], &val[3], &val[4], &val[5]);
-        unpack_16(&data[pos + 0], val[0]);
-        unpack_16(&data[pos + 2], val[1]);
-        unpack_16(&data[pos + 4], val[2]);
-        unpack_16(&data[pos + 6], val[3]);
-        unpack_16(&data[pos + 8], val[4]);
-        unpack_16(&data[pos + 10], val[5]);
+        put_net_unaligned_uint16(&data[pos + 0], val[0]);
+        put_net_unaligned_uint16(&data[pos + 2], val[1]);
+        put_net_unaligned_uint16(&data[pos + 4], val[2]);
+        put_net_unaligned_uint16(&data[pos + 6], val[3]);
+        put_net_unaligned_uint16(&data[pos + 8], val[4]);
+        put_net_unaligned_uint16(&data[pos + 10], val[5]);
         pos += 12;
     }
+    /*endif*/
 
     if (memcmp(s->illuminant_code, "\0\0\0\0", 4) != 0
         ||
         s->illuminant_colour_temperature > 0)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Putting G3FAX2\n");
-        unpack_16(&data[pos], 0xFFE1);
+        put_net_unaligned_uint16(&data[pos], 0xFFE1);
         pos += 2;
-        unpack_16(&data[pos], 2 + 6 + 4);
+        put_net_unaligned_uint16(&data[pos], 2 + 6 + 4);
         pos += 2;
         memcpy(&data[pos], "G3FAX\2", 6);
         pos += 6;
@@ -213,35 +180,38 @@ static int t43_create_header(t43_encode_state_t *s, uint8_t data[], size_t len)
         else
         {
             memcpy(&data[pos], "CT", 2);
-            unpack_16(&data[pos + 2], s->illuminant_colour_temperature);
+            put_net_unaligned_uint16(&data[pos + 2], s->illuminant_colour_temperature);
         }
+        /*endif*/
         pos += 4;
     }
+    /*endif*/
 
 #if 0
     if (s->colour_map)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Putting G3FAX3\n");
         bytes_per_entry = (table_id == 0)  ?  1  :  2;
-        unpack_16(&data[pos], 0xFFE3);
+        put_net_unaligned_uint16(&data[pos], 0xFFE3);
         pos += 2;
-        unpack_32(&data[pos], 2 + 6 + 2 + 4 + 3*s->colour_map_entries*bytes_per_entry);
+        put_net_unaligned_uint32(&data[pos], 2 + 6 + 2 + 4 + 3*s->colour_map_entries*bytes_per_entry);
         pos += 4;
         memcpy(&data[pos], "G3FAX\3", 6);
         pos += 6;
-        unpack_16(&data[pos], table_id);
+        put_net_unaligned_uint16(&data[pos], table_id);
         pos += 2;
-        unpack_32(&data[pos], s->colour_map_entries);
+        put_net_unaligned_uint32(&data[pos], s->colour_map_entries);
         pos += 4;
         srgb_to_lab(&s->lab, &data[pos], s->colour_map, s->colour_map_entries);
         pos += 3*s->colour_map_entries*bytes_per_entry;
     }
+    /*endif*/
 #endif
 
     span_log(&s->logging, SPAN_LOG_FLOW, "Putting G3FAX-FF\n");
-    unpack_16(&data[pos], 0xFFE1);
+    put_net_unaligned_uint16(&data[pos], 0xFFE1);
     pos += 2;
-    unpack_16(&data[pos], 2 + 6);
+    put_net_unaligned_uint16(&data[pos], 2 + 6);
     pos += 2;
     memcpy(&data[pos], "G3FAX\xFF", 6);
     pos += 6;
@@ -350,7 +320,9 @@ SPAN_DECLARE(t43_encode_state_t *) t43_encode_init(t43_encode_state_t *s,
     {
         if ((s = (t43_encode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "T.43");
@@ -408,6 +380,7 @@ SPAN_DECLARE(void) t43_decode_rx_status(t43_decode_state_t *s, int status)
         span_log(&s->logging, SPAN_LOG_WARNING, "Unexpected rx status - %d!\n", status);
         break;
     }
+    /*endswitch*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -498,6 +471,7 @@ static void set_simple_colour_map(t43_decode_state_t *s, int code)
             s->colour_map[i + 1] = i;
             s->colour_map[i + 2] = i;
         }
+        /*endfor*/
         s->colour_map_entries = 256;
         break;
     case T43_IMAGE_TYPE_12BIT_COLOUR_PALETTE:
@@ -507,12 +481,14 @@ static void set_simple_colour_map(t43_decode_state_t *s, int code)
         /* Gray-scale image (using L*) */
         for (i = 0;  i < 256;  i++)
             s->colour_map[i] = i;
+        /*endfor*/
         s->colour_map_entries = 256;
         break;
     case T43_IMAGE_TYPE_COLOUR:
         /* Continuous-tone colour image (using CIELAB) */
         break;
     }
+    /*endswitch*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -526,16 +502,17 @@ static int t43_analyse_header(t43_decode_state_t *s, const uint8_t data[], size_
     int i;
 
     pos = 0;
-    if (pack_16(&data[pos]) != 0xFFA8)
+    if (get_net_unaligned_uint16(&data[pos]) != 0xFFA8)
         return 0;
+    /*endif*/
     span_log(&s->logging, SPAN_LOG_FLOW, "Got BCIH (bit-plane colour image header)\n");
     pos += 2;
     for (;;)
     {
-        if (pack_16(&data[pos]) == 0xFFE1)
+        if (get_net_unaligned_uint16(&data[pos]) == 0xFFE1)
         {
             pos += 2;
-            seg = pack_16(&data[pos]);
+            seg = get_net_unaligned_uint16(&data[pos]);
             pos += 2;
             seg -= 2;
             if (seg >= 6  &&  strncmp((char *) &data[pos], "G3FAX", 5) == 0)
@@ -545,9 +522,11 @@ static int t43_analyse_header(t43_decode_state_t *s, const uint8_t data[], size_
                     span_log(&s->logging, SPAN_LOG_FLOW, "Got ECIH (end of colour image header)\n");
                     if (seg != 6)
                         span_log(&s->logging, SPAN_LOG_FLOW, "Got bad ECIH length - %d\n", seg);
+                    /*endif*/
                     pos += seg;
                     break;
                 }
+                /*endif*/
                 switch (data[pos + 5])
                 {
                 case 0:
@@ -558,8 +537,8 @@ static int t43_analyse_header(t43_decode_state_t *s, const uint8_t data[], size_
                     }
                     else
                     {
-                        val[0] = pack_16(&data[pos + 6 + 0]);
-                        s->spatial_resolution = pack_16(&data[pos + 6 + 2]);
+                        val[0] = get_net_unaligned_uint16(&data[pos + 6 + 0]);
+                        s->spatial_resolution = get_net_unaligned_uint16(&data[pos + 6 + 2]);
                         val[2] = data[pos + 6 + 4];
                         s->image_type = data[pos + 6 + 5];
                         s->bit_planes[0] = data[pos + 6 + 6];
@@ -578,6 +557,7 @@ static int t43_analyse_header(t43_decode_state_t *s, const uint8_t data[], size_
                         {
                             s->samples_per_pixel = 3;
                         }
+                        /*endif*/
                         span_log(&s->logging,
                                  SPAN_LOG_FLOW,
                                  "Version %d, resolution %ddpi, coding method %d, type %s (%d), bit planes %d,%d,%d,%d\n",
@@ -592,6 +572,7 @@ static int t43_analyse_header(t43_decode_state_t *s, const uint8_t data[], size_
                                  s->bit_planes[3]);
                         set_simple_colour_map(s, s->image_type);
                     }
+                    /*endif*/
                     break;
                 case 1:
                     span_log(&s->logging, SPAN_LOG_FLOW, "Set gamut\n");
@@ -603,6 +584,7 @@ static int t43_analyse_header(t43_decode_state_t *s, const uint8_t data[], size_
                     {
                         set_gamut_from_code(&s->logging, &s->lab, &data[pos + 6]);
                     }
+                    /*endif*/
                     break;
                 case 2:
                     span_log(&s->logging, SPAN_LOG_FLOW, "Set illuminant\n");
@@ -614,18 +596,21 @@ static int t43_analyse_header(t43_decode_state_t *s, const uint8_t data[], size_
                     {
                         s->illuminant_colour_temperature = set_illuminant_from_code(&s->logging, &s->lab, &data[pos + 6]);
                     }
+                    /*endif*/
                     break;
                 default:
                     span_log(&s->logging, SPAN_LOG_FLOW, "Got unexpected G3FAX%d length - %d\n", data[pos + 5], seg);
                     break;
                 }
+                /*endswitch*/
             }
+            /*endif*/
             pos += seg;
         }
-        else if (pack_16(&data[pos]) == 0xFFE3)
+        else if (get_net_unaligned_uint16(&data[pos]) == 0xFFE3)
         {
             pos += 2;
-            seg = pack_32(&data[pos]);
+            seg = get_net_unaligned_uint32(&data[pos]);
             pos += 4;
             seg -= 4;
             if (seg >= 6)
@@ -633,13 +618,13 @@ static int t43_analyse_header(t43_decode_state_t *s, const uint8_t data[], size_
                 if (strncmp((char *) &data[pos], "G3FAX\3", 6) == 0)
                 {
                     span_log(&s->logging, SPAN_LOG_FLOW, "Got G3FAX3\n");
-                    table_id = pack_16(&data[pos + 6]);
+                    table_id = get_net_unaligned_uint16(&data[pos + 6]);
                     span_log(&s->logging, SPAN_LOG_FLOW, "  Table ID %3d\n", table_id);
                     switch (table_id)
                     {
                     case 0:
                         /* 8 bit CIELAB */
-                        s->colour_map_entries = pack_32(&data[pos + 8]);
+                        s->colour_map_entries = get_net_unaligned_uint32(&data[pos + 8]);
                         span_log(&s->logging, SPAN_LOG_FLOW, "  Entries %6d (len %d)\n", s->colour_map_entries, seg);
                         if (seg >= 12 + s->colour_map_entries*3)
                         {
@@ -649,40 +634,48 @@ static int t43_analyse_header(t43_decode_state_t *s, const uint8_t data[], size_
                         {
                             span_log(&s->logging, SPAN_LOG_FLOW, "Got bad G3FAX3 length - %d\n", seg);
                         }
+                        /*endif*/
                         break;
                     case 4:
                         /* 12 bit CIELAB */
-                        s->colour_map_entries = pack_32(&data[pos + 8]);
+                        s->colour_map_entries = get_net_unaligned_uint32(&data[pos + 8]);
                         span_log(&s->logging, SPAN_LOG_FLOW, "  Entries %6d\n", s->colour_map_entries);
                         /* TODO: implement 12bit stuff */
                         if (seg >= 12 + s->colour_map_entries*3*2)
                         {
                             for (i = 0;  i < s->colour_map_entries;  i++)
                             {
-                                col[0] = pack_16(&data[pos + 12 + 6*i]) >> 4;
-                                col[1] = pack_16(&data[pos + 12 + 6*i + 2]) >> 4;
-                                col[2] = pack_16(&data[pos + 12 + 6*i + 4]) >> 4;
+                                col[0] = get_net_unaligned_uint16(&data[pos + 12 + 6*i]) >> 4;
+                                col[1] = get_net_unaligned_uint16(&data[pos + 12 + 6*i + 2]) >> 4;
+                                col[2] = get_net_unaligned_uint16(&data[pos + 12 + 6*i + 4]) >> 4;
                                 lab_to_srgb(&s->lab, &s->colour_map[3*i], col, 1);
                             }
+                            /*endfor*/
                         }
                         else
                         {
                             span_log(&s->logging, SPAN_LOG_FLOW, "Got bad G3FAX3 length - %d\n", seg);
                         }
+                        /*endif*/
                         break;
                     default:
                         span_log(&s->logging, SPAN_LOG_FLOW, "Got bad G3FAX3 table ID - %d\n", table_id);
                         break;
                     }
+                    /*endswitch*/
                 }
+                /*endif*/
             }
+            /*endif*/
             pos += seg;
         }
         else
         {
             break;
         }
+        /*endif*/
     }
+    /*endfor*/
     return pos;
 }
 /*- End of function --------------------------------------------------------*/
@@ -705,8 +698,10 @@ static int t85_row_write_handler(void *user_data, const uint8_t buf[], size_t le
         image_size = s->samples_per_pixel*s->t85.xd*s->t85.yd;
         if ((s->buf = span_alloc(image_size)) == NULL)
             return -1;
+        /*endif*/
         memset(s->buf, 0, image_size);
     }
+    /*endif*/
 
     for (i = 0;  i < len;  i++)
     {
@@ -717,8 +712,10 @@ static int t85_row_write_handler(void *user_data, const uint8_t buf[], size_t le
             {
                 if ((buf[i] & mask))
                     s->buf[s->ptr + j] |= s->bit_plane_mask;
+                /*endif*/
                 mask >>= 1;
             }
+            /*endfor*/
         }
         else
         {
@@ -726,11 +723,15 @@ static int t85_row_write_handler(void *user_data, const uint8_t buf[], size_t le
             {
                 if ((buf[i] & mask))
                     s->buf[s->ptr + j] |= s->bit_plane_mask;
+                /*endif*/
                 mask >>= 1;
             }
+            /*endfor*/
         }
+        /*endif*/
         s->ptr += s->samples_per_pixel*8;
     }
+    /*endfor*/
     s->row++;
     return 0;
 }
@@ -762,6 +763,7 @@ SPAN_DECLARE(int) t43_decode_put(t43_decode_state_t *s, const uint8_t data[], si
         s->plane_ptr = 0;
         t85_decode_new_plane(&s->t85);
     }
+    /*endif*/
 
     /* Now deal the bit-planes, one after another. */
     total_len = 0;
@@ -774,6 +776,7 @@ SPAN_DECLARE(int) t43_decode_put(t43_decode_state_t *s, const uint8_t data[], si
             s->plane_ptr += len;
             return result;
         }
+        /*endif*/
         plane_len = t85_decode_get_compressed_image_size(&s->t85);
         data += (plane_len/8 - s->plane_ptr);
         len -= (plane_len/8 - s->plane_ptr);
@@ -787,11 +790,13 @@ SPAN_DECLARE(int) t43_decode_put(t43_decode_state_t *s, const uint8_t data[], si
         s->current_bit_plane++;
         t85_decode_new_plane(&s->t85);
     }
+    /*endwhile*/
     /* Apply the colour map, and produce the RGB data from the collected bit-planes */
     if (s->samples_per_pixel == 1)
     {
         for (j = 0;  j < total_len;  j += s->samples_per_pixel)
             s->buf[j] = s->colour_map[s->buf[j]];
+        /*endfor*/
     }
     else
     {
@@ -802,9 +807,12 @@ SPAN_DECLARE(int) t43_decode_put(t43_decode_state_t *s, const uint8_t data[], si
             s->buf[j + 1] = s->colour_map[3*i + 1];
             s->buf[j + 2] = s->colour_map[3*i + 2];
         }
+        /*endfor*/
     }
+    /*endif*/
     for (j = 0;  j < s->t85.yd;  j++)
         s->row_write_handler(s->row_write_user_data, &s->buf[j*s->samples_per_pixel*s->t85.xd], s->samples_per_pixel*s->t85.xd);
+    /*endfor*/
     return result;
 }
 /*- End of function --------------------------------------------------------*/
@@ -888,7 +896,9 @@ SPAN_DECLARE(t43_decode_state_t *) t43_decode_init(t43_decode_state_t *s,
     {
         if ((s = (t43_decode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "T.43");

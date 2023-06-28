@@ -97,7 +97,7 @@ struct faxtester_state_s
     /*! If true, transmission is in progress */
     bool transmit;
 
-    /*! \brief true if the short training sequence should be used. */
+    /*! \brief True if the short training sequence should be used. */
     bool short_train;
 
     /*! \brief The currently select receiver type */
@@ -124,7 +124,7 @@ struct faxtester_state_s
     uint8_t awaited[1000];
     int awaited_len;
 
-    char next_tx_file[1000];
+    char next_tx_file[1024];
 
     /*! \brief Error and flow logging control */
     logging_state_t logging;
@@ -170,9 +170,9 @@ void faxtester_set_flush_handler(faxtester_state_t *s, faxtester_flush_handler_t
 /*! Select whether silent audio will be sent when FAX transmit is idle.
     \brief Select whether silent audio will be sent when FAX transmit is idle.
     \param s The FAX tester context.
-    \param transmit_on_idle true if silent audio should be output when the FAX transmitter is
-           idle. FALSE to transmit zero length audio when the FAX transmitter is idle. The default
-           behaviour is FALSE.
+    \param transmit_on_idle True if silent audio should be output when the FAX transmitter is
+           idle. False to transmit zero length audio when the FAX transmitter is idle. The default
+           behaviour is false.
 */
 void faxtester_set_transmit_on_idle(faxtester_state_t *s, int transmit_on_idle);
 

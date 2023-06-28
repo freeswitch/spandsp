@@ -51,9 +51,8 @@ struct t4_t6_decode_state_s
     /*! \brief Pointer to the buffer for the current pixel row. */
     uint8_t *row_buf;
 
-    /*! \brief This variable is set if we are treating the current row as a 2D encoded
-               one. */
-    int row_is_2d;
+    /*! \brief True if we are treating the current row as a 2D encoded one. */
+    bool row_is_2d;
     /*! \brief The current length of the current row. */
     int row_len;
 

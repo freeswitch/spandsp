@@ -135,8 +135,8 @@
 
 /* This is the target time per transmission chunk. The actual
    packet timing will sync to the data octets. */
-/*! The default number of milliseconds per transmitted IFP when sending bulk T.38 data */
-#define DEFAULT_MS_PER_TX_CHUNK                 30
+/*! The default number of microseconds per transmitted IFP when sending bulk T.38 data */
+#define DEFAULT_MICROSECONDS_PER_TX_CHUNK       30000
 
 /*! The number of bytes which must be in the audio to T.38 HDLC buffer before we start
     outputting them as IFP messages. */
@@ -226,6 +226,7 @@ static void hdlc_underflow_handler(void *user_data)
         t->buf[t->out].contents = 0;
         if (++t->out >= T38_TX_HDLC_BUFS)
             t->out = 0;
+        /*endif*/
         span_log(&s->logging, SPAN_LOG_FLOW, "HDLC next is 0x%X\n", t->buf[t->out].contents);
         if ((t->buf[t->out].contents & FLAG_INDICATOR))
         {
@@ -259,8 +260,8 @@ static int set_next_tx_type(t38_gateway_state_t *s)
     int indicator;
     fax_modems_state_t *t;
     t38_gateway_hdlc_state_t *u;
-    int short_train;
-    int use_hdlc;
+    bool short_train;
+    bool use_hdlc;
 
     t = &s->audio.modems;
     t38_non_ecm_buffer_report_output_status(&s->core.non_ecm_to_modem, &s->logging);
@@ -302,13 +303,13 @@ static int set_next_tx_type(t38_gateway_state_t *s)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "HDLC mode\n");
         hdlc_tx_init(&t->hdlc_tx, false, 2, true, hdlc_underflow_handler, s);
-        fax_modems_set_get_bit(t, (get_bit_func_t) hdlc_tx_get_bit, &t->hdlc_tx);
+        fax_modems_set_get_bit(t, (span_get_bit_func_t) hdlc_tx_get_bit, &t->hdlc_tx);
         use_hdlc = true;
     }
     else
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Non-ECM mode\n");
-        fax_modems_set_get_bit(t, (get_bit_func_t) t38_non_ecm_buffer_get_bit, &s->core.non_ecm_to_modem);
+        fax_modems_set_get_bit(t, (span_get_bit_func_t) t38_non_ecm_buffer_get_bit, &s->core.non_ecm_to_modem);
         use_hdlc = false;
     }
     /*endif*/
@@ -317,7 +318,7 @@ static int set_next_tx_type(t38_gateway_state_t *s)
     case T38_IND_NO_SIGNAL:
         t->tx_bit_rate = 0;
         /* Impose 75ms minimum on transmitted silence */
-        //silence_gen_set(&t->silence_gen, ms_to_samples(75));
+        //silence_gen_set(&t->silence_gen, milliseconds_to_samples(75));
         fax_modems_set_tx_handler(t, (span_tx_handler_t) &silence_gen, &t->silence_gen);
         fax_modems_set_next_tx_handler(t, (span_tx_handler_t) NULL, NULL);
         fax_modems_set_rx_active(t, true);
@@ -339,7 +340,7 @@ static int set_next_tx_type(t38_gateway_state_t *s)
         t->tx_bit_rate = 300;
         hdlc_tx_init(&t->hdlc_tx, false, 2, true, hdlc_underflow_handler, s);
         hdlc_tx_flags(&t->hdlc_tx, 32);
-        silence_gen_alter(&t->silence_gen, ms_to_samples(75));
+        silence_gen_alter(&t->silence_gen, milliseconds_to_samples(75));
         u->buf[u->in].len = 0;
         fax_modems_start_slow_modem(t, FAX_MODEM_V21_TX);
         fax_modems_set_tx_handler(t, (span_tx_handler_t) &silence_gen, &t->silence_gen);
@@ -349,7 +350,7 @@ static int set_next_tx_type(t38_gateway_state_t *s)
     case T38_IND_V27TER_2400_TRAINING:
     case T38_IND_V27TER_4800_TRAINING:
         t->tx_bit_rate = (indicator == T38_IND_V27TER_4800_TRAINING)  ?  4800  :  2400;
-        silence_gen_alter(&t->silence_gen, ms_to_samples(75));
+        silence_gen_alter(&t->silence_gen, milliseconds_to_samples(75));
         fax_modems_start_fast_modem(t, FAX_MODEM_V27TER_TX, t->tx_bit_rate, s->core.short_train, use_hdlc);
         fax_modems_set_tx_handler(t, (span_tx_handler_t) &silence_gen, &t->silence_gen);
         fax_modems_set_next_tx_handler(t, (span_tx_handler_t) &v27ter_tx, &t->fast_modems.v27ter_tx);
@@ -358,7 +359,7 @@ static int set_next_tx_type(t38_gateway_state_t *s)
     case T38_IND_V29_7200_TRAINING:
     case T38_IND_V29_9600_TRAINING:
         t->tx_bit_rate = (indicator == T38_IND_V29_9600_TRAINING)  ?  9600  :  7200;
-        silence_gen_alter(&t->silence_gen, ms_to_samples(75));
+        silence_gen_alter(&t->silence_gen, milliseconds_to_samples(75));
         fax_modems_start_fast_modem(t, FAX_MODEM_V29_TX, t->tx_bit_rate, s->core.short_train, use_hdlc);
         fax_modems_set_tx_handler(t, (span_tx_handler_t) &silence_gen, &t->silence_gen);
         fax_modems_set_next_tx_handler(t, (span_tx_handler_t) &v29_tx, &t->fast_modems.v29_tx);
@@ -403,9 +404,11 @@ static int set_next_tx_type(t38_gateway_state_t *s)
         case T38_IND_V17_14400_LONG_TRAINING:
             t->tx_bit_rate = 14400;
             break;
+        default:
+            break;
         }
         /*endswitch*/
-        silence_gen_alter(&t->silence_gen, ms_to_samples(75));
+        silence_gen_alter(&t->silence_gen, milliseconds_to_samples(75));
         fax_modems_start_fast_modem(t, FAX_MODEM_V17_TX, t->tx_bit_rate, short_train, use_hdlc);
         fax_modems_set_tx_handler(t, (span_tx_handler_t) &silence_gen, &t->silence_gen);
         fax_modems_set_next_tx_handler(t, (span_tx_handler_t) &v17_tx, &t->fast_modems.v17_tx);
@@ -513,6 +516,8 @@ static void edit_control_messages(t38_gateway_state_t *s, bool from_modem, uint8
             }
             /*endif*/
             break;
+        default:
+            break;
         }
         /*endswitch*/
         break;
@@ -524,6 +529,8 @@ static void edit_control_messages(t38_gateway_state_t *s, bool from_modem, uint8
                did, two V.34 capable FAX machines might start some
                V.8 re-negotiation. */
             buf[3] &= ~DISBIT6;
+            break;
+        default:
             break;
         }
         /*endswitch*/
@@ -572,6 +579,8 @@ static void edit_control_messages(t38_gateway_state_t *s, bool from_modem, uint8
             }
             /*endswitch*/
             break;
+        default:
+            break;
         }
         /*endswitch*/
         break;
@@ -587,8 +596,12 @@ static void edit_control_messages(t38_gateway_state_t *s, bool from_modem, uint8
             }
             /*endif*/
             break;
+        default:
+            break;
         }
         /*endswitch*/
+        break;
+    default:
         break;
     }
     /*endswitch*/
@@ -744,6 +757,8 @@ static void monitor_control_messages(t38_gateway_state_t *s,
         case T30_PRI_MPS:
             s->core.count_page_on_mcf = true;
             break;
+        default:
+            break;
         }
         /*endswitch*/
         break;
@@ -852,6 +867,8 @@ static void queue_missing_indicator(t38_gateway_state_t *s, int data_type)
         break;
     case T38_DATA_V33_14400:
         break;
+    default:
+        break;
     }
     /*endswitch*/
     if (expected < 0)
@@ -931,7 +948,10 @@ static int process_rx_indicator(t38_core_state_t *t, void *user_data, int indica
             break;
         case T38_FIELD_CLASS_NON_ECM:
             break;
+        default:
+            break;
         }
+        /*endswitch*/
     }
     else
     {
@@ -942,6 +962,7 @@ static int process_rx_indicator(t38_core_state_t *t, void *user_data, int indica
                  t38_indicator_to_str(t->current_rx_indicator),
                  t38_indicator_to_str(indicator));
     }
+    /*endif*/
     s->t38x.current_rx_field_class = T38_FIELD_CLASS_NONE;
     /* We need to set this here, since we might have been called as a fake
        indication when the real one was missing */
@@ -1317,6 +1338,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
     case T38_FIELD_T4_NON_ECM_DATA:
         if (xx->current_rx_field_class == T38_FIELD_CLASS_NONE)
             t38_non_ecm_buffer_set_mode(&s->core.non_ecm_to_modem, s->core.image_data_mode, s->core.min_row_bits);
+        /*endif*/
         xx->current_rx_field_class = T38_FIELD_CLASS_NON_ECM;
         hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
         if (hdlc_buf->contents != (data_type | FLAG_DATA))
@@ -1330,6 +1352,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
     case T38_FIELD_T4_NON_ECM_SIG_END:
         if (xx->current_rx_field_class == T38_FIELD_CLASS_NONE)
             t38_non_ecm_buffer_set_mode(&s->core.non_ecm_to_modem, s->core.image_data_mode, s->core.min_row_bits);
+        /*endif*/
         hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
         /* Some T.38 implementations send multiple T38_FIELD_T4_NON_ECM_SIG_END messages, in IFP packets with
            incrementing sequence numbers, which are actually repeats. They get through to this point because
@@ -1409,7 +1432,7 @@ static void set_octets_per_data_packet(t38_gateway_state_t *s, int bit_rate)
 {
     int octets;
 
-    octets = s->core.ms_per_tx_chunk*bit_rate/(8*1000);
+    octets = s->core.microseconds_per_tx_chunk*bit_rate/(8*1000*1000);
     if (octets < 1)
         octets = 1;
     /*endif*/
@@ -1518,7 +1541,7 @@ static void non_ecm_rx_status(void *user_data, int status)
             if (s->core.timed_mode == TIMED_MODE_TCF_PREDICTABLE_MODEM_START_PAST_V21_MODEM)
                 s->core.timed_mode = TIMED_MODE_TCF_PREDICTABLE_MODEM_START_FAST_MODEM_SEEN;
             else
-                s->core.samples_to_timeout = ms_to_samples(500);
+                s->core.samples_to_timeout = milliseconds_to_samples(500);
             /*endif*/
             set_fast_packetisation(s);
         }
@@ -1557,6 +1580,8 @@ static void non_ecm_rx_status(void *user_data, int status)
             }
             /*endif*/
             restart_rx_modem(s);
+            break;
+        default:
             break;
         }
         /*endswitch*/
@@ -1747,7 +1772,7 @@ static void hdlc_rx_status(hdlc_rx_state_t *t, int status)
                it trains will be too late. We need to announce the fast modem a fixed time after
                the end of the V.21 carrier, in anticipation of its arrival. If we announce it,
                and it doesn't arrive, we will worry about that later. */
-            s->core.samples_to_timeout = ms_to_samples(75);
+            s->core.samples_to_timeout = milliseconds_to_samples(75);
             s->core.timed_mode = TIMED_MODE_TCF_PREDICTABLE_MODEM_START_PAST_V21_MODEM;
         }
         /*endif*/
@@ -2012,6 +2037,7 @@ static void t38_hdlc_rx_put_bit(hdlc_rx_state_t *t, int new_bit)
            man-in-the-middle role of T.38 */
         edit_control_messages(s, 1, t->buffer, t->len);
     }
+    /*endif*/
     if (++u->data_ptr >= u->octets_per_data_packet)
     {
         bit_reverse(u->data, &t->buffer[t->len - HDLC_TRAMISSION_LAG_OCTETS - u->data_ptr], u->data_ptr);
@@ -2055,21 +2081,21 @@ static int restart_rx_modem(t38_gateway_state_t *s)
     /* Default to the transmit data being V.21, unless a faster modem pops up trained. */
     s->t38x.current_tx_data_type = T38_DATA_V21;
     //fax_modems_start_slow_modem(t, FAX_MODEM_V21_RX);
-    fsk_rx_init(&t->v21_rx, &preset_fsk_specs[FSK_V21CH2], FSK_FRAME_MODE_SYNC, (put_bit_func_t) t38_hdlc_rx_put_bit, &t->hdlc_rx);
+    fsk_rx_init(&t->v21_rx, &preset_fsk_specs[FSK_V21CH2], FSK_FRAME_MODE_SYNC, (span_put_bit_func_t) t38_hdlc_rx_put_bit, &t->hdlc_rx);
     hdlc_rx_init(&t->hdlc_rx, false, true, HDLC_FRAMING_OK_THRESHOLD, NULL, s);
 #if 0
-    fsk_rx_signal_cutoff(&t->v21_rx, -39.09f);
+    fsk_rx_set_signal_cutoff(&t->v21_rx, -39.09f);
 #endif
     if (s->core.image_data_mode  &&  s->core.ecm_mode)
     {
-        fax_modems_set_put_bit(t, (put_bit_func_t) t38_hdlc_rx_put_bit, &t->hdlc_rx);
+        fax_modems_set_put_bit(t, (span_put_bit_func_t) t38_hdlc_rx_put_bit, &t->hdlc_rx);
     }
     else
     {
         if (s->core.image_data_mode  &&  s->core.to_t38.fill_bit_removal)
-            fax_modems_set_put_bit(t, (put_bit_func_t) non_ecm_remove_fill_and_put_bit, s);
+            fax_modems_set_put_bit(t, (span_put_bit_func_t) non_ecm_remove_fill_and_put_bit, s);
         else
-            fax_modems_set_put_bit(t, (put_bit_func_t) non_ecm_put_bit, s);
+            fax_modems_set_put_bit(t, (span_put_bit_func_t) non_ecm_put_bit, s);
         /*endif*/
     }
     /*endif*/
@@ -2113,7 +2139,7 @@ static void update_rx_timing(t38_gateway_state_t *s, int len)
                 /* Timed announcement of training, 75ms after the DCS carrier fell. */
                 announce_training(s);
                 /* Use a timeout to ride over TEP, if it is present */
-                s->core.samples_to_timeout = ms_to_samples(500);
+                s->core.samples_to_timeout = milliseconds_to_samples(500);
                 s->core.timed_mode = TIMED_MODE_TCF_PREDICTABLE_MODEM_START_FAST_MODEM_ANNOUNCED;
                 break;
             case TIMED_MODE_TCF_PREDICTABLE_MODEM_START_FAST_MODEM_ANNOUNCED:
@@ -2124,6 +2150,8 @@ static void update_rx_timing(t38_gateway_state_t *s, int len)
                 /* Ensure a no-signal condition goes out the moment the received audio starts */
                 t38_core_send_indicator(&s->t38x.t38, T38_IND_NO_SIGNAL);
                 s->core.timed_mode = TIMED_MODE_IDLE;
+                break;
+            default:
                 break;
             }
             /*endswitch*/
@@ -2149,6 +2177,7 @@ SPAN_DECLARE(int) t38_gateway_rx(t38_gateway_state_t *s, int16_t amp[], int len)
     /*endfor*/
     if (s->audio.modems.rx_handler)
         s->audio.modems.rx_handler(s->audio.modems.rx_user_data, amp, len);
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2173,6 +2202,7 @@ SPAN_DECLARE(int) t38_gateway_rx_fillin(t38_gateway_state_t *s, int len)
         vec_zeroi16(amp, len);
         write(s->audio.modems.audio_rx_log, amp, len*sizeof(int16_t));
     }
+    /*endif*/
 #endif
     update_rx_timing(s, len);
     /* TODO: handle the modems properly */
@@ -2280,12 +2310,16 @@ SPAN_DECLARE(void) t38_gateway_set_nsx_suppression(t38_gateway_state_t *s,
 {
     if (from_t38_len >= 0)
         s->t38x.suppress_nsx_len[0] = ((from_t38_len < MAX_NSX_SUPPRESSION)  ?  from_t38_len  :  MAX_NSX_SUPPRESSION) + 3;
+    /*endif*/
     if (from_t38)
         memcpy(s->t38x.suppress_nsx_string[0], from_t38, s->t38x.suppress_nsx_len[0]);
+    /*endif*/
     if (from_modem_len >= 0)
         s->t38x.suppress_nsx_len[1] = ((from_modem_len < MAX_NSX_SUPPRESSION)  ?  from_modem_len  :  MAX_NSX_SUPPRESSION) + 3;
+    /*endif*/
     if (from_modem)
         memcpy(s->t38x.suppress_nsx_string[1], from_modem, s->t38x.suppress_nsx_len[1]);
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -2323,10 +2357,10 @@ static int t38_gateway_audio_init(t38_gateway_state_t *s)
     /* We need to use progressive HDLC transmit, and a special HDLC receiver, which is different
        from the other uses of FAX modems. */
     hdlc_tx_init(&s->audio.modems.hdlc_tx, false, 2, true, hdlc_underflow_handler, s);
-    fsk_rx_set_put_bit(&s->audio.modems.v21_rx, (put_bit_func_t) t38_hdlc_rx_put_bit, &s->audio.modems.hdlc_rx);
+    fsk_rx_set_put_bit(&s->audio.modems.v21_rx, (span_put_bit_func_t) t38_hdlc_rx_put_bit, &s->audio.modems.hdlc_rx);
     /* TODO: Don't use the very low cutoff levels we would like to. We get some quirks if we do.
        We need to sort this out. */
-    fsk_rx_signal_cutoff(&s->audio.modems.v21_rx, -30.0f);
+    fsk_rx_set_signal_cutoff(&s->audio.modems.v21_rx, -30.0f);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2381,7 +2415,7 @@ SPAN_DECLARE(t38_gateway_state_t *) t38_gateway_init(t38_gateway_state_t *s,
 
     s->core.to_t38.octets_per_data_packet = 1;
     s->core.ecm_allowed = true;
-    s->core.ms_per_tx_chunk = DEFAULT_MS_PER_TX_CHUNK;
+    s->core.microseconds_per_tx_chunk = DEFAULT_MICROSECONDS_PER_TX_CHUNK;
     t38_non_ecm_buffer_init(&s->core.non_ecm_to_modem, false, 0);
     restart_rx_modem(s);
     s->core.timed_mode = TIMED_MODE_STARTUP;

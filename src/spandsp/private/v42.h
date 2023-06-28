@@ -67,13 +67,13 @@ typedef struct frame_s
 */
 typedef struct
 {
-    get_msg_func_t iframe_get;
+    span_get_msg_func_t iframe_get;
     void *iframe_get_user_data;
 
-    put_msg_func_t iframe_put;
+    span_put_msg_func_t iframe_put;
     void *iframe_put_user_data;
 
-    modem_status_func_t status_handler;
+    span_modem_status_func_t status_handler;
     void *status_user_data;
 
     hdlc_rx_state_t hdlc_rx;

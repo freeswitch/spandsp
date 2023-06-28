@@ -109,14 +109,17 @@ SPAN_DECLARE(int) t38_non_ecm_buffer_get_bit(void *user_data)
                 restart_buffer(s);
                 return SIG_STATUS_END_OF_DATA;
             }
+            /*endif*/
             /* The queue is blocked, but this does not appear to be the end of the data. Idle with
                fill octets, which should be safe at this point. */
             s->octet = s->flow_control_fill_octet;
             s->flow_control_fill_octets++;
         }
+        /*endif*/
         s->out_octets++;
         s->bit_no = 8;
     }
+    /*endif*/
     s->bit_no--;
     bit = (s->octet >> 7) & 1;
     s->octet <<= 1;
@@ -191,7 +194,9 @@ SPAN_DECLARE(void) t38_non_ecm_buffer_inject(t38_non_ecm_buffer_state_t *s, cons
                 s->flow_control_fill_octet = 0x00;
                 break;
             }
+            /*endif*/
         }
+        /*endfor*/
         /* Fall through */
     case TCF_AT_ALL_ZEROS:
         for (  ;  i < len;  i++)
@@ -203,6 +208,7 @@ SPAN_DECLARE(void) t38_non_ecm_buffer_inject(t38_non_ecm_buffer_state_t *s, cons
             s->in_ptr = (s->in_ptr + 1) & (T38_NON_ECM_TX_BUF_LEN - 1);
             s->in_octets++;
         }
+        /*endfor*/
         break;
     case IMAGE_WAITING_FOR_FIRST_EOL:
         /* Dump anything up to the first EOL. Let the output side stuff with 0xFF bytes while waiting
@@ -244,11 +250,15 @@ SPAN_DECLARE(void) t38_non_ecm_buffer_inject(t38_non_ecm_buffer_state_t *s, cons
                     i++;
                     break;
                 }
+                /*endif*/
             }
+            /*endif*/
             s->bit_stream = (s->bit_stream << 8) | buf[i];
         }
+        /*endfor*/
         if (i >= len)
             break;
+        /*endif*/
         /* Fall through */
     case IMAGE_IN_PROGRESS:
         /* Now we have seen an EOL, we can stuff with zeros just in front of that EOL, or any
@@ -290,15 +300,19 @@ SPAN_DECLARE(void) t38_non_ecm_buffer_inject(t38_non_ecm_buffer_state_t *s, cons
                                      the tail could overwrite itself if things fall badly behind. */
                             s->in_ptr = (s->in_ptr + 1) & (T38_NON_ECM_TX_BUF_LEN - 1);
                         }
+                        /*endwhile*/
                         /* This is now the limit for the output side, before it starts
                            stuffing. */
                         s->latest_eol_ptr = s->in_ptr;
                     }
+                    /*endif*/
                     /* Start a new row */
                     s->row_bits = lower - 8;
                     s->in_rows++;
                 }
+                /*endif*/
             }
+            /*endif*/
             s->bit_stream = (s->bit_stream << 8) | buf[i];
             s->data[s->in_ptr] = buf[i];
             s->row_bits += 8;
@@ -307,8 +321,10 @@ SPAN_DECLARE(void) t38_non_ecm_buffer_inject(t38_non_ecm_buffer_state_t *s, cons
             s->in_ptr = (s->in_ptr + 1) & (T38_NON_ECM_TX_BUF_LEN - 1);
             s->in_octets++;
         }
+        /*endfor*/
         break;
     }
+    /*endswitch*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -326,6 +342,7 @@ SPAN_DECLARE(void) t38_non_ecm_buffer_report_input_status(t38_non_ecm_buffer_sta
         s->in_rows = 0;
         s->min_row_bits_fill_octets = 0;
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -343,6 +360,7 @@ SPAN_DECLARE(void) t38_non_ecm_buffer_report_output_status(t38_non_ecm_buffer_st
         s->out_rows = 0;
         s->flow_control_fill_octets = 0;
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -359,7 +377,9 @@ SPAN_DECLARE(t38_non_ecm_buffer_state_t *) t38_non_ecm_buffer_init(t38_non_ecm_b
     {
         if ((s = (t38_non_ecm_buffer_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     s->image_data_mode = image_mode;
     s->min_bits_per_row = min_bits_per_row;
@@ -378,6 +398,7 @@ SPAN_DECLARE(int) t38_non_ecm_buffer_free(t38_non_ecm_buffer_state_t *s)
 {
     if (s)
         span_free(s);
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

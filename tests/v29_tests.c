@@ -191,8 +191,8 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
     {
         constel_point.re = constel->re/V29_CONSTELLATION_SCALING_FACTOR;
         constel_point.im = constel->im/V29_CONSTELLATION_SCALING_FACTOR;
-        target_point.re = target->re/V29_CONSTELLATION_SCALING_FACTOR,
-        target_point.im = target->im/V29_CONSTELLATION_SCALING_FACTOR,
+        target_point.re = target->re/V29_CONSTELLATION_SCALING_FACTOR;
+        target_point.im = target->im/V29_CONSTELLATION_SCALING_FACTOR;
         fpower = (constel_point.re - target_point.re)*(constel_point.re - target_point.re)
                + (constel_point.im - target_point.im)*(constel_point.im - target_point.im);
         smooth_power = 0.95f*smooth_power + 0.05f*fpower;
@@ -447,7 +447,7 @@ int main(int argc, char *argv[])
     logging = v29_rx_get_logging_state(rx);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "V.29-rx");
-    v29_rx_signal_cutoff(rx, -45.5f);
+    v29_rx_set_signal_cutoff(rx, -45.5f);
     v29_rx_set_modem_status_handler(rx, v29_rx_status, (void *) rx);
     v29_rx_set_qam_report_handler(rx, qam_report, (void *) rx);
 #if defined(SPANDSP_EXPOSE_INTERNAL_STRUCTURES)

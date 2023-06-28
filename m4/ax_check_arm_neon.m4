@@ -11,7 +11,7 @@
 # provided "as is" without express or implied warranty.
 
 AC_DEFUN([AX_CHECK_ARM_NEON],
-[AC_CACHE_CHECK([if $1 supports the ARM NEON instructions set], 
+[AC_CACHE_CHECK([if $1 supports the ARM NEON instruction set], 
     ac_cv_symbol_arm_neon,
 
 [# Initialize to unknown

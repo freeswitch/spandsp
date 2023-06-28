@@ -75,8 +75,10 @@ static int32_t lpc10_random(lpc10_decode_state_t *s)
     ret_val = s->y[s->k];
     if (--s->k < 0)
         s->k = 4;
+    /*endif*/
     if (--s->j < 0)
         s->j = 4;
+    /*endif*/
     return ret_val;
 }
 /*- End of function --------------------------------------------------------*/
@@ -121,18 +123,21 @@ static void bsynz(lpc10_decode_state_t *s,
     s->rmso_bsynz = rms;
     for (i = 0;  i < LPC10_ORDER;  i++)
         s->exc2[i] = s->exc2[s->ipo + i]*xy;
+    /*endfor*/
     s->ipo = ip;
     if (*iv == 0)
     {
         /* Generate white noise for unvoiced */
         for (i = 0;  i < ip;  i++)
             s->exc[LPC10_ORDER + i] = (float) (lpc10_random(s)/64);
+        /*endfor*/
         /* Impulse double excitation for plosives */
         px = (lpc10_random(s) + 32768)*(ip - 1)/65536 + LPC10_ORDER + 1;
         r1 = ratio/4.0f;
         pulse = r1*342;
         if (pulse > 2.0e3f)
             pulse = 2.0e3f;
+        /*endif*/
         s->exc[px - 1] += pulse;
         s->exc[px] -= pulse;
     }
@@ -144,11 +149,13 @@ static void bsynz(lpc10_decode_state_t *s,
             s->exc[LPC10_ORDER + i] = 0.0f;
             if (i < 25)
                 s->exc[LPC10_ORDER + i] = sscale*kexc[i];
+            /*endif*/
             lpi0 = s->exc[LPC10_ORDER + i];
             s->exc[LPC10_ORDER + i] = s->exc[LPC10_ORDER + i]*0.125f + s->lpi[0]*0.75f + s->lpi[1]*0.125f;
             s->lpi[1] = s->lpi[0];
             s->lpi[0] = lpi0;
         }
+        /*endfor*/
         for (i = 0;  i < ip;  i++)
         {
             hpi0 = lpc10_random(s)/64.0f;
@@ -156,9 +163,12 @@ static void bsynz(lpc10_decode_state_t *s,
             s->hpi[1] = s->hpi[0];
             s->hpi[0] = hpi0;
         }
+        /*endfor*/
         for (i = 0;  i < ip;  i++)
             s->exc[LPC10_ORDER + i] += noise[i];
+        /*endfor*/
     }
+    /*endif*/
     /* Synthesis filters: */
     /* Modify the excitation with all-zero filter 1 + G*SUM */
     xssq = 0.0f;
@@ -168,9 +178,11 @@ static void bsynz(lpc10_decode_state_t *s,
         sum = 0.0f;
         for (j = 0;  j < LPC10_ORDER;  j++)
             sum += coef[j]*s->exc[k - j - 1];
+        /*endfor*/
         sum *= g2pass;
         s->exc2[k] = sum + s->exc[k];
     }
+    /*endfor*/
     /* Synthesize using the all pole filter 1/(1 - SUM) */
     for (i = 0;  i < ip;  i++)
     {
@@ -178,20 +190,24 @@ static void bsynz(lpc10_decode_state_t *s,
         sum = 0.0f;
         for (j = 0;  j < LPC10_ORDER;  j++)
             sum += coef[j]*s->exc2[k - j - 1];
+        /*endfor*/
         s->exc2[k] = sum + s->exc2[k];
         xssq += s->exc2[k]*s->exc2[k];
     }
+    /*endfor*/
     /* Save filter history for next epoch */
     for (i = 0;  i < LPC10_ORDER;  i++)
     {
         s->exc[i] = s->exc[ip + i];
         s->exc2[i] = s->exc2[ip + i];
     }
+    /*endfor*/
     /* Apply gain to match RMS */
     ssq = rms*rms*ip;
     gain = sqrtf(ssq/xssq);
     for (i = 0;  i < ip;  i++)
         sout[i] = gain*s->exc2[LPC10_ORDER + i];
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -229,8 +245,10 @@ static int pitsyn(lpc10_decode_state_t *s,
 
     if (rms < 1.0f)
         rms = 1.0f;
+    /*endif*/
     if (s->rmso < 1.0f)
         s->rmso = 1.0f;
+    /*endif*/
     uvpit = 0.0f;
     *ratio = rms/(s->rmso + 8.0f);
     if (s->first_pitsyn)
@@ -238,6 +256,7 @@ static int pitsyn(lpc10_decode_state_t *s,
         ivoice = voice[1];
         if (ivoice == 0)
             *pitch = LPC10_SAMPLES_PER_FRAME/4;
+        /*endif*/
         *nout = LPC10_SAMPLES_PER_FRAME / *pitch;
         s->jsamp = LPC10_SAMPLES_PER_FRAME - *nout * *pitch;
 
@@ -245,10 +264,12 @@ static int pitsyn(lpc10_decode_state_t *s,
         {
             for (j = 0;  j < LPC10_ORDER;  j++)
                 rci[j + i*LPC10_ORDER] = rc[j];
+            /*endfor*/
             ivuv[i] = ivoice;
             ipiti[i] = *pitch;
             rmsi[i] = rms;
         }
+        /*endfor*/
         s->first_pitsyn = false;
     }
     else
@@ -267,7 +288,9 @@ static int pitsyn(lpc10_decode_state_t *s,
                 s->ipito = *pitch;
                 if (*ratio > 8.0f)
                     s->rmso = rms;
+                /*endif*/
             }
+            /*endif*/
             /* SSVC - -   1  ,  1  ,  1 */
             slope = (*pitch - s->ipito)/(float) lsamp;
             ivoice = voice[1];
@@ -286,6 +309,7 @@ static int pitsyn(lpc10_decode_state_t *s,
                     /* UV2VC1 - -  0  ,  1  ,  1 */
                     nl = lsamp - LPC10_SAMPLES_PER_FRAME*3/4;
                 }
+                /*endif*/
                 ipiti[0] = nl/2;
                 ipiti[1] = nl - ipiti[0];
                 ivuv[0] = 0;
@@ -298,6 +322,7 @@ static int pitsyn(lpc10_decode_state_t *s,
                     rci[i + LPC10_ORDER] = s->rco[i];
                     s->rco[i] = rc[i];
                 }
+                /*endfor*/
                 *nout = 2;
                 s->ipito = *pitch;
                 jused = nl;
@@ -316,16 +341,20 @@ static int pitsyn(lpc10_decode_state_t *s,
                     /* VC2UV2 - -   1  ,  1  ,  0 */
                     lsamp = LPC10_SAMPLES_PER_FRAME*3/4 + s->jsamp;
                 }
+                /*endif*/
                 for (i = 0;  i < LPC10_ORDER;  i++)
                 {
                     yarc[i] = rc[i];
                     rc[i] = s->rco[i];
                 }
+                /*endfor*/
                 ivoice = 1;
                 vflag = 1;
             }
+            /*endif*/
             slope = 0.0f;
         }
+        /*endif*/
         /* Here is the value of most variables that are used below, depending on */
         /* the values of IVOICO, VOICE(1), and VOICE(2).  VOICE(1) and VOICE(2) */
         /* are input arguments, and IVOICO is the value of VOICE(2) on the */
@@ -397,6 +426,7 @@ static int pitsyn(lpc10_decode_state_t *s,
                 ip = (int32_t) (r1 + 0.5f);
                 if (uvpit != 0.0f)
                     ip = (int32_t) uvpit;
+                /*endif*/
                 if (ip <= i - jused)
                 {
                     ipiti[*nout] = ip;
@@ -412,15 +442,19 @@ static int pitsyn(lpc10_decode_state_t *s,
                         xxy = expf(xxy);
                         rci[j + *nout*LPC10_ORDER] = (xxy - 1.0f)/(xxy + 1.0f);
                     }
+                    /*endfor*/
                     msix = logf(rms) - logf(s->rmso);
                     msix = prop*msix;
                     msix = logf(s->rmso) + msix;
                     rmsi[*nout] = expf(msix);
                     (*nout)++;
                 }
+                /*endif*/
             }
+            /*endfor*/
             if (vflag != 1)
                 break;
+            /*endif*/
 
             vflag = 0;
             istart = jused + 1;
@@ -430,15 +464,19 @@ static int pitsyn(lpc10_decode_state_t *s,
             uvpit = (float) ((lsamp - istart)/2);
             if (uvpit > 90.0f)
                 uvpit /= 2;
+            /*endif*/
             s->rmso = rms;
             for (i = 0;  i < LPC10_ORDER;  i++)
             {
                 rc[i] = yarc[i];
                 s->rco[i] = yarc[i];
             }
+            /*endfor*/
         }
+        /*endfor*/
         s->jsamp = lsamp - jused;
     }
+    /*endif*/
     if (*nout != 0)
     {
         s->ivoico = voice[1];
@@ -446,7 +484,9 @@ static int pitsyn(lpc10_decode_state_t *s,
         s->rmso = rms;
         for (i = 0;  i < LPC10_ORDER;  i++)
             s->rco[i] = rc[i];
+        /*endfor*/
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -468,6 +508,7 @@ static void deemp(lpc10_decode_state_t *s, float x[], int len)
         s->deo[1] = s->deo[0];
         s->deo[0] = x[i];
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -482,16 +523,20 @@ static float reflection_coeffs_to_predictor_coeffs(float rc[], float pc[], float
     g2pass = 1.0f;
     for (i = 0;  i < LPC10_ORDER;  i++)
         g2pass *= 1.0f - rc[i]*rc[i];
+    /*endfor*/
     g2pass = gprime*sqrtf(g2pass);
     pc[0] = rc[0];
     for (i = 1;  i < LPC10_ORDER;  i++)
     {
         for (j = 0;  j < i;  j++)
             temp[j] = pc[j] - rc[i]*pc[i - j - 1];
+        /*endfor*/
         for (j = 0;  j < i;  j++)
             pc[j] = temp[j];
+        /*endfor*/
         pc[i] = rc[i];
     }
+    /*endfor*/
     return g2pass;
 }
 /*- End of function --------------------------------------------------------*/
@@ -517,6 +562,7 @@ static int synths(lpc10_decode_state_t *s,
     *pitch = max(min(*pitch, LPC10_MIN_PITCH), LPC10_MAX_PITCH);
     for (i = 0;  i < LPC10_ORDER;  i++)
         rc[i] = max(min(rc[i], 0.99f), -0.99f);
+    /*endfor*/
     pitsyn(s, voice, pitch, rms, rc, ivuv, ipiti, rmsi, rci, &nout, &ratio);
     if (nout > 0)
     {
@@ -528,14 +574,18 @@ static int synths(lpc10_decode_state_t *s,
             deemp(s, &s->buf[s->buflen], ipiti[j]);
             s->buflen += ipiti[j];
         }
+        /*endfor*/
         /* Copy first MAXFRM samples from BUF to output array speech (scaling them),
            and then remove them from the beginning of s->buf. */
         for (i = 0;  i < LPC10_SAMPLES_PER_FRAME;  i++)
             speech[i] = s->buf[i]/4096.0f;
+        /*endfor*/
         s->buflen -= LPC10_SAMPLES_PER_FRAME;
         for (i = 0;  i < s->buflen;  i++)
             s->buf[i] = s->buf[i + LPC10_SAMPLES_PER_FRAME];
+        /*endfor*/
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -574,23 +624,28 @@ static void lpc10_unpack(lpc10_frame_t *t, const uint8_t ibits[])
     /* Reconstruct ITAB */
     for (i = 0;  i < 13;  i++)
         itab[i] = 0;
+    /*endfor*/
     for (i = 0;  i < 53;  i++)
     {
         x = 52 - i;
         x = (ibits[x >> 3] >> (7 - (x & 7))) & 1;
         itab[iblist[52 - i] - 1] = (itab[iblist[52 - i] - 1] << 1) | x;
     }
+    /*endfor*/
     /* Sign extend the RC's */
     for (i = 0;  i < LPC10_ORDER;  i++)
     {
         if ((itab[i + 3] & bit[i]))
             itab[i + 3] -= (bit[i] << 1);
+        /*endif*/
     }
+    /*endfor*/
     /* Restore variables */
     t->ipitch = itab[0];
     t->irms = itab[1];
     for (i = 0;  i < LPC10_ORDER;  i++)
         t->irc[i] = itab[LPC10_ORDER - 1 - i + 3];
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -632,6 +687,7 @@ static int32_t hamming_84_decode(int32_t input, int *errcnt)
         /* No errors detected in seven bits */
         if (parity)
             (*errcnt)++;
+        /*endif*/
     }
     else
     {
@@ -643,7 +699,9 @@ static int32_t hamming_84_decode(int32_t input, int *errcnt)
             (*errcnt)++;
             output = -1;
         }
+        /*endif*/
     }
+    /*endif*/
     return output;
 }
 /*- End of function --------------------------------------------------------*/
@@ -658,13 +716,16 @@ static int32_t median(int32_t d1, int32_t d2, int32_t d3)
         ret_val = d1;
         if (d3 > d1)
             ret_val = d3;
+        /*endif*/
     }
     else if (d2 < d1  &&  d2 < d3)
     {
         ret_val = d1;
         if (d3 < d1)
             ret_val = d3;
+        /*endif*/
     }
+    /*endif*/
     return ret_val;
 }
 /*- End of function --------------------------------------------------------*/
@@ -773,15 +834,20 @@ static void decode(lpc10_decode_state_t *s,
         voice[1] = 1;
         if (t->ipitch <= 1)
             voice[0] = 0;
+        /*endif*/
         if (t->ipitch == 0  ||  t->ipitch == 2)
             voice[1] = 0;
+        /*endif*/
         if (i4 <= 4)
             i4 = s->iptold;
+        /*endif*/
         *pitch = i4;
         if (voice[0] == 1  &&  voice[1] == 1)
             s->iptold = *pitch;
+        /*endif*/
         if (voice[0] != voice[1])
             *pitch = s->iptold;
+        /*endif*/
     }
     else
     {
@@ -797,9 +863,11 @@ static void decode(lpc10_decode_state_t *s,
             s->dpit[0] = s->iavgp;
             ivoic = i4;
         }
+        /*endif*/
         s->drms[0] = t->irms;
         for (i = 0;  i < LPC10_ORDER;  i++)
             s->drc[i][0] = t->irc[i];
+        /*endfor*/
         /* Determine index to IVTAB from V/UV decision */
         /* If error rate is high then use alternate table */
         index = (s->ivp2h << 4) + (s->iovoic << 2) + ivoic + 1;
@@ -808,14 +876,18 @@ static void decode(lpc10_decode_state_t *s,
         icorf = i1 >> 3;
         if (s->erate < 2048)
             icorf /= 64;
+        /*endif*/
         /* Determine error rate:  4=high    1=low */
         ixcor = 4;
         if (s->erate < 2048)
             ixcor = 3;
+        /*endif*/
         if (s->erate < 1024)
             ixcor = 2;
+        /*endif*/
         if (s->erate < 128)
             ixcor = 1;
+        /*endif*/
         /* Voice/unvoice decision determined from bits 0 and 1 of IVTAB */
         voice[0] = icorf/2 & 1;
         voice[1] = icorf & 1;
@@ -829,6 +901,7 @@ static void decode(lpc10_decode_state_t *s,
             /* reasonable thing to do for the first call. */
             if (i4 <= 4)
                 i4 = s->iptold;
+            /*endif*/
             *pitch = i4;
         }
         else
@@ -846,12 +919,14 @@ static void decode(lpc10_decode_state_t *s,
                 s->drms[1] = s->drms[2];
                 if (iout >= 0)
                     s->drms[1] = (iout << 1) + lsb;
+                /*endif*/
                 for (i = 1;  i <= 4;  i++)
                 {
                     if (i == 1)
                         i1 = ((s->drc[8][1] & 7) << 1) + (s->drc[9][1] & 1);
                     else
                         i1 = s->drc[8 - i][1] & 15;
+                    /*endif*/
                     i2 = s->drc[4 - i][1] & 31;
                     lsb = i2 & 1;
                     index = (i1 << 4) + (i2 >> 1);
@@ -861,24 +936,31 @@ static void decode(lpc10_decode_state_t *s,
                         iout = (iout << 1) + lsb;
                         if ((iout & 16) == 16)
                             iout -= 32;
+                        /*endif*/
                     }
                     else
                     {
                         iout = s->drc[4 - i][2];
                     }
+                    /*endif*/
                     s->drc[4 - i][1] = iout;
                 }
+                /*endfor*/
                 /* Determine error rate */
                 s->erate = (int32_t) (s->erate*0.96875f + errcnt*102.0f);
             }
+            /*endif*/
             /* Get unsmoothed RMS, RC's, and PITCH */
             t->irms = s->drms[1];
             for (i = 0;  i < LPC10_ORDER;  i++)
                 t->irc[i] = s->drc[i][1];
+            /*endfor*/
             if (ipit == 1)
                 s->dpit[1] = s->dpit[2];
+            /*endif*/
             if (ipit == 3)
                 s->dpit[1] = s->dpit[0];
+            /*endif*/
             *pitch = s->dpit[1];
             /* If bit 2 of ICORF is set then smooth RMS and RC's, */
             if ((icorf & bit[1]) != 0)
@@ -889,6 +971,7 @@ static void decode(lpc10_decode_state_t *s,
                 {
                     t->irms = median(s->drms[2], s->drms[1], s->drms[0]);
                 }
+                /*endif*/
                 for (i = 0;  i < 6;  i++)
                 {
                     if ((float) abs(s->drc[i][1] - s->drc[i][0]) >= corth[ixcor + ((i + 3) << 2) - 5]
@@ -897,8 +980,11 @@ static void decode(lpc10_decode_state_t *s,
                     {
                         t->irc[i] = median(s->drc[i][2], s->drc[i][1], s->drc[i][0]);
                     }
+                    /*endif*/
                 }
+                /*endfor*/
             }
+            /*endif*/
             /* If bit 3 of ICORF is set then smooth pitch */
             if ((icorf & bit[2]) != 0)
             {
@@ -908,16 +994,21 @@ static void decode(lpc10_decode_state_t *s,
                 {
                     *pitch = median(s->dpit[2], s->dpit[1], s->dpit[0]);
                 }
+                /*endif*/
             }
+            /*endif*/
             /* If bit 5 of ICORF is set then RC(5) - RC(10) are loaded with
                values so that after quantization bias is removed in decode
                the values will be zero. */
         }
+        /*endif*/
         if ((icorf & bit[4]) != 0)
         {
             for (i = 4;  i < LPC10_ORDER;  i++)
                 t->irc[i] = zrc[i];
+            /*endfor*/
         }
+        /*endif*/
         /* Housekeeping  - one frame delay */
         s->iovoic = ivoic;
         s->ivp2h = voice[1];
@@ -930,7 +1021,9 @@ static void decode(lpc10_decode_state_t *s,
             s->drc[i][2] = s->drc[i][1];
             s->drc[i][1] = s->drc[i][0];
         }
+        /*endfor*/
     }
+    /*endif*/
     /* Decode RMS */
     t->irms = rmst[(31 - t->irms)*2];
     /* Decode RC(1) and RC(2) from log-area-ratios */
@@ -945,13 +1038,17 @@ static void decode(lpc10_decode_state_t *s,
             i2 = -i2;
             if (i2 > 15)
                 i2 = 0;
+            /*endif*/
         }
+        /*endif*/
         i2 = detab7[i2*2];
         if (i1 == 1)
             i2 = -i2;
+        /*endif*/
         ishift = 15 - nbit[i];
         t->irc[i] = i2*pow_ii(2, ishift);
     }
+    /*endfor*/
     /* Decode RC(3)-RC(10) to sign plus 14 bits */
     for (i = 2;  i < LPC10_ORDER;  i++)
     {
@@ -959,10 +1056,12 @@ static void decode(lpc10_decode_state_t *s,
         i2 = t->irc[i]*pow_ii(2, ishift) + qb[i - 2];
         t->irc[i] = (int32_t) (i2*descl[i - 2] + deadd[i - 2]);
     }
+    /*endfor*/
     /* Scale RMS and RC's to floats */
     *rms = (float) t->irms;
     for (i = 0;  i < LPC10_ORDER;  i++)
         rc[i] = t->irc[i]/16384.0f;
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -983,7 +1082,9 @@ SPAN_DECLARE(lpc10_decode_state_t *) lpc10_decode_init(lpc10_decode_state_t *s, 
     {
         if ((s = (lpc10_decode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
 
     s->error_correction = error_correction;
 
@@ -998,13 +1099,16 @@ SPAN_DECLARE(lpc10_decode_state_t *) lpc10_decode_init(lpc10_decode_state_t *s, 
     {
         for (j = 0;  j < 10;  j++)
             s->drc[j][i] = 0;
+        /*endfor*/
         s->dpit[i] = 0;
         s->drms[i] = 0;
     }
+    /*endfor*/
 
     /* State used by function synths */
     for (i = 0;  i < 360;  i++)
         s->buf[i] = 0.0f;
+    /*endfor*/
     s->buflen = LPC10_SAMPLES_PER_FRAME;
 
     /* State used by function pitsyn */
@@ -1018,11 +1122,13 @@ SPAN_DECLARE(lpc10_decode_state_t *) lpc10_decode_init(lpc10_decode_state_t *s, 
         s->exc[i] = 0.0f;
         s->exc2[i] = 0.0f;
     }
+    /*endfor*/
     for (i = 0;  i < 3;  i++)
     {
         s->lpi[i] = 0.0f;
         s->hpi[i] = 0.0f;
     }
+    /*endfor*/
     s->rmso_bsynz = 0.0f;
 
     /* State used by function lpc10_random */
@@ -1030,12 +1136,15 @@ SPAN_DECLARE(lpc10_decode_state_t *) lpc10_decode_init(lpc10_decode_state_t *s, 
     s->k = 4;
     for (i = 0;  i < 5;  i++)
         s->y[i] = rand_init[i];
+    /*endfor*/
 
     /* State used by function deemp */
     for (i = 0;  i < 2;  i++)
         s->dei[i] = 0.0f;
+    /*endfor*/
     for (i = 0;  i < 3;  i++)
         s->deo[i] = 0.0f;
+    /*endfor*/
 
     return s;
 }
@@ -1076,7 +1185,9 @@ SPAN_DECLARE(int) lpc10_decode(lpc10_decode_state_t *s, int16_t amp[], const uin
         base = i*LPC10_SAMPLES_PER_FRAME;
         for (j = 0;  j < LPC10_SAMPLES_PER_FRAME;  j++)
             amp[base + j] = (int16_t) lfastrintf(32768.0f*speech[j]);
+        /*endfor*/
     }
+    /*endfor*/
 
     return len*LPC10_SAMPLES_PER_FRAME;
 }

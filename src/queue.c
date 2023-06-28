@@ -391,8 +391,10 @@ SPAN_DECLARE(int) queue_write_msg(queue_state_t *s, const uint8_t *buf, int len)
             memcpy(s->data, ((uint8_t *) &lenx) + to_end, sizeof(uint16_t) - to_end);
             memcpy(&s->data[sizeof(uint16_t) - to_end], buf, len);
         }
+        /*endif*/
         new_iptr = real_len - to_end;
     }
+    /*endif*/
     /*endif*/
     /* Only change the pointer now we have really finished */
     s->iptr = new_iptr;
@@ -406,7 +408,9 @@ SPAN_DECLARE(queue_state_t *) queue_init(queue_state_t *s, int len, int flags)
     {
         if ((s = (queue_state_t *) span_alloc(sizeof(*s) + len + 1)) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     s->iptr =
     s->optr = 0;
     s->flags = flags;

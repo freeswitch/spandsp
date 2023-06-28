@@ -155,7 +155,7 @@ SPAN_DECLARE(float) v27ter_rx_signal_power(v27ter_rx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) v27ter_rx_signal_cutoff(v27ter_rx_state_t *s, float cutoff)
+SPAN_DECLARE(void) v27ter_rx_set_signal_cutoff(v27ter_rx_state_t *s, float cutoff)
 {
     /* The 0.4 factor allows for the gain of the DC blocker */
     s->carrier_on_power = (int32_t) (power_meter_level_dbm0(cutoff + 2.5f)*0.4f);
@@ -1013,14 +1013,14 @@ SPAN_DECLARE(int) v27ter_rx_fillin(v27ter_rx_state_t *s, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) v27ter_rx_set_put_bit(v27ter_rx_state_t *s, put_bit_func_t put_bit, void *user_data)
+SPAN_DECLARE(void) v27ter_rx_set_put_bit(v27ter_rx_state_t *s, span_put_bit_func_t put_bit, void *user_data)
 {
     s->put_bit = put_bit;
     s->put_bit_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) v27ter_rx_set_modem_status_handler(v27ter_rx_state_t *s, modem_status_func_t handler, void *user_data)
+SPAN_DECLARE(void) v27ter_rx_set_modem_status_handler(v27ter_rx_state_t *s, span_modem_status_func_t handler, void *user_data)
 {
     s->status_handler = handler;
     s->status_user_data = user_data;
@@ -1101,7 +1101,7 @@ SPAN_DECLARE(int) v27ter_rx_restart(v27ter_rx_state_t *s, int bit_rate, bool old
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(v27ter_rx_state_t *) v27ter_rx_init(v27ter_rx_state_t *s, int bit_rate, put_bit_func_t put_bit, void *user_data)
+SPAN_DECLARE(v27ter_rx_state_t *) v27ter_rx_init(v27ter_rx_state_t *s, int bit_rate, span_put_bit_func_t put_bit, void *user_data)
 {
     switch (bit_rate)
     {
@@ -1119,7 +1119,7 @@ SPAN_DECLARE(v27ter_rx_state_t *) v27ter_rx_init(v27ter_rx_state_t *s, int bit_r
     memset(s, 0, sizeof(*s));
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "V.27ter RX");
-    v27ter_rx_signal_cutoff(s, -45.5f);
+    v27ter_rx_set_signal_cutoff(s, -45.5f);
     s->put_bit = put_bit;
     s->put_bit_user_data = user_data;
 

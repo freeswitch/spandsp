@@ -206,8 +206,8 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
             qam_monitor_update_symbol_tracking(s->qam_monitor, v22bis_rx_symbol_timing_correction(s->v22bis));
         }
 #endif
-        fpower = (constel->re - target->re)*(constel->re - target->re)
-               + (constel->im - target->im)*(constel->im - target->im);
+        fpower = (constel_point.re - target_point.re)*(constel_point.re - target_point.re)
+               + (constel_point.im - target_point.im)*(constel_point.im - target_point.im);
         s->smooth_power = 0.95f*s->smooth_power + 0.05f*fpower;
 
         printf("%8d [%8.4f, %8.4f] [%8.4f, %8.4f] %2x %8.4f %8.4f %8.4f\n",

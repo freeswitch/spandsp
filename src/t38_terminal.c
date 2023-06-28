@@ -101,7 +101,7 @@
 #include "spandsp/private/t38_terminal.h"
 
 /* Settings suitable for paced transmission over a UDP transport */
-#define DEFAULT_US_PER_TX_CHUNK                 30000
+#define DEFAULT_MICROSECONDS_PER_TX_CHUNK       30000
 
 #define INDICATOR_TX_COUNT                      3
 #define DATA_TX_COUNT                           1
@@ -268,8 +268,9 @@ static int process_rx_indicator(t38_core_state_t *t, void *user_data, int indica
     case T38_IND_CED:
         front_end_status(s, T30_FRONT_END_CED_PRESENT);
         break;
+    case T38_IND_V34_CNTL_CHANNEL_1200:
     case T38_IND_V21_PREAMBLE:
-        fe->timeout_rx_samples = fe->samples + ms_to_samples(MID_RX_TIMEOUT);
+        fe->timeout_rx_samples = fe->samples + milliseconds_to_samples(MID_RX_TIMEOUT);
         front_end_status(s, T30_FRONT_END_SIGNAL_PRESENT);
         break;
     case T38_IND_V27TER_2400_TRAINING:
@@ -284,13 +285,12 @@ static int process_rx_indicator(t38_core_state_t *t, void *user_data, int indica
     case T38_IND_V17_12000_LONG_TRAINING:
     case T38_IND_V17_14400_SHORT_TRAINING:
     case T38_IND_V17_14400_LONG_TRAINING:
-    case T38_IND_V34_CNTL_CHANNEL_1200:
     case T38_IND_V34_PRI_CHANNEL:
     case T38_IND_V33_12000_TRAINING:
     case T38_IND_V33_14400_TRAINING:
         /* We really don't care what kind of modem is delivering the following image data.
            We only care that some kind of fast modem signal is coming next. */
-        fe->timeout_rx_samples = fe->samples + ms_to_samples(MID_RX_TIMEOUT);
+        fe->timeout_rx_samples = fe->samples + milliseconds_to_samples(MID_RX_TIMEOUT);
         front_end_status(s, T30_FRONT_END_SIGNAL_PRESENT);
         break;
     case T38_IND_V8_ANSAM:
@@ -435,7 +435,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             process_hdlc_data(fe, buf, len);
         }
         /*endif*/
-        fe->timeout_rx_samples = fe->samples + ms_to_samples(MID_RX_TIMEOUT);
+        fe->timeout_rx_samples = fe->samples + milliseconds_to_samples(MID_RX_TIMEOUT);
         break;
     case T38_FIELD_HDLC_FCS_OK:
         if (len > 0)
@@ -457,7 +457,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         }
         /*endif*/
         fe->rx_data_missing = false;
-        fe->timeout_rx_samples = fe->samples + ms_to_samples(MID_RX_TIMEOUT);
+        fe->timeout_rx_samples = fe->samples + milliseconds_to_samples(MID_RX_TIMEOUT);
         break;
     case T38_FIELD_HDLC_FCS_BAD:
         if (len > 0)
@@ -479,7 +479,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         }
         /*endif*/
         fe->rx_data_missing = false;
-        fe->timeout_rx_samples = fe->samples + ms_to_samples(MID_RX_TIMEOUT);
+        fe->timeout_rx_samples = fe->samples + milliseconds_to_samples(MID_RX_TIMEOUT);
         break;
     case T38_FIELD_HDLC_FCS_OK_SIG_END:
         if (len > 0)
@@ -573,7 +573,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             t30_non_ecm_put(&s->t30, buf2, len);
         }
         /*endif*/
-        fe->timeout_rx_samples = fe->samples + ms_to_samples(MID_RX_TIMEOUT);
+        fe->timeout_rx_samples = fe->samples + milliseconds_to_samples(MID_RX_TIMEOUT);
         break;
     case T38_FIELD_T4_NON_ECM_SIG_END:
         /* Some T.38 implementations send multiple T38_FIELD_T4_NON_ECM_SIG_END messages, in IFP packets with
@@ -633,7 +633,7 @@ static void send_hdlc(void *user_data, const uint8_t *msg, int len)
         return;
     }
     /*endif*/
-    if (s->t38_fe.us_per_tx_chunk)
+    if (s->t38_fe.microseconds_per_tx_chunk)
         s->t38_fe.hdlc_tx.extra_bits = extra_bits_in_stuffed_frame(msg, len);
     /*endif*/
     bit_reverse(s->t38_fe.hdlc_tx.buf, msg, len);
@@ -644,7 +644,7 @@ static void send_hdlc(void *user_data, const uint8_t *msg, int len)
 
 static __inline__ int bits_to_us(t38_terminal_state_t *s, int bits)
 {
-    if (s->t38_fe.us_per_tx_chunk == 0  ||  s->t38_fe.tx_bit_rate == 0)
+    if (s->t38_fe.microseconds_per_tx_chunk == 0  ||  s->t38_fe.tx_bit_rate == 0)
         return 0;
     /*endif*/
     return bits*1000000/s->t38_fe.tx_bit_rate;
@@ -654,9 +654,9 @@ static __inline__ int bits_to_us(t38_terminal_state_t *s, int bits)
 static void set_octets_per_data_packet(t38_terminal_state_t *s, int bit_rate)
 {
     s->t38_fe.tx_bit_rate = bit_rate;
-    if (s->t38_fe.us_per_tx_chunk)
+    if (s->t38_fe.microseconds_per_tx_chunk)
     {
-        s->t38_fe.octets_per_data_packet = (s->t38_fe.us_per_tx_chunk/1000)*bit_rate/(8*1000);
+        s->t38_fe.octets_per_data_packet = (s->t38_fe.microseconds_per_tx_chunk/1000)*bit_rate/(8*1000);
         /* Make sure we have a positive number (i.e. we didn't truncate to zero). */
         if (s->t38_fe.octets_per_data_packet < 1)
             s->t38_fe.octets_per_data_packet = 1;
@@ -681,11 +681,11 @@ static int set_no_signal(t38_terminal_state_t *s)
         /*endif*/
         s->t38_fe.timed_step = T38_TIMED_STEP_NO_SIGNAL;
         if ((s->t38_fe.chunking_modes & T38_CHUNKING_SEND_2S_REGULAR_INDICATORS))
-            s->t38_fe.timeout_tx_samples = s->t38_fe.next_tx_samples + us_to_samples(2000000);
+            s->t38_fe.timeout_tx_samples = s->t38_fe.next_tx_samples + microseconds_to_samples(2000000);
         else
             s->t38_fe.timeout_tx_samples = 0;
         /*endif*/
-        return s->t38_fe.us_per_tx_chunk;
+        return s->t38_fe.microseconds_per_tx_chunk;
     }
     /*endif*/
     if ((delay = t38_core_send_indicator(&s->t38_fe.t38, T38_IND_NO_SIGNAL)) < 0)
@@ -706,7 +706,7 @@ static int stream_no_signal(t38_terminal_state_t *s)
     if (s->t38_fe.timeout_tx_samples  &&  s->t38_fe.next_tx_samples >= s->t38_fe.timeout_tx_samples)
         s->t38_fe.timed_step = T38_TIMED_STEP_NONE;
     /*endif*/
-    return s->t38_fe.us_per_tx_chunk;
+    return s->t38_fe.microseconds_per_tx_chunk;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -733,14 +733,14 @@ static int stream_non_ecm(t38_terminal_state_t *s)
             }
             else
             {
-                if (fe->us_per_tx_chunk)
+                if (fe->microseconds_per_tx_chunk)
                     delay = 75000;
                 /*endif*/
             }
             /*endif*/
             fe->timed_step = T38_TIMED_STEP_NON_ECM_MODEM_2;
             fe->timeout_tx_samples = fe->next_tx_samples
-                                   + us_to_samples(t38_core_send_training_delay(&fe->t38, fe->next_tx_indicator));
+                                   + microseconds_to_samples(t38_core_send_training_delay(&fe->t38, fe->next_tx_indicator));
             fe->next_tx_samples = fe->samples;
             break;
         case T38_TIMED_STEP_NON_ECM_MODEM_2:
@@ -753,7 +753,7 @@ static int stream_non_ecm(t38_terminal_state_t *s)
                 if (fe->next_tx_samples >= fe->timeout_tx_samples)
                     fe->timed_step = T38_TIMED_STEP_NON_ECM_MODEM_3;
                 /*endif*/
-                return fe->us_per_tx_chunk;
+                return fe->microseconds_per_tx_chunk;
             }
             /*endif*/
             if ((delay = t38_core_send_indicator(&fe->t38, fe->next_tx_indicator)) < 0)
@@ -777,7 +777,7 @@ static int stream_non_ecm(t38_terminal_state_t *s)
             if (len < fe->octets_per_data_packet)
             {
                 /* That's the end of the image data. */
-                if (fe->us_per_tx_chunk)
+                if (fe->microseconds_per_tx_chunk)
                 {
                     /* Pad the end of the data with some zeros. If we just stop abruptly
                        at the end of the EOLs, some ATAs fail to clean up properly before
@@ -809,7 +809,7 @@ static int stream_non_ecm(t38_terminal_state_t *s)
             if ((res = t38_core_send_data(&fe->t38, fe->current_tx_data_type, T38_FIELD_T4_NON_ECM_DATA, buf, len, T38_PACKET_CATEGORY_IMAGE_DATA)) < 0)
                 return res;
             /*endif*/
-            if (fe->us_per_tx_chunk)
+            if (fe->microseconds_per_tx_chunk)
                 delay = bits_to_us(s, 8*len);
             /*endif*/
             break;
@@ -827,7 +827,7 @@ static int stream_non_ecm(t38_terminal_state_t *s)
                 fe->timed_step = T38_TIMED_STEP_NON_ECM_MODEM_5;
                 /* Allow a bit more time than the data will take to play out, to ensure the far ATA does not
                    cut things short. */
-                if (fe->us_per_tx_chunk)
+                if (fe->microseconds_per_tx_chunk)
                     delay = bits_to_us(s, 8*len) + 60000;
                 /*endif*/
                 if (front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE) < 0)
@@ -840,7 +840,7 @@ static int stream_non_ecm(t38_terminal_state_t *s)
             if ((res = t38_core_send_data(&fe->t38, fe->current_tx_data_type, T38_FIELD_T4_NON_ECM_DATA, buf, len, T38_PACKET_CATEGORY_IMAGE_DATA)) < 0)
                 return res;
             /*endif*/
-            if (fe->us_per_tx_chunk)
+            if (fe->microseconds_per_tx_chunk)
                 delay = bits_to_us(s, 8*len);
             /*endif*/
             break;
@@ -859,6 +859,8 @@ static int stream_non_ecm(t38_terminal_state_t *s)
             }
             /*endif*/
             return delay;
+        default:
+            break;
         }
         /*endswitch*/
     }
@@ -893,14 +895,14 @@ static int stream_hdlc(t38_terminal_state_t *s)
             }
             else
             {
-                delay = (fe->us_per_tx_chunk)  ?  75000  :  0;
+                delay = (fe->microseconds_per_tx_chunk)  ?  75000  :  0;
             }
             /*endif*/
             fe->timed_step = T38_TIMED_STEP_HDLC_MODEM_2;
             fe->timeout_tx_samples = fe->next_tx_samples
-                                   + us_to_samples(t38_core_send_training_delay(&fe->t38, fe->next_tx_indicator))
-                                   + us_to_samples(t38_core_send_flags_delay(&fe->t38, fe->next_tx_indicator))
-                                   + us_to_samples(delay);
+                                   + microseconds_to_samples(t38_core_send_training_delay(&fe->t38, fe->next_tx_indicator))
+                                   + microseconds_to_samples(t38_core_send_flags_delay(&fe->t38, fe->next_tx_indicator))
+                                   + microseconds_to_samples(delay);
             fe->next_tx_samples = fe->samples;
             break;
         case T38_TIMED_STEP_HDLC_MODEM_2:
@@ -913,7 +915,7 @@ static int stream_hdlc(t38_terminal_state_t *s)
                 if (fe->next_tx_samples >= fe->timeout_tx_samples)
                     fe->timed_step = T38_TIMED_STEP_HDLC_MODEM_3;
                 /*endif*/
-                return fe->us_per_tx_chunk;
+                return fe->microseconds_per_tx_chunk;
             }
             /*endif*/
             if ((delay = t38_core_send_indicator(&fe->t38, fe->next_tx_indicator)) < 0)
@@ -968,7 +970,7 @@ static int stream_hdlc(t38_terminal_state_t *s)
                         /* We add a bit of extra time here, as with some implementations
                            the carrier falling too abruptly causes data loss. */
                         delay = bits_to_us(s, i*8 + fe->hdlc_tx.extra_bits);
-                        if (fe->us_per_tx_chunk)
+                        if (fe->microseconds_per_tx_chunk)
                             delay += 100000;
                         /*endif*/
                         if (front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE) < 0)
@@ -1035,7 +1037,7 @@ static int stream_hdlc(t38_terminal_state_t *s)
                 /* We add a bit of extra time here, as with some implementations
                    the carrier falling too abruptly causes data loss. */
                 delay = bits_to_us(s, fe->hdlc_tx.extra_bits);
-                if (fe->us_per_tx_chunk)
+                if (fe->microseconds_per_tx_chunk)
                     delay += 100000;
                 /*endif*/
                 if (front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE) < 0)
@@ -1059,6 +1061,8 @@ static int stream_hdlc(t38_terminal_state_t *s)
             }
             /*endif*/
             return delay;
+        default:
+            break;
         }
         /*endswitch*/
     }
@@ -1086,7 +1090,7 @@ static int stream_ced(t38_terminal_state_t *s)
             if ((delay = t38_core_send_indicator(&fe->t38, T38_IND_NO_SIGNAL)) < 0)
                 return delay;
             /*endif*/
-            delay = (fe->us_per_tx_chunk)  ?  200000  :  0;
+            delay = (fe->microseconds_per_tx_chunk)  ?  200000  :  0;
             fe->next_tx_samples = fe->samples;
             break;
         case T38_TIMED_STEP_CED_2:
@@ -1104,6 +1108,8 @@ static int stream_ced(t38_terminal_state_t *s)
                 return -1;
             /*endif*/
             return 0;
+        default:
+            break;
         }
         /*endswitch*/
     }
@@ -1131,7 +1137,7 @@ static int stream_cng(t38_terminal_state_t *s)
             if ((delay = t38_core_send_indicator(&fe->t38, T38_IND_NO_SIGNAL)) < 0)
                 return delay;
             /*endif*/
-            delay = (fe->us_per_tx_chunk)  ?  200000  :  0;
+            delay = (fe->microseconds_per_tx_chunk)  ?  200000  :  0;
             fe->next_tx_samples = fe->samples;
             break;
         case T38_TIMED_STEP_CNG_2:
@@ -1142,6 +1148,8 @@ static int stream_cng(t38_terminal_state_t *s)
             fe->timed_step = fe->queued_timed_step;
             fe->current_tx_data_type = T38_DATA_NONE;
             return delay;
+        default:
+            break;
         }
         /*endswitch*/
     }
@@ -1174,7 +1182,7 @@ SPAN_DECLARE(int) t38_terminal_send_timeout(t38_terminal_state_t *s, int samples
     /*endif*/
     /* Wait until the right time comes along, unless we are working in "no delays" mode, while talking to an
        IAF terminal. */
-    if (fe->us_per_tx_chunk  &&  fe->samples < fe->next_tx_samples)
+    if (fe->microseconds_per_tx_chunk  &&  fe->samples < fe->next_tx_samples)
         return false;
     /*endif*/
     /* Its time to send something */
@@ -1201,6 +1209,8 @@ SPAN_DECLARE(int) t38_terminal_send_timeout(t38_terminal_state_t *s, int samples
     case T38_TIMED_STEP_NO_SIGNAL:
         delay = stream_no_signal(s);
         break;
+    default:
+        break;
     }
     /*endswitch*/
     if (delay < 0)
@@ -1209,7 +1219,7 @@ SPAN_DECLARE(int) t38_terminal_send_timeout(t38_terminal_state_t *s, int samples
         return true;
     }
     /*endif*/
-    fe->next_tx_samples += us_to_samples(delay);
+    fe->next_tx_samples += microseconds_to_samples(delay);
     return false;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1272,8 +1282,8 @@ static void set_tx_type(void *user_data, int type, int bit_rate, int short_train
         fe->current_tx_data_type = T38_DATA_NONE;
         break;
     case T30_MODEM_PAUSE:
-        if (s->t38_fe.us_per_tx_chunk)
-            fe->next_tx_samples = fe->samples + ms_to_samples(short_train);
+        if (fe->microseconds_per_tx_chunk)
+            fe->next_tx_samples = fe->samples + milliseconds_to_samples(short_train);
         else
             fe->next_tx_samples = fe->samples;
         /*endif*/
@@ -1315,6 +1325,8 @@ static void set_tx_type(void *user_data, int type, int bit_rate, int short_train
             fe->next_tx_indicator = T38_IND_V27TER_4800_TRAINING;
             fe->current_tx_data_type = T38_DATA_V27TER_4800;
             break;
+        default:
+            break;
         }
         /*endswitch*/
         start_tx(fe, use_hdlc);
@@ -1329,6 +1341,8 @@ static void set_tx_type(void *user_data, int type, int bit_rate, int short_train
         case 9600:
             fe->next_tx_indicator = T38_IND_V29_9600_TRAINING;
             fe->current_tx_data_type = T38_DATA_V29_9600;
+            break;
+        default:
             break;
         }
         /*endswitch*/
@@ -1353,6 +1367,8 @@ static void set_tx_type(void *user_data, int type, int bit_rate, int short_train
             fe->next_tx_indicator = (short_train)  ?  T38_IND_V17_14400_SHORT_TRAINING  :  T38_IND_V17_14400_LONG_TRAINING;
             fe->current_tx_data_type = T38_DATA_V17_14400;
             break;
+        default:
+            break;
         }
         /*endswitch*/
         start_tx(fe, use_hdlc);
@@ -1361,6 +1377,8 @@ static void set_tx_type(void *user_data, int type, int bit_rate, int short_train
         span_log(&s->logging, SPAN_LOG_FLOW, "FAX exchange complete\n");
         fe->timed_step = T38_TIMED_STEP_NONE;
         fe->current_tx_data_type = T38_DATA_NONE;
+        break;
+    default:
         break;
     }
     /*endswitch*/
@@ -1384,7 +1402,7 @@ SPAN_DECLARE(void) t38_terminal_set_config(t38_terminal_state_t *s, int config)
         t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_CONTROL_DATA_END, 1);
         t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_IMAGE_DATA, 1);
         t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_IMAGE_DATA_END, 1);
-        s->t38_fe.us_per_tx_chunk = 0;
+        s->t38_fe.microseconds_per_tx_chunk = 0;
         s->t38_fe.chunking_modes &= ~T38_CHUNKING_SEND_REGULAR_INDICATORS;
         s->t38_fe.chunking_modes |= T38_CHUNKING_MERGE_FCS_WITH_DATA;
     }
@@ -1402,7 +1420,7 @@ SPAN_DECLARE(void) t38_terminal_set_config(t38_terminal_state_t *s, int config)
         t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_CONTROL_DATA_END, DATA_END_TX_COUNT);
         t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_IMAGE_DATA, DATA_TX_COUNT);
         t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_IMAGE_DATA_END, DATA_END_TX_COUNT);
-        s->t38_fe.us_per_tx_chunk = DEFAULT_US_PER_TX_CHUNK;
+        s->t38_fe.microseconds_per_tx_chunk = DEFAULT_MICROSECONDS_PER_TX_CHUNK;
         if ((config & (T38_TERMINAL_OPTION_REGULAR_INDICATORS | T38_TERMINAL_OPTION_2S_REPEATING_INDICATORS)))
             s->t38_fe.chunking_modes |= T38_CHUNKING_SEND_REGULAR_INDICATORS;
         else

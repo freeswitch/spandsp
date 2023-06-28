@@ -54,7 +54,7 @@ typedef struct
     /*! \brief Compression mode. */
     int compression_mode;
     /*! \brief Callback function to handle output data. */
-    put_msg_func_t handler;
+    span_put_msg_func_t handler;
     /*! \brief An opaque pointer passed in calls to the data handler. */
     void *user_data;
     /*! \brief The maximum amount to be passed to the data handler. */

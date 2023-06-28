@@ -100,7 +100,7 @@ static void decode_a_frame(gsm0610_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) gsm0610_unpack_none(gsm0610_frame_t *s, const uint8_t c[])
+SPAN_DECLARE(int) gsm0610_unpack_none(gsm0610_frame_t *s, const uint8_t c[76])
 {
     int i;
     int j;
@@ -109,6 +109,7 @@ SPAN_DECLARE(int) gsm0610_unpack_none(gsm0610_frame_t *s, const uint8_t c[])
     i = 0;
     for (j = 0;  j < 8;  j++)
         s->LARc[j] = c[i++];
+    /*endfor*/
     for (j = 0;  j < 4;  j++)
     {
         s->Nc[j] = c[i++];
@@ -117,12 +118,14 @@ SPAN_DECLARE(int) gsm0610_unpack_none(gsm0610_frame_t *s, const uint8_t c[])
         s->xmaxc[j] = c[i++];
         for (k = 0;  k < 13;  k++)
             s->xMc[j][k] = c[i++];
+        /*endfor*/
     }
+    /*endfor*/
     return 76;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) gsm0610_unpack_wav49(gsm0610_frame_t *s, const uint8_t c[])
+SPAN_DECLARE(int) gsm0610_unpack_wav49(gsm0610_frame_t *s, const uint8_t c[65])
 {
     uint16_t sr;
     int i;
@@ -191,6 +194,7 @@ SPAN_DECLARE(int) gsm0610_unpack_wav49(gsm0610_frame_t *s, const uint8_t c[])
         s->xMc[i][12] = sr & 0x7;
         sr >>= 3;
     }
+    /*endfor*/
 
     s++;
     sr |= (uint16_t) *c++ << 4;
@@ -254,6 +258,7 @@ SPAN_DECLARE(int) gsm0610_unpack_wav49(gsm0610_frame_t *s, const uint8_t c[])
         sr >>= 3;
         s->xMc[i][12] = sr & 0x7;
     }
+    /*endfor*/
     return 65;
 }
 /*- End of function --------------------------------------------------------*/
@@ -299,6 +304,7 @@ SPAN_DECLARE(int) gsm0610_unpack_voip(gsm0610_frame_t *s, const uint8_t c[33])
         s->xMc[i][11]  = (*c >> 3) & 0x7;
         s->xMc[i][12]  = *c++ & 0x7;
     }
+    /*endfor*/
     return 33;
 }
 /*- End of function --------------------------------------------------------*/
@@ -319,12 +325,14 @@ SPAN_DECLARE(int) gsm0610_decode(gsm0610_state_t *s, int16_t amp[], const uint8_
         case GSM0610_PACKING_NONE:
             if ((bytes = gsm0610_unpack_none(frame, &code[i])) < 0)
                 return 0;
+            /*endif*/
             decode_a_frame(s, &amp[samples], frame);
             samples += GSM0610_FRAME_LEN;
             break;
         case GSM0610_PACKING_WAV49:
             if ((bytes = gsm0610_unpack_wav49(frame, &code[i])) < 0)
                 return 0;
+            /*endif*/
             decode_a_frame(s, &amp[samples], frame);
             samples += GSM0610_FRAME_LEN;
             decode_a_frame(s, &amp[samples], frame + 1);
@@ -333,6 +341,7 @@ SPAN_DECLARE(int) gsm0610_decode(gsm0610_state_t *s, int16_t amp[], const uint8_
         case GSM0610_PACKING_VOIP:
             if ((bytes = gsm0610_unpack_voip(frame, &code[i])) < 0)
                 return 0;
+            /*endif*/
             decode_a_frame(s, &amp[samples], frame);
             samples += GSM0610_FRAME_LEN;
             break;

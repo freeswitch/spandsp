@@ -17,19 +17,20 @@ AC_DEFUN([AX_C99_FLEXIBLE_ARRAY],
 # Initialize to unknown
 ac_cv_c99_flexible_array=no
 
-AC_TRY_LINK([[
+AC_LINK_IFELSE(
+  [AC_LANG_PROGRAM([[#define _ISOC9X_SOURCE  1
     #include <stdlib.h>
 
     typedef struct {
     int k;
     char buffer [] ;
     } MY_STRUCT ;
-    ]], 
-    [  MY_STRUCT *p = calloc (1, sizeof (MY_STRUCT) + 42); ],
-    ac_cv_c99_flexible_array=yes,
-    ac_cv_c99_flexible_array=no
-    ))]
-) # AX_C99_FLEXIBLE_ARRAY
+]],
+  [[MY_STRUCT *p = calloc (1, sizeof (MY_STRUCT) + 42);]])],
+  [ac_cv_c99_flexible_array=yes],
+  [ac_cv_c99_flexible_array=no])
+
+)]) # AX_C99_FLEXIBLE_ARRAY
 
 # @synopsis AX_C99_FUNC_LRINT
 #
@@ -49,14 +50,18 @@ AC_DEFUN([AX_C99_FUNC_LRINT],
 [
 lrint_save_LIBS=$LIBS
 LIBS="-lm"
-AC_TRY_LINK([
-#define _ISOC9X_SOURCE  1
+
+AC_LINK_IFELSE(
+  [AC_LANG_PROGRAM([[#define _ISOC9X_SOURCE  1
 #define _ISOC99_SOURCE  1
 #define __USE_ISOC99    1
 #define __USE_ISOC9X    1
 
 #include <math.h>
-], if (!lrint(3.14159)) lrint(2.7183);, ac_cv_c99_lrint=yes, ac_cv_c99_lrint=no)
+]],
+  [[if (!lrint(3.14159)) lrint(2.7183);]])],
+  [ac_cv_c99_lrint=yes],
+  [ac_cv_c99_lrint=no])
 
 LIBS=$lrint_save_LIBS
 
@@ -86,14 +91,18 @@ AC_DEFUN([AX_C99_FUNC_LRINTF],
 [
 lrintf_save_LIBS=$LIBS
 LIBS="-lm"
-AC_TRY_LINK([
+AC_LINK_IFELSE(
+  [AC_LANG_PROGRAM([[
 #define _ISOC9X_SOURCE  1
 #define _ISOC99_SOURCE  1
 #define __USE_ISOC99    1
 #define __USE_ISOC9X    1
 
 #include <math.h>
-], if (!lrintf(3.14159)) lrintf(2.7183);, ac_cv_c99_lrintf=yes, ac_cv_c99_lrintf=no)
+]],
+  [[if (!lrintf(3.14159)) lrintf(2.7183);]])],
+  [ac_cv_c99_lrintf=yes],
+  [ac_cv_c99_lrintf=no])
 
 LIBS=$lrintf_save_LIBS
 
@@ -123,14 +132,19 @@ AC_DEFUN([AX_C99_FUNC_LLRINT],
 [
 llrint_save_LIBS=$LIBS
 LIBS="-lm"
-AC_TRY_LINK([
+
+AC_LINK_IFELSE(
+  [AC_LANG_PROGRAM([[
 #define ISOC9X_SOURCE   1
 #define _ISOC99_SOURCE  1
 #define __USE_ISOC99    1
 #define __USE_ISOC9X    1
 
 #include <math.h>
-], long long int x ; x = llrint(3.14159) ;, ac_cv_c99_llrint=yes, ac_cv_c99_llrint=no)
+]],
+  [[long long int x ; x = llrint(3.14159) ;]])],
+  [ac_cv_c99_llrint=yes],
+  [ac_cv_c99_llrint=no])
 
 LIBS=$llrint_save_LIBS
 
@@ -161,14 +175,19 @@ AC_DEFUN([AX_C99_FUNC_LLRINTF],
 [
 llrintf_save_LIBS=$LIBS
 LIBS="-lm"
-AC_TRY_LINK([
+
+AC_LINK_IFELSE(
+  [AC_LANG_PROGRAM([[
 #define _ISOC9X_SOURCE  1
 #define _ISOC99_SOURCE  1
 #define __USE_ISOC99    1
 #define __USE_ISOC9X    1
 
 #include <math.h>
-], long long int x ; x = llrintf(3.14159) ;, ac_cv_c99_llrintf=yes, ac_cv_c99_llrintf=no)
+]],
+  [[long long int x ; x = llrintf(3.14159) ;]])],
+  [ac_cv_c99_llrintf=yes],
+  [ac_cv_c99_llrintf=no])
 
 LIBS=$llrintf_save_LIBS
 

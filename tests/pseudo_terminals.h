@@ -23,24 +23,52 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#if !defined(_SPANDSP_PSEUDO_TERMINALS_H_)
+#define _SPANDSP_PSEUDO_TERMINALS_H_
+
 #if !defined(HAVE_POSIX_OPENPT)  &&  !defined(HAVE_DEV_PTMX)  &&  !defined(WIN32)
 #define USE_OPENPTY 1
 #endif
 
-struct modem_s
+struct pseudo_terminal_state_s
 {
     int slot;
-    int master;
-    int slave;
+    int master_fd;
+    int slave_fd;
     const char *stty;
-    char devlink[128];
+    char *devlink;
     int block_read;
     int block_write;
+    bool dtr;
+    struct termios termios;
     logging_state_t logging;
 };
 
-typedef struct modem_s modem_t;
+typedef struct pseudo_terminal_state_s pseudo_terminal_state_t;
 
-int pseudo_terminal_close(modem_t *modem);
+extern const char *pseudo_terminal_device_root_name;
 
-int pseudo_terminal_create(modem_t *modem);
+
+#if defined(__cplusplus)
+extern "C"
+{
+#endif
+
+SPAN_DECLARE(logging_state_t *) pseudo_terminal_get_logging_state(pseudo_terminal_state_t *s);
+
+SPAN_DECLARE(int) pseudo_terminal_check_termios(pseudo_terminal_state_t *pty);
+
+SPAN_DECLARE(int) pseudo_terminal_release(pseudo_terminal_state_t *s);
+
+SPAN_DECLARE(int) pseudo_terminal_free(pseudo_terminal_state_t *s);
+
+SPAN_DECLARE(int) pseudo_terminal_restart(pseudo_terminal_state_t *s);
+
+SPAN_DECLARE(pseudo_terminal_state_t *) pseudo_terminal_init(pseudo_terminal_state_t *s);
+
+#if defined(__cplusplus)
+}
+#endif
+
+#endif
+/*- End of file ------------------------------------------------------------*/

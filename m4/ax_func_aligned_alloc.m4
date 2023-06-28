@@ -1,7 +1,14 @@
 # AX_FUNC_ALIGNED_ALLOC
 # ---------------------
 #
-# Check for the function aligned_alloc()
+# Check if a specified machine type cannot handle misaligned data. That is, multi-byte data
+# types which are not properly aligned in memory fail. Many machines are happy to work with
+# misaligned data, but slowing down a bit. Other machines just won't tolerate such data.
+#
+# This is a simple lookup amongst machines known to the current autotools. So far we only deal
+# with the ARM and sparc.
+# A lookup is used, as many of the devices which cannot handled misaligned access are embedded
+# processors, for which the code normally be cross-compiled. 
 #
 AC_DEFUN([AX_FUNC_ALIGNED_ALLOC],[
 saved_CFLAGS="$CFLAGS"

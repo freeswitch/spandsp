@@ -108,7 +108,7 @@ struct at_state_s
     int dte_is_waiting;
     /*! \brief True if a carrier is present. */
     bool rx_signal_present;
-    /*! \brief True if a modem has trained, */
+    /*! \brief True if a modem has trained. */
     bool rx_trained;
     int transmit;
 

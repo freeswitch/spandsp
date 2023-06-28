@@ -86,6 +86,7 @@ static void ran_init(awgn_state_t *s, int idum)
 
     if (idum < 0)
         idum = -idum;
+    /*endif*/
     s->ix1 = (IC1 + (int32_t) idum)%M1;
     s->ix1 = (IA1*s->ix1 + IC1)%M1;
     s->ix2 = s->ix1%M2;
@@ -97,6 +98,7 @@ static void ran_init(awgn_state_t *s, int idum)
         s->ix2 = (IA2*s->ix2 + IC2)%M2;
         s->r[j] = (s->ix1 + s->ix2*RM2)*RM1;
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -120,6 +122,7 @@ static double ran(awgn_state_t *s)
         temp = s->r[j];
         s->r[j] = (s->ix1 + s->ix2*RM2)*RM1;
     }
+    /*endif*/
     return temp;
 }
 /*- End of function --------------------------------------------------------*/
@@ -130,7 +133,9 @@ SPAN_DECLARE(awgn_state_t *) awgn_init_dbov(awgn_state_t *s, int idum, float lev
     {
         if ((s = (awgn_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
 
     ran_init(s, idum);
 
@@ -185,6 +190,7 @@ SPAN_DECLARE(int16_t) awgn(awgn_state_t *s)
         s->amp2 = v1*r;
         amp = v2*r;
     }
+    /*endif*/
     amp *= s->rms;
     return fsaturate(amp);
 }

@@ -51,6 +51,7 @@
 #include "spandsp/complex.h"
 #include "spandsp/dds.h"
 #include "spandsp/power_meter.h"
+#include "spandsp/bit_operations.h"
 #include "spandsp/async.h"
 #include "spandsp/fsk.h"
 
@@ -60,6 +61,7 @@
 const fsk_spec_t preset_fsk_specs[] =
 {
     {
+        /* For duplex operation, this is the tx channel for the caller. */
         "V21 ch 1",
         1080 + 100,
         1080 - 100,
@@ -68,6 +70,8 @@ const fsk_spec_t preset_fsk_specs[] =
         300*100
     },
     {
+        /* For duplex operation, this is the tx channel for the answerer. */
+        /* This is the channel used for one way signaling for FAX. */
         "V21 ch 2",
         1750 + 100,
         1750 - 100,
@@ -93,17 +97,19 @@ const fsk_spec_t preset_fsk_specs[] =
         75*100
     },
     {
+        /* For duplex operation, this is the tx channel for the caller. */
         "Bell103 ch 1",
-        2125 - 100,
-        2125 + 100,
+        1170 - 100,
+        1170 + 100,
         -14,
         -30,
         300*100
     },
     {
+        /* For duplex operation, this is the tx channel for the answerer. */
         "Bell103 ch 2",
-        1170 - 100,
-        1170 + 100,
+        2125 - 100,
+        2125 + 100,
         -14,
         -30,
         300*100
@@ -117,7 +123,8 @@ const fsk_spec_t preset_fsk_specs[] =
         1200*100
     },
     {
-        "Weitbrecht 45.45", /* Used for US TDD (Telecoms Device for the Deaf) */
+        /* Used for US TDD (Telecoms Device for the Deaf) */
+        "Weitbrecht 45.45",
         1600 + 200,
         1600 - 200,
         -14,
@@ -125,7 +132,8 @@ const fsk_spec_t preset_fsk_specs[] =
          4545
     },
     {
-        "Weitbrecht 50",    /* Used for international TDD (Telecoms Device for the Deaf) */
+        /* Used for international TDD (Telecoms Device for the Deaf) */
+        "Weitbrecht 50",
         1600 + 200,
         1600 - 200,
         -14,
@@ -133,7 +141,8 @@ const fsk_spec_t preset_fsk_specs[] =
          50*100
     },
     {
-        "Weitbrecht 47.6",  /* Used for V.18 probing */
+        /* Used for V.18 probing */
+        "Weitbrecht 47.6",
         1600 + 200,
         1600 - 200,
         -14,
@@ -149,56 +158,6 @@ const fsk_spec_t preset_fsk_specs[] =
         110*100
     }
 };
-
-SPAN_DECLARE(int) fsk_tx_restart(fsk_tx_state_t *s, const fsk_spec_t *spec)
-{
-    s->baud_rate = spec->baud_rate;
-    s->phase_rates[0] = dds_phase_rate((float) spec->freq_zero);
-    s->phase_rates[1] = dds_phase_rate((float) spec->freq_one);
-    s->scaling = dds_scaling_dbm0((float) spec->tx_level);
-    /* Initialise fractional sample baud generation. */
-    s->phase_acc = 0;
-    s->baud_frac = 0;
-    s->current_phase_rate = s->phase_rates[1];
-
-    s->shutdown = false;
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(fsk_tx_state_t *) fsk_tx_init(fsk_tx_state_t *s,
-                                           const fsk_spec_t *spec,
-                                           get_bit_func_t get_bit,
-                                           void *user_data)
-{
-    if (s == NULL)
-    {
-        if ((s = (fsk_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
-            return NULL;
-        /*endif*/
-    }
-    /*endif*/
-    memset(s, 0, sizeof(*s));
-
-    s->get_bit = get_bit;
-    s->get_bit_user_data = user_data;
-    fsk_tx_restart(s, spec);
-    return s;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) fsk_tx_release(fsk_tx_state_t *s)
-{
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) fsk_tx_free(fsk_tx_state_t *s)
-{
-    span_free(s);
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) fsk_tx(fsk_tx_state_t *s, int16_t amp[], int len)
 {
@@ -245,21 +204,71 @@ SPAN_DECLARE(void) fsk_tx_power(fsk_tx_state_t *s, float power)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) fsk_tx_set_get_bit(fsk_tx_state_t *s, get_bit_func_t get_bit, void *user_data)
+SPAN_DECLARE(void) fsk_tx_set_get_bit(fsk_tx_state_t *s, span_get_bit_func_t get_bit, void *user_data)
 {
     s->get_bit = get_bit;
     s->get_bit_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) fsk_tx_set_modem_status_handler(fsk_tx_state_t *s, modem_status_func_t handler, void *user_data)
+SPAN_DECLARE(void) fsk_tx_set_modem_status_handler(fsk_tx_state_t *s, span_modem_status_func_t handler, void *user_data)
 {
     s->status_handler = handler;
     s->status_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) fsk_rx_signal_cutoff(fsk_rx_state_t *s, float cutoff)
+SPAN_DECLARE(int) fsk_tx_restart(fsk_tx_state_t *s, const fsk_spec_t *spec)
+{
+    s->baud_rate = spec->baud_rate;
+    s->phase_rates[0] = dds_phase_rate((float) spec->freq_zero);
+    s->phase_rates[1] = dds_phase_rate((float) spec->freq_one);
+    s->scaling = dds_scaling_dbm0((float) spec->tx_level);
+    /* Initialise fractional sample baud generation. */
+    s->phase_acc = 0;
+    s->baud_frac = 0;
+    s->current_phase_rate = s->phase_rates[1];
+
+    s->shutdown = false;
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(fsk_tx_state_t *) fsk_tx_init(fsk_tx_state_t *s,
+                                           const fsk_spec_t *spec,
+                                           span_get_bit_func_t get_bit,
+                                           void *user_data)
+{
+    if (s == NULL)
+    {
+        if ((s = (fsk_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
+            return NULL;
+        /*endif*/
+    }
+    /*endif*/
+    memset(s, 0, sizeof(*s));
+
+    s->get_bit = get_bit;
+    s->get_bit_user_data = user_data;
+    fsk_tx_restart(s, spec);
+    return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) fsk_tx_release(fsk_tx_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) fsk_tx_free(fsk_tx_state_t *s)
+{
+    span_free(s);
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) fsk_rx_set_signal_cutoff(fsk_rx_state_t *s, float cutoff)
 {
     /* The 6.04 allows for the gain of the DC blocker */
     s->carrier_on_power = (int32_t) (power_meter_level_dbm0(cutoff + 2.5f - 6.04f));
@@ -273,102 +282,60 @@ SPAN_DECLARE(float) fsk_rx_signal_power(fsk_rx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) fsk_rx_set_put_bit(fsk_rx_state_t *s, put_bit_func_t put_bit, void *user_data)
+SPAN_DECLARE(void) fsk_rx_set_put_bit(fsk_rx_state_t *s, span_put_bit_func_t put_bit, void *user_data)
 {
     s->put_bit = put_bit;
     s->put_bit_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) fsk_rx_set_modem_status_handler(fsk_rx_state_t *s, modem_status_func_t handler, void *user_data)
+SPAN_DECLARE(void) fsk_rx_set_modem_status_handler(fsk_rx_state_t *s, span_modem_status_func_t handler, void *user_data)
 {
     s->status_handler = handler;
     s->status_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) fsk_rx_restart(fsk_rx_state_t *s, const fsk_spec_t *spec, int framing_mode)
+SPAN_DECLARE(void) fsk_rx_set_frame_parameters(fsk_rx_state_t *s,
+                                               int data_bits,
+                                               int parity,
+                                               int stop_bits)
 {
-    int chop;
-
-    s->baud_rate = spec->baud_rate;
-    s->framing_mode = framing_mode;
-    fsk_rx_signal_cutoff(s, (float) spec->min_level);
-
-    /* Detect by correlating against the tones we want, over a period
-       of one baud. The correlation must be quadrature. */
-
-    /* First we need the quadrature tone generators to correlate
-       against. */
-    s->phase_rate[0] = dds_phase_rate((float) spec->freq_zero);
-    s->phase_rate[1] = dds_phase_rate((float) spec->freq_one);
-    s->phase_acc[0] = 0;
-    s->phase_acc[1] = 0;
-    s->last_sample = 0;
-
-    /* The correlation should be over one baud. */
-    s->correlation_span = SAMPLE_RATE*100/spec->baud_rate;
-    /* But limit it for very slow baud rates, so we do not overflow our
-       buffer. */
-    if (s->correlation_span > FSK_MAX_WINDOW_LEN)
-        s->correlation_span = FSK_MAX_WINDOW_LEN;
-    /*endif*/
-
-    /* We need to scale, to avoid overflow in the correlation. */
-    s->scaling_shift = 0;
-    chop = s->correlation_span;
-    while (chop != 0)
+    if (s->framing_mode == FSK_FRAME_MODE_FRAMED)
     {
-        s->scaling_shift++;
-        chop >>= 1;
-    }
-    /*endwhile*/
-
-    /* Initialise the baud/bit rate tracking. */
-    s->baud_phase = 0;
-    s->frame_state = 0;
-    s->frame_bits = 0;
-    s->last_bit = 0;
-
-    /* Initialise a power detector, so sense when a signal is present. */
-    power_meter_init(&s->power, 4);
-    s->signal_present = 0;
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(fsk_rx_state_t *) fsk_rx_init(fsk_rx_state_t *s,
-                                           const fsk_spec_t *spec,
-                                           int framing_mode,
-                                           put_bit_func_t put_bit,
-                                           void *user_data)
-{
-    if (s == NULL)
-    {
-        if ((s = (fsk_rx_state_t *) span_alloc(sizeof(*s))) == NULL)
-            return NULL;
+        s->data_bits = data_bits;
+        s->parity = parity;
+        s->stop_bits = stop_bits;
+        s->total_data_bits = s->data_bits;
+        if (s->parity != ASYNC_PARITY_NONE)
+            s->total_data_bits++;
         /*endif*/
     }
     /*endif*/
-    memset(s, 0, sizeof(*s));
-
-    s->put_bit = put_bit;
-    s->put_bit_user_data = user_data;
-    fsk_rx_restart(s, spec, framing_mode);
-    return s;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) fsk_rx_release(fsk_rx_state_t *s)
+SPAN_DECLARE(int) fsk_rx_get_parity_errors(fsk_rx_state_t *s, bool reset)
 {
-    return 0;
+    int errors;
+
+    errors = s->parity_errors;
+    if (reset)
+        s->parity_errors = 0;
+    /*endif*/
+    return errors;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) fsk_rx_free(fsk_rx_state_t *s)
+SPAN_DECLARE(int) fsk_rx_get_framing_errors(fsk_rx_state_t *s, bool reset)
 {
-    span_free(s);
-    return 0;
+    int errors;
+
+    errors = s->framing_errors;
+    if (reset)
+        s->framing_errors = 0;
+    /*endif*/
+    return errors;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -378,6 +345,48 @@ static void report_status_change(fsk_rx_state_t *s, int status)
         s->status_handler(s->status_user_data, status);
     else if (s->put_bit)
         s->put_bit(s->put_bit_user_data, status);
+    /*endif*/
+}
+/*- End of function --------------------------------------------------------*/
+
+static void put_frame(fsk_rx_state_t *s, uint16_t frame)
+{
+    uint16_t parity_bit_a;
+    uint16_t parity_bit_b;
+
+    if (s->parity != ASYNC_PARITY_NONE)
+    {
+        parity_bit_a = (frame >> 15) & 0x01;
+        /* Trim off the parity bit */
+        frame &= 0x7FFF;
+        frame >>= (16 - s->total_data_bits);
+        switch (s->parity)
+        {
+        case ASYNC_PARITY_ODD:
+            parity_bit_b = parity8(frame) ^ 1;
+            break;
+        case ASYNC_PARITY_EVEN:
+            parity_bit_b = parity8(frame);
+            break;
+        case ASYNC_PARITY_MARK:
+            parity_bit_b = 1;
+            break;
+        case ASYNC_PARITY_SPACE:
+            parity_bit_b = 0;
+            break;
+        }
+        /*endswitch*/
+        if (parity_bit_a == parity_bit_b)
+            s->put_bit(s->put_bit_user_data, frame);
+        else
+            s->parity_errors++;
+        /*endif*/
+    }
+    else
+    {
+        frame >>= (16 - s->total_data_bits);
+        s->put_bit(s->put_bit_user_data, frame);
+    }
     /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
@@ -461,8 +470,8 @@ SPAN_DECLARE(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
             s->signal_present = 1;
             /* Initialise the baud/bit rate tracking. */
             s->baud_phase = 0;
-            s->frame_state = 0;
-            s->frame_bits = 0;
+            s->frame_pos = -2;
+            s->frame_in_progress = 0;
             s->last_bit = 0;
             report_status_change(s, SIG_STATUS_CARRIER_UP);
         }
@@ -523,40 +532,37 @@ SPAN_DECLARE(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
             }
             /*endif*/
             break;
-        case FSK_FRAME_MODE_5N1_FRAMES:
-        case FSK_FRAME_MODE_7N1_FRAMES:
-        case FSK_FRAME_MODE_7E1_FRAMES:
-        case FSK_FRAME_MODE_7E2_FRAMES:
         default:
-            /* Gather the specified number of bits, with robust checking to ensure reasonable voice immunity.
-               The first bit should be a start bit (0), and the last bit should be a stop bit (1) */
-            if (s->frame_state == 0)
+            /* Gather the specified number of bits, with robust checking to ensure reasonable voice
+               immunity. The first bit should be a start bit (0), and the last bit should be a stop
+               bit (1) */
+            if (s->frame_pos == -2)
             {
-                /* Looking for the start of a zero bit, which hopefully the start of a start bit */
+                /* Looking for the start of a zero bit, which could be a start bit */
                 if (baudstate == 0)
                 {
                     s->baud_phase = SAMPLE_RATE*(100 - 40)/2;
-                    s->frame_state = -1;
-                    s->frame_bits = 0;
+                    s->frame_pos = -1;
+                    s->frame_in_progress = 0;
                     s->last_bit = -1;
                 }
                 /*endif*/
             }
-            else if (s->frame_state == -1)
+            else if (s->frame_pos == -1)
             {
                 /* Look for a continuous zero from the start of the start bit until
                    beyond the middle */
                 if (baudstate != 0)
                 {
-                    /* If we aren't looking at a stable start bit, restart */
-                    s->frame_state = 0;
+                    /* If we aren't seeing a stable start bit, restart */
+                    s->frame_pos = -2;
                 }
                 else
                 {
                     s->baud_phase += s->baud_rate;
                     if (s->baud_phase >= SAMPLE_RATE*100)
                     {
-                        s->frame_state = 1;
+                        s->frame_pos = 0;
                         s->last_bit = baudstate;
                     }
                     /*endif*/
@@ -574,39 +580,38 @@ SPAN_DECLARE(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
                     /* Look for the bit being consistent over the central 20% of the bit time. */
                     if (s->last_bit != baudstate)
                     {
-                        s->frame_state = 0;
+                        s->frame_pos = -2;
+                        s->framing_errors++;
                     }
-                    else if (s->baud_phase >= SAMPLE_RATE*100)
+                    else
                     {
-                        /* We should be in the middle of a baud now, so report the current
-                           state as the next bit */
-                        if (s->last_bit == baudstate)
+                        if (s->baud_phase >= SAMPLE_RATE*100)
                         {
-                            if (++s->frame_state > s->framing_mode)
+                            /* We should be in the middle of a baud now, so report the current
+                               state as the next bit */
+                            if (s->frame_pos++ > s->total_data_bits)
                             {
-                                /* Check we have a stop bit and a start bit */
-                                if (baudstate == 1  &&  (s->frame_bits & 0x02) == 0)
+                                /* Check we have a stop bit */
+                                if (baudstate == 1)
                                 {
-                                    /* Drop the start bit, and pass the rest back */
-                                    s->put_bit(s->put_bit_user_data, s->frame_bits >> 2);
+                                    put_frame(s, s->frame_in_progress);
+                                }
+                                else
+                                {
+                                    s->framing_errors++;
                                 }
                                 /*endif*/
-                                s->frame_state = 0;
+                                s->frame_pos = -2;
                             }
                             else
                             {
-                                s->frame_bits |= (baudstate << s->framing_mode);
-                                s->frame_bits >>= 1;
+                                s->frame_in_progress = (s->frame_in_progress >> 1) | (baudstate << 15);
                             }
                             /*endif*/
                             s->baud_phase -= (SAMPLE_RATE*100);
-                        }
-                        else
-                        {
-                            s->frame_state = 0;
+                            s->last_bit = -1;
                         }
                         /*endif*/
-                        s->last_bit = -1;
                     }
                     /*endif*/
                 }
@@ -655,6 +660,96 @@ SPAN_DECLARE(int) fsk_rx_fillin(fsk_rx_state_t *s, int len)
     }
     /*endfor*/
     s->buf_ptr = buf_ptr;
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) fsk_rx_restart(fsk_rx_state_t *s,
+                                 const fsk_spec_t *spec,
+                                 int framing_mode)
+{
+    int chop;
+
+    s->baud_rate = spec->baud_rate;
+    s->framing_mode = framing_mode;
+    if (s->framing_mode == FSK_FRAME_MODE_FRAMED)
+        fsk_rx_set_frame_parameters(s, 8, ASYNC_PARITY_NONE, 1);
+    /*endif*/
+    fsk_rx_set_signal_cutoff(s, (float) spec->min_level);
+
+    /* Detect by correlating against the tones we want, over a period
+       of one baud. The correlation must be quadrature. */
+
+    /* First we need the quadrature tone generators to correlate
+       against. */
+    s->phase_rate[0] = dds_phase_rate((float) spec->freq_zero);
+    s->phase_rate[1] = dds_phase_rate((float) spec->freq_one);
+    s->phase_acc[0] = 0;
+    s->phase_acc[1] = 0;
+    s->last_sample = 0;
+
+    /* The correlation should be over one baud. */
+    s->correlation_span = SAMPLE_RATE*100/spec->baud_rate;
+    /* But limit it for very slow baud rates, so we do not overflow our
+       buffer. */
+    if (s->correlation_span > FSK_MAX_WINDOW_LEN)
+        s->correlation_span = FSK_MAX_WINDOW_LEN;
+    /*endif*/
+
+    /* We need to scale, to avoid overflow in the correlation. */
+    s->scaling_shift = 0;
+    chop = s->correlation_span;
+    while (chop != 0)
+    {
+        s->scaling_shift++;
+        chop >>= 1;
+    }
+    /*endwhile*/
+
+    /* Initialise the baud/bit rate tracking. */
+    s->baud_phase = 0;
+    s->frame_pos = -2;
+    s->frame_in_progress = 0;
+    s->last_bit = 0;
+
+    /* Initialise a power detector, so sense when a signal is present. */
+    power_meter_init(&s->power, 4);
+    s->signal_present = 0;
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(fsk_rx_state_t *) fsk_rx_init(fsk_rx_state_t *s,
+                                           const fsk_spec_t *spec,
+                                           int framing_mode,
+                                           span_put_bit_func_t put_bit,
+                                           void *user_data)
+{
+    if (s == NULL)
+    {
+        if ((s = (fsk_rx_state_t *) span_alloc(sizeof(*s))) == NULL)
+            return NULL;
+        /*endif*/
+    }
+    /*endif*/
+    memset(s, 0, sizeof(*s));
+
+    s->put_bit = put_bit;
+    s->put_bit_user_data = user_data;
+    fsk_rx_restart(s, spec, framing_mode);
+    return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) fsk_rx_release(fsk_rx_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) fsk_rx_free(fsk_rx_state_t *s)
+{
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

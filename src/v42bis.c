@@ -404,7 +404,7 @@ static void monitor_for_mode_change(v42bis_state_t *ss)
 static int v42bis_comp_init(v42bis_comp_state_t *s,
                             int p1,
                             int p2,
-                            put_msg_func_t handler,
+                            span_put_msg_func_t handler,
                             void *user_data,
                             int max_output_len)
 {
@@ -720,10 +720,10 @@ SPAN_DECLARE(v42bis_state_t *) v42bis_init(v42bis_state_t *s,
                                            int negotiated_p0,
                                            int negotiated_p1,
                                            int negotiated_p2,
-                                           put_msg_func_t encode_handler,
+                                           span_put_msg_func_t encode_handler,
                                            void *encode_user_data,
                                            int max_encode_len,
-                                           put_msg_func_t decode_handler,
+                                           span_put_msg_func_t decode_handler,
                                            void *decode_user_data,
                                            int max_decode_len)
 {

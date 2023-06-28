@@ -77,6 +77,7 @@ SPAN_DECLARE(modem_echo_can_state_t *) modem_echo_can_init(int len)
         span_free(ec);
         return NULL;
     }
+    /*endif*/
     memset(ec->fir_taps32, 0, ec->taps*sizeof(int32_t));
     if ((ec->fir_taps16 = (int16_t *) span_alloc(ec->taps*sizeof(int16_t))) == NULL)
     {
@@ -84,6 +85,7 @@ SPAN_DECLARE(modem_echo_can_state_t *) modem_echo_can_init(int len)
         span_free(ec);
         return NULL;
     }
+    /*endif*/
     memset(ec->fir_taps16, 0, ec->taps*sizeof(int16_t));
     if (fir16_create(&ec->fir_state, ec->fir_taps16, ec->taps) == NULL)
     {
@@ -92,6 +94,7 @@ SPAN_DECLARE(modem_echo_can_state_t *) modem_echo_can_init(int len)
         span_free(ec);
         return NULL;
     }
+    /*endif*/
     return ec;
 }
 /*- End of function --------------------------------------------------------*/
@@ -159,17 +162,21 @@ SPAN_DECLARE(int16_t) modem_echo_can_update(modem_echo_can_state_t *ec, int16_t 
             ec->fir_taps32[i] += (ec->fir_state.history[i - offset1]*clean_rx) >> shift;
             ec->fir_taps16[i] = (int16_t) (ec->fir_taps32[i] >> 15);
         }
+        /*endfor*/
         for (  ;  i >= 0;  i--)
         {
             ec->fir_taps32[i] -= (ec->fir_taps32[i] >> 23);
             ec->fir_taps32[i] += (ec->fir_state.history[i + offset2]*clean_rx) >> shift;
             ec->fir_taps16[i] = (int16_t) (ec->fir_taps32[i] >> 15);
         }
+        /*endfor*/
     }
+    /*endif*/
 
     /* Roll around the rolling buffer */
     if (ec->curr_pos <= 0)
         ec->curr_pos = ec->taps;
+    /*endif*/
     ec->curr_pos--;
     return (int16_t) clean_rx;
 }

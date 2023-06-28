@@ -15,7 +15,7 @@
 #if !defined(_INTTYPES_H_)
 #define _INTTYPES_H_
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -23,7 +23,7 @@ extern "C" {
 #include <stdint.h>
 #else
 
-typedef __int8			        __int8_t;
+typedef __int8		        __int8_t;
 typedef __int16		        __int16_t;
 typedef __int32		        __int32_t;
 typedef __int64		        __int64_t;
@@ -76,7 +76,7 @@ typedef __int64		        int64_t;
 #define PRIu32 "lu"
 #define PRIu64 "llu"
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif
 

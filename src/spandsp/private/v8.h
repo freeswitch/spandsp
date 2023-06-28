@@ -39,15 +39,18 @@ struct v8_state_s
     /*! \brief The current state of the V.8 protocol */
     int state;
     bool fsk_tx_on;
-    int modem_connect_tone_tx_on;
-    int negotiation_timer;
-    int ci_timer;
-    int ci_count;
+    span_sample_timer_t modem_connect_tone_tx_timer;
+    span_sample_timer_t negotiation_timer;
+    span_sample_timer_t ci_timer;
+    int ci_repetition_count;
+    bool proceed;
     fsk_tx_state_t v21tx;
     fsk_rx_state_t v21rx;
     queue_state_t *tx_queue;
     modem_connect_tones_tx_state_t ansam_tx;
     modem_connect_tones_rx_state_t ansam_rx;
+    modem_connect_tones_rx_state_t calling_tone_rx;
+    modem_connect_tones_rx_state_t cng_tone_rx;
 
     v8_parms_t parms;
     v8_parms_t result;
@@ -67,6 +70,7 @@ struct v8_state_s
                testing for matches. */
     uint8_t cm_jm_data[64];
     int cm_jm_len;
+    bool got_ci;
     bool got_cm_jm;
     bool got_cj;
     int zero_byte_count;

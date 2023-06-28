@@ -62,6 +62,7 @@ int main(int argc, char *argv[])
 
         printf((i < 255)  ?  "    %f,\n"  :  "    %f\n", r);
     }
+    /*endfor*/
     printf("};\n");
 
     printf("static const uint8_t linear_to_srgb[4096] =\n");
@@ -80,6 +81,7 @@ int main(int argc, char *argv[])
 
         printf((i < 4095)  ?  "    %d,\n"  :  "    %d\n", srgb);
     }
+    /*endfor*/
     printf("};\n");
     return 0;
 }

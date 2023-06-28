@@ -142,7 +142,9 @@ static int adsi_tx_get_bit(void *user_data)
             s->bit_pos = 0;
             if (++s->byte_no >= s->msg_len)
                 s->bit_no++;
+            /*endif*/
         }
+        /*endif*/
     }
     else if (s->bit_no <= s->preamble_len + s->preamble_ones_len + s->postamble_ones_len)
     {
@@ -160,7 +162,9 @@ static int adsi_tx_get_bit(void *user_data)
             s->tx_signal_on = false;
             s->msg_len = 0;
         }
+        /*endif*/
     }
+    /*endif*/
     //printf("Tx bit %d\n", bit);
     return bit;
 }
@@ -173,12 +177,14 @@ static int adsi_tdd_get_async_byte(void *user_data)
     s = (adsi_tx_state_t *) user_data;
     if (s->byte_no < s->msg_len)
         return s->msg[s->byte_no++];
+    /*endif*/
     if (s->tx_signal_on)
     {
         /* The FSK should now be switched off. */
         s->tx_signal_on = false;
         s->msg_len = 0;
     }
+    /*endif*/
     return 0x1F;
 }
 /*- End of function --------------------------------------------------------*/
@@ -208,6 +214,7 @@ static void adsi_rx_put_bit(void *user_data, int bit)
             span_log(&s->logging, SPAN_LOG_WARNING, "Unexpected special put bit value - %d!\n", bit);
             break;
         }
+        /*endswitch*/
         return;
     }
     bit &= 1;
@@ -223,18 +230,21 @@ static void adsi_rx_put_bit(void *user_data, int bit)
                    restart message acquisition */
                 s->msg_len = 0;
             }
+            /*endif*/
             s->consecutive_ones = 0;
         }
         else
         {
             s->consecutive_ones++;
         }
+        /*endif*/
     }
     else if (s->bit_pos <= 8)
     {
         s->in_progress >>= 1;
         if (bit)
             s->in_progress |= 0x80;
+        /*endif*/
         s->bit_pos++;
     }
     else
@@ -252,11 +262,13 @@ static void adsi_rx_put_bit(void *user_data, int bit)
                            we are starting with a DLE for now */
                         if (s->in_progress == (0x80 | DLE))
                             s->msg[s->msg_len++] = (uint8_t) s->in_progress;
+                        /*endif*/
                     }
                     else
                     {
                         s->msg[s->msg_len++] = (uint8_t) s->in_progress;
                     }
+                    /*endif*/
                     if (s->msg_len >= 11  &&  s->msg_len == ((s->msg[6] & 0x7F) + 11))
                     {
                         /* Test the CRC-16 */
@@ -267,6 +279,7 @@ static void adsi_rx_put_bit(void *user_data, int bit)
                                CRC check has succeeded. */
                             for (i = 0;  i < s->msg_len - 2;  i++)
                                 s->msg[i] &= 0x7F;
+                            /*endfor*/
                             /* Put everything, except the CRC octets */
                             s->put_msg(s->user_data, s->msg, s->msg_len - 2);
                         }
@@ -274,8 +287,10 @@ static void adsi_rx_put_bit(void *user_data, int bit)
                         {
                             span_log(&s->logging, SPAN_LOG_WARNING, "CRC failed\n");
                         }
+                        /*endif*/
                         s->msg_len = 0;
                     }
+                    /*endif*/
                 }
                 else
                 {
@@ -286,22 +301,29 @@ static void adsi_rx_put_bit(void *user_data, int bit)
                         sum = 0;
                         for (i = 0;  i < s->msg_len - 1;  i++)
                             sum += s->msg[i];
+                        /*endfor*/
                         if ((-sum & 0xFF) == s->msg[i])
                             s->put_msg(s->user_data, s->msg, s->msg_len - 1);
                         else
                             span_log(&s->logging, SPAN_LOG_WARNING, "Sumcheck failed\n");
+                        /*endif*/
                         s->msg_len = 0;
                     }
+                    /*endif*/
                 }
+                /*endif*/
             }
+            /*endif*/
         }
         else
         {
             s->framing_errors++;
         }
+        /*endif*/
         s->bit_pos = 0;
         s->in_progress = 0;
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -331,20 +353,25 @@ static void adsi_tdd_put_async_byte(void *user_data, int byte)
                 s->put_msg(s->user_data, s->msg, s->msg_len);
                 s->msg_len = 0;
             }
+            /*endif*/
             break;
         default:
             span_log(&s->logging, SPAN_LOG_WARNING, "Unexpected special put byte value - %d!\n", byte);
             break;
         }
+        /*endswitch*/
         return;
     }
+    /*endif*/
     if ((octet = adsi_decode_baudot(s, (uint8_t) (byte & 0x1F))))
         s->msg[s->msg_len++] = octet;
+    /*endif*/
     if (s->msg_len >= 256)
     {
         s->put_msg(s->user_data, s->msg, s->msg_len);
         s->msg_len = 0;
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -359,6 +386,7 @@ static void adsi_rx_dtmf(void *user_data, const char *digits, int len)
            tolerant for a detector running continuously when on hook. */
         s->in_progress = 80000;
     }
+    /*endif*/
     /* It seems all the DTMF variants are a string of digits and letters,
        terminated by a "#", or a "C". It appears these are unambiguous, and
        non-conflicting. */
@@ -370,8 +398,10 @@ static void adsi_rx_dtmf(void *user_data, const char *digits, int len)
             s->put_msg(s->user_data, s->msg, s->msg_len);
             s->msg_len = 0;
         }
+        /*endif*/
         digits++;
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -380,23 +410,24 @@ static void start_tx(adsi_tx_state_t *s)
     switch (s->standard)
     {
     case ADSI_STANDARD_CLASS:
-        fsk_tx_init(&s->fsktx, &preset_fsk_specs[FSK_BELL202], adsi_tx_get_bit, s);
+        fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_BELL202], adsi_tx_get_bit, s);
         break;
     case ADSI_STANDARD_CLIP:
     case ADSI_STANDARD_ACLIP:
     case ADSI_STANDARD_JCLIP:
-        fsk_tx_init(&s->fsktx, &preset_fsk_specs[FSK_V23CH1], adsi_tx_get_bit, s);
+        fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_V23CH1], adsi_tx_get_bit, s);
         break;
     case ADSI_STANDARD_CLIP_DTMF:
-        dtmf_tx_init(&s->dtmftx, NULL, NULL);
+        dtmf_tx_init(&s->dtmf_tx, NULL, NULL);
         break;
     case ADSI_STANDARD_TDD:
-        fsk_tx_init(&s->fsktx, &preset_fsk_specs[FSK_WEITBRECHT_4545], async_tx_get_bit, &s->asynctx);
-        async_tx_init(&s->asynctx, 5, ASYNC_PARITY_NONE, 2, false, adsi_tdd_get_async_byte, s);
+        fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_WEITBRECHT_4545], async_tx_get_bit, &s->async_tx);
+        async_tx_init(&s->async_tx, 5, ASYNC_PARITY_NONE, 2, false, adsi_tdd_get_async_byte, s);
         /* Schedule an explicit shift at the start of baudot transmission */
         s->baudot_shift = 2;
         break;
     }
+    /*endswitch*/
     s->tx_signal_on = true;
 }
 /*- End of function --------------------------------------------------------*/
@@ -410,12 +441,14 @@ SPAN_DECLARE(int) adsi_rx(adsi_rx_state_t *s, const int16_t amp[], int len)
         s->in_progress -= len;
         if (s->in_progress <= 0)
             s->msg_len = 0;
-        dtmf_rx(&s->dtmfrx, amp, len);
+        /*endif*/
+        dtmf_rx(&s->dtmf_rx, amp, len);
         break;
     default:
-        fsk_rx(&s->fskrx, amp, len);
+        fsk_rx(&s->fsk_rx, amp, len);
         break;
     }
+    /*endswitch*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -428,36 +461,47 @@ SPAN_DECLARE(logging_state_t *) adsi_rx_get_logging_state(adsi_rx_state_t *s)
 
 SPAN_DECLARE(adsi_rx_state_t *) adsi_rx_init(adsi_rx_state_t *s,
                                              int standard,
-                                             put_msg_func_t put_msg,
+                                             span_put_msg_func_t put_msg,
                                              void *user_data)
 {
     if (s == NULL)
     {
         if ((s = (adsi_rx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     s->put_msg = put_msg;
     s->user_data = user_data;
     switch (standard)
     {
     case ADSI_STANDARD_CLASS:
-        fsk_rx_init(&s->fskrx, &preset_fsk_specs[FSK_BELL202], FSK_FRAME_MODE_ASYNC, adsi_rx_put_bit, s);
+        fsk_rx_init(&s->fsk_rx, &preset_fsk_specs[FSK_BELL202], FSK_FRAME_MODE_ASYNC, adsi_rx_put_bit, s);
         break;
     case ADSI_STANDARD_CLIP:
     case ADSI_STANDARD_ACLIP:
     case ADSI_STANDARD_JCLIP:
-        fsk_rx_init(&s->fskrx, &preset_fsk_specs[FSK_V23CH1], FSK_FRAME_MODE_ASYNC, adsi_rx_put_bit, s);
+        fsk_rx_init(&s->fsk_rx, &preset_fsk_specs[FSK_V23CH1], FSK_FRAME_MODE_ASYNC, adsi_rx_put_bit, s);
         break;
     case ADSI_STANDARD_CLIP_DTMF:
-        dtmf_rx_init(&s->dtmfrx, adsi_rx_dtmf, s);
+        dtmf_rx_init(&s->dtmf_rx, adsi_rx_dtmf, s);
         break;
     case ADSI_STANDARD_TDD:
         /* TDD uses 5 bit data, no parity and 1.5 stop bits. We scan for the first stop bit, and
            ride over the fraction. */
-        fsk_rx_init(&s->fskrx, &preset_fsk_specs[FSK_WEITBRECHT_4545], FSK_FRAME_MODE_5N1_FRAMES, adsi_tdd_put_async_byte, s);
+        fsk_rx_init(&s->fsk_rx,
+                    &preset_fsk_specs[FSK_WEITBRECHT_4545],
+                    FSK_FRAME_MODE_FRAMED,
+                    adsi_tdd_put_async_byte,
+                    s);
+        fsk_rx_set_frame_parameters(&s->fsk_rx,
+                                    5,
+                                    ASYNC_PARITY_NONE,
+                                    2);
         break;
     }
+    /*endswitch*/
     s->standard = standard;
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     return s;
@@ -489,18 +533,22 @@ SPAN_DECLARE(int) adsi_tx(adsi_tx_state_t *s, int16_t amp[], int max_len)
         {
         case ADSI_STANDARD_CLIP_DTMF:
             if (len < max_len)
-                len += dtmf_tx(&s->dtmftx, amp, max_len - len);
+                len += dtmf_tx(&s->dtmf_tx, amp, max_len - len);
             break;
         default:
             if (len < max_len)
             {
-                if ((lenx = fsk_tx(&s->fsktx, amp + len, max_len - len)) <= 0)
+                if ((lenx = fsk_tx(&s->fsk_tx, amp + len, max_len - len)) <= 0)
                     s->tx_signal_on = false;
+                /*endif*/
                 len += lenx;
             }
+            /*endif*/
             break;
         }
+        /*endswitch*/
     }
+    /*endif*/
     return len;
 }
 /*- End of function --------------------------------------------------------*/
@@ -523,22 +571,26 @@ SPAN_DECLARE(void) adsi_tx_set_preamble(adsi_tx_state_t *s,
             s->preamble_len = 0;
         else
             s->preamble_len = 300;
+        /*endif*/
     }
     else
     {
         s->preamble_len = preamble_len;
     }
+    /*endif*/
     if (preamble_ones_len < 0)
     {
         if (s->standard == ADSI_STANDARD_JCLIP)
             s->preamble_ones_len = 75;
         else
             s->preamble_ones_len = 80;
+        /*endif*/
     }
     else
     {
         s->preamble_ones_len = preamble_ones_len;
     }
+    /*endif*/
     if (postamble_ones_len < 0)
     {
 #if 0
@@ -547,22 +599,26 @@ SPAN_DECLARE(void) adsi_tx_set_preamble(adsi_tx_state_t *s,
         else
 #endif
             s->postamble_ones_len = 5;
+        /*endif*/
     }
     else
     {
         s->postamble_ones_len = postamble_ones_len;
     }
+    /*endif*/
     if (stop_bits < 0)
     {
         if (s->standard == ADSI_STANDARD_JCLIP)
             s->stop_bits = 4;
         else
             s->stop_bits = 1;
+        /*endif*/
     }
     else
     {
         s->stop_bits = stop_bits;
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -580,21 +636,25 @@ SPAN_DECLARE(int) adsi_tx_put_message(adsi_tx_state_t *s, const uint8_t *msg, in
     /* Don't inject a new message when a previous one is still in progress */
     if (s->msg_len > 0)
         return 0;
+    /*endif*/
     if (!s->tx_signal_on)
     {
         /* We need to restart the modem */
         start_tx(s);
     }
+    /*endif*/
     switch (s->standard)
     {
     case ADSI_STANDARD_CLIP_DTMF:
         if (len >= 128)
             return -1;
-        len -= (int) dtmf_tx_put(&s->dtmftx, (char *) msg, len);
+        /*endif*/
+        len -= (int) dtmf_tx_put(&s->dtmf_tx, (char *) msg, len);
         break;
     case ADSI_STANDARD_JCLIP:
         if (len > 128 - 9)
             return -1;
+        /*endif*/
         i = 0;
         s->msg[i++] = DLE;
         s->msg[i++] = SOH;
@@ -607,6 +667,7 @@ SPAN_DECLARE(int) adsi_tx_put_message(adsi_tx_state_t *s, const uint8_t *msg, in
            message should already be stuffed. */
         if (len - 2 == DLE)
             s->msg[i++] = DLE;
+        /*endif*/
         memcpy(&s->msg[i], &msg[2], len - 2);
         i += len - 2;
         s->msg[i++] = DLE;
@@ -619,8 +680,10 @@ SPAN_DECLARE(int) adsi_tx_put_message(adsi_tx_state_t *s, const uint8_t *msg, in
             parity = 0;
             for (k = 1;  k <= 7;  k++)
                 parity ^= (byte << k);
+            /*endfor*/
             s->msg[j] = (s->msg[j] & 0x7F) | ((uint8_t) parity & 0x80);
         }
+        /*endfor*/
 
         crc_value = crc_itu16_calc(s->msg + 2, i - 2, 0);
         s->msg[i++] = (uint8_t) (crc_value & 0xFF);
@@ -630,12 +693,14 @@ SPAN_DECLARE(int) adsi_tx_put_message(adsi_tx_state_t *s, const uint8_t *msg, in
     case ADSI_STANDARD_TDD:
         if (len > 255)
             return -1;
+        /*endif*/
         memcpy(s->msg, msg, len);
         s->msg_len = len;
         break;
     default:
         if (len > 255)
             return -1;
+        /*endif*/
         memcpy(s->msg, msg, len);
         /* Force the length in case it is wrong */
         s->msg[1] = (uint8_t) (len - 2);
@@ -643,10 +708,12 @@ SPAN_DECLARE(int) adsi_tx_put_message(adsi_tx_state_t *s, const uint8_t *msg, in
         sum = 0;
         for (ii = 0;  ii < (size_t) len;  ii++)
             sum += s->msg[ii];
+        /*endfor*/
         s->msg[len] = (uint8_t) ((-sum) & 0xFF);
         s->msg_len = len + 1;
         break;
     }
+    /*endswitch*/
     /* Prepare the bit sequencing */
     s->byte_no = 0;
     s->bit_pos = 0;
@@ -667,7 +734,9 @@ SPAN_DECLARE(adsi_tx_state_t *) adsi_tx_init(adsi_tx_state_t *s, int standard)
     {
         if ((s = (adsi_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     tone_gen_descriptor_init(&s->alert_tone_desc,
                              2130,
@@ -838,12 +907,15 @@ static uint16_t adsi_encode_baudot(adsi_tx_state_t *s, uint8_t ch)
     ch = conv[ch];
     if (ch == 0xFF)
         return 0;
+    /*endif*/
     if ((ch & 0x40))
         return ch & 0x1F;
+    /*endif*/
     if ((ch & 0x80))
     {
         if (s->baudot_shift == 1)
             return ch & 0x1F;
+        /*endif*/
         s->baudot_shift = 1;
         shift = BAUDOT_FIGURE_SHIFT;
     }
@@ -851,9 +923,11 @@ static uint16_t adsi_encode_baudot(adsi_tx_state_t *s, uint8_t ch)
     {
         if (s->baudot_shift == 0)
             return ch & 0x1F;
+        /*endif*/
         s->baudot_shift = 0;
         shift = BAUDOT_LETTER_SHIFT;
     }
+    /*endif*/
     return (shift << 5) | (ch & 0x1F);
 }
 /*- End of function --------------------------------------------------------*/
@@ -877,6 +951,7 @@ static uint8_t adsi_decode_baudot(adsi_rx_state_t *s, uint8_t ch)
     default:
         return conv[s->baudot_shift][ch];
     }
+    /*endswitch*/
     /* return 0 if we did not produce a character */
     return 0;
 }
@@ -894,6 +969,7 @@ SPAN_DECLARE(int) adsi_next_field(adsi_rx_state_t *s, const uint8_t *msg, int ms
     case ADSI_STANDARD_ACLIP:
         if (pos >= msg_len)
             return -1;
+        /*endif*/
         /* For MDMF type messages, these standards all use "IE" type fields - type,
            length, contents - and similar headers */
         if (pos <= 0)
@@ -921,14 +997,18 @@ SPAN_DECLARE(int) adsi_next_field(adsi_rx_state_t *s, const uint8_t *msg, int ms
                 *field_len = msg_len - pos;
                 *field_body = msg + pos;
             }
+            /*endif*/
             pos += *field_len;
         }
+        /*endif*/
         if (pos > msg_len)
             return -2;
+        /*endif*/
         break;
     case ADSI_STANDARD_JCLIP:
         if (pos >= msg_len - 2)
             return -1;
+        /*endif*/
         if (pos <= 0)
         {
             /* Return the message type */
@@ -936,8 +1016,10 @@ SPAN_DECLARE(int) adsi_next_field(adsi_rx_state_t *s, const uint8_t *msg, int ms
             *field_type = msg[pos++];
             if (*field_type == DLE)
                 pos++;
+            /*endif*/
             if (msg[pos++] == DLE)
                 pos++;
+            /*endif*/
             *field_len = 0;
             *field_body = NULL;
         }
@@ -946,19 +1028,24 @@ SPAN_DECLARE(int) adsi_next_field(adsi_rx_state_t *s, const uint8_t *msg, int ms
             *field_type = msg[pos++];
             if (*field_type == DLE)
                 pos++;
+            /*endif*/
             *field_len = msg[pos++];
             if (*field_len == DLE)
                 pos++;
+            /*endif*/
             /* TODO: we assume here that the body contains no DLE's that would have been stuffed */
             *field_body = msg + pos;
             pos += *field_len;
         }
+        /*endif*/
         if (pos > msg_len - 2)
             return -2;
+        /*endif*/
         break;
     case ADSI_STANDARD_CLIP_DTMF:
         if (pos > msg_len)
             return -1;
+        /*endif*/
         if (pos <= 0)
         {
             pos = 1;
@@ -974,30 +1061,37 @@ SPAN_DECLARE(int) adsi_next_field(adsi_rx_state_t *s, const uint8_t *msg, int ms
                 *field_type = CLIP_DTMF_HASH_UNSPECIFIED;
             else
                 *field_type = msg[pos++];
+            /*endif*/
             *field_body = msg + pos;
             i = pos;
             while (i < msg_len  &&  msg[i] >= '0'  &&  msg[i] <= '9')
                 i++;
+            /*endwhile*/
             *field_len = i - pos;
             pos = i;
             /* Check if we have reached the end of message marker. */
             if (msg[pos] == '#'  ||  msg[pos] == 'C')
                 pos++;
+            /*endif*/
             if (pos > msg_len)
                 return -2;
+            /*endif*/
             /* Bias the pos value, so we don't return 0 inappropriately */
             pos++;
         }
+        /*endif*/
         break;
     case ADSI_STANDARD_TDD:
         if (pos >= msg_len)
             return -1;
+        /*endif*/
         *field_type = 0;
         *field_body = msg;
         *field_len = msg_len;
         pos = msg_len;
         break;
     }
+    /*endswitch*/
     return pos;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1029,6 +1123,7 @@ SPAN_DECLARE(int) adsi_add_field(adsi_tx_state_t *s, uint8_t *msg, int len, uint
                 msg[len++] = (uint8_t) field_len;
                 if (field_len == DLE)
                     msg[len++] = (uint8_t) field_len;
+                /*endif*/
                 memcpy(&msg[len], field_body, field_len);
                 len += field_len;
             }
@@ -1038,7 +1133,9 @@ SPAN_DECLARE(int) adsi_add_field(adsi_tx_state_t *s, uint8_t *msg, int len, uint
                 memcpy(&msg[len], field_body, field_len);
                 len += field_len;
             }
+            /*endif*/
         }
+        /*endif*/
         break;
     case ADSI_STANDARD_JCLIP:
         /* This standard uses "IE" type fields - type, length, value - but escapes DLE characters,
@@ -1056,16 +1153,21 @@ SPAN_DECLARE(int) adsi_add_field(adsi_tx_state_t *s, uint8_t *msg, int len, uint
             msg[len++] = field_type;
             if (field_type == DLE)
                 msg[len++] = field_type;
+            /*endif*/
             msg[len++] = (uint8_t) field_len;
             if (field_len == DLE)
                 msg[len++] = (uint8_t) field_len;
+            /*endif*/
             for (i = 0;  i < field_len;  i++)
             {
                 msg[len++] = field_body[i];
                 if (field_body[i] == DLE)
                     msg[len++] = field_body[i];
+                /*endif*/
             }
+            /*endfor*/
         }
+        /*endif*/
         break;
     case ADSI_STANDARD_CLIP_DTMF:
         if (len <= 0)
@@ -1080,25 +1182,32 @@ SPAN_DECLARE(int) adsi_add_field(adsi_tx_state_t *s, uint8_t *msg, int len, uint
             x = msg[--len];
             if (field_type != CLIP_DTMF_HASH_UNSPECIFIED)
                 msg[len++] = field_type;
+            /*endif*/
             memcpy(&msg[len], field_body, field_len);
             msg[len + field_len] = (uint8_t) x;
             len += (field_len + 1);
         }
+        /*endif*/
         break;
     case ADSI_STANDARD_TDD:
         if (len < 0)
             len = 0;
+        /*endif*/
         for (i = 0;  i < field_len;  i++)
         {
             if ((x = adsi_encode_baudot(s, field_body[i])))
             {
                 if ((x & 0x3E0))
                     msg[len++] = (uint8_t) ((x >> 5) & 0x1F);
+                /*endif*/
                 msg[len++] = (uint8_t) (x & 0x1F);
             }
+            /*endif*/
         }
+        /*endfor*/
         break;
     }
+    /*endswitch*/
 
     return len;
 }
@@ -1121,6 +1230,7 @@ SPAN_DECLARE(const char *) adsi_standard_to_str(int standard)
     case ADSI_STANDARD_TDD:
         return "TDD";
     }
+    /*endswitch*/
     return "???";
 }
 /*- End of function --------------------------------------------------------*/

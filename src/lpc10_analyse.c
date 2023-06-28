@@ -62,6 +62,7 @@ static __inline__ float energyf(float amp[], int len)
     rms = 0.0f;
     for (i = 0;  i < len;  i++)
         rms += amp[i]*amp[i];
+    /*endfor*/
     rms = sqrtf(rms/len);
     return rms;
 }
@@ -75,9 +76,11 @@ static void remove_dc_bias(float speech[], int len, float sigout[])
     bias = 0.0f;
     for (i = 0;  i < len;  i++)
         bias += speech[i];
+    /*endfor*/
     bias /= len;
     for (i = 0; i < len;  i++)
         sigout[i] = speech[i] - bias;
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -105,12 +108,16 @@ static void eval_amdf(float speech[],
         sum = 0.0f;
         for (j = n1;  j <= n2;  j += 4)
             sum += fabsf(speech[j - 1] - speech[j + tau[i] - 1]);
+        /*endfor*/
         amdf[i] = sum;
         if (amdf[i] < amdf[*minptr])
             *minptr = i;
+        /*endif*/
         if (amdf[i] > amdf[*maxptr])
             *maxptr = i;
+        /*endif*/
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -147,9 +154,12 @@ static void eval_highres_amdf(float speech[],
     {
         while (tau[ptr] < i)
             ptr++;
+        /*endwhile*/
         if (tau[ptr] != i)
             tau2[ltau2++] = i;
+        /*endif*/
     }
+    /*endfor*/
     /* Compute AMDF of the new lags, if there are any, and choose one
        if it is better than the coarse minimum */
     if (ltau2 > 0)
@@ -160,7 +170,9 @@ static void eval_highres_amdf(float speech[],
             *mintau = tau2[minp2];
             minamd = (int32_t) amdf2[minp2];
         }
+        /*endif*/
     }
+    /*endif*/
     /* Check one octave up, if there are any lags not yet computed */
     if (*mintau >= 80)
     {
@@ -176,6 +188,7 @@ static void eval_highres_amdf(float speech[],
             ltau2 = 1;
             tau2[0] = i;
         }
+        /*endif*/
         eval_amdf(speech, lpita, tau2, ltau2, tau[ltau - 1], amdf2, &minp2, &maxp2);
         if (amdf2[minp2] < (float) minamd)
         {
@@ -183,7 +196,9 @@ static void eval_highres_amdf(float speech[],
             minamd = (int32_t) amdf2[minp2];
             *minptr -= 20;
         }
+        /*endif*/
     }
+    /*endif*/
     /* Force minimum of the AMDF array to the high resolution minimum */
     amdf[*minptr] = (float) minamd;
     /* Find maximum of AMDF within 1/2 octave of minimum */
@@ -193,7 +208,9 @@ static void eval_highres_amdf(float speech[],
     {
         if (amdf[i] > amdf[*maxptr])
             *maxptr = i;
+        /*endif*/
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -221,9 +238,11 @@ static void dynamic_pitch_tracking(lpc10_encode_state_t *s,
         s->alphax = s->alphax*0.75f + amdf[*minptr - 1]*0.5f;
     else
         s->alphax *= 0.984375f;
+    /*endif*/
     alpha = s->alphax/16;
     if (voice == 0  &&  s->alphax < 128.0f)
         alpha = 8.0f;
+    /*endif*/
     /* SEESAW: Construct a pitch pointer array and intermediate winner function */
     /* Left to right pass: */
     s->p[s->ipoint][0] = 1;
@@ -241,8 +260,10 @@ static void dynamic_pitch_tracking(lpc10_encode_state_t *s,
             pbar = i + 1;
             sbar = s->s[i];
         }
+        /*endif*/
         s->p[s->ipoint][i] = pbar;
     }
+    /*endfor*/
     /* Right to left pass: */
     sbar = s->s[pbar - 1];
     for (i = pbar - 2;  i >= 0;  i--)
@@ -259,7 +280,9 @@ static void dynamic_pitch_tracking(lpc10_encode_state_t *s,
             i = pbar - 1;
             sbar = s->s[i];
         }
+        /*endif*/
     }
+    /*endfor*/
     /* Update S using AMDF */
     /* Find maximum, minimum, and location of minimum */
     s->s[0] += amdf[0]/2;
@@ -271,15 +294,19 @@ static void dynamic_pitch_tracking(lpc10_encode_state_t *s,
         s->s[i] += amdf[i]/2;
         if (s->s[i] > maxsc)
             maxsc = s->s[i];
+        /*endif*/
         if (s->s[i] < minsc)
         {
             *midx = i + 1;
             minsc = s->s[i];
         }
+        /*endif*/
     }
+    /*endfor*/
     /* Subtract MINSC from S to prevent overflow */
     for (i = 0;  i < ltau;  i++)
         s->s[i] -= minsc;
+    /*endfor*/
     maxsc -= minsc;
     /* Use higher octave pitch if significant null there */
     j = 0;
@@ -289,13 +316,17 @@ static void dynamic_pitch_tracking(lpc10_encode_state_t *s,
         {
             if (s->s[*midx - i - 1] < maxsc / 4)
                 j = i;
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endfor*/
     *midx -= j;
     /* TRACE: look back two frames to find minimum cost pitch estimate */
     *pitch = *midx;
     for (i = 0, j = s->ipoint;  i < 2;  i++, j++)
         *pitch = s->p[j & 1][*pitch - 1];
+    /*endfor*/
 
     /* The following statement subtracts one from IPOINT, mod DEPTH.  I */
     /* think the author chose to add DEPTH-1, instead of subtracting 1, */
@@ -323,6 +354,7 @@ static void onset(lpc10_encode_state_t *s,
 
     if (s->hyst)
         s->lasti -= lframe;
+    /*endif*/
     for (i = sbufh - lframe + 1;  i <= sbufh;  i++)
     {
         /* Compute FPC; Use old FPC on divide by zero; Clamp FPC to +/- 1. */
@@ -336,7 +368,9 @@ static void onset(lpc10_encode_state_t *s,
                 s->fpc = r_sign(1.0f, s->n);
             else
                 s->fpc = s->n/s->d__;
+            /*endif*/
         }
+        /*endif*/
         /* Filter FPC */
         l2sum2 = s->l2buf[s->l2ptr1 - 1];
         s->l2sum1 = s->l2sum1 - s->l2buf[s->l2ptr2 - 1] + s->fpc;
@@ -354,8 +388,10 @@ static void onset(lpc10_encode_state_t *s,
                     osbuf[*osptr - 1] = i - 9;
                     (*osptr)++;
                 }
+                /*endif*/
                 s->hyst = true;
             }
+            /*endif*/
             s->lasti = i;
             /* After one onset detection, at least OSHYST sample times must go */
             /* by before another is allowed to occur. */
@@ -364,7 +400,9 @@ static void onset(lpc10_encode_state_t *s,
         {
             s->hyst = false;
         }
+        /*endif*/
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -381,12 +419,15 @@ static void mload(int32_t order, int32_t awins, int32_t awinf, float speech[], f
         phi[r - 1] = 0.0f;
         for (i = start;  i <= awinf;  i++)
             phi[r - 1] += speech[i - 2]*speech[i - r - 1];
+        /*endfor*/
     }
+    /*endfor*/
 
     /* Load last element of vector PSI */
     psi[order - 1] = 0.0f;
     for (i = start - 1;  i < awinf;  i++)
         psi[order - 1] += speech[i]*speech[i - order];
+    /*endfor*/
     /* End correct to get additional columns of phi */
     for (r = 1;  r < order;  r++)
     {
@@ -396,7 +437,9 @@ static void mload(int32_t order, int32_t awins, int32_t awinf, float speech[], f
                              - speech[awinf - (r + 1)]*speech[awinf - (i + 1)]
                              + speech[start - (r + 2)]*speech[start - (i + 2)];
         }
+        /*endfor*/
     }
+    /*endfor*/
     /* End correct to get additional elements of PSI */
     for (i = 0;  i < order - 1;  i++)
     {
@@ -404,6 +447,7 @@ static void mload(int32_t order, int32_t awins, int32_t awinf, float speech[], f
                - speech[start - 2]*speech[start - i - 3]
                + speech[awinf - 1]*speech[awinf - i - 2];
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -420,6 +464,7 @@ static float preemp(float inbuf[], float pebuf[], int nsamp, float coeff, float 
         z = inbuf[i];
         pebuf[i] = temp;
     }
+    /*endfor*/
     return z;
 }
 /*- End of function --------------------------------------------------------*/
@@ -437,27 +482,34 @@ static void invert(int32_t order, float phi[], float psi[], float rc[])
     {
         for (i = j;  i < order;  i++)
             v[j][i] = phi[i + j*order];
+        /*endfor*/
         for (k = 0;  k < j;  k++)
         {
             r1 = v[k][j]*v[k][k];
             for (i = j;  i <= order;  i++)
                 v[j][i] -= v[k][i]*r1;
+            /*endfor*/
         }
+        /*endfor*/
         /* Compute intermediate results, which are similar to RC's */
         if (fabsf(v[j][j]) < 1.0e-10f)
         {
             for (i = j;  i < order;  i++)
                 rc[i] = 0.0f;
+            /*endfor*/
             return;
         }
+        /*endif*/
         rc[j] = psi[j];
         for (k = 0;  k < j;  k++)
             rc[j] -= rc[k]*v[k][j];
+        /*endfor*/
         v[j][j] = 1.0f/v[j][j];
         rc[j] *= v[j][j];
         r1 = min(rc[j], 0.999f);
         rc[j] = max(r1, -0.999f);
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -472,9 +524,12 @@ static int rcchk(int order, float rc1f[], float rc2f[])
         {
             for (i = 0;  i < order;  i++)
                 rc2f[i] = rc1f[i];
+            /*endfor*/
             break;
         }
+        /*endif*/
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -509,6 +564,7 @@ static void lpfilt(float inbuf[], float lpbuf[], int32_t len, int32_t nsamp)
         t += inbuf[j - 15] * 0.250535965f;
         lpbuf[j] = t;
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -529,7 +585,9 @@ static void ivfilt(float lpbuf[], float ivbuf[], int32_t len, int32_t nsamp, flo
         k = (i - 1) << 2;
         for (j = (i << 2) + len - nsamp;  j <= len;  j += 2)
             r[i - 1] += lpbuf[j - 1]*lpbuf[j - k - 1];
+        /*endfor*/
     }
+    /*endfor*/
     /* Calculate predictor coefficients */
     pc1 = 0.0f;
     pc2 = 0.0f;
@@ -542,9 +600,11 @@ static void ivfilt(float lpbuf[], float ivbuf[], int32_t len, int32_t nsamp, flo
         pc1 = ivrc[0] - ivrc[0]*ivrc[1];
         pc2 = ivrc[1];
     }
+    /*endif*/
     /* Inverse filter LPBUF into IVBUF */
     for (i = len - nsamp;  i < len;  i++)
         ivbuf[i] = lpbuf[i] - pc1*lpbuf[i - 4] - pc2*lpbuf[i - 8];
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -589,15 +649,20 @@ void lpc10_analyse(lpc10_encode_state_t *s, float speech[], int32_t voice[], int
         s->inbuf[i] = s->inbuf[LPC10_SAMPLES_PER_FRAME + i];
         s->pebuf[i] = s->pebuf[LPC10_SAMPLES_PER_FRAME + i];
     }
+    /*endfor*/
     for (i = 0;  i <= 540 - LPC10_SAMPLES_PER_FRAME - 229;  i++)
         s->ivbuf[i] = s->ivbuf[LPC10_SAMPLES_PER_FRAME + i];
+    /*endfor*/
     for (i = 0;  i <= 720 - LPC10_SAMPLES_PER_FRAME - 25;  i++)
         s->lpbuf[i] = s->lpbuf[LPC10_SAMPLES_PER_FRAME + i];
+    /*endfor*/
     for (i = 0, j = 0;  i < s->osptr - 1;  i++)
     {
         if (s->osbuf[i] > LPC10_SAMPLES_PER_FRAME)
             s->osbuf[j++] = s->osbuf[i] - LPC10_SAMPLES_PER_FRAME;
+        /*endif*/
     }
+    /*endfor*/
     s->osptr = j + 1;
     s->voibuf[0][0] = s->voibuf[1][0];
     s->voibuf[0][1] = s->voibuf[1][1];
@@ -613,7 +678,9 @@ void lpc10_analyse(lpc10_encode_state_t *s, float speech[], int32_t voice[], int
         s->rmsbuf[i] = s->rmsbuf[i + 1];
         for (j = 0;  j < LPC10_ORDER;  j++)
             s->rcbuf[i][j] = s->rcbuf[i + 1][j];
+        /*endfor*/
     }
+    /*endfor*/
     /* If the average value in the frame was over 1/4096 (after current
        BIAS correction), then subtract that much more from samples in the
        next frame.  If the average value in the frame was under
@@ -625,16 +692,18 @@ void lpc10_analyse(lpc10_encode_state_t *s, float speech[], int32_t voice[], int
         s->inbuf[720 - 2*LPC10_SAMPLES_PER_FRAME + i] = speech[i]*4096.0f - s->bias;
         temp += s->inbuf[720 - 2*LPC10_SAMPLES_PER_FRAME + i];
     }
+    /*endfor*/
     if (temp > (float) LPC10_SAMPLES_PER_FRAME)
         s->bias++;
     else if (temp < (float) (-LPC10_SAMPLES_PER_FRAME))
         s->bias--;
+    /*endif*/
     /* Place voicing window */
     i = 721 - LPC10_SAMPLES_PER_FRAME;
     s->zpre = preemp(&s->inbuf[i - 181], &s->pebuf[i - 181], LPC10_SAMPLES_PER_FRAME, precoef, s->zpre);
     onset(s, s->pebuf, s->osbuf, &s->osptr, 10, 181, 720, LPC10_SAMPLES_PER_FRAME);
 
-    lpc10_placev(s->osbuf, &s->osptr, 10, &s->obound[2], s->vwin, 3, LPC10_SAMPLES_PER_FRAME, 90, LPC10_MIN_PITCH, 307, 462);
+    lpc10_placev(s->osbuf, &s->osptr, 10, &s->obound[2], s->vwin, LPC10_SAMPLES_PER_FRAME, 90, LPC10_MIN_PITCH, 307, 462);
     /* The Pitch Extraction algorithm estimates the pitch for a frame
        of speech by locating the minimum of the average magnitude difference
        function (AMDF).  The AMDF operates on low-pass, inverse filtered
@@ -682,13 +751,14 @@ void lpc10_analyse(lpc10_encode_state_t *s, float speech[], int32_t voice[], int
                       ivrc,
                       s->obound);
     }
+    /*endfor*/
     /* Find the minimum cost pitch decision over several frames,
        given the current voicing decision and the AMDF array */
     minptr++;
     dynamic_pitch_tracking(s, amdf, 60, &minptr, s->voibuf[3][1], pitch, &midx);
     ipitch = tau[midx - 1];
     /* Place spectrum analysis and energy windows */
-    lpc10_placea(&ipitch, s->voibuf, &s->obound[2], 3, s->vwin, s->awin, ewin, LPC10_SAMPLES_PER_FRAME, LPC10_MIN_PITCH);
+    lpc10_placea(&ipitch, s->voibuf, &s->obound[2], s->vwin, s->awin, ewin, LPC10_SAMPLES_PER_FRAME, LPC10_MIN_PITCH);
     /* Remove short term DC bias over the analysis window. */
     lanal = s->awin[2][1] + 1 - s->awin[2][0];
     remove_dc_bias(&s->pebuf[s->awin[2][0] - 181], lanal, abuf);
@@ -706,6 +776,7 @@ void lpc10_analyse(lpc10_encode_state_t *s, float speech[], int32_t voice[], int
     *rms = s->rmsbuf[0];
     for (i = 0;  i < LPC10_ORDER;  i++)
         rc[i] = s->rcbuf[0][i];
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

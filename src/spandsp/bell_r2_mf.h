@@ -252,7 +252,7 @@ SPAN_DECLARE(int) r2_mf_rx_get(r2_mf_rx_state_t *s);
     \return A pointer to the R2 MF receiver context. */
 SPAN_DECLARE(r2_mf_rx_state_t *) r2_mf_rx_init(r2_mf_rx_state_t *s,
                                                bool fwd,
-                                               tone_report_func_t callback,
+                                               span_tone_report_func_t callback,
                                                void *user_data);
 
 /*! \brief Release an R2 MF receiver context.

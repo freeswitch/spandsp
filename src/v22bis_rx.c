@@ -154,7 +154,7 @@ SPAN_DECLARE(float) v22bis_rx_signal_power(v22bis_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) v22bis_rx_signal_cutoff(v22bis_state_t *s, float cutoff)
+SPAN_DECLARE(void) v22bis_rx_set_signal_cutoff(v22bis_state_t *s, float cutoff)
 {
     s->rx.carrier_on_power = (int32_t) (power_meter_level_dbm0(cutoff + 2.5f)*0.232f);
     s->rx.carrier_off_power = (int32_t) (power_meter_level_dbm0(cutoff - 2.5f)*0.232f);
@@ -960,7 +960,7 @@ int v22bis_rx_restart(v22bis_state_t *s)
     s->rx.carrier_phase_rate = (s->calling_party)  ?  DDS_PHASE_RATE(2400.0f)  :  DDS_PHASE_RATE(1200.0f);
     s->rx.carrier_phase = 0;
     power_meter_init(&s->rx.rx_power, 5);
-    v22bis_rx_signal_cutoff(s, -45.5f);
+    v22bis_rx_set_signal_cutoff(s, -45.5f);
 #if defined(SPANDSP_USE_FIXED_POINT)
     s->rx.agc_scaling = (float) (1024.0f*1024.0f)*0.0005f*0.025f;
 #else

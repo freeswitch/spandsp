@@ -346,11 +346,11 @@ SPAN_DECLARE(int) ademco_contactid_sender_put(ademco_contactid_sender_state_t *s
 SPAN_DECLARE(logging_state_t *) ademco_contactid_sender_get_logging_state(ademco_contactid_sender_state_t *s);
 
 SPAN_DECLARE(void) ademco_contactid_sender_set_realtime_callback(ademco_contactid_sender_state_t *s,
-                                                                 tone_report_func_t callback,
+                                                                 span_tone_report_func_t callback,
                                                                  void *user_data);
 
 SPAN_DECLARE(ademco_contactid_sender_state_t *) ademco_contactid_sender_init(ademco_contactid_sender_state_t *s,
-                                                                             tone_report_func_t callback,
+                                                                             span_tone_report_func_t callback,
                                                                              void *user_data);
 
 SPAN_DECLARE(int) ademco_contactid_sender_release(ademco_contactid_sender_state_t *s);

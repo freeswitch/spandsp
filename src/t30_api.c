@@ -775,7 +775,7 @@ SPAN_DECLARE(void) t30_set_tx_file(t30_state_t *s, const char *file, int start_p
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t30_set_iaf_mode(t30_state_t *s, bool iaf)
+SPAN_DECLARE(void) t30_set_iaf_mode(t30_state_t *s, int iaf)
 {
     s->iaf = iaf;
 }
@@ -786,6 +786,12 @@ SPAN_DECLARE(int) t30_set_ecm_capability(t30_state_t *s, bool enabled)
     s->ecm_allowed = enabled;
     t30_build_dis_or_dtc(s);
     return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) t30_set_retransmit_capable(t30_state_t *s, bool enabled)
+{
+    s->retransmit_capable = enabled;
 }
 /*- End of function --------------------------------------------------------*/
 

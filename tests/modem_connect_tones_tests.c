@@ -1313,7 +1313,7 @@ int main(int argc, char *argv[])
                 {
                     if (--modem_tone_tx.hop_timer <= 0)
                     {
-                        modem_tone_tx.hop_timer = ms_to_samples(interval);
+                        modem_tone_tx.hop_timer = milliseconds_to_samples(interval);
                         modem_tone_tx.tone_phase += 0x80000000;
                     }
                     /*endif*/
@@ -1379,7 +1379,7 @@ int main(int argc, char *argv[])
                         interval = 1000;
                     if (cycle == 20)
                         interval = 450;
-                    modem_tone_tx.hop_timer = ms_to_samples(interval);
+                    modem_tone_tx.hop_timer = milliseconds_to_samples(interval);
                     modem_tone_tx.tone_phase += 0x80000000;
                 }
                 amp[j] = dds_mod(&modem_tone_tx.tone_phase, modem_tone_tx.tone_phase_rate, modem_tone_tx.level, 0);
@@ -1725,7 +1725,7 @@ int main(int argc, char *argv[])
         hits = 0;
         while ((frames = sf_readf_short(inhandle, amp, 8000)))
         {
-            when++;
+            when += frames;
             modem_connect_tones_rx(&cng_rx, amp, frames);
             modem_connect_tones_rx(&ced_rx, amp, frames);
             modem_connect_tones_rx(&ans_pr_rx, amp, frames);

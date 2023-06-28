@@ -85,7 +85,7 @@ struct r2_mf_tx_state_s
 struct r2_mf_rx_state_s
 {
     /*! Optional callback funcion to deliver received digits. */
-    tone_report_func_t callback;
+    span_tone_report_func_t callback;
     /*! An opaque pointer passed to the callback function. */
     void *callback_data;
     /*! True if we are detecting forward tones. False if we are detecting backward tones */

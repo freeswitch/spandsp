@@ -41,6 +41,7 @@
 
 #include "spandsp/telephony.h"
 #include "spandsp/alloc.h"
+#include "spandsp/unaligned.h"
 #include "spandsp/logging.h"
 #include "spandsp/async.h"
 #include "spandsp/timezone.h"
@@ -52,15 +53,6 @@
 #include "spandsp/private/logging.h"
 #include "spandsp/private/t81_t82_arith_coding.h"
 #include "spandsp/private/t85.h"
-
-static __inline__ int32_t pack_32(const uint8_t *s)
-{
-    int32_t value;
-
-    value = (((int32_t) s[0] << 24) | ((int32_t) s[1] << 16) | ((int32_t) s[2] << 8) | (int32_t) s[3]);
-    return value;
-}
-/*- End of function --------------------------------------------------------*/
 
 /* Decode some PSCD bytes, output the decoded rows as they are completed. Return
    the number of bytes which have actually been read. This will be less than len
@@ -276,8 +268,8 @@ SPAN_DECLARE(bool) t85_analyse_header(uint32_t *width, uint32_t *length, const u
         *length = 0;
         return false;
     }
-    *width = pack_32(&data[6]);
-    *length = pack_32(&data[10]);
+    *width = get_net_unaligned_uint32(&data[6]);
+    *length = get_net_unaligned_uint32(&data[10]);
     if ((data[19] & T85_VLENGTH))
     {
         /* There should be an image length sequence terminating the image later on. */
@@ -288,7 +280,7 @@ SPAN_DECLARE(bool) t85_analyse_header(uint32_t *width, uint32_t *length, const u
             {
                 if (data[i + 1] == T82_COMMENT)
                 {
-                    skip = pack_32(&data[2]);
+                    skip = get_net_unaligned_uint32(&data[2]);
                     if ((skip + 6) > (len - i))
                         break;
                     i += (6 + skip - 1);
@@ -301,7 +293,7 @@ SPAN_DECLARE(bool) t85_analyse_header(uint32_t *width, uint32_t *length, const u
                 {
                     /* We are only allow to have one of these, so if we find one
                        we should not look any further. */
-                    *length = pack_32(&data[i + 2]);
+                    *length = get_net_unaligned_uint32(&data[i + 2]);
                     break;
                 }
             }
@@ -343,11 +335,11 @@ static int extract_bih(t85_decode_state_t *s)
     s->current_bit_plane = 0;
     /* Now look at the stuff which actually counts in a T.85 header. */
     /* XD - Horizontal image size at layer D */
-    s->xd = pack_32(&s->buffer[4]);
+    s->xd = get_net_unaligned_uint32(&s->buffer[4]);
     /* YD - Vertical image size at layer D */
-    s->yd = pack_32(&s->buffer[8]);
+    s->yd = get_net_unaligned_uint32(&s->buffer[8]);
     /* L0 - Rows per stripe, at the lowest resolution */
-    s->l0 = pack_32(&s->buffer[12]);
+    s->l0 = get_net_unaligned_uint32(&s->buffer[12]);
     /* MX - Maximum horizontal offset allowed for AT pixel */
     s->mx = s->buffer[16];
     /* Options byte */
@@ -449,11 +441,14 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
     {
         if (s->y >= s->yd)
             return T4_DECODE_OK;
+        /*endif*/
         if (s->end_of_data > 0)
             return T4_DECODE_INVALID_DATA;
+        /*endif*/
         /* This is the end of image condition */
         s->end_of_data = 1;
     }
+    /*endif*/
 
     s->compressed_image_size += len;
     cnt = 0;
@@ -467,8 +462,10 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
         cnt = i;
         if (s->bie_len < 20)
             return T4_DECODE_MORE_DATA;
+        /*endif*/
         if ((ret = extract_bih(s)) != T4_DECODE_OK)
             return ret;
+        /*endif*/
         /* Set up the two/three row buffer */
         bytes_per_row = (s->xd + 7) >> 3;
         min_len = ((s->options & T85_LRLTWO)  ?  2  :  3)*bytes_per_row;
@@ -477,9 +474,11 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
             /* We need to expand the 3 row buffer */
             if ((buf = (uint8_t *) span_realloc(s->row_buf, min_len)) == NULL)
                 return T4_DECODE_NOMEM;
+            /*endif*/
             s->row_buf = buf;
             s->row_buf_len = min_len;
         }
+        /*endif*/
 
         t81_t82_arith_decode_init(&s->s);
         s->s.nopadding = s->options & T85_VLENGTH;
@@ -488,6 +487,7 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
             span_free(s->comment);
             s->comment = NULL;
         }
+        /*endif*/
         s->comment_len = 0;
         s->comment_progress = 0;
         s->buf_len = 0;
@@ -504,6 +504,7 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
         s->p[1] = -1;
         s->p[2] = -1;
     }
+    /*endif*/
 
     /* BID processing loop */
     while (cnt < len  ||  s->end_of_data == 1)
@@ -514,6 +515,7 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
             s->options &= ~T85_VLENGTH;
             s->end_of_data = 2;
         }
+        /*endif*/
         if (s->comment_len)
         {
             /* We are in a COMMENT. Absorb its contents */
@@ -527,13 +529,16 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
                    comment has occurred. */
                 if (s->comment)
                     memcpy(&s->comment[s->comment_progress], &data[cnt], chunk);
+                /*endif*/
                 if (s->comment_handler)
                     s->interrupt = s->comment_handler(s->comment_user_data, s->comment, s->comment_len);
+                /*endif*/
                 if (s->comment)
                 {
                     span_free(s->comment);
                     s->comment = NULL;
                 }
+                /*endif*/
                 s->comment_len = 0;
                 s->comment_progress = 0;
             }
@@ -541,11 +546,14 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
             {
                 if (s->comment)
                     memcpy(&s->comment[s->comment_progress], &data[cnt], chunk);
+                /*endif*/
                 s->comment_progress += chunk;
             }
+            /*endif*/
             cnt += chunk;
             continue;
         }
+        /*endif*/
 
         /* Load marker segments into s->buffer for processing */
         if (s->buf_len > 0)
@@ -555,9 +563,11 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
                length. */
             while (s->buf_len < s->buf_needed  &&  cnt < len)
                 s->buffer[s->buf_len++] = data[cnt++];
+            /*endwhile*/
             /* Check we have enough bytes to see the message type */
             if (s->buf_len < s->buf_needed)
                 continue;
+            /*endif*/
             switch (s->buffer[1])
             {
             case T82_STUFF:
@@ -567,6 +577,7 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
                 s->buf_len = 0;
                 if (s->interrupt)
                     return T4_DECODE_INTERRUPT;
+                /*endif*/
                 break;
             case T82_ABORT:
                 s->buf_len = 0;
@@ -575,10 +586,11 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
                 s->buf_needed = 6;
                 if (s->buf_len < 6)
                     continue;
+                /*endif*/
                 s->buf_needed = 2;
                 s->buf_len = 0;
 
-                s->comment_len = pack_32(&s->buffer[2]);
+                s->comment_len = get_net_unaligned_uint32(&s->buffer[2]);
                 /* Only try to buffer and process the comment's contents if we have
                    a defined callback routine to do something with it. */
                 /* If this allocate fails we carry on working just fine, and don't try to
@@ -587,12 +599,14 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
                    not worry. */
                 if (s->comment_handler  &&  s->comment_len > 0  &&  s->comment_len <= s->max_comment_len)
                     s->comment = span_alloc(s->comment_len);
+                /*endif*/
                 s->comment_progress = 0;
                 continue;
             case T82_ATMOVE:
                 s->buf_needed = 8;
                 if (s->buf_len < 8)
                     continue;
+                /*endif*/
                 s->buf_needed = 2;
                 s->buf_len = 0;
                 if (s->at_moves >= T85_ATMOVES_MAX)
@@ -600,7 +614,8 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
                     s->end_of_data = 2;
                     return T4_DECODE_INVALID_DATA;
                 }
-                s->at_row[s->at_moves] = pack_32(&s->buffer[2]);
+                /*endif*/
+                s->at_row[s->at_moves] = get_net_unaligned_uint32(&s->buffer[2]);
                 s->at_tx[s->at_moves] = s->buffer[6];
                 if (s->at_tx[s->at_moves] > s->mx
                     ||
@@ -611,12 +626,14 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
                     s->end_of_data = 2;
                     return T4_DECODE_INVALID_DATA;
                 }
+                /*endif*/
                 s->at_moves++;
                 break;
             case T82_NEWLEN:
                 s->buf_needed = 6;
                 if (s->buf_len < 6)
                     continue;
+                /*endif*/
                 s->buf_needed = 2;
                 s->buf_len = 0;
                 if (!(s->options & T85_VLENGTH))
@@ -624,14 +641,16 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
                     s->end_of_data = 2;
                     return T4_DECODE_INVALID_DATA;
                 }
+                /*endif*/
                 s->options &= ~T85_VLENGTH;
-                y = pack_32(&s->buffer[2]);
+                y = get_net_unaligned_uint32(&s->buffer[2]);
                 /* An update to the image length is not allowed to stretch it. */
                 if (y > s->yd)
                 {
                     s->end_of_data = 2;
                     return T4_DECODE_INVALID_DATA;
                 }
+                /*endif*/
                 s->yd = y;
                 break;
             case T82_SDNORM:
@@ -642,21 +661,26 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
                     s->buf_len = 0;
                     if (finish_sde(s))
                         return T4_DECODE_INTERRUPT;
+                    /*endif*/
                     /* Check whether this was the last SDE */
                     if (s->y >= s->yd)
                     {
                         s->compressed_image_size -= (len - cnt);
                         return T4_DECODE_OK;
                     }
+                    /*endif*/
                     break;
                 }
+                /*endif*/
                 /* This is the messy case. We need to peek ahead, as this element
                    might be immediately followed by a T82_NEWLEN which affects the
                    limit of what we decode here. */
                 if (s->buf_needed < 3)
                     s->buf_needed = 3;
+                /*endif*/
                 if (s->buf_len < 3)
                     continue;
+                /*endif*/
                 /* Peek ahead to see whether a NEWLEN marker segment follows */
                 if (s->buffer[2] != T82_ESC)
                 {
@@ -669,18 +693,23 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
                     /* Process the T82_SDNORM or T82_SDRST */
                     if (finish_sde(s))
                         return T4_DECODE_INTERRUPT;
+                    /*endif*/
                     /* Check whether this was the last SDE */
                     if (s->y >= s->yd)
                     {
                         s->compressed_image_size -= (len - cnt);
                         return T4_DECODE_OK;
                     }
+                    /*endif*/
                     break;
                 }
+                /*endif*/
                 if (s->buf_needed < 4)
                     s->buf_needed = 4;
+                /*endif*/
                 if (s->buf_len < 4)
                     continue;
+                /*endif*/
                 if (s->buffer[3] != T82_NEWLEN)
                 {
                     s->buf_needed = 2;
@@ -688,12 +717,14 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
                     /* Process the T82_SDNORM or T82_SDRST */
                     if (finish_sde(s))
                         return T4_DECODE_INTERRUPT;
+                    /*endif*/
                     /* Check whether this was the last SDE */
                     if (s->y >= s->yd)
                     {
                         s->compressed_image_size -= (len - cnt);
                         return T4_DECODE_OK;
                     }
+                    /*endif*/
                     /* Recycle the two peek-ahead marker sequence bytes to
                        be processed later. */
                     s->buffer[0] = s->buffer[2];
@@ -701,27 +732,32 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
                     s->buf_len = 2;
                     break;
                 }
+                /*endif*/
                 if (s->buf_needed < 8)
                     s->buf_needed = 8;
+                /*endif*/
                 if (s->buf_len < 8)
                     continue;
+                /*endif*/
                 s->buf_needed = 2;
                 s->buf_len = 0;
                 /* We must have a complete T82_NEWLEN to be here, which we need
                    to process immediately. */
                 s->options &= ~T85_VLENGTH;
-                y = pack_32(&s->buffer[4]);
+                y = get_net_unaligned_uint32(&s->buffer[4]);
                 /* An update to the image length is not allowed to stretch it. */
                 if (y > s->yd)
                 {
                     s->end_of_data = 2;
                     return T4_DECODE_INVALID_DATA;
                 }
+                /*endif*/
                 /* Things look OK, so accept this new length, and proceed. */
                 s->yd = y;
                 /* Now process the T82_SDNORM or T82_SDRST */
                 if (finish_sde(s))
                     return T4_DECODE_INTERRUPT;
+                /*endif*/
                 /* We might be at the end of the image now, but even if we are
                    there should still be a final training T82_SDNORM or T82_SDRST
                    that we should pick up. When we do, we won't wait for further
@@ -733,6 +769,7 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
                 s->end_of_data = 2;
                 return T4_DECODE_INVALID_DATA;
             }
+            /*endswitch*/
         }
         else if (cnt < len  &&  data[cnt] == T82_ESC)
         {
@@ -744,6 +781,7 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
             cnt += decode_pscd(s, data + cnt, len - cnt);
             if (s->interrupt)
                 return T4_DECODE_INTERRUPT;
+            /*endif*/
             /* We should only have stopped processing PSCD if we ran out of data,
                or hit a T82_ESC */
             if (cnt < len  &&  data[cnt] != T82_ESC)
@@ -751,7 +789,9 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
                 s->end_of_data = 2;
                 return T4_DECODE_INVALID_DATA;
             }
+            /*endif*/
         }
+        /*endif*/
     }
     return T4_DECODE_MORE_DATA;
 }
@@ -811,6 +851,7 @@ SPAN_DECLARE(int) t85_decode_new_plane(t85_decode_state_t *s)
 {
     if (s->current_bit_plane >= s->bit_planes - 1)
         return -1;
+    /*endif*/
 
     s->current_bit_plane++;
     s->tx = 0;
@@ -830,6 +871,7 @@ SPAN_DECLARE(int) t85_decode_new_plane(t85_decode_state_t *s)
         span_free(s->comment);
         s->comment = NULL;
     }
+    /*endif*/
     s->comment_len = 0;
     s->comment_progress = 0;
     s->compressed_image_size = 0;
@@ -884,6 +926,7 @@ SPAN_DECLARE(int) t85_decode_restart(t85_decode_state_t *s)
         span_free(s->comment);
         s->comment = NULL;
     }
+    /*endif*/
     s->comment_len = 0;
     s->comment_progress = 0;
     s->compressed_image_size = 0;
@@ -902,7 +945,9 @@ SPAN_DECLARE(t85_decode_state_t *) t85_decode_init(t85_decode_state_t *s,
     {
         if ((s = (t85_decode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "T.85");
@@ -929,11 +974,13 @@ SPAN_DECLARE(int) t85_decode_release(t85_decode_state_t *s)
         span_free(s->row_buf);
         s->row_buf = NULL;
     }
+    /*endif*/
     if (s->comment)
     {
         span_free(s->comment);
         s->comment = NULL;
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

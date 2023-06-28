@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <!DOCTYPE fax-tests SYSTEM "./fax-tests.dtd">
 <fax-tests>
-<config>
+  <config>
     <path type="IMAGE" value="../test-data/etsi/fax"/>
-</config>
-<messages>
+  </config>
+  <messages>
     <!-- TCF = 2700 bytes at 14400, 2250 at 12000, 1800 at 9600, 1350 at 7200, 900 at 4800 or 450 at 2400 -->
     <!-- Bad TCF == 10101010.... -->
     <!-- slow HDLC preamble == 37 flag bytes -->
@@ -16,8 +16,8 @@
     <!-- STAIRSTEP image is 1728x1728 pixels. Its is about 15k, so an average of 68.2 bits per row. To
          cook it as a 31k page requires a min_bits of 141. To cook it as a 63k page requires a min_bits of
          286. To cook it as a 64k page requires a min_bits of 291 -->
-</messages>
-<test-group name="Supplementary">
+  </messages>
+  <test-group name="Supplementary">
     <test name="PPS-MPS-lost-PPS">
         <!-- Tester calls DUT and sends one 31k byte STAIRSTEP page and one 15k byte STAIRSTEP page. -->
         <step type="CALL"/>
@@ -703,5 +703,5 @@
         <step dir="R" type="CLEAR" timein="55000" timeout="65000"/>
         <step type="STATUS" value="T0_EXPIRED"/>
     </test>
-</test-group>
+  </test-group>
 </fax-tests>

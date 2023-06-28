@@ -52,7 +52,9 @@ int main(int argc, char *argv[])
         {
             if (((i >> (j + 1)) & 1) ^ ((i >> j) & 1))
                 gray |= (1 << j);
+            /*endif*/
         }
+        /*endfor*/
         printf("    0x%04x, /* 0x%04x */\n", gray, restore);
 
         /* Now reverse the process and check we get back where we start */
@@ -61,14 +63,18 @@ int main(int argc, char *argv[])
         {
             if (((restore >> (j + 1)) & 1) ^ ((gray >> j) & 1))
                 restore |= (1 << j);
+            /*endif*/
         }
+        /*endfor*/
 
         if (i != restore)
         {
             printf("Ah\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     printf("};\n\n");
 
     printf("static const int16_t anti_gray_code[4096] =\n{\n");
@@ -80,7 +86,9 @@ int main(int argc, char *argv[])
         {
             if (((restore >> (j + 1)) & 1) ^ ((gray >> j) & 1))
                 restore |= (1 << j);
+            /*endif*/
         }
+        /*endfor*/
         printf("    0x%04x, /* 0x%04x */\n", restore, gray);
 
         /* Now reverse the process and check we get back where we start */
@@ -89,14 +97,18 @@ int main(int argc, char *argv[])
         {
             if (((restore >> (j + 1)) & 1) ^ ((restore >> j) & 1))
                 new_gray |= (1 << j);
+            /*endif*/
         }
+        /*endfor*/
 
         if (gray != new_gray)
         {
             printf("Ah\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     printf("};\n");
 
     return 0;

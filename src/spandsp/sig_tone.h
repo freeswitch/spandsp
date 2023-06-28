@@ -119,7 +119,7 @@ SPAN_DECLARE(void) sig_tone_rx_set_mode(sig_tone_rx_state_t *s, int mode, int du
     \param sig_update Callback function to handle signalling updates.
     \param user_data An opaque pointer.
     \return A pointer to the signalling tone context, or NULL if there was a problem. */
-SPAN_DECLARE(sig_tone_rx_state_t *) sig_tone_rx_init(sig_tone_rx_state_t *s, int tone_type, tone_report_func_t sig_update, void *user_data);
+SPAN_DECLARE(sig_tone_rx_state_t *) sig_tone_rx_init(sig_tone_rx_state_t *s, int tone_type, span_tone_report_func_t sig_update, void *user_data);
 
 /*! Release a signalling tone receiver context.
     \brief Release a signalling tone receiver context.
@@ -156,7 +156,7 @@ SPAN_DECLARE(void) sig_tone_tx_set_mode(sig_tone_tx_state_t *s, int mode, int du
     \param sig_update Callback function to handle signalling updates.
     \param user_data An opaque pointer.
     \return A pointer to the signalling tone context, or NULL if there was a problem. */
-SPAN_DECLARE(sig_tone_tx_state_t *) sig_tone_tx_init(sig_tone_tx_state_t *s, int tone_type, tone_report_func_t sig_update, void *user_data);
+SPAN_DECLARE(sig_tone_tx_state_t *) sig_tone_tx_init(sig_tone_tx_state_t *s, int tone_type, span_tone_report_func_t sig_update, void *user_data);
 
 /*! Release a signalling tone transmitter context.
     \brief Release a signalling tone transmitter context.

@@ -540,6 +540,7 @@ int read_compressed_image(meta_t *meta, uint8_t **buf)
         if ((len = TIFFReadRawStrip(meta->tif, i, &data[read_len], total_len - read_len)) < 0)
         {
             printf("TIFF read error.\n");
+            free(data);
             return -1;
         }
     }
@@ -579,6 +580,7 @@ int read_decompressed_image(meta_t *meta, uint8_t **buf)
 
     image_buf = NULL;
     total_data = 0;
+    *buf = NULL;
     switch (meta->compression)
     {
     case COMPRESSION_T85:
@@ -671,7 +673,8 @@ printf("\n");
             //if (!t42_itulab_jpeg_to_srgb(&logging2, &lab_param, (tdata_t) image_buf, &off, raw_buf, total_raw, &w, &h, &samples_per_pixel))
             {
                 printf("Failed to convert from ITULAB.\n");
-                return 1;
+                free(image_buf);
+                return -1;
             }
             meta->photometric = PHOTOMETRIC_RGB;
 
@@ -690,6 +693,7 @@ printf("nstrips %d\n", nstrips);
                 if ((len = TIFFReadRawStrip(tif, i, &data[total_len], total_image_len - total_len)) < 0)
                 {
                     printf("TIFF read error.\n");
+                    free(image_buf);
                     return -1;
                 }
                 if (jpeg_table_len > 0)
@@ -703,7 +707,8 @@ printf("%02x %02x %02x %02x\n", data[total_len], data[total_len + 1], data[total
                 if (!t42_itulab_jpeg_to_srgb(&logging2, &lab_param, data2, &off, data, off, &w, &h, &samples_per_pixel))
                 {
                     printf("Failed to convert from ITULAB.\n");
-                    return 1;
+                    free(image_buf);
+                    return -1;
                 }
             }
             if (data2)
@@ -821,7 +826,10 @@ printf("\n");
                 for (y = 0;  y < meta->image_length;  y++)
                 {
                     if (TIFFReadScanline(meta->tif, &image_buf[y*bytes_per_row], y, 0) < 0)
-                        return 1;
+                    {
+                        free(image_buf);
+                        return -1;
+                    }
                 }
                 break;
             case PLANARCONFIG_SEPARATE:
@@ -840,7 +848,10 @@ printf("\n");
                     for (y = 0;  y < meta->image_length;  y++)
                     {
                         if (TIFFReadScanline(meta->tif, data, y, j) < 0)
-                            return 1;
+                        {
+                            free(image_buf);
+                            return -1;
+                        }
                         for (x = 0;  x < meta->image_width;  x++)
                             image_buf[meta->samples_per_pixel*(y*bytes_per_row + x) + j] = data[x];
                     }

@@ -40,10 +40,11 @@
 #if !defined(_WIN32)
 #include <unistd.h>
 #endif
+#include <arpa/inet.h>
 
-#include "udptl.h"
 #include "spandsp.h"
 #include "spandsp-sim.h"
+#include "udptl.h"
 
 #include "fax_utils.h"
 #include "pcap_parse.h"
@@ -137,16 +138,20 @@ static int t38_terminal_timing_update(void *user_data, struct timeval *ts)
 
     memcpy(&now, ts, sizeof(now));
 
-    when = ts->tv_sec*1000000LL + ts->tv_usec;
+    when = ts->tv_sec*1000000000LL + ts->tv_usec;
     if (current == 0)
     {
         if (started)
             current = when;
+        /*endif*/
         return 0;
     }
+    /*endif*/
+    //fprintf(stderr, "Time stamp %ld:%06ld\n", ts->tv_sec, + ts->tv_usec);
 
     diff = when - current;
-    samples = diff/125LL;
+    samples = diff/125000LL;
+    //fprintf(stderr, "Update time at %ld by %ld - %d total samples\n", current, diff, samples);
     while (samples > 0)
     {
         partial = (samples > SAMPLES_PER_CHUNK)  ?  SAMPLES_PER_CHUNK  :  samples;
@@ -163,6 +168,7 @@ static int t38_terminal_timing_update(void *user_data, struct timeval *ts)
         current = when;
         samples -= partial;
     }
+    /*endwhile*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -190,8 +196,10 @@ static int t38_gateway_timing_update(void *user_data, struct timeval *ts)
     {
         if (started)
             current = when;
+        /*endif*/
         return 0;
     }
+    /*endif*/
 
     diff = when - current;
     samples = diff/125LL;
@@ -222,14 +230,19 @@ static int t38_gateway_timing_update(void *user_data, struct timeval *ts)
                 memset(t30_amp + t30_len, 0, sizeof(int16_t)*(partial - t30_len));
                 t30_len = partial;
             }
+            /*endif*/
         }
+        /*endif*/
         if (log_audio)
         {
             for (i = 0;  i < t30_len;  i++)
                 out_amp[2*i + 1] = t30_amp[i];
+            /*endfor*/
         }
+        /*endif*/
         if (t38_gateway_rx(t38_gateway_state, t30_amp, t30_len))
             break;
+        /*endif*/
 
         t38_len = t38_gateway_tx(t38_gateway_state, t38_amp, partial);
         if (!use_transmit_on_idle)
@@ -239,28 +252,37 @@ static int t38_gateway_timing_update(void *user_data, struct timeval *ts)
                 memset(t38_amp + t38_len, 0, sizeof(int16_t)*(partial - t38_len));
                 t38_len = partial;
             }
+            /*endif*/
         }
+        /*endif*/
         if (log_audio)
         {
             for (i = 0;  i < t38_len;  i++)
                 out_amp[2*i] = t38_amp[i];
+            /*endfor*/
         }
+        /*endif*/
         if (fax_rx(fax_state, t38_amp, partial))
             break;
+        /*endif*/
 
         if (log_audio)
         {
             outframes = sf_writef_short(wave_handle, out_amp, partial);
             if (outframes != partial)
                 break;
+            /*endif*/
         }
+        /*endif*/
 
         if (done)
             break;
+        /*endif*/
 
         current = when;
         samples -= partial;
     }
+    /*endwhile*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -274,6 +296,7 @@ static int ifp_handler(void *user_data, const uint8_t msg[], int len, int seq_no
     printf("%5d >>> ", seq_no);
     for (i = 0;  i < len;  i++)
         printf("%02X ", msg[i]);
+    /*endfor*/
     printf("\n");
 
     t38_core_rx_ifp_packet(t38_core, msg, len, seq_no);
@@ -282,41 +305,18 @@ static int ifp_handler(void *user_data, const uint8_t msg[], int len, int seq_no
 }
 /*- End of function --------------------------------------------------------*/
 
-static int process_packet(void *user_data, const uint8_t *pkt, int len)
+static int process_packet(void *user_data, const uint8_t *pkt, int len, bool forward)
 {
     static udptl_state_t *state = NULL;
 
     if (state == NULL)
         state = udptl_init(NULL, UDPTL_ERROR_CORRECTION_REDUNDANCY, 3, 3, ifp_handler, NULL);
+    /*endif*/
 
-    udptl_rx_packet(state, pkt, len);
+    if (forward)
+        udptl_rx_packet(state, pkt, len);
+    /*endif*/
     return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-static uint32_t parse_inet_addr(const char *s)
-{
-    int i;
-    uint32_t a;
-    uint32_t b;
-    uint32_t c;
-    uint32_t d;
-
-    a = 0;
-    b = 0;
-    c = 0;
-    d = 0;
-    i = sscanf(s, "%" PRIu32 ".%" PRIu32 ".%" PRIu32 ".%" PRIu32, &a, &b, &c, &d);
-    switch (i)
-    {
-    case 4:
-        c = (c << 8) | d;
-    case 3:
-        b = (b << 16) | c;
-    case 2:
-        a = (a << 24) | b;
-    }
-    return a;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -335,9 +335,9 @@ int main(int argc, char *argv[])
     int fill_removal;
     int opt;
     int t38_terminal_operation;
-    uint32_t src_addr;
+    uint8_t src_addr[INET6_ADDRSTRLEN];
     uint16_t src_port;
-    uint32_t dest_addr;
+    uint8_t dest_addr[INET6_ADDRSTRLEN];
     uint16_t dest_port;
 
     caller = false;
@@ -352,9 +352,9 @@ int main(int argc, char *argv[])
     supported_modems = T30_SUPPORT_V27TER | T30_SUPPORT_V29 | T30_SUPPORT_V17;
     t38_terminal_operation = true;
     log_audio = false;
-    src_addr = 0;
+    memset(src_addr, 0, sizeof(src_addr));
     src_port = 0;
-    dest_addr = 0;
+    memset(dest_addr, 0, sizeof(src_addr));
     dest_port = 0;
     while ((opt = getopt(argc, argv, "cD:d:eFGi:lm:oS:s:T:tv:")) != -1)
     {
@@ -364,7 +364,12 @@ int main(int argc, char *argv[])
             caller = true;
             break;
         case 'D':
-            dest_addr = parse_inet_addr(optarg);
+            if (inet_pton(AF_INET, optarg, dest_addr) <= 0)
+            {
+                fprintf(stderr, "Bad destination address\n");
+                return -1;
+            }
+            /*endif*/
             break;
         case 'd':
             dest_port = atoi(optarg);
@@ -391,7 +396,12 @@ int main(int argc, char *argv[])
             options = atoi(optarg);
             break;
         case 'S':
-            src_addr = parse_inet_addr(optarg);
+            if (inet_pton(AF_INET, optarg, src_addr) <= 0)
+            {
+                fprintf(stderr, "Bad destination address\n");
+                return -1;
+            }
+            /*endif*/
             break;
         case 's':
             src_port = atoi(optarg);
@@ -410,7 +420,9 @@ int main(int argc, char *argv[])
             exit(2);
             break;
         }
+        /*endswitch*/
     }
+    /*endwhile*/
 
     printf("Using T.38 version %d\n", t38_version);
 
@@ -421,6 +433,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Cannot start the T.38 channel\n");
             exit(2);
         }
+        /*endif*/
         t30 = t38_terminal_get_t30_state(t38_terminal_state);
         t38_core = t38_terminal_get_t38_core_state(t38_terminal_state);
         t38_set_t38_version(t38_core, t38_version);
@@ -447,6 +460,7 @@ int main(int argc, char *argv[])
             t30_set_tx_file(t30, input_tiff_file_name, -1, -1);
         else
             t30_set_rx_file(t30, OUTPUT_TIFF_FILE_NAME, -1);
+        /*endif*/
         t30_set_phase_b_handler(t30, phase_b_handler, (void *) t30);
         t30_set_phase_d_handler(t30, phase_d_handler, (void *) t30);
         t30_set_phase_e_handler(t30, phase_e_handler, (void *) t30);
@@ -482,8 +496,9 @@ int main(int argc, char *argv[])
                                            | T4_RESOLUTION_600_600
                                            | T4_RESOLUTION_1200_1200);
 
-        if (pcap_scan_pkts(input_file_name, src_addr, src_port, dest_addr, dest_port, t38_terminal_timing_update, process_packet, NULL))
+        if (pcap_scan_pkts(input_file_name, src_addr, src_port, dest_addr, dest_port, false, t38_terminal_timing_update, process_packet, NULL))
             exit(2);
+        /*endif*/
         /* Push the time along, to flush out any remaining activity from the application. */
         now.tv_sec += 60;
         t38_terminal_timing_update(NULL, &now);
@@ -498,13 +513,16 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "    Cannot create audio file '%s'\n", OUTPUT_WAVE_FILE_NAME);
                 exit(2);
             }
+            /*endif*/
         }
+        /*endif*/
 
         if ((t38_gateway_state = t38_gateway_init(NULL, tx_packet_handler, NULL)) == NULL)
         {
             fprintf(stderr, "Cannot start the T.38 channel\n");
             exit(2);
         }
+        /*endif*/
         t38_core = t38_gateway_get_t38_core_state(t38_gateway_state);
         t38_gateway_set_transmit_on_idle(t38_gateway_state, use_transmit_on_idle);
         t38_set_t38_version(t38_core, t38_version);
@@ -523,6 +541,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Cannot start FAX\n");
             exit(2);
         }
+        /*endif*/
         t30 = fax_get_t30_state(fax_state);
         fax_set_transmit_on_idle(fax_state, use_transmit_on_idle);
         fax_set_tep_mode(fax_state, use_tep);
@@ -533,6 +552,7 @@ int main(int argc, char *argv[])
             t30_set_tx_file(t30, input_tiff_file_name, -1, -1);
         else
             t30_set_rx_file(t30, OUTPUT_TIFF_FILE_NAME, -1);
+        /*endif*/
         t30_set_phase_b_handler(t30, phase_b_handler, (void *) t30);
         t30_set_phase_d_handler(t30, phase_d_handler, (void *) t30);
         t30_set_phase_e_handler(t30, phase_e_handler, (void *) t30);
@@ -576,8 +596,9 @@ int main(int argc, char *argv[])
         span_log_set_level(logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
         span_log_set_tag(logging, "FAX ");
 
-        if (pcap_scan_pkts(input_file_name, src_addr, src_port, dest_addr, dest_port, t38_gateway_timing_update, process_packet, NULL))
+        if (pcap_scan_pkts(input_file_name, src_addr, src_port, dest_addr, dest_port, false, t38_gateway_timing_update, process_packet, NULL))
             exit(2);
+        /*endif*/
         /* Push the time along, to flush out any remaining activity from the application. */
         now.tv_sec += 60;
         t38_gateway_timing_update(NULL, &now);
@@ -591,8 +612,11 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_WAVE_FILE_NAME);
                 exit(2);
             }
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

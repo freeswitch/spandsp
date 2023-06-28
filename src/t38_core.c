@@ -53,6 +53,7 @@
 
 #include "spandsp/telephony.h"
 #include "spandsp/alloc.h"
+#include "spandsp/unaligned.h"
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/t38_core.h"
@@ -377,7 +378,7 @@ SPAN_DECLARE(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8_t *buf
     switch (s->data_transport_protocol)
     {
     case T38_TRANSPORT_TCP:
-        /* We don't know the actual packet length, so treat everythign we have as the packet */
+        /* We don't know the actual packet length, so treat everything we have as the packet */
         ret = 0;
         break;
     case T38_TRANSPORT_TCP_TPKT:
@@ -392,7 +393,7 @@ SPAN_DECLARE(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8_t *buf
                 return -1;
             /*endif*/
             /* Packet length - this includes the length of the header itself */
-            pkt_len = (buf[2] << 8) | buf[3];
+            pkt_len = get_net_unaligned_uint16(&buf[2]);
             if (len < pkt_len)
                 return 0;
             /*endif*/
@@ -563,7 +564,7 @@ SPAN_DECLARE(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8_t *buf
                 if ((ptr + 2) > pkt_len)
                     return ret;
                 /*endif*/
-                numocts = ((buf[ptr] << 8) | buf[ptr + 1]) + 1;
+                numocts = get_net_unaligned_uint16(&buf[ptr]) + 1;
                 ptr += numocts + 2;
             }
             /*endif*/
@@ -631,7 +632,7 @@ SPAN_DECLARE(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8_t *buf
             /* Decode field_data */
             if (field_data_present)
             {
-                numocts = ((buf[ptr] << 8) | buf[ptr + 1]) + 1;
+                numocts = get_net_unaligned_uint16(&buf[ptr]) + 1;
                 msg = buf + ptr + 2;
                 ptr += numocts + 2;
             }
@@ -659,6 +660,8 @@ SPAN_DECLARE(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8_t *buf
             ptr++;
         /*endif*/
         break;
+    default:
+        break;
     }
     /*endswitch*/
     if (ptr > pkt_len)
@@ -680,12 +683,12 @@ SPAN_DECLARE(int) t38_core_rx_ifp_packet(t38_core_state_t *s, const uint8_t *buf
         seq_no &= 0xFFFF;
         if (seq_no != s->rx_expected_seq_no)
         {
-            /* An expected value of -1 indicates this is the first received packet, and will accept
+            /* An expected value of -1 indicates this is the first received packet, and we will accept
                anything for that. We can't assume they will start from zero, even though they should. */
             if (s->rx_expected_seq_no != -1)
             {
                 /* We have a packet with a serial number that is not in sequence. The cause could be:
-                    - 1. a repeat copy of a recent packet. Many T.38 implementations can preduce quite a lot of these.
+                    - 1. a repeat copy of a recent packet. Many T.38 implementations can produce quite a lot of these.
                     - 2. a late packet, whose point in the sequence we have already passed.
                     - 3. the result of a hop in the sequence numbers cause by something weird from the other
                          end. Stream switching might cause this
@@ -767,7 +770,10 @@ static int t38_encode_indicator(t38_core_state_t *s, uint8_t buf[], int indicato
     /* Build the IFP packet */
     len = 0;
     if (s->data_transport_protocol == T38_TRANSPORT_TCP_TPKT)
+    {
+        /* Make space for the header, to be filled in later */
         len = 4;
+    }
     /*endif*/
 
     /* Data field not present */
@@ -779,8 +785,8 @@ static int t38_encode_indicator(t38_core_state_t *s, uint8_t buf[], int indicato
     }
     else if (s->t38_version != 0  &&  indicator <= T38_IND_V33_14400_TRAINING)
     {
-        buf[len++] = (uint8_t) (0x20 | (((indicator - T38_IND_V8_ANSAM) & 0xF) >> 2));
-        buf[len++] = (uint8_t) (((indicator - T38_IND_V8_ANSAM) << 6) & 0xFF);
+        put_net_unaligned_uint16(&buf[len], 0x2000 | ((indicator - T38_IND_V8_ANSAM) << 6));
+        len += 2;
     }
     else
     {
@@ -795,8 +801,7 @@ static int t38_encode_indicator(t38_core_state_t *s, uint8_t buf[], int indicato
         /* Reserved */
         buf[1] = 0;
         /* Packet length - this includes the length of the header itself */
-        buf[2] = (len >> 8) & 0xFF;
-        buf[3] = len & 0xFF;
+        put_net_unaligned_uint16(&buf[2], len);
     }
     /*endif*/
     return len;
@@ -821,7 +826,10 @@ static int t38_encode_data(t38_core_state_t *s, uint8_t buf[], int data_type, co
     /* Build the IFP packet */
     len = 0;
     if (s->data_transport_protocol == T38_TRANSPORT_TCP_TPKT)
+    {
+        /* Make space for the header, to be filled in later */
         len = 4;
+    }
     /*endif*/
 
     /* There seems no valid reason why a packet would ever be generated without a data field present */
@@ -836,8 +844,8 @@ static int t38_encode_data(t38_core_state_t *s, uint8_t buf[], int data_type, co
     }
     else if (s->t38_version != 0  &&  data_type <= T38_DATA_V33_14400)
     {
-        buf[len++] = (uint8_t) (data_field_present | 0x60 | (((data_type - T38_DATA_V8) & 0xF) >> 2));
-        buf[len++] = (uint8_t) (((data_type - T38_DATA_V8) << 6) & 0xFF);
+        put_net_unaligned_uint16(&buf[len], (data_field_present << 8) | 0x6000 | ((data_type - T38_DATA_V8) << 6));
+        len += 2;
     }
     else
     {
@@ -861,8 +869,8 @@ static int t38_encode_data(t38_core_state_t *s, uint8_t buf[], int data_type, co
             else if (value < 0x4000)
             {
                 /* 2 octet case */
-                buf[len++] = (uint8_t) (0x80 | ((value >> 8) & 0xFF));
-                buf[len++] = (uint8_t) (value & 0xFF);
+                put_net_unaligned_uint16(&buf[len], 0x8000 | value);
+                len += 2;
                 enclen = value;
             }
             else
@@ -914,8 +922,8 @@ static int t38_encode_data(t38_core_state_t *s, uint8_t buf[], int data_type, co
                     if (q->field_len < 1  ||  q->field_len > 65535)
                         return -1;
                     /*endif*/
-                    buf[len++] = (uint8_t) (((q->field_len - 1) >> 8) & 0xFF);
-                    buf[len++] = (uint8_t) ((q->field_len - 1) & 0xFF);
+                    put_net_unaligned_uint16(&buf[len], q->field_len - 1);
+                    len += 2;
                     memcpy(&buf[len], q->field, q->field_len);
                     len += q->field_len;
                 }
@@ -949,8 +957,7 @@ static int t38_encode_data(t38_core_state_t *s, uint8_t buf[], int data_type, co
         /* Reserved */
         buf[1] = 0;
         /* Packet length - this includes the length of the header itself */
-        buf[2] = (len >> 8) & 0xFF;
-        buf[3] = len & 0xFF;
+        put_net_unaligned_uint16(&buf[2], len);
     }
     /*endif*/
 
@@ -1250,6 +1257,7 @@ SPAN_DECLARE(int) t38_core_free(t38_core_state_t *s)
 {
     if (s)
         span_free(s);
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

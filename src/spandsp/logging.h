@@ -120,6 +120,8 @@ SPAN_DECLARE(int) span_log_set_sample_rate(logging_state_t *s, int samples_per_s
 
 SPAN_DECLARE(int) span_log_bump_samples(logging_state_t *s, int samples);
 
+SPAN_DECLARE(int) span_log_bump_time(logging_state_t *s, int milliseconds);
+
 SPAN_DECLARE(void) span_log_set_message_handler(logging_state_t *s, message_handler_func_t func, void *user_data);
 
 SPAN_DECLARE(void) span_set_message_handler(message_handler_func_t func, void *user_data);

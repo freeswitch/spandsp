@@ -106,6 +106,7 @@ SPAN_DECLARE(const char *) modem_connect_tone_to_str(int tone)
     case MODEM_CONNECT_TONES_CALLING_TONE:
         return "Calling tone";
     }
+    /*endswitch*/
     return "???";
 }
 /*- End of function --------------------------------------------------------*/
@@ -124,135 +125,176 @@ SPAN_DECLARE(int) modem_connect_tones_tx(modem_connect_tones_tx_state_t *s,
     case MODEM_CONNECT_TONES_FAX_CNG:
         for (  ;  i < len;  i++)
         {
-            if (s->duration_timer > ms_to_samples(3000))
+            if (s->duration_timer > milliseconds_to_samples(3000))
             {
-                if ((xlen = i + s->duration_timer - ms_to_samples(3000)) > len)
+                if ((xlen = i + s->duration_timer - milliseconds_to_samples(3000)) > len)
                     xlen = len;
+                /*endif*/
                 s->duration_timer -= (xlen - i);
                 for (  ;  i < xlen;  i++)
                     amp[i] = dds_mod(&s->tone_phase, s->tone_phase_rate, s->level, 0);
+                /*endfor*/
             }
+            /*endif*/
             if (s->duration_timer > 0)
             {
                 if ((xlen = i + s->duration_timer) > len)
                     xlen = len;
+                /*endif*/
                 s->duration_timer -= (xlen - i);
                 memset(amp + i, 0, sizeof(int16_t)*(xlen - i));
                 i = xlen;
             }
+            /*endif*/
             if (s->duration_timer == 0)
-                s->duration_timer = ms_to_samples(500 + 3000);
+                s->duration_timer = milliseconds_to_samples(500 + 3000);
+            /*endif*/
         }
+        /*endfor*/
         break;
     case MODEM_CONNECT_TONES_ANS:
         if (s->duration_timer < len)
             len = s->duration_timer;
-        if (s->duration_timer > ms_to_samples(2600))
+        /*endif*/
+        if (s->duration_timer > milliseconds_to_samples(2600))
         {
             /* There is some initial silence to be generated. */
-            if ((i = s->duration_timer - ms_to_samples(2600)) > len)
+            if ((i = s->duration_timer - milliseconds_to_samples(2600)) > len)
                 i = len;
+            /*endif*/
             memset(amp, 0, sizeof(int16_t)*i);
         }
+        /*endif*/
         for (  ;  i < len;  i++)
             amp[i] = dds_mod(&s->tone_phase, s->tone_phase_rate, s->level, 0);
+        /*endfor*/
         s->duration_timer -= len;
         break;
     case MODEM_CONNECT_TONES_ANS_PR:
         if (s->duration_timer < len)
             len = s->duration_timer;
-        if (s->duration_timer > ms_to_samples(3300))
+        /*endif*/
+        if (s->duration_timer > milliseconds_to_samples(3300))
         {
-            if ((i = s->duration_timer - ms_to_samples(3300)) > len)
+            if ((i = s->duration_timer - milliseconds_to_samples(3300)) > len)
                 i = len;
+            /*endif*/
             memset(amp, 0, sizeof(int16_t)*i);
         }
+        /*endif*/
         for (  ;  i < len;  i++)
         {
             if (--s->hop_timer <= 0)
             {
-                s->hop_timer = ms_to_samples(450);
+                s->hop_timer = milliseconds_to_samples(450);
                 s->tone_phase += 0x80000000;
             }
+            /*endif*/
             amp[i] = dds_mod(&s->tone_phase, s->tone_phase_rate, s->level, 0);
         }
+        /*endfor*/
         s->duration_timer -= len;
         break;
     case MODEM_CONNECT_TONES_ANSAM:
         if (s->duration_timer < len)
             len = s->duration_timer;
-        if (s->duration_timer > ms_to_samples(5000))
+        /*endif*/
+        if (s->duration_timer > milliseconds_to_samples(5000))
         {
-            if ((i = s->duration_timer - ms_to_samples(5000)) > len)
+            /* There is some initial silence to be generated. */
+            if ((i = s->duration_timer - milliseconds_to_samples(5000)) > len)
                 i = len;
+            /*endif*/
             memset(amp, 0, sizeof(int16_t)*i);
         }
+        /*endif*/
         for (  ;  i < len;  i++)
         {
             mod = (int16_t) (s->level + dds_mod(&s->mod_phase, s->mod_phase_rate, s->mod_level, 0));
             amp[i] = dds_mod(&s->tone_phase, s->tone_phase_rate, mod, 0);
         }
+        /*endfor*/
         s->duration_timer -= len;
         break;
     case MODEM_CONNECT_TONES_ANSAM_PR:
         if (s->duration_timer < len)
             len = s->duration_timer;
-        if (s->duration_timer > ms_to_samples(5000))
+        /*endif*/
+        if (s->duration_timer > milliseconds_to_samples(5000))
         {
-            if ((i = s->duration_timer - ms_to_samples(5000)) > len)
+            /* There is some initial silence to be generated. */
+            if ((i = s->duration_timer - milliseconds_to_samples(5000)) > len)
                 i = len;
+            /*endif*/
             memset(amp, 0, sizeof(int16_t)*i);
         }
+        /*endif*/
         for (  ;  i < len;  i++)
         {
             if (--s->hop_timer <= 0)
             {
-                s->hop_timer = ms_to_samples(450);
+                s->hop_timer = milliseconds_to_samples(450);
                 s->tone_phase += 0x80000000;
             }
+            /*endif*/
             mod = (int16_t) (s->level + dds_mod(&s->mod_phase, s->mod_phase_rate, s->mod_level, 0));
             amp[i] = dds_mod(&s->tone_phase, s->tone_phase_rate, mod, 0);
         }
+        /*endfor*/
         s->duration_timer -= len;
         break;
     case MODEM_CONNECT_TONES_BELL_ANS:
         if (s->duration_timer < len)
             len = s->duration_timer;
-        if (s->duration_timer > ms_to_samples(2600))
+        /*endif*/
+        if (s->duration_timer > milliseconds_to_samples(2600))
         {
             /* There is some initial silence to be generated. */
-            if ((i = s->duration_timer - ms_to_samples(2600)) > len)
+            if ((i = s->duration_timer - milliseconds_to_samples(2600)) > len)
                 i = len;
+            /*endif*/
             memset(amp, 0, sizeof(int16_t)*i);
         }
+        /*endif*/
         for (  ;  i < len;  i++)
             amp[i] = dds_mod(&s->tone_phase, s->tone_phase_rate, s->level, 0);
+        /*endfor*/
         s->duration_timer -= len;
         break;
     case MODEM_CONNECT_TONES_CALLING_TONE:
         for (  ;  i < len;  i++)
         {
-            if (s->duration_timer > ms_to_samples(2000))
+            if (s->duration_timer > milliseconds_to_samples(2000))
             {
-                if ((xlen = i + s->duration_timer - ms_to_samples(2000)) > len)
+                if ((xlen = i + s->duration_timer - milliseconds_to_samples(2000)) > len)
                     xlen = len;
+                /*endif*/
                 s->duration_timer -= (xlen - i);
                 for (  ;  i < xlen;  i++)
                     amp[i] = dds_mod(&s->tone_phase, s->tone_phase_rate, s->level, 0);
+                /*endfor*/
             }
+            /*endif*/
             if (s->duration_timer > 0)
             {
                 if ((xlen = i + s->duration_timer) > len)
                     xlen = len;
+                /*endif*/
                 s->duration_timer -= (xlen - i);
                 memset(amp + i, 0, sizeof(int16_t)*(xlen - i));
                 i = xlen;
             }
+            /*endif*/
             if (s->duration_timer == 0)
-                s->duration_timer = ms_to_samples(600 + 2000);
+                s->duration_timer = milliseconds_to_samples(600 + 2000);
+            /*endif*/
         }
+        /*endfor*/
+        break;
+    default:
         break;
     }
+    /*endswitch*/
     return len;
 }
 /*- End of function --------------------------------------------------------*/
@@ -267,8 +309,10 @@ SPAN_DECLARE(modem_connect_tones_tx_state_t *) modem_connect_tones_tx_init(modem
     {
         if ((s = (modem_connect_tones_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
         alloced = true;
     }
+    /*endif*/
     s->tone_type = tone_type;
     switch (s->tone_type)
     {
@@ -276,7 +320,7 @@ SPAN_DECLARE(modem_connect_tones_tx_state_t *) modem_connect_tones_tx_init(modem
         /* 0.5s of 1100Hz+-38Hz + 3.0s of silence repeating. Timing +-15% */
         s->tone_phase_rate = dds_phase_rate(1100.0);
         s->level = dds_scaling_dbm0(-11);
-        s->duration_timer = ms_to_samples(500 + 3000);
+        s->duration_timer = milliseconds_to_samples(500 + 3000);
         s->mod_phase_rate = 0;
         s->tone_phase = 0;
         s->mod_phase = 0;
@@ -292,14 +336,15 @@ SPAN_DECLARE(modem_connect_tones_tx_state_t *) modem_connect_tones_tx_init(modem
         {
             s->mod_phase_rate = dds_phase_rate(15.0);
             s->mod_level = s->level/5;
-            s->duration_timer = ms_to_samples(200 + 5000);
+            s->duration_timer = milliseconds_to_samples(200 + 5000);
         }
         else
         {
             s->mod_phase_rate = 0;
             s->mod_level = 0;
-            s->duration_timer = ms_to_samples(200 + 2600);
+            s->duration_timer = milliseconds_to_samples(200 + 2600);
         }
+        /*endif*/
         s->tone_phase = 0;
         s->mod_phase = 0;
         s->hop_timer = 0;
@@ -312,17 +357,18 @@ SPAN_DECLARE(modem_connect_tones_tx_state_t *) modem_connect_tones_tx_init(modem
         {
             s->mod_phase_rate = dds_phase_rate(15.0);
             s->mod_level = s->level/5;
-            s->duration_timer = ms_to_samples(200 + 5000);
+            s->duration_timer = milliseconds_to_samples(200 + 5000);
         }
         else
         {
             s->mod_phase_rate = 0;
             s->mod_level = 0;
-            s->duration_timer = ms_to_samples(200 + 3300);
+            s->duration_timer = milliseconds_to_samples(200 + 3300);
         }
+        /*endif*/
         s->tone_phase = 0;
         s->mod_phase = 0;
-        s->hop_timer = ms_to_samples(450);
+        s->hop_timer = milliseconds_to_samples(450);
         break;
     case MODEM_CONNECT_TONES_BELL_ANS:
         /* 0.2s of silence, then 2.6s to 4s of 2225Hz+-15Hz tone, then 75ms of silence. */
@@ -330,7 +376,7 @@ SPAN_DECLARE(modem_connect_tones_tx_state_t *) modem_connect_tones_tx_init(modem
         s->level = dds_scaling_dbm0(-11);
         s->mod_phase_rate = 0;
         s->mod_level = 0;
-        s->duration_timer = ms_to_samples(200 + 2600);
+        s->duration_timer = milliseconds_to_samples(200 + 2600);
         s->tone_phase = 0;
         s->mod_phase = 0;
         s->hop_timer = 0;
@@ -339,7 +385,7 @@ SPAN_DECLARE(modem_connect_tones_tx_state_t *) modem_connect_tones_tx_init(modem
         /* 0.6s of 1300Hz+-15Hz + 2.0s of silence repeating. */
         s->tone_phase_rate = dds_phase_rate(1300.0);
         s->level = dds_scaling_dbm0(-11);
-        s->duration_timer = ms_to_samples(600 + 2000);
+        s->duration_timer = milliseconds_to_samples(600 + 2000);
         s->mod_phase_rate = 0;
         s->tone_phase = 0;
         s->mod_phase = 0;
@@ -349,8 +395,10 @@ SPAN_DECLARE(modem_connect_tones_tx_state_t *) modem_connect_tones_tx_init(modem
     default:
         if (alloced)
             span_free(s);
+        /*endif*/
         return NULL;
     }
+    /*endswitch*/
     return s;
 }
 /*- End of function --------------------------------------------------------*/
@@ -380,9 +428,12 @@ static void report_tone_state(modem_connect_tones_rx_state_t *s, int tone, int l
         {
             if (tone != MODEM_CONNECT_TONES_NONE)
                 s->hit = tone;
+            /*endif*/
         }
+        /*endif*/
         s->tone_present = tone;
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -407,9 +458,13 @@ static void v21_put_bit(void *user_data, int bit)
             s->flags_seen = 0;
             s->framing_ok_announced = false;
             break;
+        default:
+            break;
         }
+        /*endswitch*/
         return;
     }
+    /*endif*/
     /* Look for enough FAX V.21 message preamble (back to back HDLC flag octets) to be sure
        we are really seeing preamble, and declare the signal to be present. Any change from
        preamble declares the signal to not be present, though it will probably be the body
@@ -433,13 +488,17 @@ static void v21_put_bit(void *user_data, int bit)
                    which doesn't send them back-to-back is badly broken. */
                 if (s->num_bits != 8)
                     s->flags_seen = 0;
+                /*endif*/
                 if (++s->flags_seen >= HDLC_FRAMING_OK_THRESHOLD  &&  !s->framing_ok_announced)
                 {
                     report_tone_state(s, MODEM_CONNECT_TONES_FAX_PREAMBLE, lfastrintf(fsk_rx_signal_power(&(s->v21rx))));
                     s->framing_ok_announced = true;
                 }
+                /*endif*/
             }
+            /*endif*/
         }
+        /*endif*/
         s->num_bits = 0;
     }
     else
@@ -451,8 +510,11 @@ static void v21_put_bit(void *user_data, int bit)
                 s->framing_ok_announced = false;
                 s->flags_seen = 0;
             }
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -492,9 +554,11 @@ SPAN_DECLARE(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *s,
                 /* There is adequate energy in the channel, and it is mostly at 1100Hz. */
                 if (s->tone_present != MODEM_CONNECT_TONES_FAX_CNG)
                 {
-                    if (++s->tone_cycle_duration >= ms_to_samples(415))
+                    if (++s->tone_cycle_duration >= milliseconds_to_samples(415))
                         report_tone_state(s, MODEM_CONNECT_TONES_FAX_CNG, lfastrintf(((s->channel_level == 0)  ?  (-96.329f + DBM0_MAX_POWER)  :  log10f(s->channel_level/32768.0f)*20.0f) + DBM0_MAX_POWER + 0.8f));
+                    /*endif*/
                 }
+                /*endif*/
             }
             else
             {
@@ -502,9 +566,12 @@ SPAN_DECLARE(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *s,
                    end of the tone. */
                 if (s->tone_present == MODEM_CONNECT_TONES_FAX_CNG)
                     report_tone_state(s, MODEM_CONNECT_TONES_NONE, -99);
+                /*endif*/
                 s->tone_cycle_duration = 0;
             }
+            /*endif*/
         }
+        /*endfor*/
         break;
     case MODEM_CONNECT_TONES_FAX_PREAMBLE:
         /* Ignore any CED tone, and just look for V.21 preamble. */
@@ -552,11 +619,13 @@ SPAN_DECLARE(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *s,
                    end of the tone. */
                 if (s->tone_present != MODEM_CONNECT_TONES_NONE)
                     report_tone_state(s, MODEM_CONNECT_TONES_NONE, -99);
+                /*endif*/
                 s->tone_cycle_duration = 0;
                 s->good_cycles = 0;
                 s->tone_on = false;
                 continue;
             }
+            /*endif*/
             /* There is adequate energy in the channel. Is it mostly at 2100Hz? */
             s->tone_cycle_duration++;
             if (s->notch_level*6 < s->channel_level)
@@ -566,7 +635,7 @@ SPAN_DECLARE(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *s,
                    EC disable tone. For a simple answer tone, the tone should persist unbroken for longer. */
                 if (!s->tone_on)
                 {
-                    if (s->tone_cycle_duration >= ms_to_samples(450 - 25))
+                    if (s->tone_cycle_duration >= milliseconds_to_samples(450 - 25))
                     {
                         if (++s->good_cycles == 3)
                         {
@@ -574,17 +643,19 @@ SPAN_DECLARE(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *s,
                                               (s->am_level*15/256 > s->channel_level)  ?  MODEM_CONNECT_TONES_ANSAM_PR  :  MODEM_CONNECT_TONES_ANS_PR,
                                               lfastrintf(((s->channel_level == 0)  ?  (-96.329f + DBM0_MAX_POWER)  :  log10f(s->channel_level/32768.0f)*20.0f) + DBM0_MAX_POWER + 0.8f));
                         }
+                        /*endif*/
                     }
                     else
                     {
                         s->good_cycles = 0;
                     }
+                    /*endif*/
                     /* Cycles are timed from rising edge to rising edge */
                     s->tone_cycle_duration = 0;
                 }
                 else
                 {
-                    if (s->tone_cycle_duration >= ms_to_samples(450 + 100))
+                    if (s->tone_cycle_duration >= milliseconds_to_samples(450 + 100))
                     {
                         if (s->tone_present == MODEM_CONNECT_TONES_NONE)
                         {
@@ -592,10 +663,13 @@ SPAN_DECLARE(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *s,
                                               (s->am_level*15/256 > s->channel_level)  ?  MODEM_CONNECT_TONES_ANSAM  :  MODEM_CONNECT_TONES_ANS,
                                               lfastrintf(((s->channel_level == 0)  ?  (-96.329f + DBM0_MAX_POWER)  :  log10f(s->channel_level/32768.0f)*20.0f) + DBM0_MAX_POWER + 0.8f));
                         }
+                        /*endif*/
                         s->good_cycles = 0;
-                        s->tone_cycle_duration = ms_to_samples(450 + 100);
+                        s->tone_cycle_duration = milliseconds_to_samples(450 + 100);
                     }
+                    /*endif*/
                 }
+                /*endif*/
                 s->tone_on = true;
             }
             else if (s->notch_level*5 > s->channel_level)
@@ -607,17 +681,22 @@ SPAN_DECLARE(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *s,
                 }
                 else
                 {
-                    if (s->tone_cycle_duration >= ms_to_samples(450 + 25))
+                    if (s->tone_cycle_duration >= milliseconds_to_samples(450 + 25))
                     {
                         /* The change came too late for a cycle of ANS_PR tone */
                         if (s->tone_present == MODEM_CONNECT_TONES_ANS_PR  ||  s->tone_present == MODEM_CONNECT_TONES_ANSAM_PR)
                             report_tone_state(s, MODEM_CONNECT_TONES_NONE, -99);
+                        /*endif*/
                         s->good_cycles = 0;
                     }
+                    /*endif*/
                 }
+                /*endif*/
                 s->tone_on = false;
             }
+            /*endif*/
         }
+        /*endfor*/
         break;
     case MODEM_CONNECT_TONES_BELL_ANS:
         for (i = 0;  i < len;  i++)
@@ -643,9 +722,11 @@ SPAN_DECLARE(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *s,
                 /* There is adequate energy in the channel, and it is mostly at 2225Hz. */
                 if (s->tone_present != MODEM_CONNECT_TONES_BELL_ANS)
                 {
-                    if (++s->tone_cycle_duration >= ms_to_samples(415))
+                    if (++s->tone_cycle_duration >= milliseconds_to_samples(415))
                         report_tone_state(s, MODEM_CONNECT_TONES_BELL_ANS, lfastrintf(((s->channel_level == 0)  ?  (-96.329f + DBM0_MAX_POWER)  :  log10f(s->channel_level/32768.0f)*20.0f) + DBM0_MAX_POWER + 0.8f));
+                    /*endif*/
                 }
+                /*endif*/
             }
             else
             {
@@ -653,9 +734,12 @@ SPAN_DECLARE(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *s,
                    end of the tone. */
                 if (s->tone_present == MODEM_CONNECT_TONES_BELL_ANS)
                     report_tone_state(s, MODEM_CONNECT_TONES_NONE, -99);
+                /*endif*/
                 s->tone_cycle_duration = 0;
             }
+            /*endif*/
         }
+        /*endfor*/
         break;
     case MODEM_CONNECT_TONES_CALLING_TONE:
         for (i = 0;  i < len;  i++)
@@ -681,9 +765,11 @@ SPAN_DECLARE(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *s,
                 /* There is adequate energy in the channel, and it is mostly at 1300Hz. */
                 if (s->tone_present != MODEM_CONNECT_TONES_CALLING_TONE)
                 {
-                    if (++s->tone_cycle_duration >= ms_to_samples(415))
+                    if (++s->tone_cycle_duration >= milliseconds_to_samples(415))
                         report_tone_state(s, MODEM_CONNECT_TONES_CALLING_TONE, lfastrintf(((s->channel_level == 0)  ?  (-96.329f + DBM0_MAX_POWER)  :  log10f(s->channel_level/32768.0f)*20.0f) + DBM0_MAX_POWER + 0.8f));
+                    /*endif*/
                 }
+                /*endif*/
             }
             else
             {
@@ -691,11 +777,17 @@ SPAN_DECLARE(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *s,
                    end of the tone. */
                 if (s->tone_present == MODEM_CONNECT_TONES_CALLING_TONE)
                     report_tone_state(s, MODEM_CONNECT_TONES_NONE, -99);
+                /*endif*/
                 s->tone_cycle_duration = 0;
             }
+            /*endif*/
         }
+        /*endfor*/
+        break;
+    default:
         break;
     }
+    /*endswitch*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -718,22 +810,26 @@ SPAN_DECLARE(int) modem_connect_tones_rx_get(modem_connect_tones_rx_state_t *s)
 
 SPAN_DECLARE(modem_connect_tones_rx_state_t *) modem_connect_tones_rx_init(modem_connect_tones_rx_state_t *s,
                                                                            int tone_type,
-                                                                           tone_report_func_t tone_callback,
+                                                                           span_tone_report_func_t tone_callback,
                                                                            void *user_data)
 {
     if (s == NULL)
     {
         if ((s = (modem_connect_tones_rx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
 
-    s->tone_type = tone_type;
+    s->real_time_reports = (tone_type & MODEM_CONNECT_TONES_REAL_TIME_REPORTS) != 0;
+    /* Remove any tone modifiers in the upper bits of the tone type */
+    s->tone_type = tone_type & 0xFFF;
     switch (s->tone_type)
     {
     case MODEM_CONNECT_TONES_FAX_PREAMBLE:
     case MODEM_CONNECT_TONES_FAX_CED_OR_PREAMBLE:
         fsk_rx_init(&(s->v21rx), &preset_fsk_specs[FSK_V21CH2], FSK_FRAME_MODE_SYNC, v21_put_bit, s);
-        fsk_rx_signal_cutoff(&(s->v21rx), -45.5f);
+        fsk_rx_set_signal_cutoff(&(s->v21rx), -45.5f);
         break;
     case MODEM_CONNECT_TONES_ANS_PR:
     case MODEM_CONNECT_TONES_ANSAM:
@@ -741,7 +837,10 @@ SPAN_DECLARE(modem_connect_tones_rx_state_t *) modem_connect_tones_rx_init(modem
         /* Treat these all the same for receive purposes */
         s->tone_type = MODEM_CONNECT_TONES_ANS;
         break;
+    default:
+        break;
     }
+    /*endswitch*/
     s->channel_level = 0;
     s->notch_level = 0;
     s->am_level = 0;

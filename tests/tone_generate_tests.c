@@ -43,6 +43,8 @@
 
 #define OUTPUT_FILE_NAME    "tone_generate.wav"
 
+#define SAMPLES_PER_CHUNK   160
+
 int main(int argc, char *argv[])
 {
     tone_gen_descriptor_t tone_desc;
@@ -72,7 +74,7 @@ int main(int argc, char *argv[])
     tone_gen_init(&tone_state, &tone_desc);
     for (i = 0;  i < 1000;  i++)
     {
-        len = tone_gen(&tone_state, amp, 160);
+        len = tone_gen(&tone_state, amp, SAMPLES_PER_CHUNK);
         printf("Generated %d samples\n", len);
         if (len <= 0)
             break;
@@ -94,7 +96,7 @@ int main(int argc, char *argv[])
     tone_gen_init(&tone_state, &tone_desc);
     for (i = 0;  i < 1000;  i++)
     {
-        len = tone_gen(&tone_state, amp, 160);
+        len = tone_gen(&tone_state, amp, SAMPLES_PER_CHUNK);
         printf("Generated %d samples\n", len);
         if (len <= 0)
             break;
@@ -116,7 +118,7 @@ int main(int argc, char *argv[])
     tone_gen_init(&tone_state, &tone_desc);
     for (i = 0;  i < 1000;  i++)
     {
-        len = tone_gen(&tone_state, amp, 160);
+        len = tone_gen(&tone_state, amp, SAMPLES_PER_CHUNK);
         printf("Generated %d samples\n", len);
         if (len <= 0)
             break;
@@ -138,7 +140,7 @@ int main(int argc, char *argv[])
     tone_gen_init(&tone_state, &tone_desc);
     for (i = 0;  i < 1000;  i++)
     {
-        len = tone_gen(&tone_state, amp, 160);
+        len = tone_gen(&tone_state, amp, SAMPLES_PER_CHUNK);
         printf("Generated %d samples\n", len);
         if (len <= 0)
             break;
@@ -160,7 +162,7 @@ int main(int argc, char *argv[])
     tone_gen_init(&tone_state, &tone_desc);
     for (i = 0;  i < 1000;  i++)
     {
-        len = tone_gen(&tone_state, amp, 160);
+        len = tone_gen(&tone_state, amp, SAMPLES_PER_CHUNK);
         printf("Generated %d samples\n", len);
         if (len <= 0)
             break;
@@ -182,7 +184,7 @@ int main(int argc, char *argv[])
     tone_gen_init(&tone_state, &tone_desc);
     for (i = 0;  i < 1000;  i++)
     {
-        len = tone_gen(&tone_state, amp, 160);
+        len = tone_gen(&tone_state, amp, SAMPLES_PER_CHUNK);
         printf("Generated %d samples\n", len);
         if (len <= 0)
             break;
@@ -204,7 +206,7 @@ int main(int argc, char *argv[])
     tone_gen_init(&tone_state, &tone_desc);
     for (i = 0;  i < 1000;  i++)
     {
-        len = tone_gen(&tone_state, amp, 160);
+        len = tone_gen(&tone_state, amp, SAMPLES_PER_CHUNK);
         printf("Generated %d samples\n", len);
         if (len <= 0)
             break;
@@ -226,7 +228,7 @@ int main(int argc, char *argv[])
     tone_gen_init(&tone_state, &tone_desc);
     for (i = 0;  i < 1000;  i++)
     {
-        len = tone_gen(&tone_state, amp, 160);
+        len = tone_gen(&tone_state, amp, SAMPLES_PER_CHUNK);
         printf("Generated %d samples\n", len);
         if (len <= 0)
             break;

@@ -40,9 +40,9 @@ enum
 {
     V18_MODE_NONE = 0x0001,
     /* V.18 Annex A - Weitbrecht TDD at 45.45bps (US TTY), half-duplex, 5 bit baudot (USA). */
-    V18_MODE_5BIT_4545 = 0x0002,
+    V18_MODE_WEITBRECHT_5BIT_4545 = 0x0002,
     /* V.18 Annex A - Weitbrecht TDD at 50bps (International TTY), half-duplex, 5 bit baudot (UK, Australia and others). */
-    V18_MODE_5BIT_50 = 0x0004,
+    V18_MODE_WEITBRECHT_5BIT_50 = 0x0004,
     /* V.18 Annex B - DTMF encoding of ASCII (Denmark, Holland and others). */
     V18_MODE_DTMF = 0x0008,
     /* V.18 Annex C - EDT (European Deaf Telephone) 110bps, V.21, half-duplex, ASCII (Germany, Austria, Switzerland and others). */
@@ -56,13 +56,13 @@ enum
     /* V.18 Annex G - V.18 text telephone mode. */
     V18_MODE_V18TEXTPHONE = 0x0100,
     /* V.18 Annex A - Used during probing. */
-    V18_MODE_5BIT_476 = 0x0200,
+    V18_MODE_WEITBRECHT_5BIT_476 = 0x0200,
     /* Use repetitive shift characters where character set shifts are used */ 
     V18_MODE_REPETITIVE_SHIFTS_OPTION = 0x1000
 };
 
 /* Automoding sequences for different countries */
-enum
+enum v18_autobauding_modes_e
 {
     V18_AUTOMODING_GLOBAL = 0,
 
@@ -102,6 +102,20 @@ enum
     V18_AUTOMODING_END
 };
 
+enum v18_status_e
+{
+    V18_STATUS_SWITCH_TO_NONE,
+    V18_STATUS_SWITCH_TO_WEITBRECHT_5BIT_4545,
+    V18_STATUS_SWITCH_TO_WEITBRECHT_5BIT_476,
+    V18_STATUS_SWITCH_TO_WEITBRECHT_5BIT_50,
+    V18_STATUS_SWITCH_TO_DTMF,
+    V18_STATUS_SWITCH_TO_EDT,
+    V18_STATUS_SWITCH_TO_BELL103,
+    V18_STATUS_SWITCH_TO_V23VIDEOTEX,
+    V18_STATUS_SWITCH_TO_V21TEXTPHONE,
+    V18_STATUS_SWITCH_TO_V18TEXTPHONE
+};
+
 #if defined(__cplusplus)
 extern "C"
 {
@@ -117,14 +131,18 @@ SPAN_DECLARE(logging_state_t *) v18_get_logging_state(v18_state_t *s);
     \param nation National variant for automoding.
     \param put_msg A callback routine called to deliver the received text
            to the application.
-    \param user_data An opaque pointer for the callback routine.
+    \param put_msg_user_data An opaque pointer for the put_msg callback routine.
+    \param status_handler A callback routine called to deliver status reports.
+    \param status_handler_user_data An opaque pointer for the status callback routine.
     \return A pointer to the V.18 context, or NULL if there was a problem. */
 SPAN_DECLARE(v18_state_t *) v18_init(v18_state_t *s,
                                      bool calling_party,
                                      int mode,
                                      int nation,
-                                     put_msg_func_t put_msg,
-                                     void *user_data);
+                                     span_put_msg_func_t put_msg,
+                                     void *put_msg_user_data,
+                                     span_modem_status_func_t status_handler,
+                                     void *status_handler_user_data);
 
 /*! Release a V.18 context.
     \brief Release a V.18 context.
@@ -175,16 +193,25 @@ SPAN_DECLARE(int) v18_rx_fillin(v18_state_t *s, int len);
             invalid, this function will return -1. */
 SPAN_DECLARE(int) v18_put(v18_state_t *s, const char msg[], int len);
 
+/*! \brief Set the stored message, as per V.18/5.2.12.1. This message may be up
+           to 80 bytes long.
+    \param s The V.18 context.
+    \param msg The string to be set.
+*/
+SPAN_DECLARE(int) v18_set_stored_message(v18_state_t *s, uint8_t *msg);
+
 /*! \brief Get the current mode of a V.18 connection.
     \param s The V.18 context.
     \return The mode. */
 SPAN_DECLARE(int) v18_get_current_mode(v18_state_t *s);
 
-/*! \brief Return a short name for an V.18 mode
+/*! \brief Return a short name for a V.18 mode
     \param mode The code for the V.18 mode.
     \return A pointer to the name.
 */
 SPAN_DECLARE(const char *) v18_mode_to_str(int mode);
+
+SPAN_DECLARE(const char *) v18_status_to_str(int status);
 
 #if defined(__cplusplus)
 }

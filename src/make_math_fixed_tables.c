@@ -51,7 +51,9 @@ int main(int argc, char *argv[])
             printf("    %6d,\n", ival);
         else
             printf("    %6d\n", ival);
+        /*endif*/
     }
+    /*endfor*/
     printf("};\n\n");
 
     printf("static const uint16_t fixed_sqrt_table[193] =\n");
@@ -65,7 +67,9 @@ int main(int argc, char *argv[])
             printf("    %6d,\n", ival);
         else
             printf("    %6d\n", ival);
+        /*endif*/
     }
+    /*endfor*/
     printf("};\n\n");
 
     printf("static const int16_t fixed_log10_table[129] =\n");
@@ -77,7 +81,9 @@ int main(int argc, char *argv[])
             printf("    %6d,\n", ival);
         else
             printf("    %6d\n", ival);
+        /*endif*/
     }
+    /*endfor*/
     printf("};\n\n");
 
     printf("static const int16_t fixed_sine_table[257] =\n");
@@ -88,11 +94,14 @@ int main(int argc, char *argv[])
         ival = (int) (val + 0.5);
         if (ival > 32767)
             ival = 32767;
+        /*endif*/
         if (i <= 255)
             printf("    %6d,\n", ival);
         else
             printf("    %6d\n", ival);
+        /*endif*/
     }
+    /*endfor*/
     printf("};\n\n");
 
     printf("static const uint16_t fixed_arctan_table[257] =\n");
@@ -105,11 +114,14 @@ int main(int argc, char *argv[])
            the correct side of the axes. */
         if (ival == 0)
             ival = 1;
+        /*endif*/
         if (i <= 255)
             printf("    %6d,\n", ival);
         else
             printf("    %6d\n", ival);
+        /*endif*/
     }
+    /*endfor*/
     printf("};\n\n");
 
     return 0;

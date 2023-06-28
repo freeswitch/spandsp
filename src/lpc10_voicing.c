@@ -144,8 +144,10 @@ static void vparms(int32_t vwin[],
             ++(*zc);
             oldsgn = -oldsgn;
         }
+        /*endif*/
         *dither = -(*dither);
     }
+    /*endfor*/
     /* Normalized short-term autocovariance coefficient at unit sample delay */
     *rc1 /= max(e0ap, 1.0f);
     /* Ratio of the energy of the first difference signal (6 dB/oct preemphasis)*/
@@ -265,11 +267,13 @@ void lpc10_voicing(lpc10_encode_state_t *s,
         inbuf_offset = buflim[0];
         inbuf -= inbuf_offset;
     }
+    /*endif*/
     if (lpbuf)
     {
         lpbuf_offset = buflim[2];
         lpbuf -= lpbuf_offset;
     }
+    /*endif*/
 
     /* Voicing Decision Parameter vector (* denotes zero coefficient): */
 
@@ -306,6 +310,7 @@ void lpc10_voicing(lpc10_encode_state_t *s,
         s->voice[1][1] = s->voice[2][1];
         s->maxmin = *maxamd / max(*minamd, 1.0f);
     }
+    /*endif*/
     /* Calculate voicing parameters twice per frame */
     vparms(vwin,
            &inbuf[inbuf_offset],
@@ -334,7 +339,9 @@ void lpc10_voicing(lpc10_encode_state_t *s,
     {
         if (snr2 > vdcl[snrl])
             break;
+        /*endif*/
     }
+    /*endfor*/
     /* (Note:  SNRL = NVDCL here) */
     /* Linear discriminant voicing parameters: */
     value[0] = s->maxmin;
@@ -349,6 +356,7 @@ void lpc10_voicing(lpc10_encode_state_t *s,
     s->voice[2][half] = vdc[snrl*10 + 9];
     for (i = 0;  i < 8;  i++)
         s->voice[2][half] += vdc[snrl*10 + i]*value[i];
+    /*endfor*/
     /* Classify as voiced if discriminant > 0, otherwise unvoiced */
     /* Voicing decision for current half-frame:  1 = Voiced; 0 = Unvoiced */
     s->voibuf[3][half] = (s->voice[2][half] > 0.0f)  ?  1  :  0;
@@ -402,12 +410,14 @@ void lpc10_voicing(lpc10_encode_state_t *s,
         case 2:
             if (ot  &&  s->voibuf[3][0] == 1)
                 s->voibuf[2][0] = 1;
+            /*endif*/
             break;
         case 3:
             if (s->voibuf[3][0] == 0  ||  s->voice[1][0] < -s->voice[1][1])
                 s->voibuf[2][0] = 0;
             else
                 s->voibuf[2][1] = 1;
+            /*endif*/
             break;
         case 5:
             s->voibuf[1][1] = 0;
@@ -417,26 +427,31 @@ void lpc10_voicing(lpc10_encode_state_t *s,
                 s->voibuf[1][1] = 0;
             else
                 s->voibuf[2][0] = 1;
+            /*endif*/
             break;
         case 7:
             if (s->voibuf[0][0] == 1  ||  s->voibuf[3][0] == 1  ||  s->voice[1][1] > s->voice[0][0])
                 s->voibuf[2][1] = 1;
             else
                 s->voibuf[1][0] = 1;
+            /*endif*/
             break;
         case 8:
             if (ot)
                 s->voibuf[1][1] = 0;
+            /*endif*/
             break;
         case 9:
             if (ot)
                 s->voibuf[1][1] = 1;
+            /*endif*/
             break;
         case 11:
             if (s->voice[1][0] < -s->voice[0][1])
                 s->voibuf[2][0] = 0;
             else
                 s->voibuf[1][1] = 1;
+            /*endif*/
             break;
         case 12:
             s->voibuf[1][1] = 1;
@@ -446,13 +461,17 @@ void lpc10_voicing(lpc10_encode_state_t *s,
                 s->voibuf[2][1] = 0;
             else
                 s->voibuf[2][0] = 1;
+            /*endif*/
             break;
         case 15:
             if (ot  &&  s->voibuf[3][0] == 0)
                 s->voibuf[2][0] = 0;
+            /*endif*/
             break;
         }
+        /*endswitch*/
     }
+    /*endif*/
     /* During unvoiced half-frames, update the low band and full band unvoiced*/
     /* energy estimates (LBUE and FBUE) and also the zero crossing */
     /* threshold (DITHER).  (The input to the unvoiced energy filters is */
@@ -476,6 +495,7 @@ void lpc10_voicing(lpc10_encode_state_t *s,
         s->lbve = lfastrintf((s->lbve*63 + lbe)/64.0f);
         s->fbve = lfastrintf((s->fbve*63 + fbe)/64.0f);
     }
+    /*endif*/
     /* Set dither threshold to yield proper zero crossing rates in the */
     /* presence of low frequency noise and low level signal input. */
     /* NOTE: The divisor is a function of REF, the expected energies. */

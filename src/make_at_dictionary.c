@@ -470,6 +470,7 @@ static trie_node_t *trie_node_create(void)
         memset(s, 0, sizeof(*s));
         s->first = ALPHABET_SIZE - 1;
     }
+    /*endif*/
     return s;
 }
 /*- End of function --------------------------------------------------------*/
@@ -483,6 +484,7 @@ static trie_t *trie_create(void)
         memset(s, 0, sizeof(*s));
         s->root = trie_node_create();
     }
+    /*endif*/
     return s;
 }
 /*- End of function --------------------------------------------------------*/
@@ -499,13 +501,16 @@ static void trie_recursive_add_node_numbers(trie_node_t *t)
             packed_ptr += (t->last - t->first + 1 + 3);
             for (index = 0;  index < ALPHABET_SIZE;  index++)
                 trie_recursive_add_node_numbers(t->child_list[index]);
+            /*endfor*/
         }
         else
         {
             t->node_no = packed_ptr + 1;
             packed_ptr += 3;
         }
+        /*endif*/
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -522,8 +527,10 @@ static void trie_recursive_build_packed_trie(trie_node_t *t)
             packed_trie[packed_ptr++] = t->entry;
             for (i = t->first;  i <= t->last;  i++)
                 packed_trie[packed_ptr++] = (t->child_list[i])  ?  t->child_list[i]->node_no  :  0;
+            /*endfor*/
             for (i = t->first;  i <= t->last;  i++)
                 trie_recursive_build_packed_trie(t->child_list[i]);
+            /*endfor*/
         }
         else
         {
@@ -531,7 +538,9 @@ static void trie_recursive_build_packed_trie(trie_node_t *t)
             packed_trie[packed_ptr++] = 0;
             packed_trie[packed_ptr++] = t->entry;
         }
+        /*endif*/
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -553,15 +562,20 @@ static void trie_add(trie_t *s, const char *u, size_t len)
         {
             if ((t->child_list[index] = trie_node_create()) == NULL)
                 exit(2);
+            /*endif*/
             if (index < t->first)
                 t->first = index;
+            /*endif*/
             if (index > t->last)
                 t->last = index;
+            /*endif*/
         }
+        /*endif*/
 
         /* Move to the new node... and loop */
         t = t->child_list[index];
     }
+    /*endfor*/
     t->entry = s->entries;
 }
 /*- End of function --------------------------------------------------------*/
@@ -589,7 +603,9 @@ static void dump_trie(void)
             printf("    at_cmd_%s,\n", wordlist[i]);
             break;
         }
+        /*endswitch*/
     }
+    /*endfor*/
     printf("};\n");
 
     printf("\nstatic const uint16_t command_trie[] =\n{");

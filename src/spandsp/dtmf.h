@@ -151,7 +151,7 @@ SPAN_DECLARE(int) dtmf_tx_free(dtmf_tx_state_t *s);
     \param user_data An opaque pointer which is associated with the context,
            and supplied in callbacks. */
 SPAN_DECLARE(void) dtmf_rx_set_realtime_callback(dtmf_rx_state_t *s,
-                                                 tone_report_func_t callback,
+                                                 span_tone_report_func_t callback,
                                                  void *user_data);
 
 /*! \brief Adjust a DTMF receiver context.

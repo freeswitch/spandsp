@@ -200,9 +200,9 @@ static void tx_handler(void *user_data, int what, int level, int duration)
                    tone,
                    (tone & SIG_TONE_1_PRESENT)  ?  "on "  :  "off",
                    (tone & SIG_TONE_2_PRESENT)  ?  "on "  :  "off",
-                   ms_to_samples(time),
+                   milliseconds_to_samples(time),
                    time);
-            sig_tone_tx_set_mode(s, tone, ms_to_samples(time));
+            sig_tone_tx_set_mode(s, tone, milliseconds_to_samples(time));
             tx_section++;
         }
         else
@@ -476,9 +476,9 @@ static void sequence_tests(sig_tone_tx_state_t *tx_state, sig_tone_rx_state_t *r
         if (sampleno == 800)
         {
             /* 100ms seize */
-            printf("Tx: [0000] off off for %d samples (%dms)\n", ms_to_samples(100), 100);
+            printf("Tx: [0000] off off for %d samples (%dms)\n", milliseconds_to_samples(100), 100);
             dial_pulses = 0;
-            sig_tone_tx_set_mode(tx_state, 0, ms_to_samples(100));
+            sig_tone_tx_set_mode(tx_state, 0, milliseconds_to_samples(100));
         }
         /*endif*/
         for (i = 0;  i < SAMPLES_PER_CHUNK;  i++)

@@ -47,6 +47,14 @@
 
 int negotiations_ok = 0;
 
+enum
+{
+    V8_TESTS_CALLER = 0,
+    V8_TESTS_ANSWERER = 1
+};
+
+int expected_status[2];
+
 #if 0
 static int select_modulation(int mask)
 {
@@ -73,45 +81,23 @@ static int select_modulation(int mask)
 
 static void handler(void *user_data, v8_parms_t *result)
 {
-    const char *s;
+    int side;
 
-    s = (const char *) user_data;
+    side = (int) (intptr_t) user_data;
 
-    printf("%s ", s);
-    switch (result->status)
-    {
-    case V8_STATUS_IN_PROGRESS:
-        printf("V.8 negotiation in progress\n");
-        return;
-    case V8_STATUS_V8_OFFERED:
-        printf("V.8 offered by the other party\n");
-        break;
-    case V8_STATUS_V8_CALL:
-        printf("V.8 call negotiation successful\n");
-        break;
-    case V8_STATUS_NON_V8_CALL:
-        printf("Non-V.8 call negotiation successful\n");
-        break;
-    case V8_STATUS_FAILED:
-        printf("V.8 call negotiation failed\n");
-        return;
-    default:
-        printf("Unexpected V.8 status %d\n", result->status);
-        break;
-    }
-    /*endswitch*/
-
+    printf("%s ", (side == V8_TESTS_CALLER)  ?  "Caller"  :  "Answerer");
+    printf("V.8 status %s\n", v8_status_to_str(result->status));
     printf("  Modem connect tone '%s' (%d)\n", modem_connect_tone_to_str(result->modem_connect_tone), result->modem_connect_tone);
-    printf("  Call function '%s' (%d)\n", v8_call_function_to_str(result->call_function), result->call_function);
-    printf("  Far end modulations 0x%X\n", result->modulations);
-    printf("  Protocol '%s' (%d)\n", v8_protocol_to_str(result->protocol), result->protocol);
-    printf("  PSTN access '%s' (%d)\n", v8_pstn_access_to_str(result->pstn_access), result->pstn_access);
-    printf("  PCM modem availability '%s' (%d)\n", v8_pcm_modem_availability_to_str(result->pcm_modem_availability), result->pcm_modem_availability);
-    if (result->t66 >= 0)
-        printf("  T.66 '%s' (%d)\n", v8_t66_to_str(result->t66), result->t66);
+    printf("  Call function '%s' (%d)\n", v8_call_function_to_str(result->jm_cm.call_function), result->jm_cm.call_function);
+    printf("  Supported modulations 0x%X\n", result->jm_cm.modulations);
+    printf("  Protocol '%s' (%d)\n", v8_protocol_to_str(result->jm_cm.protocols), result->jm_cm.protocols);
+    printf("  PSTN access '%s' (%d)\n", v8_pstn_access_to_str(result->jm_cm.pstn_access), result->jm_cm.pstn_access);
+    printf("  PCM modem availability '%s' (%d)\n", v8_pcm_modem_availability_to_str(result->jm_cm.pcm_modem_availability), result->jm_cm.pcm_modem_availability);
+    if (result->jm_cm.t66 >= 0)
+        printf("  T.66 '%s' (%d)\n", v8_t66_to_str(result->jm_cm.t66), result->jm_cm.t66);
     /*endif*/
-    if (result->nsf >= 0)
-        printf("  NSF %d\n", result->nsf);
+    if (result->jm_cm.nsf >= 0)
+        printf("  NSF %d\n", result->jm_cm.nsf);
     /*endif*/
 
     switch (result->status)
@@ -119,32 +105,38 @@ static void handler(void *user_data, v8_parms_t *result)
     case V8_STATUS_V8_OFFERED:
         /* Edit the result information appropriately */
         //result->call_function = V8_CALL_T30_TX;
-        result->modulations &= (V8_MOD_V17
-                              | V8_MOD_V21
-                              //| V8_MOD_V22
-                              //| V8_MOD_V23HDX
-                              //| V8_MOD_V23
-                              //| V8_MOD_V26BIS
-                              //| V8_MOD_V26TER
-                              | V8_MOD_V27TER
-                              | V8_MOD_V29
-                              //| V8_MOD_V32
-                              | V8_MOD_V34HDX
-                              //| V8_MOD_V34
-                              //| V8_MOD_V90
-                              | V8_MOD_V92);
+        result->jm_cm.modulations &= (V8_MOD_V17
+                                    | V8_MOD_V21
+                                    //| V8_MOD_V22
+                                    //| V8_MOD_V23HDX
+                                    //| V8_MOD_V23
+                                    //| V8_MOD_V26BIS
+                                    //| V8_MOD_V26TER
+                                    | V8_MOD_V27TER
+                                    | V8_MOD_V29
+                                    //| V8_MOD_V32
+                                    | V8_MOD_V34HDX
+                                    | V8_MOD_V34
+                                    //| V8_MOD_V90
+                                    | V8_MOD_V92);
         break;
     case V8_STATUS_V8_CALL:
-        if (result->call_function == V8_CALL_V_SERIES
+        if (result->jm_cm.call_function == V8_CALL_V_SERIES
             &&
-            result->protocol == V8_PROTOCOL_LAPM_V42)
+            result->jm_cm.protocols == V8_PROTOCOL_LAPM_V42)
         {
-            negotiations_ok++;
+            if (expected_status[side] == result->status)
+                negotiations_ok++;
+            /*endif*/
         }
         /*endif*/
         break;
+    case V8_STATUS_CALLING_TONE_RECEIVED:
+    case V8_STATUS_FAX_CNG_TONE_RECEIVED:
     case V8_STATUS_NON_V8_CALL:
-        negotiations_ok = 42;
+        if (expected_status[side] == result->status)
+            negotiations_ok++;
+        /*endif*/
         break;
     }
     /*endswitch*/
@@ -199,41 +191,46 @@ static int v8_calls_v8_tests(SNDFILE *outhandle)
     negotiations_ok = 0;
 
     v8_call_parms.modem_connect_tone = MODEM_CONNECT_TONES_NONE;
+    v8_call_parms.gateway_mode = false;
     v8_call_parms.send_ci = true;
     v8_call_parms.v92 = -1;
-    v8_call_parms.call_function = V8_CALL_V_SERIES;
-    v8_call_parms.modulations = caller_available_modulations;
-    v8_call_parms.protocol = V8_PROTOCOL_LAPM_V42;
-    v8_call_parms.pcm_modem_availability = 0;
-    v8_call_parms.pstn_access = 0;
-    v8_call_parms.nsf = -1;
-    v8_call_parms.t66 = -1;
-    v8_caller = v8_init(NULL, true, &v8_call_parms, handler, (void *) "caller");
+    v8_call_parms.jm_cm.call_function = V8_CALL_V_SERIES;
+    v8_call_parms.jm_cm.modulations = caller_available_modulations;
+    v8_call_parms.jm_cm.protocols = V8_PROTOCOL_LAPM_V42;
+    v8_call_parms.jm_cm.pcm_modem_availability = 0;
+    v8_call_parms.jm_cm.pstn_access = 0;
+    v8_call_parms.jm_cm.nsf = -1;
+    v8_call_parms.jm_cm.t66 = -1;
+    v8_caller = v8_init(NULL, true, &v8_call_parms, handler, (void *) (intptr_t) V8_TESTS_CALLER);
 
     v8_answer_parms.modem_connect_tone = MODEM_CONNECT_TONES_ANSAM_PR;
+    v8_answer_parms.gateway_mode = false;
     v8_answer_parms.send_ci = true;
     v8_answer_parms.v92 = -1;
-    v8_answer_parms.call_function = V8_CALL_V_SERIES;
-    v8_answer_parms.modulations = answerer_available_modulations;
-    v8_answer_parms.protocol = V8_PROTOCOL_LAPM_V42;
-    v8_answer_parms.pcm_modem_availability = 0;
-    v8_answer_parms.pstn_access = 0;
-    v8_answer_parms.nsf = -1;
-    v8_answer_parms.t66 = -1;
-    v8_answerer = v8_init(NULL, false, &v8_answer_parms, handler, (void *) "answerer");
+    v8_answer_parms.jm_cm.call_function = V8_CALL_V_SERIES;
+    v8_answer_parms.jm_cm.modulations = answerer_available_modulations;
+    v8_answer_parms.jm_cm.protocols = V8_PROTOCOL_LAPM_V42;
+    v8_answer_parms.jm_cm.pcm_modem_availability = 0;
+    v8_answer_parms.jm_cm.pstn_access = 0;
+    v8_answer_parms.jm_cm.nsf = -1;
+    v8_answer_parms.jm_cm.t66 = -1;
+    v8_answerer = v8_init(NULL, false, &v8_answer_parms, handler, (void *) (intptr_t) V8_TESTS_ANSWERER);
 
     caller_logging = v8_get_logging_state(v8_caller);
     span_log_set_level(caller_logging, SPAN_LOG_FLOW | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
-    span_log_set_tag(caller_logging, "caller");
+    span_log_set_tag(caller_logging, "Caller");
     answerer_logging = v8_get_logging_state(v8_answerer);
     span_log_set_level(answerer_logging, SPAN_LOG_FLOW | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
-    span_log_set_tag(answerer_logging, "answerer");
+    span_log_set_tag(answerer_logging, "Answerer");
+
+    expected_status[V8_TESTS_CALLER] = V8_STATUS_V8_CALL;
+    expected_status[V8_TESTS_ANSWERER] = V8_STATUS_V8_CALL;
+
     for (i = 0;  i < 1000;  i++)
     {
         samples = v8_tx(v8_caller, amp, SAMPLES_PER_CHUNK);
         if (samples < SAMPLES_PER_CHUNK)
         {
-printf("Caller silence %d\n", SAMPLES_PER_CHUNK - samples);
             vec_zeroi16(amp + samples, SAMPLES_PER_CHUNK - samples);
             samples = SAMPLES_PER_CHUNK;
         }
@@ -247,7 +244,6 @@ printf("Caller silence %d\n", SAMPLES_PER_CHUNK - samples);
         samples = v8_tx(v8_answerer, amp, SAMPLES_PER_CHUNK);
         if (samples < SAMPLES_PER_CHUNK)
         {
-printf("Answerer silence %d\n", SAMPLES_PER_CHUNK - samples);
             vec_zeroi16(amp + samples, SAMPLES_PER_CHUNK - samples);
             samples = SAMPLES_PER_CHUNK;
         }
@@ -282,11 +278,12 @@ printf("Answerer silence %d\n", SAMPLES_PER_CHUNK - samples);
         exit(2);
     }
     /*endif*/
+    printf("Test passed.\n");
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-static int non_v8_calls_v8_tests(SNDFILE *outhandle)
+static int non_v8_without_calling_tone_calls_v8_tests(SNDFILE *outhandle)
 {
     silence_gen_state_t *non_v8_caller_tx;
     modem_connect_tones_rx_state_t *non_v8_caller_rx;
@@ -324,21 +321,25 @@ static int non_v8_calls_v8_tests(SNDFILE *outhandle)
     v8_answer_parms.modem_connect_tone = MODEM_CONNECT_TONES_ANSAM_PR;
     v8_answer_parms.send_ci = true;
     v8_answer_parms.v92 = -1;
-    v8_answer_parms.call_function = V8_CALL_V_SERIES;
-    v8_answer_parms.modulations = answerer_available_modulations;
-    v8_answer_parms.protocol = V8_PROTOCOL_LAPM_V42;
-    v8_answer_parms.pcm_modem_availability = 0;
-    v8_answer_parms.pstn_access = 0;
-    v8_answer_parms.nsf = -1;
-    v8_answer_parms.t66 = -1;
+    v8_answer_parms.jm_cm.call_function = V8_CALL_V_SERIES;
+    v8_answer_parms.jm_cm.modulations = answerer_available_modulations;
+    v8_answer_parms.jm_cm.protocols = V8_PROTOCOL_LAPM_V42;
+    v8_answer_parms.jm_cm.pcm_modem_availability = 0;
+    v8_answer_parms.jm_cm.pstn_access = 0;
+    v8_answer_parms.jm_cm.nsf = -1;
+    v8_answer_parms.jm_cm.t66 = -1;
     v8_answerer = v8_init(NULL,
                           false,
                           &v8_answer_parms,
                           handler,
-                          (void *) "answerer");
+                          (void *) (intptr_t) V8_TESTS_ANSWERER);
     answerer_logging = v8_get_logging_state(v8_answerer);
     span_log_set_level(answerer_logging, SPAN_LOG_FLOW | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
-    span_log_set_tag(answerer_logging, "answerer");
+    span_log_set_tag(answerer_logging, "Answerer");
+
+    expected_status[V8_TESTS_CALLER] = -1;
+    expected_status[V8_TESTS_ANSWERER] = V8_STATUS_V8_CALL;
+
     for (i = 0;  i < 1000;  i++)
     {
         samples = silence_gen(non_v8_caller_tx, amp, SAMPLES_PER_CHUNK);
@@ -400,6 +401,130 @@ static int non_v8_calls_v8_tests(SNDFILE *outhandle)
         exit(2);
     }
     /*endif*/
+    printf("Test passed.\n");
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int non_v8_with_calling_tone_calls_v8_tests(SNDFILE *outhandle)
+{
+    modem_connect_tones_tx_state_t *non_v8_caller_tx;
+    modem_connect_tones_rx_state_t *non_v8_caller_rx;
+    v8_state_t *v8_answerer;
+    logging_state_t *answerer_logging;
+    int answerer_available_modulations;
+    int i;
+    int samples;
+    int remnant;
+    int outframes;
+    int tone;
+    int16_t amp[SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    v8_parms_t v8_answer_parms;
+
+    answerer_available_modulations = V8_MOD_V17
+                                   | V8_MOD_V21
+                                   | V8_MOD_V22
+                                   | V8_MOD_V23HDX
+                                   | V8_MOD_V23
+                                   | V8_MOD_V26BIS
+                                   | V8_MOD_V26TER
+                                   | V8_MOD_V27TER
+                                   | V8_MOD_V29
+                                   | V8_MOD_V32
+                                   | V8_MOD_V34HDX
+                                   | V8_MOD_V34
+                                   | V8_MOD_V90
+                                   | V8_MOD_V92;
+    negotiations_ok = 0;
+
+    non_v8_caller_tx = modem_connect_tones_tx_init(NULL, MODEM_CONNECT_TONES_CALLING_TONE);
+    non_v8_caller_rx = modem_connect_tones_rx_init(NULL, MODEM_CONNECT_TONES_ANS_PR, NULL, NULL);
+
+    v8_answer_parms.modem_connect_tone = MODEM_CONNECT_TONES_ANSAM_PR;
+    v8_answer_parms.send_ci = true;
+    v8_answer_parms.v92 = -1;
+    v8_answer_parms.jm_cm.call_function = V8_CALL_V_SERIES;
+    v8_answer_parms.jm_cm.modulations = answerer_available_modulations;
+    v8_answer_parms.jm_cm.protocols = V8_PROTOCOL_LAPM_V42;
+    v8_answer_parms.jm_cm.pcm_modem_availability = 0;
+    v8_answer_parms.jm_cm.pstn_access = 0;
+    v8_answer_parms.jm_cm.nsf = -1;
+    v8_answer_parms.jm_cm.t66 = -1;
+    v8_answerer = v8_init(NULL,
+                          false,
+                          &v8_answer_parms,
+                          handler,
+                          (void *) (intptr_t) V8_TESTS_ANSWERER);
+    answerer_logging = v8_get_logging_state(v8_answerer);
+    span_log_set_level(answerer_logging, SPAN_LOG_FLOW | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
+    span_log_set_tag(answerer_logging, "Answerer");
+
+    expected_status[V8_TESTS_CALLER] = -1;
+    expected_status[V8_TESTS_ANSWERER] = V8_STATUS_CALLING_TONE_RECEIVED;
+
+    for (i = 0;  i < 1000;  i++)
+    {
+        samples = modem_connect_tones_tx(non_v8_caller_tx, amp, SAMPLES_PER_CHUNK);
+        if (samples < SAMPLES_PER_CHUNK)
+        {
+            vec_zeroi16(amp + samples, SAMPLES_PER_CHUNK - samples);
+            samples = SAMPLES_PER_CHUNK;
+        }
+        /*endif*/
+        remnant = v8_rx(v8_answerer, amp, samples);
+        if (remnant)
+            break;
+        /*endif*/
+        for (i = 0;  i < samples;  i++)
+            out_amp[2*i] = amp[i];
+        /*endfor*/
+
+        samples = v8_tx(v8_answerer, amp, SAMPLES_PER_CHUNK);
+        if (samples < SAMPLES_PER_CHUNK)
+        {
+            vec_zeroi16(amp + samples, SAMPLES_PER_CHUNK - samples);
+            samples = SAMPLES_PER_CHUNK;
+        }
+        /*endif*/
+        span_log_bump_samples(answerer_logging, samples);
+        modem_connect_tones_rx(non_v8_caller_rx, amp, samples);
+        if ((tone = modem_connect_tones_rx_get(non_v8_caller_rx)) != MODEM_CONNECT_TONES_NONE)
+        {
+            printf("Detected %s (%d)\n", modem_connect_tone_to_str(tone), tone);
+            if (tone == MODEM_CONNECT_TONES_ANSAM_PR)
+                negotiations_ok++;
+            /*endif*/
+        }
+        /*endif*/
+        for (i = 0;  i < samples;  i++)
+            out_amp[2*i + 1] = amp[i];
+        /*endfor*/
+
+        if (outhandle)
+        {
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+            /*endif*/
+        }
+        /*endif*/
+    }
+    /*endfor*/
+    modem_connect_tones_tx_free(non_v8_caller_tx);
+    modem_connect_tones_rx_free(non_v8_caller_rx);
+    v8_free(v8_answerer);
+
+    if (negotiations_ok != 1)
+    {
+        printf("Tests failed.\n");
+        exit(2);
+    }
+    /*endif*/
+    printf("Test passed.\n");
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -436,22 +561,26 @@ static int v8_calls_non_v8_tests(SNDFILE *outhandle)
     v8_call_parms.modem_connect_tone = MODEM_CONNECT_TONES_NONE;
     v8_call_parms.send_ci = true;
     v8_call_parms.v92 = -1;
-    v8_call_parms.call_function = V8_CALL_V_SERIES;
-    v8_call_parms.modulations = caller_available_modulations;
-    v8_call_parms.protocol = V8_PROTOCOL_LAPM_V42;
-    v8_call_parms.pcm_modem_availability = 0;
-    v8_call_parms.pstn_access = 0;
-    v8_call_parms.nsf = -1;
-    v8_call_parms.t66 = -1;
+    v8_call_parms.jm_cm.call_function = V8_CALL_V_SERIES;
+    v8_call_parms.jm_cm.modulations = caller_available_modulations;
+    v8_call_parms.jm_cm.protocols = V8_PROTOCOL_LAPM_V42;
+    v8_call_parms.jm_cm.pcm_modem_availability = 0;
+    v8_call_parms.jm_cm.pstn_access = 0;
+    v8_call_parms.jm_cm.nsf = -1;
+    v8_call_parms.jm_cm.t66 = -1;
     v8_caller = v8_init(NULL,
                         true,
                         &v8_call_parms,
                         handler,
-                        (void *) "caller");
+                        (void *) (intptr_t) V8_TESTS_CALLER);
     non_v8_answerer_tx = modem_connect_tones_tx_init(NULL, MODEM_CONNECT_TONES_ANS_PR);
     caller_logging = v8_get_logging_state(v8_caller);
     span_log_set_level(caller_logging, SPAN_LOG_FLOW | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
-    span_log_set_tag(caller_logging, "caller");
+    span_log_set_tag(caller_logging, "Caller");
+
+    expected_status[V8_TESTS_CALLER] = V8_STATUS_NON_V8_CALL;
+    expected_status[V8_TESTS_ANSWERER] = -1;
+
     for (i = 0;  i < 1000;  i++)
     {
         samples = v8_tx(v8_caller, amp, SAMPLES_PER_CHUNK);
@@ -496,9 +625,278 @@ static int v8_calls_non_v8_tests(SNDFILE *outhandle)
     v8_free(v8_caller);
     modem_connect_tones_tx_free(non_v8_answerer_tx);
 
-    if (negotiations_ok != 42)
+    if (negotiations_ok != 1)
     {
         printf("Tests failed.\n");
+        exit(2);
+    }
+    /*endif*/
+    printf("Test passed.\n");
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int fax_calls_v8_tests(SNDFILE *outhandle)
+{
+    modem_connect_tones_tx_state_t *fax_caller_tx;
+    modem_connect_tones_rx_state_t *fax_caller_rx;
+    v8_state_t *v8_answerer;
+    logging_state_t *answerer_logging;
+    int answerer_available_modulations;
+    int i;
+    int samples;
+    int remnant;
+    int outframes;
+    int tone;
+    int16_t amp[SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    v8_parms_t v8_answer_parms;
+
+    answerer_available_modulations = V8_MOD_V17
+                                   | V8_MOD_V21
+                                   | V8_MOD_V22
+                                   | V8_MOD_V23HDX
+                                   | V8_MOD_V23
+                                   | V8_MOD_V26BIS
+                                   | V8_MOD_V26TER
+                                   | V8_MOD_V27TER
+                                   | V8_MOD_V29
+                                   | V8_MOD_V32
+                                   | V8_MOD_V34HDX
+                                   | V8_MOD_V34
+                                   | V8_MOD_V90
+                                   | V8_MOD_V92;
+    negotiations_ok = 0;
+
+    fax_caller_tx = modem_connect_tones_tx_init(NULL, MODEM_CONNECT_TONES_FAX_CNG);
+    fax_caller_rx = modem_connect_tones_rx_init(NULL, MODEM_CONNECT_TONES_ANS_PR, NULL, NULL);
+
+    v8_answer_parms.modem_connect_tone = MODEM_CONNECT_TONES_ANSAM_PR;
+    v8_answer_parms.send_ci = true;
+    v8_answer_parms.v92 = -1;
+    v8_answer_parms.jm_cm.call_function = V8_CALL_V_SERIES;
+    v8_answer_parms.jm_cm.modulations = answerer_available_modulations;
+    v8_answer_parms.jm_cm.protocols = V8_PROTOCOL_LAPM_V42;
+    v8_answer_parms.jm_cm.pcm_modem_availability = 0;
+    v8_answer_parms.jm_cm.pstn_access = 0;
+    v8_answer_parms.jm_cm.nsf = -1;
+    v8_answer_parms.jm_cm.t66 = -1;
+    v8_answerer = v8_init(NULL,
+                          false,
+                          &v8_answer_parms,
+                          handler,
+                          (void *) (intptr_t) V8_TESTS_ANSWERER);
+    answerer_logging = v8_get_logging_state(v8_answerer);
+    span_log_set_level(answerer_logging, SPAN_LOG_FLOW | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
+    span_log_set_tag(answerer_logging, "Answerer");
+
+    expected_status[V8_TESTS_CALLER] = -1;
+    expected_status[V8_TESTS_ANSWERER] = V8_STATUS_FAX_CNG_TONE_RECEIVED;
+
+    for (i = 0;  i < 1000;  i++)
+    {
+        samples = modem_connect_tones_tx(fax_caller_tx, amp, SAMPLES_PER_CHUNK);
+        if (samples < SAMPLES_PER_CHUNK)
+        {
+            vec_zeroi16(amp + samples, SAMPLES_PER_CHUNK - samples);
+            samples = SAMPLES_PER_CHUNK;
+        }
+        /*endif*/
+        remnant = v8_rx(v8_answerer, amp, samples);
+        if (remnant)
+            break;
+        /*endif*/
+        for (i = 0;  i < samples;  i++)
+            out_amp[2*i] = amp[i];
+        /*endfor*/
+
+        samples = v8_tx(v8_answerer, amp, SAMPLES_PER_CHUNK);
+        if (samples < SAMPLES_PER_CHUNK)
+        {
+            vec_zeroi16(amp + samples, SAMPLES_PER_CHUNK - samples);
+            samples = SAMPLES_PER_CHUNK;
+        }
+        /*endif*/
+        span_log_bump_samples(answerer_logging, samples);
+        modem_connect_tones_rx(fax_caller_rx, amp, samples);
+        if ((tone = modem_connect_tones_rx_get(fax_caller_rx)) != MODEM_CONNECT_TONES_NONE)
+        {
+            printf("Detected %s (%d)\n", modem_connect_tone_to_str(tone), tone);
+            if (tone == MODEM_CONNECT_TONES_ANSAM_PR)
+                negotiations_ok++;
+            /*endif*/
+        }
+        /*endif*/
+        for (i = 0;  i < samples;  i++)
+            out_amp[2*i + 1] = amp[i];
+        /*endfor*/
+
+        if (outhandle)
+        {
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+            /*endif*/
+        }
+        /*endif*/
+    }
+    /*endfor*/
+    modem_connect_tones_tx_free(fax_caller_tx);
+    modem_connect_tones_rx_free(fax_caller_rx);
+    v8_free(v8_answerer);
+
+    if (negotiations_ok != 1)
+    {
+        printf("Tests failed.\n");
+        exit(2);
+    }
+    /*endif*/
+    printf("Test passed.\n");
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static void insert_silence(SNDFILE *outhandle)
+{
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int samples;
+    int outframes;
+    int i;
+
+    if (outhandle)
+    {
+        /* Insert 4s of silence */
+        for (samples = 0;  samples< SAMPLES_PER_CHUNK;  samples++)
+        {
+            out_amp[2*samples] = 0;
+            out_amp[2*samples + 1] = 0;
+        }
+        /*endfor*/
+        for (i = 0;  i < 200;  i++)
+        {
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+            /*endif*/
+        }
+        /*endfor*/
+    }
+    /*endif*/
+}
+/*- End of function --------------------------------------------------------*/
+
+static int decode_from_file(const char *decode_test_file, bool log_audio)
+{
+    int16_t amp[SAMPLES_PER_CHUNK];
+    int samples;
+    int caller_available_modulations;
+    int answerer_available_modulations;
+    SNDFILE *inhandle;
+    v8_state_t *v8_caller;
+    v8_state_t *v8_answerer;
+    v8_parms_t v8_call_parms;
+    v8_parms_t v8_answer_parms;
+    logging_state_t *logging;
+
+    if ((inhandle = sf_open_telephony_read(decode_test_file, 1)) == NULL)
+    {
+        fprintf(stderr, "    Cannot open speech file '%s'\n", decode_test_file);
+        exit (2);
+    }
+    /*endif*/
+
+    caller_available_modulations = V8_MOD_V17
+                                 | V8_MOD_V21
+                                 | V8_MOD_V22
+                                 | V8_MOD_V23HDX
+                                 | V8_MOD_V23
+                                 | V8_MOD_V26BIS
+                                 | V8_MOD_V26TER
+                                 | V8_MOD_V27TER
+                                 | V8_MOD_V29
+                                 | V8_MOD_V32
+                                 | V8_MOD_V34HDX
+                                 | V8_MOD_V34
+                                 | V8_MOD_V90
+                                 | V8_MOD_V92;
+    answerer_available_modulations = V8_MOD_V17
+                                   | V8_MOD_V21
+                                   | V8_MOD_V22
+                                   | V8_MOD_V23HDX
+                                   | V8_MOD_V23
+                                   | V8_MOD_V26BIS
+                                   | V8_MOD_V26TER
+                                   | V8_MOD_V27TER
+                                   | V8_MOD_V29
+                                   | V8_MOD_V32
+                                   | V8_MOD_V34HDX
+                                   | V8_MOD_V34
+                                   | V8_MOD_V90
+                                   | V8_MOD_V92;
+
+    printf("Decode file '%s'\n", decode_test_file);
+    v8_call_parms.modem_connect_tone = MODEM_CONNECT_TONES_NONE;
+    v8_call_parms.send_ci = false;
+    v8_call_parms.v92 = -1;
+    v8_call_parms.jm_cm.call_function = V8_CALL_V_SERIES;
+    v8_call_parms.jm_cm.modulations = caller_available_modulations;
+    v8_call_parms.jm_cm.protocols = V8_PROTOCOL_LAPM_V42;
+    v8_call_parms.jm_cm.pcm_modem_availability = 0;
+    v8_call_parms.jm_cm.pstn_access = 0;
+    v8_call_parms.jm_cm.nsf = -1;
+    v8_call_parms.jm_cm.t66 = -1;
+    v8_caller = v8_init(NULL,
+                        true,
+                        &v8_call_parms,
+                        handler,
+                        (void *) (intptr_t) V8_TESTS_CALLER);
+    logging = v8_get_logging_state(v8_caller);
+    span_log_set_level(logging, SPAN_LOG_FLOW | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_SHOW_TAG);
+    span_log_set_tag(logging, "Caller");
+
+    v8_answer_parms.modem_connect_tone = MODEM_CONNECT_TONES_ANSAM_PR;
+    v8_answer_parms.send_ci = false;
+    v8_answer_parms.v92 = -1;
+    v8_answer_parms.jm_cm.call_function = V8_CALL_V_SERIES;
+    v8_answer_parms.jm_cm.modulations = answerer_available_modulations;
+    v8_answer_parms.jm_cm.protocols = V8_PROTOCOL_LAPM_V42;
+    v8_answer_parms.jm_cm.pcm_modem_availability = 0;
+    v8_answer_parms.jm_cm.pstn_access = 0;
+    v8_answer_parms.jm_cm.nsf = -1;
+    v8_answer_parms.jm_cm.t66 = -1;
+    v8_answerer = v8_init(NULL,
+                          false,
+                          &v8_answer_parms,
+                          handler,
+                          (void *) (intptr_t) V8_TESTS_ANSWERER);
+    logging = v8_get_logging_state(v8_answerer);
+    span_log_set_level(logging, SPAN_LOG_FLOW | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_SHOW_TAG);
+    span_log_set_tag(logging, "Answerer");
+
+    while ((samples = sf_readf_short(inhandle, amp, SAMPLES_PER_CHUNK)))
+    {
+        v8_decode_rx(v8_caller, amp, samples);
+        v8_decode_rx(v8_answerer, amp, samples);
+        //v8_tx(v8_caller, amp, samples);
+        //v8_tx(v8_answerer, amp, samples);
+        logging = v8_get_logging_state(v8_caller);
+        span_log_bump_samples(logging, samples);
+        logging = v8_get_logging_state(v8_answerer);
+        span_log_bump_samples(logging, samples);
+    }
+    /*endwhile*/
+
+    v8_free(v8_caller);
+    v8_free(v8_answerer);
+    if (sf_close_telephony(inhandle))
+    {
+        fprintf(stderr, "    Cannot close speech file '%s'\n", decode_test_file);
         exit(2);
     }
     /*endif*/
@@ -508,20 +906,10 @@ static int v8_calls_non_v8_tests(SNDFILE *outhandle)
 
 int main(int argc, char *argv[])
 {
-    int16_t amp[SAMPLES_PER_CHUNK];
-    int samples;
-    int caller_available_modulations;
-    int answerer_available_modulations;
-    SNDFILE *inhandle;
-    SNDFILE *outhandle;
     int opt;
+    SNDFILE *outhandle;
     bool log_audio;
     char *decode_test_file;
-    v8_state_t *v8_caller;
-    v8_state_t *v8_answerer;
-    v8_parms_t v8_call_parms;
-    v8_parms_t v8_answer_parms;
-    logging_state_t *logging;
 
     decode_test_file = NULL;
     log_audio = false;
@@ -544,98 +932,7 @@ int main(int argc, char *argv[])
 
     if (decode_test_file)
     {
-        caller_available_modulations = V8_MOD_V17
-                                     | V8_MOD_V21
-                                     | V8_MOD_V22
-                                     | V8_MOD_V23HDX
-                                     | V8_MOD_V23
-                                     | V8_MOD_V26BIS
-                                     | V8_MOD_V26TER
-                                     | V8_MOD_V27TER
-                                     | V8_MOD_V29
-                                     | V8_MOD_V32
-                                     | V8_MOD_V34HDX
-                                     | V8_MOD_V34
-                                     | V8_MOD_V90
-                                     | V8_MOD_V92;
-        answerer_available_modulations = V8_MOD_V17
-                                       | V8_MOD_V21
-                                       | V8_MOD_V22
-                                       | V8_MOD_V23HDX
-                                       | V8_MOD_V23
-                                       | V8_MOD_V26BIS
-                                       | V8_MOD_V26TER
-                                       | V8_MOD_V27TER
-                                       | V8_MOD_V29
-                                       | V8_MOD_V32
-                                       | V8_MOD_V34HDX
-                                       | V8_MOD_V34
-                                       | V8_MOD_V90
-                                       | V8_MOD_V92;
-
-        printf("Decode file '%s'\n", decode_test_file);
-        v8_call_parms.modem_connect_tone = MODEM_CONNECT_TONES_NONE;
-        v8_call_parms.send_ci = true;
-        v8_call_parms.v92 = -1;
-        v8_call_parms.call_function = V8_CALL_V_SERIES;
-        v8_call_parms.modulations = caller_available_modulations;
-        v8_call_parms.protocol = V8_PROTOCOL_LAPM_V42;
-        v8_call_parms.pcm_modem_availability = 0;
-        v8_call_parms.pstn_access = 0;
-        v8_call_parms.nsf = -1;
-        v8_call_parms.t66 = -1;
-        v8_caller = v8_init(NULL,
-                            true,
-                            &v8_call_parms,
-                            handler,
-                            (void *) "caller");
-        logging = v8_get_logging_state(v8_caller);
-        span_log_set_level(logging, SPAN_LOG_FLOW | SPAN_LOG_SHOW_TAG);
-        span_log_set_tag(logging, "caller");
-
-        v8_answer_parms.modem_connect_tone = MODEM_CONNECT_TONES_ANSAM_PR;
-        v8_answer_parms.send_ci = true;
-        v8_answer_parms.v92 = -1;
-        v8_answer_parms.call_function = V8_CALL_V_SERIES;
-        v8_answer_parms.modulations = answerer_available_modulations;
-        v8_answer_parms.protocol = V8_PROTOCOL_LAPM_V42;
-        v8_answer_parms.pcm_modem_availability = 0;
-        v8_answer_parms.pstn_access = 0;
-        v8_answer_parms.nsf = -1;
-        v8_answer_parms.t66 = -1;
-        v8_answerer = v8_init(NULL,
-                              false,
-                              &v8_answer_parms,
-                              handler,
-                              (void *) "answerer");
-        logging = v8_get_logging_state(v8_answerer);
-        span_log_set_level(logging, SPAN_LOG_FLOW | SPAN_LOG_SHOW_TAG);
-        span_log_set_tag(logging, "answerer");
-
-        if ((inhandle = sf_open_telephony_read(decode_test_file, 1)) == NULL)
-        {
-            fprintf(stderr, "    Cannot open speech file '%s'\n", decode_test_file);
-            exit (2);
-        }
-        /*endif*/
-
-        while ((samples = sf_readf_short(inhandle, amp, SAMPLES_PER_CHUNK)))
-        {
-            v8_rx(v8_caller, amp, samples);
-            v8_rx(v8_answerer, amp, samples);
-            v8_tx(v8_caller, amp, samples);
-            v8_tx(v8_answerer, amp, samples);
-        }
-        /*endwhile*/
-
-        v8_free(v8_caller);
-        v8_free(v8_answerer);
-        if (sf_close_telephony(inhandle))
-        {
-            fprintf(stderr, "    Cannot close speech file '%s'\n", decode_test_file);
-            exit(2);
-        }
-        /*endif*/
+        decode_from_file(decode_test_file, log_audio);
     }
     else
     {
@@ -654,11 +951,25 @@ int main(int argc, char *argv[])
         printf("Test 1: V.8 terminal calls V.8 terminal\n");
         v8_calls_v8_tests(outhandle);
 
-        printf("Test 2: non-V.8 terminal calls V.8 terminal\n");
-        non_v8_calls_v8_tests(outhandle);
+        insert_silence(outhandle);
 
-        printf("Test 3: V.8 terminal calls non-V.8 terminal\n");
+        printf("Test 2: non-V.8 terminal without calling tone calls V.8 terminal\n");
+        non_v8_without_calling_tone_calls_v8_tests(outhandle);
+
+        insert_silence(outhandle);
+
+        printf("Test 3: non-V.8 terminal with calling tone calls V.8 terminal\n");
+        non_v8_with_calling_tone_calls_v8_tests(outhandle);
+
+        insert_silence(outhandle);
+
+        printf("Test 4: V.8 terminal calls non-V.8 terminal\n");
         v8_calls_non_v8_tests(outhandle);
+
+        insert_silence(outhandle);
+
+        printf("Test 5: FAX calls V.8 terminal\n");
+        fax_calls_v8_tests(outhandle);
 
         if (outhandle)
         {

@@ -411,7 +411,7 @@ int main(int argc, char *argv[])
             TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 3);
             TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
             TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
-            TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, (uint32) -1);
+            TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, (uint32_t) -1);
             TIFFSetField(tif, TIFFTAG_XRESOLUTION, 200.0f);
             TIFFSetField(tif, TIFFTAG_YRESOLUTION, 200.0f);
             TIFFSetField(tif, TIFFTAG_RESOLUTIONUNIT, RESUNIT_INCH);
@@ -526,7 +526,7 @@ int main(int argc, char *argv[])
     TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 3);
     TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
     TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
-    TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, (uint32) -1);
+    TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, (uint32_t) -1);
     TIFFSetField(tif, TIFFTAG_XRESOLUTION, 200.0f);
     TIFFSetField(tif, TIFFTAG_YRESOLUTION, 200.0f);
     TIFFSetField(tif, TIFFTAG_RESOLUTIONUNIT, RESUNIT_INCH);

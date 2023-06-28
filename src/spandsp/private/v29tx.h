@@ -38,12 +38,12 @@ struct v29_tx_state_s
     /*! \brief The bit rate of the modem. Valid values are 4800, 7200 and 9600. */
     int bit_rate;
     /*! \brief The callback function used to get the next bit to be transmitted. */
-    get_bit_func_t get_bit;
+    span_get_bit_func_t get_bit;
     /*! \brief A user specified opaque pointer passed to the get_bit function. */
     void *get_bit_user_data;
 
     /*! \brief The callback function used to report modem status changes. */
-    modem_status_func_t status_handler;
+    span_modem_status_func_t status_handler;
     /*! \brief A user specified opaque pointer passed to the status function. */
     void *status_user_data;
 
@@ -94,7 +94,7 @@ struct v29_tx_state_s
     /*! \brief The code number for the current position in the constellation. */
     int constellation_state;
     /*! \brief The get_bit function in use at any instant. */
-    get_bit_func_t current_get_bit;
+    span_get_bit_func_t current_get_bit;
     /*! \brief Error and flow logging control */
     logging_state_t logging;
 };

@@ -174,7 +174,9 @@ SPAN_DECLARE(g711_state_t *) g711_init(g711_state_t *s, int mode)
     {
         if ((s = (g711_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     s->mode = mode;
     return s;
 }

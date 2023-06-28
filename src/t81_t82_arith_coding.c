@@ -186,6 +186,7 @@ static __inline__ void output_stuffed_byte(t81_t82_arith_encode_state_t *s, int 
     s->output_byte_handler(s->user_data, byte);
     if (byte == T81_T82_ESC)
         s->output_byte_handler(s->user_data, T81_T82_STUFF);
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -199,11 +200,13 @@ static __inline__ void byteout(t81_t82_arith_encode_state_t *s)
     {
         if (s->buffer >= 0)
             output_stuffed_byte(s, s->buffer + 1);
+        /*endif*/
         while (s->sc)
         {
             s->output_byte_handler(s->user_data, 0x00);
             s->sc--;
         }
+        /*endwhile*/
         s->buffer = temp & 0xFF;
     }
     else if (temp == 0xFF)
@@ -214,13 +217,16 @@ static __inline__ void byteout(t81_t82_arith_encode_state_t *s)
     {
         if (s->buffer >= 0)
             output_stuffed_byte(s, s->buffer);
+        /*endif*/
         while (s->sc)
         {
             output_stuffed_byte(s, T81_T82_ESC);
             s->sc--;
         }
+        /*endwhile*/
         s->buffer = temp;
     }
+    /*endif*/
     s->c &= 0x7FFFF;
     s->ct = 8;
 }
@@ -236,6 +242,7 @@ static __inline__ void renorme(t81_t82_arith_encode_state_t *s)
         s->ct--;
         if (s->ct == 0)
             byteout(s);
+        /*endif*/
     }
     while (s->a < 0x8000);
 }
@@ -256,6 +263,7 @@ SPAN_DECLARE(void) t81_t82_arith_encode(t81_t82_arith_encode_state_t *s, int cx,
             s->c += s->a;
             s->a = prob[ss].lsz;
         }
+        /*endif*/
         s->st[cx] = (s->st[cx] & 0x80) ^ prob[ss].nlps;
         renorme(s);
     }
@@ -270,10 +278,13 @@ SPAN_DECLARE(void) t81_t82_arith_encode(t81_t82_arith_encode_state_t *s, int cx,
                 s->c += s->a;
                 s->a = prob[ss].lsz;
             }
+            /*endif*/
             s->st[cx] = (s->st[cx] & 0x80) | prob[ss].nmps;
             renorme(s);
         }
+        /*endif*/
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -291,6 +302,7 @@ SPAN_DECLARE(void) t81_t82_arith_encode_flush(t81_t82_arith_encode_state_t *s)
     {
         if (s->buffer >= 0)
             output_stuffed_byte(s, s->buffer + 1);
+        /*endif*/
         /* Only output 0x00 bytes if something non-0x00 will follow */
         if ((s->c & 0x7FFF800))
         {
@@ -299,7 +311,9 @@ SPAN_DECLARE(void) t81_t82_arith_encode_flush(t81_t82_arith_encode_state_t *s)
                 output_stuffed_byte(s, 0x00);
                 s->sc--;
             }
+            /*endwhile*/
         }
+        /*endif*/
     }
     else
     {
@@ -308,19 +322,24 @@ SPAN_DECLARE(void) t81_t82_arith_encode_flush(t81_t82_arith_encode_state_t *s)
            answers which don't seem to match other JBIG coders. */
         if (s->buffer >= 0)
             output_stuffed_byte(s, s->buffer);
+        /*endif*/
         while (s->sc)
         {
             output_stuffed_byte(s, 0xFF);
             s->sc--;
         }
+        /*endwhile*/
     }
+    /*endif*/
     /* Only output final bytes if they are not 0x00 */
     if ((s->c & 0x7FFF800))
     {
         output_stuffed_byte(s, (s->c >> 19) & 0xFF);
         if ((s->c & 0x7F800))
             output_stuffed_byte(s, (s->c >> 11) & 0xFF);
+        /*endif*/
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -329,6 +348,7 @@ SPAN_DECLARE(int) t81_t82_arith_encode_restart(t81_t82_arith_encode_state_t *s, 
     /* T.82 figure 27 - INITENC */
     if (!reuse_st)
         memset(s->st, 0, sizeof(s->st));
+    /*endif*/
     s->c = 0;
     s->a = 0x10000;
     s->sc = 0;
@@ -346,7 +366,9 @@ SPAN_DECLARE(t81_t82_arith_encode_state_t *) t81_t82_arith_encode_init(t81_t82_a
     {
         if ((s = (t81_t82_arith_encode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     s->output_byte_handler = output_byte_handler;
     s->user_data = user_data;
@@ -412,14 +434,19 @@ SPAN_DECLARE(int) t81_t82_arith_decode(t81_t82_arith_decode_state_t *s, int cx)
                 s->c |= (int32_t) *(s->pscd_ptr++) << (8 - s->ct);
                 s->ct += 8;
             }
+            /*endif*/
         }
+        /*endwhile*/
         s->a <<= 1;
         s->c <<= 1;
         if (s->ct >= 0)
             s->ct--;
+        /*endif*/
         if (s->a == 0x10000)
             s->startup = false;
+        /*endif*/
     }
+    /*endwhile*/
 
     /* T.82 figure 32 - DECODE */
     ss = s->st[cx] & 0x7F;
@@ -440,6 +467,7 @@ SPAN_DECLARE(int) t81_t82_arith_decode(t81_t82_arith_decode_state_t *s, int cx)
             pix = 1 - (s->st[cx] >> 7);
             s->st[cx] = (s->st[cx]& 0x80) ^ prob[ss].nlps;
         }
+        /*endif*/
     }
     else
     {
@@ -456,12 +484,15 @@ SPAN_DECLARE(int) t81_t82_arith_decode(t81_t82_arith_decode_state_t *s, int cx)
                 pix = s->st[cx] >> 7;
                 s->st[cx] = (s->st[cx] & 0x80) | prob[ss].nmps;
             }
+            /*endif*/
         }
         else
         {
             pix = s->st[cx] >> 7;
         }
+        /*endif*/
     }
+    /*endif*/
 
     return pix;
 }
@@ -471,6 +502,7 @@ SPAN_DECLARE(int) t81_t82_arith_decode_restart(t81_t82_arith_decode_state_t *s, 
 {
     if (!reuse_st)
         memset(s->st, 0, sizeof(s->st));
+    /*endif*/
     s->c = 0;
     s->a = 1;
     s->ct = 0;

@@ -797,12 +797,14 @@ SPAN_DECLARE(int) t35_real_country_code(int country_code, int country_code_exten
 {
     if (country_code < 0  ||  country_code > 0xFF)
         return -1;
+    /*endif*/
     if (country_code == 0xFF)
     {
         /* The extension code gives us the country. */
         /* Right now there are no extension codes defined by the ITU */
         return -1;
     }
+    /*endif*/
     /* We need to apply realism over accuracy, though it blocks out some countries.
        It is very rare to find a machine from any country but the following:
 
@@ -834,13 +836,16 @@ SPAN_DECLARE(int) t35_real_country_code(int country_code, int country_code_exten
         country_code = bit_reverse8(country_code);
         break;
     }
+    /*endswitch*/
     /* Try the country code at face value, then bit reversed */
     if (t35_country_codes[country_code].name)
         return country_code;
+    /*endif*/
     /* If the country code is missing, its most likely the country code is reversed. */
     country_code = bit_reverse8(country_code);
     if (t35_country_codes[country_code].name)
         return country_code;
+    /*endif*/
     return -1;
 }
 /*- End of function --------------------------------------------------------*/
@@ -851,6 +856,7 @@ SPAN_DECLARE(const char *) t35_real_country_code_to_str(int country_code, int co
 
     if ((real_code = t35_real_country_code(country_code, country_code_extension)) >= 0)
         return t35_country_codes[real_code].name;
+    /*endif*/
     return NULL;
 }
 /*- End of function --------------------------------------------------------*/
@@ -859,12 +865,14 @@ SPAN_DECLARE(const char *) t35_country_code_to_str(int country_code, int country
 {
     if (country_code < 0  ||  country_code > 0xFF)
         return NULL;
+    /*endif*/
     if (country_code == 0xFF)
     {
         /* The extension code gives us the country. */
         /* Right now there are no extension codes defined by the ITU */
         return NULL;
     }
+    /*endif*/
 
     return t35_country_codes[country_code].name;
 }
@@ -882,10 +890,13 @@ static const nsf_data_t *find_vendor(const uint8_t *msg, int len)
         /* Right now there are no extension codes defined by the ITU */
         return NULL;
     }
+    /*endif*/
     if ((real_country_code = t35_real_country_code(msg[0], msg[1])) < 0)
         return NULL;
+    /*endif*/
     if ((vendors = t35_country_codes[msg[0]].vendors) == NULL)
         return NULL;
+    /*endif*/
     for (p = vendors;  p->vendor_id;  p++)
     {
         if (len >= p->vendor_id_len
@@ -894,7 +905,9 @@ static const nsf_data_t *find_vendor(const uint8_t *msg, int len)
         {
             return p;
         }
+        /*endif*/
     }
+    /*endfor*/
     return NULL;
 }
 /*- End of function --------------------------------------------------------*/
@@ -905,6 +918,7 @@ SPAN_DECLARE(const char *) t35_vendor_to_str(const uint8_t *msg, int len)
 
     if ((p = find_vendor(msg, len)) == NULL)
         return NULL;
+    /*endif*/
     return p->vendor_name;
 }
 /*- End of function --------------------------------------------------------*/
@@ -916,15 +930,20 @@ SPAN_DECLARE(bool) t35_decode(const uint8_t *msg, int len, const char **country,
 
     if (country)
         *country = t35_real_country_code_to_str(msg[0], msg[1]);
+    /*endif*/
     if (vendor)
         *vendor = NULL;
+    /*endif*/
     if (model)
         *model = NULL;
+    /*endif*/
 
     if ((p = find_vendor(msg, len)) == NULL)
         return false;
+    /*endif*/
     if (vendor)
         *vendor = p->vendor_name;
+    /*endif*/
     if (model  &&  p->known_models)
     {
         for (pp = p->known_models;  pp->model_id;  pp++)
@@ -936,8 +955,11 @@ SPAN_DECLARE(bool) t35_decode(const uint8_t *msg, int len, const char **country,
                 *model = pp->model_name;
                 break;
             }
+            /*endif*/
         }
+        /*endfor*/
     }
+    /*endif*/
     return true;
 }
 /*- End of function --------------------------------------------------------*/

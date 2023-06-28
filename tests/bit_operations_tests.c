@@ -54,7 +54,7 @@ static __inline__ int top_bit_dumb(unsigned int data)
         return -1;
     for (i = 31;  i >= 0;  i--)
     {
-        if ((data & (1 << i)))
+        if ((data & (1U << i)))
             return i;
     }
     return -1;
@@ -69,7 +69,7 @@ static __inline__ int bottom_bit_dumb(unsigned int data)
         return -1;
     for (i = 0;  i < 32;  i++)
     {
-        if ((data & (1 << i)))
+        if ((data & (1U << i)))
             return i;
     }
     return -1;
@@ -261,14 +261,14 @@ int main(int argc, char *argv[])
 
     for (i = -1;  i < 32;  i++)
     {
-        ax32 = most_significant_one32(1 << i);
-        if (ax32 != (1 << i))
+        ax32 = most_significant_one32(1U << i);
+        if (ax32 != (1U << i))
         {
             printf("Test failed: most significant one 32 - %x %" PRIx32 " %x\n", i, ax32, (1 << i));
             exit(2);
         }
-        ax32 = least_significant_one32(1 << i);
-        if (ax32 != (1 << i))
+        ax32 = least_significant_one32(1U << i);
+        if (ax32 != (1U << i))
         {
             printf("Test failed: least significant one 32 - %x %" PRIx32 " %x\n", i, ax32, (1 << i));
             exit(2);

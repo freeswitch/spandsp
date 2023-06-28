@@ -79,7 +79,9 @@ SPAN_DECLARE(void) cvec_mulf(complexf_t z[], const complexf_t x[], const complex
             n0 = _mm_addsub_ps(n0, n2);
             _mm_storeu_ps((float *) z + i, n0);
         }
+        /*endfor*/
     }
+    /*endif*/
     /* Now deal with the last element, which doesn't fill an SSE2 register */
     switch (n & 1)
     {
@@ -87,6 +89,7 @@ SPAN_DECLARE(void) cvec_mulf(complexf_t z[], const complexf_t x[], const complex
         z[n - 1].re = x[n - 1].re*y[n - 1].re - x[n - 1].im*y[n - 1].im;
         z[n - 1].im = x[n - 1].re*y[n - 1].im + x[n - 1].im*y[n - 1].re;
     }
+    /*endswitch*/
 }
 #else
 SPAN_DECLARE(void) cvec_mulf(complexf_t z[], const complexf_t x[], const complexf_t y[], int n)
@@ -98,6 +101,7 @@ SPAN_DECLARE(void) cvec_mulf(complexf_t z[], const complexf_t x[], const complex
         z[i].re = x[i].re*y[i].re - x[i].im*y[i].im;
         z[i].im = x[i].re*y[i].im + x[i].im*y[i].re;
     }
+    /*endfor*/
 }
 #endif
 /*- End of function --------------------------------------------------------*/
@@ -111,6 +115,7 @@ SPAN_DECLARE(void) cvec_mul(complex_t z[], const complex_t x[], const complex_t 
         z[i].re = x[i].re*y[i].re - x[i].im*y[i].im;
         z[i].im = x[i].re*y[i].im + x[i].im*y[i].re;
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -124,6 +129,7 @@ SPAN_DECLARE(void) cvec_mull(complexl_t z[], const complexl_t x[], const complex
         z[i].re = x[i].re*y[i].re - x[i].im*y[i].im;
         z[i].im = x[i].re*y[i].im + x[i].im*y[i].re;
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 #endif
@@ -139,6 +145,7 @@ SPAN_DECLARE(complexf_t) cvec_dot_prodf(const complexf_t x[], const complexf_t y
         z.re += (x[i].re*y[i].re - x[i].im*y[i].im);
         z.im += (x[i].re*y[i].im + x[i].im*y[i].re);
     }
+    /*endfor*/
     return z;
 }
 /*- End of function --------------------------------------------------------*/
@@ -154,6 +161,7 @@ SPAN_DECLARE(complex_t) cvec_dot_prod(const complex_t x[], const complex_t y[], 
         z.re += (x[i].re*y[i].re - x[i].im*y[i].im);
         z.im += (x[i].re*y[i].im + x[i].im*y[i].re);
     }
+    /*endfor*/
     return z;
 }
 /*- End of function --------------------------------------------------------*/
@@ -170,6 +178,7 @@ SPAN_DECLARE(complexl_t) cvec_dot_prodl(const complexl_t x[], const complexl_t y
         z.re += (x[i].re*y[i].re - x[i].im*y[i].im);
         z.im += (x[i].re*y[i].im + x[i].im*y[i].re);
     }
+    /*endfor*/
     return z;
 }
 /*- End of function --------------------------------------------------------*/
@@ -199,6 +208,7 @@ SPAN_DECLARE(void) cvec_lmsf(const complexf_t x[], complexf_t y[], int n, const 
         y[i].re = y[i].re*LMS_LEAK_RATE + (x[i].im*error->im + x[i].re*error->re);
         y[i].im = y[i].im*LMS_LEAK_RATE + (x[i].re*error->im - x[i].im*error->re);
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 

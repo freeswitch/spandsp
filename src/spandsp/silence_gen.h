@@ -54,7 +54,7 @@ SPAN_DECLARE(void) silence_gen_always(silence_gen_state_t *s);
     \param s The silence generator context.
     \param silent_samples The number of samples to be generated.
 */
-SPAN_DECLARE(void) silence_gen_set(silence_gen_state_t *s, int silent_samples);
+SPAN_DECLARE(void) silence_gen_set(silence_gen_state_t *s, span_sample_timer_t silent_samples);
 
 /*! Alter the period of a silence generator context by a specified amount.
     \brief Alter the period of a silence generator context by a specified amount.
@@ -63,28 +63,28 @@ SPAN_DECLARE(void) silence_gen_set(silence_gen_state_t *s, int silent_samples);
                           increases the duration. A negative number reduces it. The duration
                           is prevented from going negative.
 */
-SPAN_DECLARE(void) silence_gen_alter(silence_gen_state_t *s, int silent_samples);
+SPAN_DECLARE(void) silence_gen_alter(silence_gen_state_t *s, span_sample_timer_t silent_samples);
 
 /*! Find how long a silence generator context has to run.
     \brief Find how long a silence generator context has to run.
     \param s The silence generator context.
     \return The number of samples remaining.
 */
-SPAN_DECLARE(int) silence_gen_remainder(silence_gen_state_t *s);
+SPAN_DECLARE(span_sample_timer_t) silence_gen_remainder(silence_gen_state_t *s);
 
 /*! Find the total silence generated to date by a silence generator context.
     \brief Find the total silence generated to date.
     \param s The silence generator context.
     \return The number of samples generated.
 */
-SPAN_DECLARE(int) silence_gen_generated(silence_gen_state_t *s);
+SPAN_DECLARE(span_sample_timer_t) silence_gen_generated(silence_gen_state_t *s);
 
 /*! Change the status reporting function associated with a silence generator context.
     \brief Change the status reporting function associated with a silence generator context.
     \param s The silence generator context.
     \param handler The callback routine used to report status changes.
     \param user_data An opaque pointer. */
-SPAN_DECLARE(void) silence_gen_status_handler(silence_gen_state_t *s, modem_status_func_t handler, void *user_data);
+SPAN_DECLARE(void) silence_gen_status_handler(silence_gen_state_t *s, span_modem_status_func_t handler, void *user_data);
 
 /*! Initialise a timed silence generator context.
     \brief Initialise a timed silence generator context.
@@ -92,7 +92,7 @@ SPAN_DECLARE(void) silence_gen_status_handler(silence_gen_state_t *s, modem_stat
     \param silent_samples The initial number of samples to set the silence to.
     \return A pointer to the silence generator context.
 */
-SPAN_DECLARE(silence_gen_state_t *) silence_gen_init(silence_gen_state_t *s, int silent_samples);
+SPAN_DECLARE(silence_gen_state_t *) silence_gen_init(silence_gen_state_t *s, span_sample_timer_t silent_samples);
 
 SPAN_DECLARE(int) silence_gen_release(silence_gen_state_t *s);
 

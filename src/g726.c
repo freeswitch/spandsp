@@ -251,6 +251,7 @@ static __inline__ int16_t predictor_zero(g726_state_t *s)
     /* ACCUM */
     for (i = 1;  i < 6;  i++)
         sezi += fmult(s->b[i] >> 2, s->dq[i]);
+    /*endfor*/
     return (int16_t) sezi;
 }
 /*- End of function --------------------------------------------------------*/
@@ -282,6 +283,7 @@ static int step_size(g726_state_t *s)
         y += (dif*al) >> 6;
     else if (dif < 0)
         y += (dif*al + 0x3F) >> 6;
+    /*endif*/
     return y;
 }
 /*- End of function --------------------------------------------------------*/
@@ -334,18 +336,22 @@ static int16_t quantize(int d,                  /* Raw difference signal sample 
     {
         if (dln < table[i])
             break;
+        /*endif*/
     }
+    /*endfor*/
     if (d < 0)
     {
         /* Take 1's complement of i */
         return (int16_t) ((size << 1) + 1 - i);
     }
+    /*endif*/
     if (i == 0  &&  (quantizer_states & 1))
     {
         /* Zero is only valid if there are an even number of states, so
            take the 1's complement if the code is zero. */
         return (int16_t) quantizer_states;
     }
+    /*endif*/
     return (int16_t) i;
 }
 /*- End of function --------------------------------------------------------*/
@@ -368,6 +374,7 @@ static int16_t reconstruct(int sign,    /* 0 for non-negative value */
 
     if (dql < 0)
         return ((sign)  ?  -0x8000  :  0);
+    /*endif*/
     /* ANTILOG */
     dex = (dql >> 7) & 15;
     dqt = 128 + (dql & 127);
@@ -419,6 +426,7 @@ static void update(g726_state_t *s,
         tr = false;                             /* treated as voice */
     else                                        /* signal is data (modem) */
         tr = true;
+    /*endif*/
 
     /*
      * Quantizer scale factor adaptation.
@@ -433,6 +441,7 @@ static void update(g726_state_t *s,
         s->yu = 544;
     else if (s->yu > 5120)
         s->yu = 5120;
+    /*endif*/
 
     /* FILTE & DELAY */
     /* update steady state step size multiplier */
@@ -471,6 +480,7 @@ static void update(g726_state_t *s,
                 a2p += 0xFF;
             else
                 a2p += fa1 >> 5;
+            /*endif*/
 
             if (pk0 ^ s->pk[1])
             {
@@ -481,14 +491,21 @@ static void update(g726_state_t *s,
                     a2p = 12288;
                 else
                     a2p -= 0x80;
+                /*endif*/
             }
-            else if (a2p <= -12416)
-                a2p = -12288;
-            else if (a2p >= 12160)
-                a2p = 12288;
             else
-                a2p += 0x80;
+            {
+                if (a2p <= -12416)
+                    a2p = -12288;
+                else if (a2p >= 12160)
+                    a2p = 12288;
+                else
+                    a2p += 0x80;
+                /*endif*/
+            }
+            /*endif*/
         }
+        /*endif*/
 
         /* TRIGB & DELAY */
         s->a[1] = a2p;
@@ -502,13 +519,16 @@ static void update(g726_state_t *s,
                 s->a[0] += 192;
             else
                 s->a[0] -= 192;
+            /*endif*/
         }
+        /*endif*/
         /* LIMD */
         a1ul = 15360 - a2p;
         if (s->a[0] < -a1ul)
             s->a[0] = -a1ul;
         else if (s->a[0] > a1ul)
             s->a[0] = a1ul;
+        /*endif*/
 
         /* UPB : update predictor zeros b[6] */
         for (i = 0;  i < 6;  i++)
@@ -522,9 +542,13 @@ static void update(g726_state_t *s,
                     s->b[i] += 128;
                 else
                     s->b[i] -= 128;
+                /*endif*/
             }
+            /*endif*/
         }
+        /*endfor*/
     }
+    /*endif*/
 
     for (i = 5;  i > 0;  i--)
         s->dq[i] = s->dq[i - 1];
@@ -562,6 +586,7 @@ static void update(g726_state_t *s,
     {
         s->sr[0] = (uint16_t) 0xFC20;
     }
+    /*endif*/
 
     /* DELAY A */
     s->pk[1] = s->pk[0];
@@ -574,6 +599,7 @@ static void update(g726_state_t *s,
         s->td = true;       /* signal may be data */
     else                    /* signal is voice */
         s->td = false;
+    /*endif*/
 
     /* Adaptation speed control. */
     /* FILTA */
@@ -591,6 +617,7 @@ static void update(g726_state_t *s,
         s->ap += (0x200 - s->ap) >> 4;
     else
         s->ap += (-s->ap) >> 4;
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -609,6 +636,7 @@ static int16_t tandem_adjust_alaw(int16_t sr,   /* decoder output linear PCM sam
 
     if (sr <= -32768)
         sr = -1;
+    /*endif*/
     sp = linear_to_alaw((sr >> 1) << 3);
     /* 16-bit prediction error */
     dx = (int16_t) ((alaw_to_linear(sp) >> 2) - se);
@@ -618,6 +646,7 @@ static int16_t tandem_adjust_alaw(int16_t sr,   /* decoder output linear PCM sam
         /* No adjustment of sp required */
         return (int16_t) sp;
     }
+    /*endif*/
     /* sp adjustment needed */
     /* ADPCM codes : 8, 9, ... F, 0, 1, ... , 6, 7 */
     /* 2's complement to biased unsigned */
@@ -628,6 +657,7 @@ static int16_t tandem_adjust_alaw(int16_t sr,   /* decoder output linear PCM sam
             sd = (sp == 0xD5)  ?  0x55  :  (((sp ^ 0x55) - 1) ^ 0x55);
         else
             sd = (sp == 0x2A)  ?  0x2A  :  (((sp ^ 0x55) + 1) ^ 0x55);
+        /*endif*/
     }
     else
     {
@@ -636,7 +666,9 @@ static int16_t tandem_adjust_alaw(int16_t sr,   /* decoder output linear PCM sam
             sd = (sp == 0xAA)  ?  0xAA  :  (((sp ^ 0x55) + 1) ^ 0x55);
         else
             sd = (sp == 0x55)  ?  0xD5  :  (((sp ^ 0x55) - 1) ^ 0x55);
+        /*endif*/
     }
+    /*endif*/
     return (int16_t) sd;
 }
 /*- End of function --------------------------------------------------------*/
@@ -656,6 +688,7 @@ static int16_t tandem_adjust_ulaw(int16_t sr,   /* decoder output linear PCM sam
 
     if (sr <= -32768)
         sr = 0;
+    /*endif*/
     sp = linear_to_ulaw(sr << 2);
     /* 16-bit prediction error */
     dx = (int16_t) ((ulaw_to_linear(sp) >> 2) - se);
@@ -665,6 +698,7 @@ static int16_t tandem_adjust_ulaw(int16_t sr,   /* decoder output linear PCM sam
         /* No adjustment of sp required. */
         return (int16_t) sp;
     }
+    /*endif*/
     /* ADPCM codes : 8, 9, ... F, 0, 1, ... , 6, 7 */
     /* 2's complement to biased unsigned */
     if ((id ^ sign) > (i ^ sign))
@@ -674,6 +708,7 @@ static int16_t tandem_adjust_ulaw(int16_t sr,   /* decoder output linear PCM sam
             sd = (sp == 0xFF)  ?  0x7E  :  (sp + 1);
         else
             sd = (sp == 0x00)  ?  0x00  :  (sp - 1);
+        /*endif*/
     }
     else
     {
@@ -682,7 +717,9 @@ static int16_t tandem_adjust_ulaw(int16_t sr,   /* decoder output linear PCM sam
             sd = (sp == 0x80)  ?  0x80  :  (sp - 1);
         else
             sd = (sp == 0x7F)  ?  0xFE  :  (sp + 1);
+        /*endif*/
     }
+    /*endif*/
     return (int16_t) sd;
 }
 /*- End of function --------------------------------------------------------*/
@@ -761,6 +798,7 @@ static int16_t g726_16_decoder(g726_state_t *s, uint8_t code)
     case G726_ENCODING_ULAW:
         return tandem_adjust_ulaw(sr, se, y, code, 2, qtab_726_16, 4);
     }
+    /*endswitch*/
     return (sr << 2);
 }
 /*- End of function --------------------------------------------------------*/
@@ -839,6 +877,7 @@ static int16_t g726_24_decoder(g726_state_t *s, uint8_t code)
     case G726_ENCODING_ULAW:
         return tandem_adjust_ulaw(sr, se, y, code, 4, qtab_726_24, 7);
     }
+    /*endswitch*/
     return (sr << 2);
 }
 /*- End of function --------------------------------------------------------*/
@@ -917,6 +956,7 @@ static int16_t g726_32_decoder(g726_state_t *s, uint8_t code)
     case G726_ENCODING_ULAW:
         return tandem_adjust_ulaw(sr, se, y, code, 8, qtab_726_32, 15);
     }
+    /*endswitch*/
     return (sr << 2);
 }
 /*- End of function --------------------------------------------------------*/
@@ -996,80 +1036,8 @@ static int16_t g726_40_decoder(g726_state_t *s, uint8_t code)
     case G726_ENCODING_ULAW:
         return tandem_adjust_ulaw(sr, se, y, code, 0x10, qtab_726_40, 31);
     }
+    /*endswitch*/
     return (sr << 2);
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(g726_state_t *) g726_init(g726_state_t *s, int bit_rate, int ext_coding, int packing)
-{
-    int i;
-
-    if (bit_rate != 16000  &&  bit_rate != 24000  &&  bit_rate != 32000  &&  bit_rate != 40000)
-        return NULL;
-    if (s == NULL)
-    {
-        if ((s = (g726_state_t *) span_alloc(sizeof(*s))) == NULL)
-            return NULL;
-    }
-    s->yl = 34816;
-    s->yu = 544;
-    s->dms = 0;
-    s->dml = 0;
-    s->ap = 0;
-    s->rate = bit_rate;
-    s->ext_coding = ext_coding;
-    s->packing = packing;
-    for (i = 0; i < 2; i++)
-    {
-        s->a[i] = 0;
-        s->pk[i] = 0;
-        s->sr[i] = 32;
-    }
-    for (i = 0; i < 6; i++)
-    {
-        s->b[i] = 0;
-        s->dq[i] = 32;
-    }
-    s->td = false;
-    switch (bit_rate)
-    {
-    case 16000:
-        s->enc_func = g726_16_encoder;
-        s->dec_func = g726_16_decoder;
-        s->bits_per_sample = 2;
-        break;
-    case 24000:
-        s->enc_func = g726_24_encoder;
-        s->dec_func = g726_24_decoder;
-        s->bits_per_sample = 3;
-        break;
-    case 32000:
-    default:
-        s->enc_func = g726_32_encoder;
-        s->dec_func = g726_32_decoder;
-        s->bits_per_sample = 4;
-        break;
-    case 40000:
-        s->enc_func = g726_40_encoder;
-        s->dec_func = g726_40_decoder;
-        s->bits_per_sample = 5;
-        break;
-    }
-    bitstream_init(&s->bs, (s->packing != G726_PACKING_LEFT));
-    return s;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) g726_release(g726_state_t *s)
-{
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) g726_free(g726_state_t *s)
-{
-    span_free(s);
-    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1094,9 +1062,11 @@ SPAN_DECLARE(int) g726_decode(g726_state_t *s,
                 {
                     if (i >= g726_bytes)
                         break;
+                    /*endif*/
                     s->bs.bitstream |= (g726_data[i++] << s->bs.residue);
                     s->bs.residue += 8;
                 }
+                /*endif*/
                 code = (uint8_t) (s->bs.bitstream & ((1 << s->bits_per_sample) - 1));
                 s->bs.bitstream >>= s->bits_per_sample;
             }
@@ -1106,25 +1076,32 @@ SPAN_DECLARE(int) g726_decode(g726_state_t *s,
                 {
                     if (i >= g726_bytes)
                         break;
+                    /*endif*/
                     s->bs.bitstream = (s->bs.bitstream << 8) | g726_data[i++];
                     s->bs.residue += 8;
                 }
+                /*endif*/
                 code = (uint8_t) ((s->bs.bitstream >> (s->bs.residue - s->bits_per_sample)) & ((1 << s->bits_per_sample) - 1));
             }
+            /*endif*/
             s->bs.residue -= s->bits_per_sample;
         }
         else
         {
             if (i >= g726_bytes)
                 break;
+            /*endif*/
             code = g726_data[i++];
         }
+        /*endif*/
         sl = s->dec_func(s, code);
         if (s->ext_coding != G726_ENCODING_LINEAR)
             ((uint8_t *) amp)[samples++] = (uint8_t) sl;
         else
             amp[samples++] = (int16_t) sl;
+        /*endif*/
     }
+    /*endfor*/
     return samples;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1154,6 +1131,7 @@ SPAN_DECLARE(int) g726_encode(g726_state_t *s,
             sl = amp[i] >> 2;
             break;
         }
+        /*endswitch*/
         code = s->enc_func(s, sl);
         if (s->packing != G726_PACKING_NONE)
         {
@@ -1168,6 +1146,7 @@ SPAN_DECLARE(int) g726_encode(g726_state_t *s,
                     s->bs.bitstream >>= 8;
                     s->bs.residue -= 8;
                 }
+                /*endif*/
             }
             else
             {
@@ -1178,14 +1157,97 @@ SPAN_DECLARE(int) g726_encode(g726_state_t *s,
                     g726_data[g726_bytes++] = (uint8_t) ((s->bs.bitstream >> (s->bs.residue - 8)) & 0xFF);
                     s->bs.residue -= 8;
                 }
+                /*endif*/
             }
+            /*endif*/
         }
         else
         {
             g726_data[g726_bytes++] = (uint8_t) code;
         }
+        /*endif*/
     }
+    /*endfor*/
     return g726_bytes;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(g726_state_t *) g726_init(g726_state_t *s, int bit_rate, int ext_coding, int packing)
+{
+    int i;
+
+    if (bit_rate != 16000  &&  bit_rate != 24000  &&  bit_rate != 32000  &&  bit_rate != 40000)
+        return NULL;
+    /*endif*/
+    if (s == NULL)
+    {
+        if ((s = (g726_state_t *) span_alloc(sizeof(*s))) == NULL)
+            return NULL;
+        /*endif*/
+    }
+    /*endif*/
+    s->yl = 34816;
+    s->yu = 544;
+    s->dms = 0;
+    s->dml = 0;
+    s->ap = 0;
+    s->rate = bit_rate;
+    s->ext_coding = ext_coding;
+    s->packing = packing;
+    for (i = 0;  i < 2;  i++)
+    {
+        s->a[i] = 0;
+        s->pk[i] = 0;
+        s->sr[i] = 32;
+    }
+    /*endfor*/
+    for (i = 0;  i < 6;  i++)
+    {
+        s->b[i] = 0;
+        s->dq[i] = 32;
+    }
+    /*endfor*/
+    s->td = false;
+    switch (bit_rate)
+    {
+    case 16000:
+        s->enc_func = g726_16_encoder;
+        s->dec_func = g726_16_decoder;
+        s->bits_per_sample = 2;
+        break;
+    case 24000:
+        s->enc_func = g726_24_encoder;
+        s->dec_func = g726_24_decoder;
+        s->bits_per_sample = 3;
+        break;
+    case 32000:
+    default:
+        s->enc_func = g726_32_encoder;
+        s->dec_func = g726_32_decoder;
+        s->bits_per_sample = 4;
+        break;
+    case 40000:
+        s->enc_func = g726_40_encoder;
+        s->dec_func = g726_40_decoder;
+        s->bits_per_sample = 5;
+        break;
+    }
+    /*endswitch*/
+    bitstream_init(&s->bs, (s->packing != G726_PACKING_LEFT));
+    return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) g726_release(g726_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) g726_free(g726_state_t *s)
+{
+    span_free(s);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

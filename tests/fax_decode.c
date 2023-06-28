@@ -436,6 +436,7 @@ static void v17_put_bit(void *user_data, int bit)
             t4_end();
             if (fast_trained == FAX_V17_RX)
                 fast_trained = FAX_NONE;
+            /*endif*/
             break;
         }
         /*endswitch*/
@@ -479,6 +480,7 @@ static void v29_put_bit(void *user_data, int bit)
             t4_end();
             if (fast_trained == FAX_V29_RX)
                 fast_trained = FAX_NONE;
+            /*endif*/
             break;
         }
         /*endswitch*/
@@ -496,6 +498,7 @@ static void v29_put_bit(void *user_data, int bit)
             t4_end();
             if (!end_of_page_detected)
                 fprintf(stderr, "End of page detected\n");
+            /*endif*/
             end_of_page_detected = true;
         }
         /*endif*/
@@ -521,6 +524,7 @@ static void v27ter_put_bit(void *user_data, int bit)
             t4_end();
             if (fast_trained == FAX_V27TER_RX)
                 fast_trained = FAX_NONE;
+            /*endif*/
             break;
         }
         /*endswitch*/
@@ -538,12 +542,40 @@ static void v27ter_put_bit(void *user_data, int bit)
             t4_end();
             if (!end_of_page_detected)
                 fprintf(stderr, "End of page detected\n");
+            /*endif*/
             end_of_page_detected = true;
         }
         /*endif*/
     }
     /*endif*/
     //printf("V.27ter Rx bit %d - %d\n", rx_bits++, bit);
+}
+/*- End of function --------------------------------------------------------*/
+
+static void decode_t30_message(bool t30_decode_reversed)
+{
+    int i;
+    unsigned int hex;
+    char buf[1024];
+    uint8_t bytes[1024];
+
+    /* Decode T.30 messages entered as a string of hex byte values in the form xx xx xx */
+    while (fgets(buf, 1024, stdin))
+    {
+        for (i = 0;  i < 256;  i++)
+        {
+            if (sscanf(&buf[3*i], "%x", &hex) != 1)
+                break;
+            /*endif*/
+            if (t30_decode_reversed)
+                hex = bit_reverse8(hex);
+            /*endif*/
+            bytes[i] = hex;
+        }
+        /*endfor*/
+        print_frame("", bytes, i);
+    }
+    /*endwhile*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -563,10 +595,6 @@ int main(int argc, char *argv[])
     int opt;
     bool t30_decode_reversed;
     bool t30_decode;
-    int i;
-    unsigned int hex;
-    char buf[1024];
-    uint8_t bytes[1024];
 
     filename = "fax_samp.wav";
     t30_decode_reversed = false;
@@ -695,27 +723,11 @@ int main(int argc, char *argv[])
 
     if (t30_decode)
     {
-        /* Decode T.30 messages entered as a string of hex byte values in the form xx xx xx */
-        while (fgets(buf, 1024, stdin))
-        {
-            for (i = 0;  i < 256;  i++)
-            {
-                if (sscanf(&buf[3*i], "%x", &hex) != 1)
-                    break;
-                /*endif*/
-                if (t30_decode_reversed)
-                    hex = bit_reverse8(hex);
-                /*endif*/
-                bytes[i] = hex;
-            }
-            /*endfor*/
-            print_frame("", bytes, i);
-        }
-        /*endwhile*/
+        decode_t30_message(t30_decode_reversed);
         exit(0);
     }
     /*endif*/
-    
+
     memset(&info, 0, sizeof(info));
     if ((inhandle = sf_open(filename, SFM_READ, &info)) == NULL)
     {
@@ -744,11 +756,11 @@ int main(int argc, char *argv[])
     v27ter_4800 = v27ter_rx_init(NULL, 4800, v27ter_put_bit, NULL);
     v27ter_2400 = v27ter_rx_init(NULL, 2400, v27ter_put_bit, NULL);
 
-    fsk_rx_signal_cutoff(fsk, -45.5);
-    v17_rx_signal_cutoff(v17, -45.5);
-    v29_rx_signal_cutoff(v29, -45.5);
-    v27ter_rx_signal_cutoff(v27ter_4800, -40.0);
-    v27ter_rx_signal_cutoff(v27ter_2400, -40.0);
+    fsk_rx_set_signal_cutoff(fsk, -45.5);
+    v17_rx_set_signal_cutoff(v17, -45.5);
+    v29_rx_set_signal_cutoff(v29, -45.5);
+    v27ter_rx_set_signal_cutoff(v27ter_4800, -40.0);
+    v27ter_rx_set_signal_cutoff(v27ter_2400, -40.0);
 
 #if 1
     logging = v17_rx_get_logging_state(v17);

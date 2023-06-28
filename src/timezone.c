@@ -136,11 +136,13 @@ static void set_tzname(tz_t *tz)
         ttisp = &sp->ttis[i];
         tz->tzname[ttisp->isdst] = &sp->chars[ttisp->abbrind];
     }
+    /*endfor*/
     for (i = 0;  i < sp->timecnt;  i++)
     {
         ttisp = &sp->ttis[sp->types[i]];
         tz->tzname[ttisp->isdst] = &sp->chars[ttisp->abbrind];
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -191,11 +193,15 @@ static struct tm *time_sub(const time_t * const timep, const long int offset, co
                         hit++;
                         --i;
                     }
+                    /*endwhile*/
                 }
+                /*endif*/
             }
+            /*endif*/
             corr = lp->corr;
             break;
         }
+        /*endif*/
     }
     y = EPOCH_YEAR;
     tdays = *timep/SECS_PER_DAY;
@@ -206,16 +212,20 @@ static struct tm *time_sub(const time_t * const timep, const long int offset, co
         idelta = tdelta;
         if (tdelta - idelta >= 1  ||  idelta - tdelta >= 1)
             return NULL;
+        /*endif*/
         if (idelta == 0)
             idelta = (tdays < 0)  ?  -1  :  1;
+        /*endif*/
         newy = y;
         if (add_with_overflow_detection(&newy, idelta))
             return NULL;
+        /*endif*/
         leapdays = leaps_thru_end_of(newy - 1) - leaps_thru_end_of(y - 1);
         tdays -= ((time_t) newy - y)*DAYS_PER_NON_LEAP_YEAR;
         tdays -= leapdays;
         y = newy;
     }
+    /*endwhile*/
     seconds = tdays*SECS_PER_DAY;
     tdays = seconds/SECS_PER_DAY;
     rem += seconds - tdays*SECS_PER_DAY;
@@ -227,26 +237,33 @@ static struct tm *time_sub(const time_t * const timep, const long int offset, co
         rem += SECS_PER_DAY;
         idays--;
     }
+    /*endwhile*/
     while (rem >= SECS_PER_DAY)
     {
         rem -= SECS_PER_DAY;
         idays++;
     }
+    /*endwhile*/
     while (idays < 0)
     {
         if (add_with_overflow_detection(&y, -1))
             return NULL;
+        /*endif*/
         idays += year_lengths[isleap(y)];
     }
+    /*endwhile*/
     while (idays >= year_lengths[isleap(y)])
     {
         idays -= year_lengths[isleap(y)];
         if (add_with_overflow_detection(&y, 1))
             return NULL;
+        /*endif*/
     }
+    /*endwhile*/
     tmp->tm_year = y;
     if (add_with_overflow_detection(&tmp->tm_year, -TM_YEAR_BASE))
         return NULL;
+    /*endif*/
     tmp->tm_yday = idays;
     /* The "extra" mods below avoid overflow problems. */
     tmp->tm_wday = EPOCH_WDAY
@@ -257,6 +274,7 @@ static struct tm *time_sub(const time_t * const timep, const long int offset, co
     tmp->tm_wday %= DAYS_PER_WEEK;
     if (tmp->tm_wday < 0)
         tmp->tm_wday += DAYS_PER_WEEK;
+    /*endif*/
     tmp->tm_hour = (int) (rem/SECS_PER_HOUR);
     rem %= SECS_PER_HOUR;
     tmp->tm_min = (int) (rem/SECS_PER_MIN);
@@ -266,6 +284,7 @@ static struct tm *time_sub(const time_t * const timep, const long int offset, co
     ip = mon_lengths[isleap(y)];
     for (tmp->tm_mon = 0;  idays >= ip[tmp->tm_mon];  (tmp->tm_mon)++)
         idays -= ip[tmp->tm_mon];
+    /*endfor*/
     tmp->tm_mday = (int) (idays + 1);
     tmp->tm_isdst = 0;
     return tmp;
@@ -281,6 +300,7 @@ static const char *get_tzname(const char *strp)
 
     while ((c = *strp) != '\0'  &&  !is_digit(c)  &&  c != ','  &&  c != '-'  &&  c != '+')
         strp++;
+    /*endwhile*/
     return strp;
 }
 /*- End of function --------------------------------------------------------*/
@@ -296,17 +316,20 @@ static const char *get_num(const char *strp, int * const nump, const int min, co
 
     if (strp == NULL  ||  !is_digit(c = *strp))
         return NULL;
+    /*endif*/
     num = 0;
     do
     {
         num = num*10 + (c - '0');
         if (num > max)
             return NULL;    /* Illegal value */
+        /*endif*/
         c = *++strp;
     }
     while (is_digit(c));
     if (num < min)
         return NULL;        /* Illegal value */
+    /*endif*/
     *nump = num;
     return strp;
 }
@@ -328,12 +351,14 @@ static const char *get_secs(const char *strp, long int * const secsp)
     strp = get_num(strp, &num, 0, HOURS_PER_DAY*DAYS_PER_WEEK - 1);
     if (strp == NULL)
         return NULL;
+    /*endif*/
     *secsp = num*(long int) SECS_PER_HOUR;
     if (*strp == ':')
     {
         strp = get_num(strp + 1, &num, 0, MINS_PER_HOUR - 1);
         if (strp == NULL)
             return NULL;
+        /*endif*/
         *secsp += num*SECS_PER_MIN;
         if (*strp == ':')
         {
@@ -341,9 +366,12 @@ static const char *get_secs(const char *strp, long int * const secsp)
             strp = get_num(strp + 1, &num, 0, SECS_PER_MIN);
             if (strp == NULL)
                 return NULL;
+            /*endif*/
             *secsp += num;
         }
+        /*endif*/
     }
+    /*endif*/
     return strp;
 }
 /*- End of function --------------------------------------------------------*/
@@ -365,11 +393,14 @@ static const char *get_offset(const char *strp, long int * const offsetp)
     {
         strp++;
     }
+    /*endif*/
     strp = get_secs(strp, offsetp);
     if (strp == NULL)
         return NULL;        /* Illegal time */
+    /*endif*/
     if (neg)
         *offsetp = -*offsetp;
+    /*endif*/
     return strp;
 }
 /*- End of function --------------------------------------------------------*/
@@ -393,9 +424,11 @@ static const char *get_rule(const char *strp, struct tz_rule_s * const rulep)
         strp = get_num(strp + 1, &rulep->r_mon, 1, MONTHS_PER_YEAR);
         if (strp == NULL  ||  *strp++ != '.')
             return NULL;
+        /*endif*/
         strp = get_num(strp, &rulep->r_week, 1, 5);
         if (strp == NULL  ||  *strp++ != '.')
             return NULL;
+        /*endif*/
         strp = get_num(strp, &rulep->r_day, 0, DAYS_PER_WEEK - 1);
     }
     else if (is_digit(*strp))
@@ -409,8 +442,10 @@ static const char *get_rule(const char *strp, struct tz_rule_s * const rulep)
         /* Invalid format */
         return NULL;
     }
+    /*endif*/
     if (strp == NULL)
         return NULL;
+    /*endif*/
     if (*strp == '/')
     {
         /* Time specified. */
@@ -421,6 +456,7 @@ static const char *get_rule(const char *strp, struct tz_rule_s * const rulep)
         /* Default = 2:00:00 */
         rulep->r_time = 2*SECS_PER_HOUR;
     }
+    /*endif*/
     return strp;
 }
 /*- End of function --------------------------------------------------------*/
@@ -453,6 +489,7 @@ static time_t trans_time(const time_t janfirst, const int year, const struct tz_
         value = janfirst + (rulep->r_day - 1)*SECS_PER_DAY;
         if (leapyear  &&  rulep->r_day >= 60)
             value += SECS_PER_DAY;
+        /*endif*/
         break;
     case DAY_OF_YEAR:
         /* n - day of year.
@@ -465,6 +502,7 @@ static time_t trans_time(const time_t janfirst, const int year, const struct tz_
         value = janfirst;
         for (i = 0;  i < rulep->r_mon - 1;  i++)
             value += mon_lengths[leapyear][i]*SECS_PER_DAY;
+        /*endfor*/
 
         /* Use Zeller's Congruence to get day-of-week of first day of month. */
         m1 = (rulep->r_mon + 9)%12 + 1;
@@ -474,6 +512,7 @@ static time_t trans_time(const time_t janfirst, const int year, const struct tz_
         dow = ((26*m1 - 2)/10 + 1 + yy2 + yy2/4 + yy1/4 - 2*yy1)%7;
         if (dow < 0)
             dow += DAYS_PER_WEEK;
+        /*endif*/
 
         /* "dow" is the day-of-week of the first day of the month. Get
          * the day-of-month (zero-origin) of the first "dow" day of the
@@ -481,17 +520,23 @@ static time_t trans_time(const time_t janfirst, const int year, const struct tz_
         d = rulep->r_day - dow;
         if (d < 0)
             d += DAYS_PER_WEEK;
+        /*endif*/
         for (i = 1;  i < rulep->r_week;  i++)
         {
             if (d + DAYS_PER_WEEK >= mon_lengths[leapyear][rulep->r_mon - 1])
                 break;
+            /*endif*/
             d += DAYS_PER_WEEK;
         }
+        /*endfor*/
 
         /* "d" is the day-of-month (zero-origin) of the day we want. */
         value += d*SECS_PER_DAY;
         break;
+    default:
+        break;
     }
+    /*endswitch*/
 
     /* "value" is the Epoch-relative time of 00:00:00 UTC on the day in
      * question. To get the Epoch-relative time of the specified local
@@ -536,6 +581,7 @@ static int tzparse(const char *name, struct tz_state_s * const sp, const int las
         name += stdlen;
         if (stdlen >= sizeof(sp->chars))
             stdlen = sizeof(sp->chars) - 1;
+        /*endif*/
         stdoffset = 0;
     }
     else
@@ -544,15 +590,19 @@ static int tzparse(const char *name, struct tz_state_s * const sp, const int las
         stdlen = name - stdname;
         if (stdlen < 3)
             return -1;
+        /*endif*/
         if (*name == '\0')
             return -1;
+        /*endif*/
         name = get_offset(name, &stdoffset);
         if (name == NULL)
             return -1;
+        /*endif*/
     }
     load_result = -1;
     if (load_result != 0)
         sp->leapcnt = 0;            /* So, we're off a little */
+    /*endif*/
     if (*name != '\0')
     {
         dstname = name;
@@ -560,27 +610,35 @@ static int tzparse(const char *name, struct tz_state_s * const sp, const int las
         dstlen = name - dstname;    /* Length of DST zone name */
         if (dstlen < 3)
             return -1;
+        /*endif*/
         if (*name != '\0'  &&  *name != ','  &&  *name != ';')
         {
             if ((name = get_offset(name, &dstoffset)) == NULL)
                 return -1;
+            /*endif*/
         }
         else
         {
             dstoffset = stdoffset - SECS_PER_HOUR;
         }
+        /*endif*/
         if (*name == '\0'  &&  load_result != 0)
             name = TZ_DEF_RULE_STRING;
+        /*endif*/
         if (*name == ','  ||  *name == ';')
         {
             if ((name = get_rule(name + 1, &start)) == NULL)
                 return -1;
+            /*endif*/
             if (*name++ != ',')
                 return -1;
+            /*endif*/
             if ((name = get_rule(name, &end)) == NULL)
                 return -1;
+            /*endif*/
             if (*name != '\0')
                 return -1;
+            /*endif*/
             sp->typecnt = 2;        /* Standard time and DST */
             /* Two transitions per year, from EPOCH_YEAR to 2037. */
             sp->timecnt = 2*(2037 - EPOCH_YEAR + 1);
@@ -613,13 +671,16 @@ static int tzparse(const char *name, struct tz_state_s * const sp, const int las
                     *atp++ = endtime;
                     *typep++ = 1;    /* DST ends */
                 }
+                /*endif*/
                 janfirst += year_lengths[isleap(year)]*SECS_PER_DAY;
             }
+            /*endfor*/
         }
         else
         {
             if (*name != '\0')
                 return -1;
+            /*endif*/
             /* Initial values of theirstdoffset and theirdstoffset. */
             theirstdoffset = 0;
             for (i = 0;  i < sp->timecnt;  i++)
@@ -630,7 +691,9 @@ static int tzparse(const char *name, struct tz_state_s * const sp, const int las
                     theirstdoffset = -sp->ttis[j].gmtoff;
                     break;
                 }
+                /*endif*/
             }
+            /*endfor*/
             theirdstoffset = 0;
             for (i = 0;  i < sp->timecnt;  i++)
             {
@@ -640,7 +703,9 @@ static int tzparse(const char *name, struct tz_state_s * const sp, const int las
                     theirdstoffset = -sp->ttis[j].gmtoff;
                     break;
                 }
+                /*endif*/
             }
+            /*endfor*/
             /* Initially we're assumed to be in standard time. */
             isdst = false;
             /* Now juggle transition times and types tracking offsets as you do. */
@@ -674,7 +739,9 @@ static int tzparse(const char *name, struct tz_state_s * const sp, const int las
                     theirdstoffset = theiroffset;
                 else
                     theirstdoffset = theiroffset;
+                /*endif*/
             }
+            /*endfor*/
             /* Finally, fill in ttis. ttisstd and ttisgmt need not be handled. */
             sp->ttis[0].gmtoff = -stdoffset;
             sp->ttis[0].isdst = false;
@@ -694,11 +761,14 @@ static int tzparse(const char *name, struct tz_state_s * const sp, const int las
         sp->ttis[0].isdst = 0;
         sp->ttis[0].abbrind = 0;
     }
+    /*endif*/
     sp->charcnt = stdlen + 1;
     if (dstlen != 0)
         sp->charcnt += dstlen + 1;
+    /*endif*/
     if ((size_t) sp->charcnt > sizeof(sp->chars))
         return -1;
+    /*endif*/
     cp = sp->chars;
     strncpy(cp, stdname, stdlen);
     cp += stdlen;
@@ -708,6 +778,7 @@ static int tzparse(const char *name, struct tz_state_s * const sp, const int las
         strncpy(cp, dstname, dstlen);
         cp[dstlen] = '\0';
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -719,13 +790,16 @@ static void tz_set(tz_t *tz, const char *tzstring)
 
     if (tzstring)
         name = tzstring;
+    /*endif*/
 
     /* See if we are already set OK */
     if (tz->lcl_is_set > 0  &&  strcmp(tz->lcl_tzname, name) == 0)
         return;
+    /*endif*/
     tz->lcl_is_set = strlen(name) < sizeof(tz->lcl_tzname);
     if (tz->lcl_is_set)
         strcpy(tz->lcl_tzname, name);
+    /*endif*/
 
     if (name[0] == '\0')
     {
@@ -742,6 +816,7 @@ static void tz_set(tz_t *tz, const char *tzstring)
     {
         tzparse(gmt, lclptr, true);
     }
+    /*endif*/
     set_tzname(tz);
 }
 /*- End of function --------------------------------------------------------*/
@@ -764,7 +839,9 @@ SPAN_DECLARE(int) tz_localtime(tz_t *tz, struct tm *tmp, time_t t)
                 i = 0;
                 break;
             }
+            /*endif*/
         }
+        /*endwhile*/
     }
     else
     {
@@ -772,9 +849,12 @@ SPAN_DECLARE(int) tz_localtime(tz_t *tz, struct tm *tmp, time_t t)
         {
             if (t < sp->ats[i])
                 break;
+            /*endif*/
         }
+        /*endfor*/
         i = (int) sp->types[i - 1];
     }
+    /*endif*/
     ttisp = &sp->ttis[i];
     time_sub(&t, ttisp->gmtoff, sp, tmp);
     tmp->tm_isdst = ttisp->isdst;
@@ -795,7 +875,9 @@ SPAN_DECLARE(tz_t *) tz_init(tz_t *tz, const char *tzstring)
     {
         if ((tz = (tz_t *) span_alloc(sizeof(*tz))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(tz, 0, sizeof(*tz));
     tz->tzname[0] =
     tz->tzname[1] = wildabbr;
@@ -814,6 +896,7 @@ SPAN_DECLARE(int) tz_free(tz_t *tz)
 {
     if (tz)
         span_free(tz);
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

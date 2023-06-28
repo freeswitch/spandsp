@@ -127,6 +127,7 @@ SPAN_DECLARE(const char *) t4_compression_to_str(int compression)
     case T4_COMPRESSION_JPEG:
         return "JPEG";
     }
+    /*endswitch*/
     return "???";
 }
 /*- End of function --------------------------------------------------------*/
@@ -154,6 +155,7 @@ SPAN_DECLARE(const char *) t4_image_type_to_str(int type)
     case T4_IMAGE_TYPE_4COLOUR_12BIT:
         return "CMYK 12-bit colour";
     }
+    /*endswitch*/
     return "???";
 }
 /*- End of function --------------------------------------------------------*/
@@ -193,6 +195,7 @@ SPAN_DECLARE(const char *) t4_image_resolution_to_str(int resolution_code)
     case T4_RESOLUTION_1200_1200:
         return "1200dpi x 1200dpi";
     }
+    /*endswitch*/
     return "???";
 }
 /*- End of function --------------------------------------------------------*/
@@ -256,6 +259,7 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
             samples_per_pixel = 1;
             photometric = PHOTOMETRIC_MINISBLACK;
         }
+        /*endif*/
         break;
     case T4_COMPRESSION_T42_T81:
         output_compression = COMPRESSION_JPEG;
@@ -270,6 +274,7 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
             samples_per_pixel = 1;
             photometric = PHOTOMETRIC_MINISBLACK;
         }
+        /*endif*/
         break;
     case T4_COMPRESSION_SYCC_T81:
         output_compression = COMPRESSION_JPEG;
@@ -284,6 +289,7 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
             samples_per_pixel = 1;
             photometric = PHOTOMETRIC_MINISBLACK;
         }
+        /*endif*/
         break;
     case T4_COMPRESSION_T43:
         output_compression = COMPRESSION_T43;
@@ -300,6 +306,7 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
         break;
 #endif
     }
+    /*endswitch*/
 
     TIFFSetField(t->tiff_file, TIFFTAG_COMPRESSION, output_compression);
     switch (output_compression)
@@ -322,6 +329,7 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
         TIFFSetField(t->tiff_file, TIFFTAG_FAXMODE, FAXMODE_CLASSF);
         break;
     }
+    /*endswitch*/
     TIFFSetField(t->tiff_file, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
     TIFFSetField(t->tiff_file, TIFFTAG_BITSPERSAMPLE, bits_per_sample);
     TIFFSetField(t->tiff_file, TIFFTAG_SAMPLESPERPIXEL, samples_per_pixel);
@@ -343,6 +351,7 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
         TIFFSetField(t->tiff_file, TIFFTAG_JPEGCOLORMODE, JPEGCOLORMODE_RGB);
         break;
     }
+    /*endswitch*/
     /* TIFFTAG_STRIPBYTECOUNTS and TIFFTAG_STRIPOFFSETS are added automatically */
 
     x_resolution = s->metadata.x_resolution/100.0f;
@@ -363,19 +372,25 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
     TIFFSetField(t->tiff_file, TIFFTAG_SOFTWARE, "Spandsp " SPANDSP_RELEASE_DATETIME_STRING);
     if (gethostname(buf, sizeof(buf)) == 0)
         TIFFSetField(t->tiff_file, TIFFTAG_HOSTCOMPUTER, buf);
+    /*endif*/
 
 #if defined(TIFFTAG_FAXDCS)
     if (s->metadata.dcs)
         TIFFSetField(t->tiff_file, TIFFTAG_FAXDCS, s->metadata.dcs);
+    /*endif*/
 #endif
     if (s->metadata.sub_address)
         TIFFSetField(t->tiff_file, TIFFTAG_FAXSUBADDRESS, s->metadata.sub_address);
+    /*endif*/
     if (s->metadata.far_ident)
         TIFFSetField(t->tiff_file, TIFFTAG_IMAGEDESCRIPTION, s->metadata.far_ident);
+    /*endif*/
     if (s->metadata.vendor)
         TIFFSetField(t->tiff_file, TIFFTAG_MAKE, s->metadata.vendor);
+    /*endif*/
     if (s->metadata.model)
         TIFFSetField(t->tiff_file, TIFFTAG_MODEL, s->metadata.model);
+    /*endif*/
 
     time(&now);
     tm = localtime(&now);
@@ -417,6 +432,7 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
             s->metadata.image_length = length;
             break;
         }
+        /*endswitch*/
         break;
     case T4_COMPRESSION_T4_1D | T4_COMPRESSION_T4_2D | T4_COMPRESSION_T6:
         if ((s->metadata.compression & (T4_COMPRESSION_T4_1D | T4_COMPRESSION_T4_2D)))
@@ -434,8 +450,11 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
                 {
                     TIFFSetField(t->tiff_file, TIFFTAG_CLEANFAXDATA, CLEANFAXDATA_CLEAN);
                 }
+                /*endif*/
             }
+            /*endif*/
         }
+        /*endif*/
         s->metadata.image_length = t4_t6_decode_get_image_length(&s->decoder.t4_t6);
         break;
     case T4_COMPRESSION_T85 | T4_COMPRESSION_T85_L0:
@@ -458,6 +477,7 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
         break;
 #endif
     }
+    /*endswitch*/
     TIFFSetField(t->tiff_file, TIFFTAG_IMAGELENGTH, s->metadata.image_length);
     TIFFSetField(t->tiff_file, TIFFTAG_ROWSPERSTRIP, s->metadata.image_length);
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
@@ -507,6 +527,7 @@ static int open_tiff_output_file(t4_rx_state_t *s, const char *file)
 {
     if ((s->tiff.tiff_file = TIFFOpen(file, "w")) == NULL)
         return -1;
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -537,8 +558,10 @@ static int write_tiff_t85_image(t4_rx_state_t *s)
     packer.ptr = 0;
     if (t85_encode_init(&t85, s->metadata.image_width, s->metadata.image_length, row_read_handler, &packer) == NULL)
         return -1;
+    /*endif*/
     //if (t->compression == T4_COMPRESSION_T85_L0)
     //    t85_encode_set_options(&t85, 256, -1, -1);
+    /*endif*/
     buf = NULL;
     buf_len = 0;
     image_len = 0;
@@ -551,10 +574,13 @@ static int write_tiff_t85_image(t4_rx_state_t *s)
             {
                 if (buf)
                     span_free(buf);
+                /*endif*/
                 return -1;
             }
+            /*endif*/
             buf = buf2;
         }
+        /*endif*/
         len = t85_encode_get(&t85, &buf[image_len], buf_len - image_len);
         image_len += len;
     }
@@ -564,6 +590,7 @@ static int write_tiff_t85_image(t4_rx_state_t *s)
         span_log(&s->logging, SPAN_LOG_WARNING, "%s: Error writing TIFF strip.\n", s->tiff.file);
         return -1;
     }
+    /*endif*/
     t85_encode_release(&t85);
     span_free(buf);
     return 0;
@@ -584,6 +611,7 @@ static int write_tiff_t43_image(t4_rx_state_t *s)
     packer.ptr = 0;
     if (t43_encode_init(&t43, s->metadata.image_width, s->metadata.image_length, row_read_handler, &packer) == NULL)
         return -1;
+    /*endif*/
     buf = NULL;
     buf_len = 0;
     image_len = 0;
@@ -596,16 +624,20 @@ static int write_tiff_t43_image(t4_rx_state_t *s)
             {
                 if (buf)
                     span_free(buf);
+                /*endif*/
                 return -1;
             }
+            /*endif*/
             buf = buf2;
         }
+        /*endif*/
         len = t43_encode_get(&t43, &buf[image_len], buf_len - image_len);
         image_len += len;
     }
     while (len > 0);
     if (TIFFWriteRawStrip(s->tiff.tiff_file, 0, buf, image_len) < 0)
         span_log(&s->logging, SPAN_LOG_WARNING, "%s: Error writing TIFF strip.\n", s->tiff.file);
+    /*endif*/
     t43_encode_release(&t43);
     span_free(buf);
     return 0;
@@ -622,6 +654,7 @@ static int write_tiff_image(t4_rx_state_t *s)
     t = &s->tiff;
     if (s->decoder.no_decoder.buf_ptr <= 0  &&  (t->image_buffer == NULL  ||  t->image_size <= 0))
         return -1;
+    /*endif*/
     /* Set up the TIFF directory info... */
     set_tiff_directory_info(s);
     /* ...Put the directory in the file before the image data, to get them in the order specified
@@ -633,6 +666,7 @@ static int write_tiff_image(t4_rx_state_t *s)
     {
         if (TIFFWriteRawStrip(s->tiff.tiff_file, 0, s->decoder.no_decoder.buf, s->decoder.no_decoder.buf_ptr) < 0)
             span_log(&s->logging, SPAN_LOG_WARNING, "%s: Error writing TIFF strip.\n", s->tiff.file);
+        /*endif*/
     }
     else
     {
@@ -643,6 +677,7 @@ static int write_tiff_image(t4_rx_state_t *s)
             /* We need to perform this compression here, as libtiff does not understand it. */
             if (write_tiff_t85_image(s) < 0)
                 return -1;
+            /*endif*/
             break;
 #if defined(SPANDSP_SUPPORT_T88)
         case T4_COMPRESSION_T88:
@@ -655,6 +690,7 @@ static int write_tiff_image(t4_rx_state_t *s)
             /* We need to perform this compression here, as libtiff does not understand it. */
             if (write_tiff_t43_image(s) < 0)
                 return -1;
+            /*endif*/
             break;
 #if defined(SPANDSP_SUPPORT_T45)
         case T4_COMPRESSION_T45:
@@ -667,12 +703,16 @@ static int write_tiff_image(t4_rx_state_t *s)
             /* Let libtiff do the compression */
             if (TIFFWriteEncodedStrip(t->tiff_file, 0, t->image_buffer, t->image_size) < 0)
                 span_log(&s->logging, SPAN_LOG_WARNING, "%s: Error writing TIFF strip.\n", t->file);
+            /*endif*/
             break;
         }
+        /*endswitch*/
     }
+    /*endif*/
     /* ...then finalise the directory entry, and libtiff is happy. */
     if (!TIFFWriteDirectory(t->tiff_file))
         span_log(&s->logging, SPAN_LOG_WARNING, "%s: Failed to write directory for page %d.\n", t->file, s->current_page);
+    /*endif*/
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
     /* According to the TIFF/FX spec, a global parameters IFD should only be inserted into
        the first page in the file */
@@ -694,13 +734,18 @@ static int write_tiff_image(t4_rx_state_t *s)
             /* Now go back and patch in the pointer to the new IFD */
             if (!TIFFSetDirectory(t->tiff_file, s->current_page))
                 span_log(&s->logging, SPAN_LOG_WARNING, "Failed to set directory.\n");
+            /*endif*/
             if (!TIFFSetField(t->tiff_file, TIFFTAG_GLOBALPARAMETERSIFD, diroff))
                 span_log(&s->logging, SPAN_LOG_WARNING, "Failed to set field.\n");
+            /*endif*/
             if (!TIFFWriteDirectory(t->tiff_file))
                 span_log(&s->logging, SPAN_LOG_WARNING, "%s: Failed to write directory for page %d.\n", t->file, s->current_page);
+            /*endif*/
         }
+        /*endif*/
 #endif
     }
+    /*endif*/
 #endif
     return 0;
 }
@@ -723,11 +768,15 @@ static int close_tiff_output_file(t4_rx_state_t *s)
         {
             if (!TIFFSetDirectory(t->tiff_file, (tdir_t) i))
                 span_log(&s->logging, SPAN_LOG_WARNING, "%s: Failed to set directory to page %d.\n", s->tiff.file, i);
+            /*endif*/
             TIFFSetField(t->tiff_file, TIFFTAG_PAGENUMBER, i, s->current_page);
             if (!TIFFWriteDirectory(t->tiff_file))
                 span_log(&s->logging, SPAN_LOG_WARNING, "%s: Failed to write directory for page %d.\n", s->tiff.file, i);
+            /*endif*/
         }
+        /*endfor*/
     }
+    /*endif*/
     TIFFClose(t->tiff_file);
     t->tiff_file = NULL;
     if (s->tiff.file)
@@ -738,9 +787,12 @@ static int close_tiff_output_file(t4_rx_state_t *s)
         {
             if (remove(s->tiff.file) < 0)
                 span_log(&s->logging, SPAN_LOG_WARNING, "%s: Failed to remove file.\n", s->tiff.file);
+            /*endif*/
         }
+        /*endif*/
         span_free((char *) s->tiff.file);
     }
+    /*endif*/
     s->tiff.file = NULL;
     return 0;
 }
@@ -750,6 +802,7 @@ static void tiff_rx_release(t4_rx_state_t *s)
 {
     if (s->tiff.tiff_file)
         close_tiff_output_file(s);
+    /*endif*/
     if (s->tiff.image_buffer)
     {
         span_free(s->tiff.image_buffer);
@@ -757,6 +810,7 @@ static void tiff_rx_release(t4_rx_state_t *s)
         s->tiff.image_size = 0;
         s->tiff.image_buffer_size = 0;
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -786,6 +840,7 @@ static int pre_encoded_release(no_decoder_state_t *s)
 {
     if (s->buf)
         span_free(s->buf);
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -805,10 +860,13 @@ static int pre_encoded_put(no_decoder_state_t *s, const uint8_t data[], size_t l
                 s->buf = NULL;
                 s->buf_len = 0;
             }
+            /*endif*/
             return -1;
         }
+        /*endif*/
         s->buf = buf;
     }
+    /*endif*/
     memcpy(&s->buf[s->buf_ptr], data, len);
     s->buf_ptr += len;
     return T4_DECODE_MORE_DATA;
@@ -821,6 +879,7 @@ SPAN_DECLARE(int) t4_rx_put(t4_rx_state_t *s, const uint8_t buf[], size_t len)
 
     if (s->image_put_handler)
         return s->image_put_handler((void *) &s->decoder, buf, len);
+    /*endif*/
 
     return T4_DECODE_OK;
 }
@@ -880,6 +939,7 @@ static bool select_tiff_compression(t4_rx_state_t *s, int output_image_type)
         s->tiff.compression = s->metadata.compression;
         return false;
     }
+    /*endif*/
 
     if (output_image_type == T4_IMAGE_TYPE_BILEVEL)
     {
@@ -895,6 +955,7 @@ static bool select_tiff_compression(t4_rx_state_t *s, int output_image_type)
             s->tiff.compression = T4_COMPRESSION_T4_2D;
         else if ((s->supported_tiff_compressions & T4_COMPRESSION_T4_1D))
             s->tiff.compression = T4_COMPRESSION_T4_1D;
+        /*endif*/
     }
     else
     {
@@ -908,7 +969,9 @@ static bool select_tiff_compression(t4_rx_state_t *s, int output_image_type)
             s->tiff.compression = T4_COMPRESSION_T45;
         else if ((s->supported_tiff_compressions & T4_COMPRESSION_UNCOMPRESSED))
             s->tiff.compression = T4_COMPRESSION_UNCOMPRESSED;
+        /*endif*/
     }
+    /*endif*/
     return true;
 }
 /*- End of function --------------------------------------------------------*/
@@ -936,6 +999,7 @@ static int release_current_decoder(t4_rx_state_t *s)
         return t45_decode_release(&s->decoder.t45);
 #endif
     }
+    /*endswitch*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -959,6 +1023,7 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int compression)
             s->current_decoder = T4_COMPRESSION_T4_1D | T4_COMPRESSION_T4_2D | T4_COMPRESSION_T6;
             break;
         }
+        /*endswitch*/
         s->metadata.compression = compression;
         if (!select_tiff_compression(s, T4_IMAGE_TYPE_BILEVEL))
         {
@@ -966,6 +1031,7 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int compression)
             s->current_decoder = 0;
             pre_encoded_init(&s->decoder.no_decoder);
         }
+        /*endif*/
         return t4_t6_decode_set_encoding(&s->decoder.t4_t6, compression);
     case T4_COMPRESSION_T85:
     case T4_COMPRESSION_T85_L0:
@@ -984,6 +1050,7 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int compression)
             t85_decode_set_image_size_constraints(&s->decoder.t85, T4_WIDTH_1200_A3, 0);
             break;
         }
+        /*endswitch*/
         s->metadata.compression = compression;
         if (!select_tiff_compression(s, T4_IMAGE_TYPE_BILEVEL))
         {
@@ -991,6 +1058,7 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int compression)
             s->current_decoder = 0;
             pre_encoded_init(&s->decoder.no_decoder);
         }
+        /*endif*/
         return 0;
 #if defined(SPANDSP_SUPPORT_T88)
     case T4_COMPRESSION_T88:
@@ -1004,6 +1072,7 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int compression)
             s->current_decoder = T4_COMPRESSION_T88;
             break;
         }
+        /*endswitch*/
         s->metadata.compression = compression;
         if (!select_tiff_compression(s, T4_IMAGE_TYPE_BILEVEL))
         {
@@ -1011,6 +1080,7 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int compression)
             s->current_decoder = 0;
             pre_encoded_init(&s->decoder.no_decoder);
         }
+        /*endif*/
         return 0;
 #endif
     case T4_COMPRESSION_T42_T81:
@@ -1030,6 +1100,7 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int compression)
             t42_decode_set_image_size_constraints(&s->decoder.t42, T4_WIDTH_1200_A3, 0);
             break;
         }
+        /*endswitch*/
         s->metadata.compression = compression;
         if (!select_tiff_compression(s, T4_IMAGE_TYPE_COLOUR_8BIT))
         {
@@ -1037,6 +1108,7 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int compression)
             s->current_decoder = 0;
             pre_encoded_init(&s->decoder.no_decoder);
         }
+        /*endif*/
         return 0;
     case T4_COMPRESSION_T43:
         switch (s->metadata.compression)
@@ -1053,6 +1125,7 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int compression)
             t43_decode_set_image_size_constraints(&s->decoder.t43, T4_WIDTH_1200_A3, 0);
             break;
         }
+        /*endswitch*/
         s->metadata.compression = compression;
         if (!select_tiff_compression(s, T4_IMAGE_TYPE_COLOUR_8BIT))
         {
@@ -1060,6 +1133,7 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int compression)
             s->current_decoder = 0;
             pre_encoded_init(&s->decoder.no_decoder);
         }
+        /*endif*/
         return 0;
 #if defined(SPANDSP_SUPPORT_T45)
     case T4_COMPRESSION_T45:
@@ -1073,6 +1147,7 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int compression)
             s->current_decoder = T4_COMPRESSION_T45;
             break;
         }
+        /*endswitch*/
         s->metadata.compression = compression;
         if (!select_tiff_compression(s, T4_IMAGE_TYPE_COLOUR_8BIT))
         {
@@ -1080,9 +1155,11 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int compression)
             s->current_decoder = 0;
             pre_encoded_init(&s->decoder.no_decoder);
         }
+        /*endif*/
         return 0;
 #endif
     }
+    /*endswitch*/
 
     return -1;
 }
@@ -1117,6 +1194,7 @@ SPAN_DECLARE(int) t4_rx_set_row_write_handler(t4_rx_state_t *s, t4_row_write_han
         return t45_decode_set_row_write_handler(&s->decoder.t45, handler, user_data);
 #endif
     }
+    /*endswitch*/
     return -1;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1191,6 +1269,7 @@ SPAN_DECLARE(void) t4_rx_get_transfer_statistics(t4_rx_state_t *s, t4_stats_t *t
         break;
 #endif
     }
+    /*endswitch*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1233,6 +1312,7 @@ SPAN_DECLARE(int) t4_rx_start_page(t4_rx_state_t *s)
         break;
 #endif
     }
+    /*endswitch*/
     s->line_image_size = 0;
     s->tiff.image_size = 0;
 
@@ -1254,12 +1334,15 @@ static int tiff_row_write_handler(void *user_data, const uint8_t buf[], size_t l
         {
             if ((t = span_realloc(s->tiff.image_buffer, s->tiff.image_buffer_size + 100*len)) == NULL)
                 return -1;
+            /*endif*/
             s->tiff.image_buffer_size += 100*len;
             s->tiff.image_buffer = t;
         }
+        /*endif*/
         memcpy(&s->tiff.image_buffer[s->tiff.image_size], buf, len);
         s->tiff.image_size += len;
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1272,6 +1355,7 @@ SPAN_DECLARE(int) t4_rx_end_page(t4_rx_state_t *s)
 
     if (s->image_put_handler)
         s->image_put_handler((void *) &s->decoder, NULL, 0);
+    /*endif*/
 
     switch (s->current_decoder)
     {
@@ -1295,6 +1379,7 @@ SPAN_DECLARE(int) t4_rx_end_page(t4_rx_state_t *s)
             s->tiff.image_type = T4_IMAGE_TYPE_COLOUR_8BIT;
         else
             s->tiff.image_type = T4_IMAGE_TYPE_GRAY_8BIT;
+        /*endif*/
         break;
     case T4_COMPRESSION_T43:
         length = t43_decode_get_image_length(&s->decoder.t43);
@@ -1305,20 +1390,24 @@ SPAN_DECLARE(int) t4_rx_end_page(t4_rx_state_t *s)
         break;
 #endif
     }
+    /*endswitch*/
 
     if (length == 0)
         return -1;
+    /*endif*/
 
     if (s->tiff.tiff_file)
     {
         if (write_tiff_image(s) == 0)
             s->current_page++;
+        /*endif*/
         s->tiff.image_size = 0;
     }
     else
     {
         s->current_page++;
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1338,8 +1427,10 @@ SPAN_DECLARE(t4_rx_state_t *) t4_rx_init(t4_rx_state_t *s, const char *file, int
     {
         if ((s = (t4_rx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
         alloced = true;
     }
+    /*endif*/
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
     TIFF_FX_init();
 #endif
@@ -1378,11 +1469,14 @@ SPAN_DECLARE(t4_rx_state_t *) t4_rx_init(t4_rx_state_t *s, const char *file, int
         {
             if (alloced)
                 span_free(s);
+            /*endif*/
             return NULL;
         }
+        /*endif*/
         /* Save the file name for logging reports. */
         s->tiff.file = strdup(file);
     }
+    /*endif*/
     return s;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1391,6 +1485,7 @@ SPAN_DECLARE(int) t4_rx_release(t4_rx_state_t *s)
 {
     if (s->tiff.file)
         tiff_rx_release(s);
+    /*endif*/
     release_current_decoder(s);
     return -1;
 }

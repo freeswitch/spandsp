@@ -55,6 +55,14 @@
 #define DBOV_MAX_POWER              (0.0f)
 #define DBOV_MAX_SINE_POWER         (-3.02f)
 
+/*! \brief A timer variable large enough that when in microseconds it just
+           won't overflow. Most things in spandsp are timed by audio samples,
+           but some things need access to global timers. */
+typedef uint64_t span_timestamp_t;
+
+/*! \brief A timer variable for timing by counting audio samples. */
+typedef int32_t span_sample_timer_t;
+
 /*! \brief A handler for pure receive. The buffer cannot be altered. */
 typedef int (*span_rx_handler_t)(void *s, const int16_t amp[], int len);
 
@@ -71,9 +79,6 @@ typedef int (*span_tx_handler_t)(void *s, int16_t amp[], int max_len);
 #define milliseconds_to_samples(t)  ((t)*(SAMPLE_RATE/1000))
 #define microseconds_to_samples(t)  ((t)/(1000000/SAMPLE_RATE))
 
-#define ms_to_samples(t)            ((t)*(SAMPLE_RATE/1000))
-#define us_to_samples(t)            ((t)/(1000000/SAMPLE_RATE))
-
 /* Fixed point constant macros for 16 bit values */
 #define FP_Q16_0(x) ((int16_t) (1.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
 #define FP_Q15_1(x) ((int16_t) (2.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
@@ -82,9 +87,9 @@ typedef int (*span_tx_handler_t)(void *s, int16_t amp[], int max_len);
 #define FP_Q12_4(x) ((int16_t) (16.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
 #define FP_Q11_5(x) ((int16_t) (32.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
 #define FP_Q10_6(x) ((int16_t) (64.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
-#define FP_Q9_7(x) ((int16_t) (128.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
-#define FP_Q8_8(x) ((int16_t) (256.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
-#define FP_Q7_9(x) ((int16_t) (512.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q9_7(x)  ((int16_t) (128.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q8_8(x)  ((int16_t) (256.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q7_9(x)  ((int16_t) (512.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
 #define FP_Q6_10(x) ((int16_t) (1024.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
 #define FP_Q5_11(x) ((int16_t) (2048.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
 #define FP_Q4_12(x) ((int16_t) (4096.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
@@ -93,16 +98,16 @@ typedef int (*span_tx_handler_t)(void *s, int16_t amp[], int max_len);
 #define FP_Q1_15(x) ((int16_t) (32768.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
 
 /* Fixed point constant macros for 32 bit values */
-#define FP_Q32_0(x) ((int32_t) (1.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
-#define FP_Q31_1(x) ((int32_t) (2.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
-#define FP_Q30_2(x) ((int32_t) (4.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
-#define FP_Q29_3(x) ((int32_t) (8.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
-#define FP_Q28_4(x) ((int32_t) (16.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
-#define FP_Q27_5(x) ((int32_t) (32.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
-#define FP_Q26_6(x) ((int32_t) (64.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
-#define FP_Q25_7(x) ((int32_t) (128.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
-#define FP_Q24_8(x) ((int32_t) (256.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
-#define FP_Q23_9(x) ((int32_t) (512.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q32_0(x)  ((int32_t) (1.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q31_1(x)  ((int32_t) (2.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q30_2(x)  ((int32_t) (4.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q29_3(x)  ((int32_t) (8.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q28_4(x)  ((int32_t) (16.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q27_5(x)  ((int32_t) (32.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q26_6(x)  ((int32_t) (64.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q25_7(x)  ((int32_t) (128.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q24_8(x)  ((int32_t) (256.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q23_9(x)  ((int32_t) (512.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
 #define FP_Q22_10(x) ((int32_t) (1024.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
 #define FP_Q21_11(x) ((int32_t) (2048.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
 #define FP_Q20_12(x) ((int32_t) (4096.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
@@ -116,15 +121,15 @@ typedef int (*span_tx_handler_t)(void *s, int16_t amp[], int max_len);
 #define FP_Q12_20(x) ((int32_t) (65536.0*16.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
 #define FP_Q11_21(x) ((int32_t) (65536.0*32.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
 #define FP_Q10_22(x) ((int32_t) (65536.0*64.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
-#define FP_Q9_23(x) ((int32_t) (65536.0*128.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
-#define FP_Q8_24(x) ((int32_t) (65536.0*256.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
-#define FP_Q7_25(x) ((int32_t) (65536.0*512.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
-#define FP_Q6_26(x) ((int32_t) (65536.0*1024.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
-#define FP_Q5_27(x) ((int32_t) (65536.0*2048.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
-#define FP_Q4_28(x) ((int32_t) (65536.0*4096.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
-#define FP_Q3_29(x) ((int32_t) (65536.0*8192.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
-#define FP_Q2_30(x) ((int32_t) (65536.0*16384.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
-#define FP_Q1_31(x) ((int32_t) (65536.0*32768.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q9_23(x)  ((int32_t) (65536.0*128.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q8_24(x)  ((int32_t) (65536.0*256.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q7_25(x)  ((int32_t) (65536.0*512.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q6_26(x)  ((int32_t) (65536.0*1024.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q5_27(x)  ((int32_t) (65536.0*2048.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q4_28(x)  ((int32_t) (65536.0*4096.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q3_29(x)  ((int32_t) (65536.0*8192.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q2_30(x)  ((int32_t) (65536.0*16384.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q1_31(x)  ((int32_t) (65536.0*32768.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
 
 #if defined(__cplusplus)
 /* C++ doesn't seem to have sane rounding functions/macros yet */

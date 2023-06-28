@@ -272,6 +272,7 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/timing.h \
                          spandsp/tone_detect.h \
                          spandsp/tone_generate.h \
+                         spandsp/unaligned.h \
                          spandsp/v17rx.h \
                          spandsp/v17tx.h \
                          spandsp/v18.h \

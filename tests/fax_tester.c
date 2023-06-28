@@ -721,7 +721,7 @@ void faxtester_set_rx_type(void *user_data, int type, int bit_rate, int short_tr
 
     s = (faxtester_state_t *) user_data;
     t = &s->modems;
-    span_log(&s->logging, SPAN_LOG_FLOW, "Set rx type %d\n", type);
+    span_log(&s->logging, SPAN_LOG_FLOW, "Set rx type %s (%d)\n", t30_modem_to_str(type), type);
     if (s->current_rx_type == type)
         return;
     s->current_rx_type = type;
@@ -763,17 +763,17 @@ void faxtester_set_rx_type(void *user_data, int type, int bit_rate, int short_tr
 void faxtester_set_tx_type(void *user_data, int type, int bit_rate, int short_train, int use_hdlc)
 {
     faxtester_state_t *s;
-    get_bit_func_t get_bit_func;
+    span_get_bit_func_t get_bit_func;
     void *get_bit_user_data;
     fax_modems_state_t *t;
     int tone;
 
     s = (faxtester_state_t *) user_data;
     t = &s->modems;
-    span_log(&s->logging, SPAN_LOG_FLOW, "Set tx type %d\n", type);
+    span_log(&s->logging, SPAN_LOG_FLOW, "Set rx type %s (%d)\n", t30_modem_to_str(type), type);
     if (use_hdlc)
     {
-        get_bit_func = (get_bit_func_t) hdlc_tx_get_bit;
+        get_bit_func = (span_get_bit_func_t) hdlc_tx_get_bit;
         get_bit_user_data = (void *) &t->hdlc_tx;
     }
     else
@@ -781,16 +781,18 @@ void faxtester_set_tx_type(void *user_data, int type, int bit_rate, int short_tr
         get_bit_func = non_ecm_get_bit;
         get_bit_user_data = (void *) s;
     }
+    /*endif*/
     if (type == s->current_tx_type)
     {
         if (type == T30_MODEM_PAUSE)
-            silence_gen_alter(&t->silence_gen, ms_to_samples(short_train));
+            silence_gen_alter(&t->silence_gen, milliseconds_to_samples(short_train));
         return;
     }
+    /*endif*/
     switch (type)
     {
     case T30_MODEM_PAUSE:
-        silence_gen_alter(&t->silence_gen, ms_to_samples(short_train));
+        silence_gen_alter(&t->silence_gen, milliseconds_to_samples(short_train));
         fax_modems_set_tx_handler(t, (span_tx_handler_t) &silence_gen, &t->silence_gen);
         s->transmit = true;
         break;
@@ -838,6 +840,7 @@ void faxtester_set_tx_type(void *user_data, int type, int bit_rate, int short_tr
         s->transmit = false;
         break;
     }
+    /*endswitch*/
     s->current_tx_type = type;
 }
 /*- End of function --------------------------------------------------------*/
@@ -848,6 +851,7 @@ void faxtester_set_timeout(faxtester_state_t *s, int timeout)
         s->timeout = s->timer + timeout*SAMPLE_RATE/1000;
     else
         s->timeout = 0x7FFFFFFFFFFFFFFFLL;
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -882,14 +886,19 @@ static void corrupt_image(faxtester_state_t *s, const char *bad_rows)
     {
         while (isspace((int) *t))
             t++;
+        /*endwhile*/
         if (sscanf(t, "%d", &list[x]) < 1)
             break;
+        /*endif*/
         x++;
         while (isdigit((int) *t))
             t++;
+        /*endwhile*/
         if (*t == ',')
             t++;
+        /*endif*/
     }
+    /*endwhile*/
 
     /* Go through the image, and corrupt the first bit of every listed row */
     bits = 0x7FF;
@@ -912,13 +921,18 @@ static void corrupt_image(faxtester_state_t *s, const char *bad_rows)
                         /* Corrupt this row. TSB85 says to hit the first bit after the EOL */
                         bitsx ^= 0x1000;
                     }
+                    /*endif*/
                 }
+                /*endfor*/
             }
+            /*endif*/
             bits >>= 1;
             bitsx >>= 1;
         }
+        /*endfor*/
         s->image[i] = (bitsx >> 3) & 0xFF;
     }
+    /*endfor*/
     span_log(&s->logging, SPAN_LOG_FLOW, "%d rows found. %d corrupted\n", row, x);
 }
 /*- End of function --------------------------------------------------------*/
@@ -938,25 +952,30 @@ static int string_to_msg(uint8_t msg[], uint8_t mask[], const char buf[])
         /* Skip white space */
         while (isspace((int) *t))
             t++;
+        /*endwhile*/
         /* If we find ... we allow arbitrary additional info beyond this point in the message */
         if (t[0] == '.'  &&  t[1] == '.'  &&  t[2] == '.')
         {
-            return -i;
+            i = -i;
+            break;
         }
-        else if (isxdigit((int) *t))
+        /*endif*/
+        if (isxdigit((int) *t))
         {
             for (  ;  isxdigit((int) *t);  t++)
             {
                 x = *t;
                 if (x >= 'a')
                     x -= 0x20;
+                /*endif*/
                 if (x >= 'A')
                     x -= ('A' - 10);
                 else
                     x -= '0';
+                /*endif*/
                 msg[i] = (msg[i] << 4) | x;
             }
-            mask[i] = 0xFF;
+            /*endfor*/
             if (*t == '/')
             {
                 /* There is a mask following the byte */
@@ -966,21 +985,32 @@ static int string_to_msg(uint8_t msg[], uint8_t mask[], const char buf[])
                     x = *t;
                     if (x >= 'a')
                         x -= 0x20;
+                    /*endif*/
                     if (x >= 'A')
                         x -= ('A' - 10);
                     else
                         x -= '0';
+                    /*endif*/
                     mask[i] = (mask[i] << 4) | x;
                 }
+                /*endfor*/
             }
+            else
+            {
+                mask[i] = 0xFF;
+            }
+            /*endif*/
             if (*t  &&  !isspace((int) *t))
             {
                 /* Bad string */
                 return 0;
             }
+            /*endif*/
             i++;
         }
+        /*endif*/
     }
+    /*endwhile*/
     return i;
 }
 /*- End of function --------------------------------------------------------*/
@@ -999,6 +1029,7 @@ static void fax_prepare(faxtester_state_t *s)
         fax_set_transmit_on_idle(s->far_fax, true);
         fax_set_tep_mode(s->far_fax, true);
     }
+    /*endif*/
 #if 0
     t30_set_tx_ident(s->far_t30, "1234567890");
     t30_set_tx_sub_address(s->far_t30, "Sub-address");
@@ -1072,32 +1103,46 @@ static void free_node_parms(struct xml_node_parms_s *parms)
 {
     if (parms->dir)
         xmlFree(parms->dir);
+    /*endif*/
     if (parms->type)
         xmlFree(parms->type);
+    /*endif*/
     if (parms->modem)
         xmlFree(parms->modem);
+    /*endif*/
     if (parms->value)
         xmlFree(parms->value);
+    /*endif*/
     if (parms->tag)
         xmlFree(parms->tag);
+    /*endif*/
     if (parms->bad_rows)
         xmlFree(parms->bad_rows);
+    /*endif*/
     if (parms->crc_error)
         xmlFree(parms->crc_error);
+    /*endif*/
     if (parms->pattern)
         xmlFree(parms->pattern);
+    /*endif*/
     if (parms->timein)
         xmlFree(parms->timein);
+    /*endif*/
     if (parms->timeout)
         xmlFree(parms->timeout);
+    /*endif*/
     if (parms->min_bits)
         xmlFree(parms->min_bits);
+    /*endif*/
     if (parms->frame_size)
         xmlFree(parms->frame_size);
+    /*endif*/
     if (parms->block)
         xmlFree(parms->block);
+    /*endif*/
     if (parms->compression)
         xmlFree(parms->compression);
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1106,9 +1151,9 @@ SPAN_DECLARE(int) faxtester_next_step(faxtester_state_t *s)
     int delay;
     int flags;
     struct xml_node_parms_s parms;
-    uint8_t buf[1000];
-    uint8_t mask[1000];
-    char path[1024];
+    uint8_t buf[1024];
+    uint8_t mask[1024];
+    char path[2048];
     int i;
     int j;
     int hdlc;
@@ -1135,10 +1180,12 @@ SPAN_DECLARE(int) faxtester_next_step(faxtester_state_t *s)
             s->final_delayed = true;
             return 1;
         }
+        /*endif*/
         /* Finished */
         printf("Test passed\n");
         exit(0);
     }
+    /*endif*/
     for (;;)
     {
         if (s->cur == NULL)
@@ -1149,6 +1196,7 @@ SPAN_DECLARE(int) faxtester_next_step(faxtester_state_t *s)
                 printf("Test passed\n");
                 exit(0);
             }
+            /*endif*/
             if (++s->repeat_count > s->repeat_max)
             {
                 /* Finished */
@@ -1156,6 +1204,7 @@ SPAN_DECLARE(int) faxtester_next_step(faxtester_state_t *s)
                 printf("Test failed\n");
                 exit(0);
             }
+            /*endif*/
             if (s->repeat_count < s->repeat_min)
             {
                 s->cur = s->repeat_start;
@@ -1165,11 +1214,14 @@ SPAN_DECLARE(int) faxtester_next_step(faxtester_state_t *s)
                 s->cur = s->repeat_parent->next;
                 s->repeat_parent = NULL;
             }
+            /*endif*/
         }
+        /*endif*/
         if (xmlStrcmp(s->cur->name, (const xmlChar *) "step") == 0)
         {
             break;
         }
+        /*endif*/
         if (s->repeat_parent == NULL  &&  xmlStrcmp(s->cur->name, (const xmlChar *) "repeat") == 0)
         {
             min = xmlGetProp(s->cur, (const xmlChar *) "min");
@@ -1179,8 +1231,10 @@ SPAN_DECLARE(int) faxtester_next_step(faxtester_state_t *s)
             s->repeat_count = 0;
             if (min)
                 xmlFree(min);
+            /*endif*/
             if (max)
                 xmlFree(max);
+            /*endif*/
             if (s->repeat_min > 0)
             {
                 s->repeat_parent = s->cur;
@@ -1188,9 +1242,12 @@ SPAN_DECLARE(int) faxtester_next_step(faxtester_state_t *s)
                 s->cur = s->cur->xmlChildrenNode;
                 continue;
             }
+            /*endif*/
         }
+        /*endif*/
         s->cur = s->cur->next;
     }
+    /*endfor*/
 
     get_node_parms(&parms, s->cur);
 
@@ -1211,487 +1268,528 @@ SPAN_DECLARE(int) faxtester_next_step(faxtester_state_t *s)
         free_node_parms(&parms);
         return 1;
     }
+    /*endif*/
     s->timein_x = (parms.timein)  ?  atoi((const char *) parms.timein)  :  -1;
     s->timeout_x = (parms.timeout)  ?  atoi((const char *) parms.timeout)  :  -1;
 
-    if (parms.dir  &&  strcasecmp((const char *) parms.dir, "R") == 0)
+    if (strcasecmp((const char *) parms.type, "ANSWER") == 0)
     {
-        /* Receive always has a timeout applied. */
-        if (s->timeout_x < 0)
-            s->timeout_x = 7000;
         faxtester_set_timeout(s, s->timeout_x);
-        if (parms.modem)
-        {
-            hdlc = (strcasecmp((const char *) parms.type, "PREAMBLE") == 0);
-            short_train = (strcasecmp((const char *) parms.type, "TCF") != 0);
-            faxtester_set_tx_type(s, T30_MODEM_NONE, 0, false, false);
-            if (strcasecmp((const char *) parms.modem, "V.21") == 0)
-            {
-                faxtester_set_rx_type(s, T30_MODEM_V21, 300, false, true);
-            }
-            else if (strcasecmp((const char *) parms.modem, "V.17/14400") == 0)
-            {
-                faxtester_set_rx_type(s, T30_MODEM_V17, 14400, short_train, hdlc);
-            }
-            else if (strcasecmp((const char *) parms.modem, "V.17/12000") == 0)
-            {
-                faxtester_set_rx_type(s, T30_MODEM_V17, 12000, short_train, hdlc);
-            }
-            else if (strcasecmp((const char *) parms.modem, "V.17/9600") == 0)
-            {
-                faxtester_set_rx_type(s, T30_MODEM_V17, 9600, short_train, hdlc);
-            }
-            else if (strcasecmp((const char *) parms.modem, "V.17/7200") == 0)
-            {
-                faxtester_set_rx_type(s, T30_MODEM_V17, 7200, short_train, hdlc);
-            }
-            else if (strcasecmp((const char *) parms.modem, "V.29/9600") == 0)
-            {
-                faxtester_set_rx_type(s, T30_MODEM_V29, 9600, false, hdlc);
-            }
-            else if (strcasecmp((const char *) parms.modem, "V.29/7200") == 0)
-            {
-                faxtester_set_rx_type(s, T30_MODEM_V29, 7200, false, hdlc);
-            }
-            else if (strcasecmp((const char *) parms.modem, "V.27ter/4800") == 0)
-            {
-                faxtester_set_rx_type(s, T30_MODEM_V27TER, 4800, false, hdlc);
-            }
-            else if (strcasecmp((const char *) parms.modem, "V.27ter/2400") == 0)
-            {
-                faxtester_set_rx_type(s, T30_MODEM_V27TER, 2400, false, hdlc);
-            }
-            else
-            {
-                span_log(&s->logging, SPAN_LOG_FLOW, "Unrecognised modem\n");
-            }
-        }
-
-        if (strcasecmp((const char *) parms.type, "SET") == 0)
-        {
-            if (strcasecmp((const char *) parms.tag, "IDENT") == 0)
-                strcpy(s->expected_rx_info.ident, (const char *) parms.value);
-            else if (strcasecmp((const char *) parms.tag, "SUB") == 0)
-                strcpy(s->expected_rx_info.sub_address, (const char *) parms.value);
-            else if (strcasecmp((const char *) parms.tag, "SEP") == 0)
-                strcpy(s->expected_rx_info.selective_polling_address, (const char *) parms.value);
-            else if (strcasecmp((const char *) parms.tag, "PSA") == 0)
-                strcpy(s->expected_rx_info.polled_sub_address, (const char *) parms.value);
-            else if (strcasecmp((const char *) parms.tag, "SID") == 0)
-                strcpy(s->expected_rx_info.sender_ident, (const char *) parms.value);
-            else if (strcasecmp((const char *) parms.tag, "PWD") == 0)
-                strcpy(s->expected_rx_info.password, (const char *) parms.value);
-            free_node_parms(&parms);
-            return 0;
-        }
-        else if (strcasecmp((const char *) parms.type, "CNG") == 0)
-        {
-            /* Look for CNG */
-            faxtester_set_rx_type(s, T30_MODEM_CNG, 0, false, false);
-            faxtester_set_tx_type(s, T30_MODEM_NONE, 0, false, false);
-        }
-        else if (strcasecmp((const char *) parms.type, "CED") == 0)
-        {
-            /* Look for CED */
-            faxtester_set_rx_type(s, T30_MODEM_CED, 0, false, false);
-            faxtester_set_tx_type(s, T30_MODEM_NONE, 0, false, false);
-        }
-        else if (strcasecmp((const char *) parms.type, "HDLC") == 0)
-        {
-            i = string_to_msg(buf, mask, (const char *) parms.value);
-            bit_reverse(s->awaited, buf, abs(i));
-            s->awaited_len = i;
-        }
-        else if (strcasecmp((const char *) parms.type, "TCF") == 0)
-        {
-        }
-        else if (strcasecmp((const char *) parms.type, "MSG") == 0)
-        {
-        }
-        else if (strcasecmp((const char *) parms.type, "PP") == 0)
-        {
-        }
-        else if (strcasecmp((const char *) parms.type, "SILENCE") == 0)
-        {
-            faxtest_set_rx_silence(s);
-        }
-        else if (strcasecmp((const char *) parms.type, "CLEAR") == 0)
-        {
-            span_log(&s->logging, SPAN_LOG_FLOW, "Far end should drop the call\n");
-            faxtester_set_rx_type(s, T30_MODEM_NONE, 0, false, false);
-            faxtester_set_tx_type(s, T30_MODEM_PAUSE, 0, s->timeout_x, false);
-            s->test_for_call_clear = true;
-            s->call_clear_timer = 0;
-        }
+        if (s->far_fax)
+            fax_restart(s->far_fax, true);
         else
+            t38_terminal_restart(s->far_t38, true);
+        /*endif*/
+        fax_prepare(s);
+        s->next_tx_file[0] = '\0';
+        /* Avoid libtiff 3.8.2 and earlier bug on complex 2D lines. */
+        t30_set_supported_output_compressions(s->far_t30, T4_COMPRESSION_T4_1D);
+        if (parms.value)
         {
-            span_log(&s->logging, SPAN_LOG_FLOW, "Unrecognised type '%s'\n", (const char *) parms.type);
-            free_node_parms(&parms);
-            return 0;
+            sprintf(path, "%s/%s", s->image_path, (const char *) parms.value);
+            t30_set_tx_file(s->far_t30, path, -1, -1);
         }
+        /*endif*/
+        free_node_parms(&parms);
+        return 0;
+    }
+    else if (strcasecmp((const char *) parms.type, "CALL") == 0)
+    {
+        faxtester_set_timeout(s, s->timeout_x);
+        if (s->far_fax)
+            fax_restart(s->far_fax, false);
+        else
+            t38_terminal_restart(s->far_t38, false);
+        /*endif*/
+        fax_prepare(s);
+        s->next_tx_file[0] = '\0';
+        t30_set_rx_file(s->far_t30, output_tiff_file_name, -1);
+        /* Avoid libtiff 3.8.2 and earlier bug on complex 2D lines. */
+        t30_set_supported_output_compressions(s->far_t30, T4_COMPRESSION_T4_1D);
+        if (parms.value)
+        {
+            sprintf(path, "%s/%s", s->image_path, (const char *) parms.value);
+            t30_set_tx_file(s->far_t30, path, -1, -1);
+        }
+        /*endif*/
+        free_node_parms(&parms);
+        return 0;
+    }
+    else if (strcasecmp((const char *) parms.type, "STATUS") == 0)
+    {
+        if (parms.value)
+        {
+            for (i = 0;  t30_status[i].code >= 0;  i++)
+            {
+                if (strcmp(t30_status[i].tag, (const char *) parms.value) == 0)
+                    break;
+                /*endif*/
+            }
+            /*endfor*/
+            if (t30_status[i].code >= 0)
+                delay = t30_status[i].code;
+            else
+                delay = atoi((const char *) parms.value);
+            /*endif*/
+            t30_get_transfer_statistics(s->far_t30, &t30_stats);
+            if (delay == t30_stats.current_status)
+                span_log(&s->logging, SPAN_LOG_FLOW, "Expected status (%s) found\n", t30_status[i].tag);
+            else
+                span_log(&s->logging, SPAN_LOG_FLOW, "Expected status %s, but found %s (%d)\n", t30_status[i].tag, t30_status[t30_stats.current_status].tag, t30_stats.current_status);
+            /*endif*/
+            if (delay != t30_stats.current_status)
+            {
+                printf("Test failed\n");
+                exit(2);
+            }
+            /*endif*/
+        }
+        /*endif*/
+        free_node_parms(&parms);
+        return 0;
+    }
+    else if (strcasecmp((const char *) parms.type, "WAIT") == 0)
+    {
+        faxtester_set_timeout(s, s->timeout_x);
+        delay = (parms.value)  ?  atoi((const char *) parms.value)  :  1;
+        faxtester_set_rx_type(s, T30_MODEM_NONE, 0, false, false);
+        faxtester_set_tx_type(s, T30_MODEM_PAUSE, 0, delay, false);
     }
     else
     {
-        faxtester_set_timeout(s, s->timeout_x);
-        if (parms.modem)
+        /* Other types depend on the direction setting */
+        if (parms.dir  &&  strcasecmp((const char *) parms.dir, "R") == 0)
         {
-            hdlc = (strcasecmp((const char *) parms.type, "PREAMBLE") == 0);
-            short_train = (strcasecmp((const char *) parms.type, "TCF") != 0);
-            faxtester_set_rx_type(s, T30_MODEM_NONE, 0, false, false);
-            if (strcasecmp((const char *) parms.modem, "V.21") == 0)
+            /* Receive always has a timeout applied. */
+            if (s->timeout_x < 0)
+                s->timeout_x = 7000;
+            /*endif*/
+            faxtester_set_timeout(s, s->timeout_x);
+            if (parms.modem)
             {
-                faxtester_set_tx_type(s, T30_MODEM_V21, 300, false, true);
+                hdlc = (strcasecmp((const char *) parms.type, "PREAMBLE") == 0);
+                short_train = (strcasecmp((const char *) parms.type, "TCF") != 0);
+                faxtester_set_tx_type(s, T30_MODEM_NONE, 0, false, false);
+                if (strcasecmp((const char *) parms.modem, "V.21") == 0)
+                {
+                    faxtester_set_rx_type(s, T30_MODEM_V21, 300, false, true);
+                }
+                else if (strcasecmp((const char *) parms.modem, "V.17/14400") == 0)
+                {
+                    faxtester_set_rx_type(s, T30_MODEM_V17, 14400, short_train, hdlc);
+                }
+                else if (strcasecmp((const char *) parms.modem, "V.17/12000") == 0)
+                {
+                    faxtester_set_rx_type(s, T30_MODEM_V17, 12000, short_train, hdlc);
+                }
+                else if (strcasecmp((const char *) parms.modem, "V.17/9600") == 0)
+                {
+                    faxtester_set_rx_type(s, T30_MODEM_V17, 9600, short_train, hdlc);
+                }
+                else if (strcasecmp((const char *) parms.modem, "V.17/7200") == 0)
+                {
+                    faxtester_set_rx_type(s, T30_MODEM_V17, 7200, short_train, hdlc);
+                }
+                else if (strcasecmp((const char *) parms.modem, "V.29/9600") == 0)
+                {
+                    faxtester_set_rx_type(s, T30_MODEM_V29, 9600, false, hdlc);
+                }
+                else if (strcasecmp((const char *) parms.modem, "V.29/7200") == 0)
+                {
+                    faxtester_set_rx_type(s, T30_MODEM_V29, 7200, false, hdlc);
+                }
+                else if (strcasecmp((const char *) parms.modem, "V.27ter/4800") == 0)
+                {
+                    faxtester_set_rx_type(s, T30_MODEM_V27TER, 4800, false, hdlc);
+                }
+                else if (strcasecmp((const char *) parms.modem, "V.27ter/2400") == 0)
+                {
+                    faxtester_set_rx_type(s, T30_MODEM_V27TER, 2400, false, hdlc);
+                }
+                else
+                {
+                    span_log(&s->logging, SPAN_LOG_FLOW, "Unrecognised modem\n");
+                }
+                /*endif*/
             }
-            else if (strcasecmp((const char *) parms.modem, "V.17/14400") == 0)
-            {
-                faxtester_set_tx_type(s, T30_MODEM_V17, 14400, short_train, hdlc);
-            }
-            else if (strcasecmp((const char *) parms.modem, "V.17/12000") == 0)
-            {
-                faxtester_set_tx_type(s, T30_MODEM_V17, 12000, short_train, hdlc);
-            }
-            else if (strcasecmp((const char *) parms.modem, "V.17/9600") == 0)
-            {
-                faxtester_set_tx_type(s, T30_MODEM_V17, 9600, short_train, hdlc);
-            }
-            else if (strcasecmp((const char *) parms.modem, "V.17/7200") == 0)
-            {
-                faxtester_set_tx_type(s, T30_MODEM_V17, 7200, short_train, hdlc);
-            }
-            else if (strcasecmp((const char *) parms.modem, "V.29/9600") == 0)
-            {
-                faxtester_set_tx_type(s, T30_MODEM_V29, 9600, false, hdlc);
-            }
-            else if (strcasecmp((const char *) parms.modem, "V.29/7200") == 0)
-            {
-                faxtester_set_tx_type(s, T30_MODEM_V29, 7200, false, hdlc);
-            }
-            else if (strcasecmp((const char *) parms.modem, "V.27ter/4800") == 0)
-            {
-                faxtester_set_tx_type(s, T30_MODEM_V27TER, 4800, false, hdlc);
-            }
-            else if (strcasecmp((const char *) parms.modem, "V.27ter/2400") == 0)
-            {
-                faxtester_set_tx_type(s, T30_MODEM_V27TER, 2400, false, hdlc);
-            }
-            else
-            {
-                span_log(&s->logging, SPAN_LOG_FLOW, "Unrecognised modem\n");
-            }
-        }
+            /*endif*/
 
-        if (strcasecmp((const char *) parms.type, "SET") == 0)
-        {
-            if (strcasecmp((const char *) parms.tag, "IDENT") == 0)
-                t30_set_tx_ident(s->far_t30, (const char *) parms.value);
-            else if (strcasecmp((const char *) parms.tag, "SUB") == 0)
-                t30_set_tx_sub_address(s->far_t30, (const char *) parms.value);
-            else if (strcasecmp((const char *) parms.tag, "SEP") == 0)
-                t30_set_tx_selective_polling_address(s->far_t30, (const char *) parms.value);
-            else if (strcasecmp((const char *) parms.tag, "PSA") == 0)
-                t30_set_tx_polled_sub_address(s->far_t30, (const char *) parms.value);
-            else if (strcasecmp((const char *) parms.tag, "SID") == 0)
-                t30_set_tx_sender_ident(s->far_t30, (const char *) parms.value);
-            else if (strcasecmp((const char *) parms.tag, "PWD") == 0)
-                t30_set_tx_password(s->far_t30, (const char *) parms.value);
-            else if (strcasecmp((const char *) parms.tag, "RXFILE") == 0)
+            if (strcasecmp((const char *) parms.type, "CED") == 0)
             {
-                if (parms.value)
-                    t30_set_rx_file(s->far_t30, (const char *) parms.value, -1);
-                else
-                    t30_set_rx_file(s->far_t30, output_tiff_file_name, -1);
+                /* Look for CED */
+                faxtester_set_rx_type(s, T30_MODEM_CED, 0, false, false);
+                faxtester_set_tx_type(s, T30_MODEM_NONE, 0, false, false);
             }
-            else if (strcasecmp((const char *) parms.tag, "TXFILE") == 0)
+            else if (strcasecmp((const char *) parms.type, "CLEAR") == 0)
             {
-                sprintf(s->next_tx_file, "%s/%s", s->image_path, (const char *) parms.value);
-                printf("Push '%s'\n", s->next_tx_file);
+                span_log(&s->logging, SPAN_LOG_FLOW, "Far end should drop the call\n");
+                faxtester_set_rx_type(s, T30_MODEM_NONE, 0, false, false);
+                faxtester_set_tx_type(s, T30_MODEM_PAUSE, 0, s->timeout_x, false);
+                s->test_for_call_clear = true;
+                s->call_clear_timer = 0;
             }
-            free_node_parms(&parms);
-            return 0;
-        }
-        else if (strcasecmp((const char *) parms.type, "CALL") == 0)
-        {
-            if (s->far_fax)
-                fax_restart(s->far_fax, false);
-            else
-                t38_terminal_restart(s->far_t38, false);
-            fax_prepare(s);
-            s->next_tx_file[0] = '\0';
-            t30_set_rx_file(s->far_t30, output_tiff_file_name, -1);
-            /* Avoid libtiff 3.8.2 and earlier bug on complex 2D lines. */
-            t30_set_supported_output_compressions(s->far_t30, T4_COMPRESSION_T4_1D);
-            if (parms.value)
+            else if (strcasecmp((const char *) parms.type, "CNG") == 0)
             {
-                sprintf(path, "%s/%s", s->image_path, (const char *) parms.value);
-                t30_set_tx_file(s->far_t30, path, -1, -1);
+                /* Look for CNG */
+                faxtester_set_rx_type(s, T30_MODEM_CNG, 0, false, false);
+                faxtester_set_tx_type(s, T30_MODEM_NONE, 0, false, false);
             }
-            free_node_parms(&parms);
-            return 0;
-        }
-        else if (strcasecmp((const char *) parms.type, "ANSWER") == 0)
-        {
-            if (s->far_fax)
-                fax_restart(s->far_fax, true);
-            else
-                t38_terminal_restart(s->far_t38, true);
-            fax_prepare(s);
-            s->next_tx_file[0] = '\0';
-            /* Avoid libtiff 3.8.2 and earlier bug on complex 2D lines. */
-            t30_set_supported_output_compressions(s->far_t30, T4_COMPRESSION_T4_1D);
-            if (parms.value)
+            else if (strcasecmp((const char *) parms.type, "HDLC") == 0)
             {
-                sprintf(path, "%s/%s", s->image_path, (const char *) parms.value);
-                t30_set_tx_file(s->far_t30, path, -1, -1);
+                i = string_to_msg(buf, mask, (const char *) parms.value);
+                bit_reverse(s->awaited, buf, abs(i));
+                s->awaited_len = i;
             }
-            free_node_parms(&parms);
-            return 0;
-        }
-        else if (strcasecmp((const char *) parms.type, "CNG") == 0)
-        {
-            faxtester_set_rx_type(s, T30_MODEM_NONE, 0, false, false);
-            faxtester_set_tx_type(s, T30_MODEM_CNG, 0, false, false);
-        }
-        else if (strcasecmp((const char *) parms.type, "CED") == 0)
-        {
-            faxtester_set_rx_type(s, T30_MODEM_NONE, 0, false, false);
-            faxtester_set_tx_type(s, T30_MODEM_CED, 0, false, false);
-        }
-        else if (strcasecmp((const char *) parms.type, "WAIT") == 0)
-        {
-            delay = (parms.value)  ?  atoi((const char *) parms.value)  :  1;
-            faxtester_set_rx_type(s, T30_MODEM_NONE, 0, false, false);
-            faxtester_set_tx_type(s, T30_MODEM_PAUSE, 0, delay, false);
-        }
-        else if (strcasecmp((const char *) parms.type, "PREAMBLE") == 0)
-        {
-            flags = (parms.value)  ?  atoi((const char *) parms.value)  :  37;
-            faxtester_send_hdlc_flags(s, flags);
-        }
-        else if (strcasecmp((const char *) parms.type, "POSTAMBLE") == 0)
-        {
-            flags = (parms.value)  ?  atoi((const char *) parms.value)  :  5;
-            faxtester_send_hdlc_flags(s, flags);
-        }
-        else if (strcasecmp((const char *) parms.type, "HDLC") == 0)
-        {
-            i = string_to_msg(buf, mask, (const char *) parms.value);
-            bit_reverse(buf, buf, abs(i));
-            if (parms.crc_error  &&  strcasecmp((const char *) parms.crc_error, "0") == 0)
-                faxtester_send_hdlc_msg(s, buf, abs(i), false);
-            else
-                faxtester_send_hdlc_msg(s, buf, abs(i), true);
-        }
-        else if (strcasecmp((const char *) parms.type, "TCF") == 0)
-        {
-            i = (parms.value)  ?  atoi((const char *) parms.value)  :  450;
-            if (parms.pattern)
+            else if (strcasecmp((const char *) parms.type, "MSG") == 0)
             {
-                /* TODO: implement proper patterns */
-                j = atoi((const char *) parms.pattern);
-                memset(s->image, 0x55, j);
-                if (i > j)
-                    memset(s->image + j, 0, i - j);
+            }
+            else if (strcasecmp((const char *) parms.type, "PP") == 0)
+            {
+            }
+            else if (strcasecmp((const char *) parms.type, "SET") == 0)
+            {
+                if (strcasecmp((const char *) parms.tag, "IDENT") == 0)
+                    strcpy(s->expected_rx_info.ident, (const char *) parms.value);
+                else if (strcasecmp((const char *) parms.tag, "SUB") == 0)
+                    strcpy(s->expected_rx_info.sub_address, (const char *) parms.value);
+                else if (strcasecmp((const char *) parms.tag, "SEP") == 0)
+                    strcpy(s->expected_rx_info.selective_polling_address, (const char *) parms.value);
+                else if (strcasecmp((const char *) parms.tag, "PSA") == 0)
+                    strcpy(s->expected_rx_info.polled_sub_address, (const char *) parms.value);
+                else if (strcasecmp((const char *) parms.tag, "SID") == 0)
+                    strcpy(s->expected_rx_info.sender_ident, (const char *) parms.value);
+                else if (strcasecmp((const char *) parms.tag, "PWD") == 0)
+                    strcpy(s->expected_rx_info.password, (const char *) parms.value);
+                /*endif*/
+                free_node_parms(&parms);
+                return 0;
+            }
+            else if (strcasecmp((const char *) parms.type, "SILENCE") == 0)
+            {
+                faxtest_set_rx_silence(s);
+            }
+            else if (strcasecmp((const char *) parms.type, "TCF") == 0)
+            {
             }
             else
             {
-                memset(s->image, 0, i);
-            }
-            s->image_ptr = 0;
-            s->image_bit_ptr = 8;
-            s->image_buffer = s->image;
-            s->image_len = i;
-        }
-        else if (strcasecmp((const char *) parms.type, "MSG") == 0)
-        {
-            /* A non-ECM page */
-            min_row_bits = (parms.min_bits)  ?  atoi((const char *) parms.min_bits)  :  0;
-            sprintf(path, "%s/%s", s->image_path, (const char *) parms.value);
-            if (t4_tx_init(&t4_tx_state, path, -1, -1) == NULL)
-            {
-                span_log(&s->logging, SPAN_LOG_FLOW, "Failed to init T.4 send\n");
-                printf("Test failed\n");
-                exit(2);
-            }
-            t4_tx_set_header_info(&t4_tx_state, NULL);
-            compression_type = T4_COMPRESSION_T4_1D;
-            if (parms.compression)
-            {
-                if (strcasecmp((const char *) parms.compression, "T.4 1D") == 0)
-                    compression_type = T4_COMPRESSION_T4_1D;
-                else if (strcasecmp((const char *) parms.compression, "T.4 2D") == 0)
-                    compression_type = T4_COMPRESSION_T4_2D;
-                else if (strcasecmp((const char *) parms.compression, "T.6") == 0)
-                    compression_type = T4_COMPRESSION_T6;
-                else if (strcasecmp((const char *) parms.compression, "T.85") == 0)
-                    compression_type = T4_COMPRESSION_T85;
-            }
-            if (t4_tx_set_tx_image_format(&t4_tx_state,
-                                          compression_type,
-                                          T4_SUPPORT_WIDTH_215MM
-                                        | T4_SUPPORT_LENGTH_US_LETTER
-                                        | T4_SUPPORT_LENGTH_US_LEGAL
-                                        | T4_SUPPORT_LENGTH_UNLIMITED,
-                                          T4_RESOLUTION_R8_STANDARD
-                                        | T4_RESOLUTION_R8_FINE
-                                        | T4_RESOLUTION_R8_SUPERFINE
-                                        | T4_RESOLUTION_R16_SUPERFINE
-                                        | T4_RESOLUTION_200_100
-                                        | T4_RESOLUTION_200_200
-                                        | T4_RESOLUTION_200_400
-                                        | T4_RESOLUTION_300_300
-                                        | T4_RESOLUTION_300_600
-                                        | T4_RESOLUTION_400_400
-                                        | T4_RESOLUTION_400_800
-                                        | T4_RESOLUTION_600_600
-                                        | T4_RESOLUTION_600_1200
-                                        | T4_RESOLUTION_1200_1200,
-                                          T4_RESOLUTION_100_100
-                                        | T4_RESOLUTION_200_200
-                                        | T4_RESOLUTION_300_300
-                                        | T4_RESOLUTION_400_400
-                                        | T4_RESOLUTION_600_600
-                                        | T4_RESOLUTION_1200_1200) < 0)
-            {
-                span_log(&s->logging, SPAN_LOG_FLOW, "Failed to set T.4 compression\n");
-                printf("Test failed\n");
-                exit(2);
-            }
-            t4_tx_set_min_bits_per_row(&t4_tx_state, min_row_bits);
-            if (t4_tx_start_page(&t4_tx_state))
-            {
-                span_log(&s->logging, SPAN_LOG_FLOW, "Failed to start T.4 send\n");
-                printf("Test failed\n");
-                exit(2);
-            }
-            s->image_len = t4_tx_get(&t4_tx_state, s->image, sizeof(s->image));
-            if (parms.bad_rows)
-            {
-                span_log(&s->logging, SPAN_LOG_FLOW, "We need to corrupt the image\n");
-                corrupt_image(s, (const char *) parms.bad_rows);
-            }
-            t4_tx_release(&t4_tx_state);
-            span_log(&s->logging, SPAN_LOG_FLOW, "Non-ECM image is %d bytes (min row bits %d)\n", s->image_len, min_row_bits);
-            s->image_ptr = 0;
-            s->image_bit_ptr = 8;
-            s->image_buffer = s->image;
-        }
-        else if (strcasecmp((const char *) parms.type, "PP") == 0)
-        {
-            min_row_bits = (parms.min_bits)  ?  atoi((const char *) parms.min_bits)  :  0;
-            ecm_block = (parms.block)  ?  atoi((const char *) parms.block)  :  0;
-            ecm_frame_size = (parms.frame_size)  ?  atoi((const char *) parms.frame_size)  :  64;
-            i = (parms.crc_error)  ?  atoi((const char *) parms.crc_error)  :  -1;
-            sprintf(path, "%s/%s", s->image_path, (const char *) parms.value);
-            if (t4_tx_init(&t4_tx_state, path, -1, -1) == NULL)
-            {
-                span_log(&s->logging, SPAN_LOG_FLOW, "Failed to init T.4 send\n");
-                printf("Test failed\n");
-                exit(2);
-            }
-            t4_tx_set_header_info(&t4_tx_state, NULL);
-            compression_type = T4_COMPRESSION_T4_1D;
-            if (parms.compression)
-            {
-                if (strcasecmp((const char *) parms.compression, "T.4 1D") == 0)
-                    compression_type = T4_COMPRESSION_T4_1D;
-                else if (strcasecmp((const char *) parms.compression, "T.4 2D") == 0)
-                    compression_type = T4_COMPRESSION_T4_2D;
-                else if (strcasecmp((const char *) parms.compression, "T.6") == 0)
-                    compression_type = T4_COMPRESSION_T6;
-                else if (strcasecmp((const char *) parms.compression, "T.85") == 0)
-                    compression_type = T4_COMPRESSION_T85;
-            }
-            if (t4_tx_set_tx_image_format(&t4_tx_state,
-                                          compression_type,
-                                          T4_SUPPORT_WIDTH_215MM
-                                        | T4_SUPPORT_LENGTH_US_LETTER
-                                        | T4_SUPPORT_LENGTH_US_LEGAL
-                                        | T4_SUPPORT_LENGTH_UNLIMITED,
-                                          T4_RESOLUTION_R8_STANDARD
-                                        | T4_RESOLUTION_R8_FINE
-                                        | T4_RESOLUTION_R8_SUPERFINE
-                                        | T4_RESOLUTION_R16_SUPERFINE
-                                        | T4_RESOLUTION_200_100
-                                        | T4_RESOLUTION_200_200
-                                        | T4_RESOLUTION_200_400
-                                        | T4_RESOLUTION_300_300
-                                        | T4_RESOLUTION_300_600
-                                        | T4_RESOLUTION_400_400
-                                        | T4_RESOLUTION_400_800
-                                        | T4_RESOLUTION_600_600
-                                        | T4_RESOLUTION_600_1200
-                                        | T4_RESOLUTION_1200_1200,
-                                          T4_RESOLUTION_100_100
-                                        | T4_RESOLUTION_200_200
-                                        | T4_RESOLUTION_300_300
-                                        | T4_RESOLUTION_400_400
-                                        | T4_RESOLUTION_600_600
-                                        | T4_RESOLUTION_1200_1200) < 0)
-            {
-                span_log(&s->logging, SPAN_LOG_FLOW, "Failed to set T.4 compression\n");
-                printf("Test failed\n");
-                exit(2);
-            }
-            t4_tx_set_min_bits_per_row(&t4_tx_state, min_row_bits);
-            if (t4_tx_start_page(&t4_tx_state))
-            {
-                span_log(&s->logging, SPAN_LOG_FLOW, "Failed to start T.4 send\n");
-                printf("Test failed\n");
-                exit(2);
+                span_log(&s->logging, SPAN_LOG_FLOW, "Unrecognised type '%s'\n", (const char *) parms.type);
+                free_node_parms(&parms);
+                return 0;
             }
             /*endif*/
-            s->image_len = t4_tx_get(&t4_tx_state, s->image, sizeof(s->image));
-            if (parms.bad_rows)
-            {
-                span_log(&s->logging, SPAN_LOG_FLOW, "We need to corrupt the image\n");
-                corrupt_image(s, (const char *) parms.bad_rows);
-            }
-            /*endif*/
-            t4_tx_release(&t4_tx_state);
-            span_log(&s->logging, SPAN_LOG_FLOW, "ECM image is %d bytes (min row bits %d)\n", s->image_len, min_row_bits);
-            faxtester_set_ecm_image_buffer(s, ecm_block, ecm_frame_size, i);
-        }
-        else if (strcasecmp((const char *) parms.type, "CLEAR") == 0)
-        {
-            span_log(&s->logging, SPAN_LOG_FLOW, "Time to drop the call\n");
-            faxtester_set_rx_type(s, T30_MODEM_NONE, 0, false, false);
-            faxtester_set_tx_type(s, T30_MODEM_PAUSE, 0, s->timeout_x, false);
-            t30_terminate(s->far_t30);
-            free_node_parms(&parms);
-            return 0;
-        }
-        else if (strcasecmp((const char *) parms.type, "STATUS") == 0)
-        {
-            if (parms.value)
-            {
-                for (i = 0;  t30_status[i].code >= 0;  i++)
-                {
-                    if (strcmp(t30_status[i].tag, (const char *) parms.value) == 0)
-                        break;
-                }
-                if (t30_status[i].code >= 0)
-                    delay = t30_status[i].code;
-                else
-                    delay = atoi((const char *) parms.value);
-                t30_get_transfer_statistics(s->far_t30, &t30_stats);
-                if (delay == t30_stats.current_status)
-                    span_log(&s->logging, SPAN_LOG_FLOW, "Expected status (%s) found\n", t30_status[i].tag);
-                else
-                    span_log(&s->logging, SPAN_LOG_FLOW, "Expected status %s, but found %s (%d)\n", t30_status[i].tag, t30_status[t30_stats.current_status].tag, t30_stats.current_status);
-                if (delay != t30_stats.current_status)
-                {
-                    printf("Test failed\n");
-                    exit(2);
-                }
-            }
-            free_node_parms(&parms);
-            return 0;
         }
         else
         {
-            span_log(&s->logging, SPAN_LOG_FLOW, "Unrecognised type '%s'\n", (const char *) parms.type);
-            free_node_parms(&parms);
-            return 0;
+            faxtester_set_timeout(s, s->timeout_x);
+            if (parms.modem)
+            {
+                hdlc = (strcasecmp((const char *) parms.type, "PREAMBLE") == 0);
+                short_train = (strcasecmp((const char *) parms.type, "TCF") != 0);
+                faxtester_set_rx_type(s, T30_MODEM_NONE, 0, false, false);
+                if (strcasecmp((const char *) parms.modem, "V.21") == 0)
+                {
+                    faxtester_set_tx_type(s, T30_MODEM_V21, 300, false, true);
+                }
+                else if (strcasecmp((const char *) parms.modem, "V.17/14400") == 0)
+                {
+                    faxtester_set_tx_type(s, T30_MODEM_V17, 14400, short_train, hdlc);
+                }
+                else if (strcasecmp((const char *) parms.modem, "V.17/12000") == 0)
+                {
+                    faxtester_set_tx_type(s, T30_MODEM_V17, 12000, short_train, hdlc);
+                }
+                else if (strcasecmp((const char *) parms.modem, "V.17/9600") == 0)
+                {
+                    faxtester_set_tx_type(s, T30_MODEM_V17, 9600, short_train, hdlc);
+                }
+                else if (strcasecmp((const char *) parms.modem, "V.17/7200") == 0)
+                {
+                    faxtester_set_tx_type(s, T30_MODEM_V17, 7200, short_train, hdlc);
+                }
+                else if (strcasecmp((const char *) parms.modem, "V.29/9600") == 0)
+                {
+                    faxtester_set_tx_type(s, T30_MODEM_V29, 9600, false, hdlc);
+                }
+                else if (strcasecmp((const char *) parms.modem, "V.29/7200") == 0)
+                {
+                    faxtester_set_tx_type(s, T30_MODEM_V29, 7200, false, hdlc);
+                }
+                else if (strcasecmp((const char *) parms.modem, "V.27ter/4800") == 0)
+                {
+                    faxtester_set_tx_type(s, T30_MODEM_V27TER, 4800, false, hdlc);
+                }
+                else if (strcasecmp((const char *) parms.modem, "V.27ter/2400") == 0)
+                {
+                    faxtester_set_tx_type(s, T30_MODEM_V27TER, 2400, false, hdlc);
+                }
+                else
+                {
+                    span_log(&s->logging, SPAN_LOG_FLOW, "Unrecognised modem\n");
+                }
+                /*endif*/
+            }
+            /*endif*/
+
+            if (strcasecmp((const char *) parms.type, "CED") == 0)
+            {
+                faxtester_set_rx_type(s, T30_MODEM_NONE, 0, false, false);
+                faxtester_set_tx_type(s, T30_MODEM_CED, 0, false, false);
+            }
+            else if (strcasecmp((const char *) parms.type, "CLEAR") == 0)
+            {
+                span_log(&s->logging, SPAN_LOG_FLOW, "Time to drop the call\n");
+                faxtester_set_rx_type(s, T30_MODEM_NONE, 0, false, false);
+                faxtester_set_tx_type(s, T30_MODEM_PAUSE, 0, s->timeout_x, false);
+                t30_terminate(s->far_t30);
+                free_node_parms(&parms);
+                return 0;
+            }
+            else if (strcasecmp((const char *) parms.type, "CNG") == 0)
+            {
+                faxtester_set_rx_type(s, T30_MODEM_NONE, 0, false, false);
+                faxtester_set_tx_type(s, T30_MODEM_CNG, 0, false, false);
+            }
+            else if (strcasecmp((const char *) parms.type, "HDLC") == 0)
+            {
+                i = string_to_msg(buf, mask, (const char *) parms.value);
+                bit_reverse(buf, buf, abs(i));
+                if (parms.crc_error  &&  strcasecmp((const char *) parms.crc_error, "0") == 0)
+                    faxtester_send_hdlc_msg(s, buf, abs(i), false);
+                else
+                    faxtester_send_hdlc_msg(s, buf, abs(i), true);
+                /*endif*/
+            }
+            else if (strcasecmp((const char *) parms.type, "MSG") == 0)
+            {
+                /* A non-ECM page */
+                min_row_bits = (parms.min_bits)  ?  atoi((const char *) parms.min_bits)  :  0;
+                sprintf(path, "%s/%s", s->image_path, (const char *) parms.value);
+                if (t4_tx_init(&t4_tx_state, path, -1, -1) == NULL)
+                {
+                    span_log(&s->logging, SPAN_LOG_FLOW, "Failed to init T.4 send\n");
+                    printf("Test failed\n");
+                    exit(2);
+                }
+                /*endif*/
+                t4_tx_set_header_info(&t4_tx_state, NULL);
+                compression_type = T4_COMPRESSION_T4_1D;
+                if (parms.compression)
+                {
+                    if (strcasecmp((const char *) parms.compression, "T.4 1D") == 0)
+                        compression_type = T4_COMPRESSION_T4_1D;
+                    else if (strcasecmp((const char *) parms.compression, "T.4 2D") == 0)
+                        compression_type = T4_COMPRESSION_T4_2D;
+                    else if (strcasecmp((const char *) parms.compression, "T.6") == 0)
+                        compression_type = T4_COMPRESSION_T6;
+                    else if (strcasecmp((const char *) parms.compression, "T.85") == 0)
+                        compression_type = T4_COMPRESSION_T85;
+                    /*endif*/
+                }
+                /*endif*/
+                if (t4_tx_set_tx_image_format(&t4_tx_state,
+                                              compression_type,
+                                              T4_SUPPORT_WIDTH_215MM
+                                            | T4_SUPPORT_LENGTH_US_LETTER
+                                            | T4_SUPPORT_LENGTH_US_LEGAL
+                                            | T4_SUPPORT_LENGTH_UNLIMITED,
+                                              T4_RESOLUTION_R8_STANDARD
+                                            | T4_RESOLUTION_R8_FINE
+                                            | T4_RESOLUTION_R8_SUPERFINE
+                                            | T4_RESOLUTION_R16_SUPERFINE
+                                            | T4_RESOLUTION_200_100
+                                            | T4_RESOLUTION_200_200
+                                            | T4_RESOLUTION_200_400
+                                            | T4_RESOLUTION_300_300
+                                            | T4_RESOLUTION_300_600
+                                            | T4_RESOLUTION_400_400
+                                            | T4_RESOLUTION_400_800
+                                            | T4_RESOLUTION_600_600
+                                            | T4_RESOLUTION_600_1200
+                                            | T4_RESOLUTION_1200_1200,
+                                              T4_RESOLUTION_100_100
+                                            | T4_RESOLUTION_200_200
+                                            | T4_RESOLUTION_300_300
+                                            | T4_RESOLUTION_400_400
+                                            | T4_RESOLUTION_600_600
+                                            | T4_RESOLUTION_1200_1200) < 0)
+                {
+                    span_log(&s->logging, SPAN_LOG_FLOW, "Failed to set T.4 compression\n");
+                    printf("Test failed\n");
+                    exit(2);
+                }
+                /*endif*/
+                t4_tx_set_min_bits_per_row(&t4_tx_state, min_row_bits);
+                if (t4_tx_start_page(&t4_tx_state))
+                {
+                    span_log(&s->logging, SPAN_LOG_FLOW, "Failed to start T.4 send\n");
+                    printf("Test failed\n");
+                    exit(2);
+                }
+                /*endif*/
+                s->image_len = t4_tx_get(&t4_tx_state, s->image, sizeof(s->image));
+                if (parms.bad_rows)
+                {
+                    span_log(&s->logging, SPAN_LOG_FLOW, "We need to corrupt the image\n");
+                    corrupt_image(s, (const char *) parms.bad_rows);
+                }
+                /*endif*/
+                t4_tx_release(&t4_tx_state);
+                span_log(&s->logging, SPAN_LOG_FLOW, "Non-ECM image is %d bytes (min row bits %d)\n", s->image_len, min_row_bits);
+                s->image_ptr = 0;
+                s->image_bit_ptr = 8;
+                s->image_buffer = s->image;
+            }
+            else if (strcasecmp((const char *) parms.type, "POSTAMBLE") == 0)
+            {
+                flags = (parms.value)  ?  atoi((const char *) parms.value)  :  5;
+                faxtester_send_hdlc_flags(s, flags);
+            }
+            else if (strcasecmp((const char *) parms.type, "PP") == 0)
+            {
+                min_row_bits = (parms.min_bits)  ?  atoi((const char *) parms.min_bits)  :  0;
+                ecm_block = (parms.block)  ?  atoi((const char *) parms.block)  :  0;
+                ecm_frame_size = (parms.frame_size)  ?  atoi((const char *) parms.frame_size)  :  64;
+                i = (parms.crc_error)  ?  atoi((const char *) parms.crc_error)  :  -1;
+                sprintf(path, "%s/%s", s->image_path, (const char *) parms.value);
+                if (t4_tx_init(&t4_tx_state, path, -1, -1) == NULL)
+                {
+                    span_log(&s->logging, SPAN_LOG_FLOW, "Failed to init T.4 send\n");
+                    printf("Test failed\n");
+                    exit(2);
+                }
+                /*endif*/
+                t4_tx_set_header_info(&t4_tx_state, NULL);
+                compression_type = T4_COMPRESSION_T4_1D;
+                if (parms.compression)
+                {
+                    if (strcasecmp((const char *) parms.compression, "T.4 1D") == 0)
+                        compression_type = T4_COMPRESSION_T4_1D;
+                    else if (strcasecmp((const char *) parms.compression, "T.4 2D") == 0)
+                        compression_type = T4_COMPRESSION_T4_2D;
+                    else if (strcasecmp((const char *) parms.compression, "T.6") == 0)
+                        compression_type = T4_COMPRESSION_T6;
+                    else if (strcasecmp((const char *) parms.compression, "T.85") == 0)
+                        compression_type = T4_COMPRESSION_T85;
+                    /*endif*/
+                }
+                /*endif*/
+                if (t4_tx_set_tx_image_format(&t4_tx_state,
+                                              compression_type,
+                                              T4_SUPPORT_WIDTH_215MM
+                                            | T4_SUPPORT_LENGTH_US_LETTER
+                                            | T4_SUPPORT_LENGTH_US_LEGAL
+                                            | T4_SUPPORT_LENGTH_UNLIMITED,
+                                              T4_RESOLUTION_R8_STANDARD
+                                            | T4_RESOLUTION_R8_FINE
+                                            | T4_RESOLUTION_R8_SUPERFINE
+                                            | T4_RESOLUTION_R16_SUPERFINE
+                                            | T4_RESOLUTION_200_100
+                                            | T4_RESOLUTION_200_200
+                                            | T4_RESOLUTION_200_400
+                                            | T4_RESOLUTION_300_300
+                                            | T4_RESOLUTION_300_600
+                                            | T4_RESOLUTION_400_400
+                                            | T4_RESOLUTION_400_800
+                                            | T4_RESOLUTION_600_600
+                                            | T4_RESOLUTION_600_1200
+                                            | T4_RESOLUTION_1200_1200,
+                                              T4_RESOLUTION_100_100
+                                            | T4_RESOLUTION_200_200
+                                            | T4_RESOLUTION_300_300
+                                            | T4_RESOLUTION_400_400
+                                            | T4_RESOLUTION_600_600
+                                            | T4_RESOLUTION_1200_1200) < 0)
+                {
+                    span_log(&s->logging, SPAN_LOG_FLOW, "Failed to set T.4 compression\n");
+                    printf("Test failed\n");
+                    exit(2);
+                }
+                /*endif*/
+                t4_tx_set_min_bits_per_row(&t4_tx_state, min_row_bits);
+                if (t4_tx_start_page(&t4_tx_state))
+                {
+                    span_log(&s->logging, SPAN_LOG_FLOW, "Failed to start T.4 send\n");
+                    printf("Test failed\n");
+                    exit(2);
+                }
+                /*endif*/
+                s->image_len = t4_tx_get(&t4_tx_state, s->image, sizeof(s->image));
+                if (parms.bad_rows)
+                {
+                    span_log(&s->logging, SPAN_LOG_FLOW, "We need to corrupt the image\n");
+                    corrupt_image(s, (const char *) parms.bad_rows);
+                }
+                /*endif*/
+                t4_tx_release(&t4_tx_state);
+                span_log(&s->logging, SPAN_LOG_FLOW, "ECM image is %d bytes (min row bits %d)\n", s->image_len, min_row_bits);
+                faxtester_set_ecm_image_buffer(s, ecm_block, ecm_frame_size, i);
+            }
+            else if (strcasecmp((const char *) parms.type, "PREAMBLE") == 0)
+            {
+                flags = (parms.value)  ?  atoi((const char *) parms.value)  :  37;
+                faxtester_send_hdlc_flags(s, flags);
+            }
+            else if (strcasecmp((const char *) parms.type, "SET") == 0)
+            {
+                if (strcasecmp((const char *) parms.tag, "IDENT") == 0)
+                    t30_set_tx_ident(s->far_t30, (const char *) parms.value);
+                else if (strcasecmp((const char *) parms.tag, "SUB") == 0)
+                    t30_set_tx_sub_address(s->far_t30, (const char *) parms.value);
+                else if (strcasecmp((const char *) parms.tag, "SEP") == 0)
+                    t30_set_tx_selective_polling_address(s->far_t30, (const char *) parms.value);
+                else if (strcasecmp((const char *) parms.tag, "PSA") == 0)
+                    t30_set_tx_polled_sub_address(s->far_t30, (const char *) parms.value);
+                else if (strcasecmp((const char *) parms.tag, "SID") == 0)
+                    t30_set_tx_sender_ident(s->far_t30, (const char *) parms.value);
+                else if (strcasecmp((const char *) parms.tag, "PWD") == 0)
+                    t30_set_tx_password(s->far_t30, (const char *) parms.value);
+                else if (strcasecmp((const char *) parms.tag, "RXFILE") == 0)
+                {
+                    if (parms.value)
+                        t30_set_rx_file(s->far_t30, (const char *) parms.value, -1);
+                    else
+                        t30_set_rx_file(s->far_t30, output_tiff_file_name, -1);
+                    /*endif*/
+                }
+                else if (strcasecmp((const char *) parms.tag, "TXFILE") == 0)
+                {
+                    snprintf(s->next_tx_file, sizeof(s->next_tx_file), "%s/%s", s->image_path, (const char *) parms.value);
+                    printf("Push '%s'\n", s->next_tx_file);
+                }
+                /*endif*/
+                free_node_parms(&parms);
+                return 0;
+            }
+            else if (strcasecmp((const char *) parms.type, "TCF") == 0)
+            {
+                i = (parms.value)  ?  atoi((const char *) parms.value)  :  450;
+                if (parms.pattern)
+                {
+                    /* TODO: implement proper patterns */
+                    j = atoi((const char *) parms.pattern);
+                    memset(s->image, 0x55, j);
+                    if (i > j)
+                        memset(s->image + j, 0, i - j);
+                    /*endif*/
+                }
+                else
+                {
+                    memset(s->image, 0, i);
+                }
+                /*endif*/
+                s->image_ptr = 0;
+                s->image_bit_ptr = 8;
+                s->image_buffer = s->image;
+                s->image_len = i;
+            }
+            else
+            {
+                span_log(&s->logging, SPAN_LOG_FLOW, "Unrecognised type '%s'\n", (const char *) parms.type);
+                free_node_parms(&parms);
+                return 0;
+            }
+            /*endif*/
         }
         /*endif*/
     }
@@ -1779,20 +1877,23 @@ static int get_test_set(faxtester_state_t *s, const char *test_file, const char 
         fprintf(stderr, "Failed to allocate XML parser context\n");
         return -1;
     }
+    /*endif*/
     /* parse the file, activating the DTD validation option */
     if ((s->doc = xmlCtxtReadFile(ctxt, test_file, NULL, XML_PARSE_XINCLUDE | XML_PARSE_DTDVALID)) == NULL)
     {
         fprintf(stderr, "Failed to read the XML document\n");
         return -1;
     }
+    /*endif*/
     if (ctxt->valid == 0)
     {
         fprintf(stderr, "Failed to validate the XML document\n");
-    	xmlFreeDoc(s->doc);
+        xmlFreeDoc(s->doc);
         s->doc = NULL;
         xmlFreeParserCtxt(ctxt);
         return -1;
     }
+    /*endif*/
     xmlFreeParserCtxt(ctxt);
 
     /* Check the document is of the right kind */
@@ -1855,6 +1956,7 @@ faxtester_state_t *faxtester_init(faxtester_state_t *s, const char *test_file, c
     {
         if ((s = (faxtester_state_t *) malloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
     /*endif*/
 
@@ -1895,6 +1997,7 @@ int faxtester_release(faxtester_state_t *s)
         xmlFreeDoc(s->doc);
         s->doc = NULL;
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

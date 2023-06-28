@@ -29,11 +29,12 @@
 #include "config.h"
 #endif
 
-#include <inttypes.h>
 #include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include <inttypes.h>
 #include <memory.h>
+#include <string.h>
+#include <limits.h>
+#include <stdio.h>
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
@@ -50,6 +51,7 @@
 #include "spandsp/telephony.h"
 #include "spandsp/alloc.h"
 #include "spandsp/logging.h"
+#include "spandsp/fast_convert.h"
 #include "spandsp/queue.h"
 #include "spandsp/async.h"
 #include "spandsp/complex.h"
@@ -87,7 +89,7 @@
             Proceed as Annex B
         1650Hz (V21 ch 2 low) [1650Hz +-12Hz]
             Proceed as Annex F in call mode
-        1300Hz (Calling tone) [1300Hz +-16Hz]
+        1300Hz (V.25 Calling tone) [1300Hz +-16Hz]
             Proceed as Annex E in call mode
         1400Hz/1800Hz (Weitbrecht) [1400Hz +-5% and 1800Hz +-5%]
             Detect rate and proceed as Annex A
@@ -105,7 +107,7 @@
             Monitor as caller for 980Hz or 1300Hz
         CI/XCI
             Respond with ANSam
-        1300Hz [1300Hz +-16Hz]
+        1300Hz (V.25 Calling tone) [1300Hz +-16Hz]
             Probe
         Timer Ta (3s)
             Probe
@@ -124,6 +126,119 @@
         ANSam
             Proceed as V.8 caller Annex G
 */
+
+/*
+    Automoding
+
+When originating the DCE should send:
+
+    Silence 1 s
+    CI 400 ms
+    Silence 2 s
+    CI 400 ms
+    Silence 2 s
+    CI 400 ms
+    Silence 2 s
+    XCI 3 s
+    Silence 1 s
+    CI 400 ms
+    Silence 2 s
+    etc
+
+and prepare to detect:
+
+    390Hz (only when sending XCI).
+    980Hz or 1180Hz (Note: take care to avoid detecting echos of the CI signal)
+    1270Hz
+    1300Hz (V.25 calling tone)
+    1650Hz
+    1400Hz or 1800Hz
+    2100Hz (ANSam) as defined in ITU-T V.8
+    2100Hz (ANS) as defined in ITU-T V.25
+    2225Hz (Bell 103 answer tone)
+    DTMF tones
+
+
+When answering the DCE should prepare to detect:
+
+    V.23 high-band signals
+    980Hz or 1180Hz
+    1300Hz (V.25 Calling tone)
+    1400Hz or 1800Hz
+    signal CI
+    1270Hz
+    1650Hz
+    2100Hz (ANS)
+    2100Hz (ANSam) as defined in ITU-T V.8
+    2225Hz
+    DTMF tones
+*/
+
+#if defined(SPANDSP_USE_FIXED_POINTx)
+/* The fixed point version scales the 16 bit signal down by 7 bits, so the Goertzels will fit in a 32 bit word */
+#define FP_SCALE(x)                 ((int16_t) (x/128.0 + ((x >= 0.0)  ?  0.5  :  -0.5)))
+#define TONE_TO_TOTAL_ENERGY        83.868f         /* -0.85dB [GOERTZEL_SAMPLES_PER_BLOCK*10^(-0.85/10.0)] */
+#else
+#define FP_SCALE(x)                 (x)
+#define TONE_TO_TOTAL_ENERGY        83.868f         /* -0.85dB [GOERTZEL_SAMPLES_PER_BLOCK*10^(-0.85/10.0)] */
+#endif
+
+#define GOERTZEL_SAMPLES_PER_BLOCK  102
+
+static void v18_set_modem(v18_state_t *s, int mode);
+
+static goertzel_descriptor_t tone_set_desc[GOERTZEL_TONE_SET_ENTRIES];
+static bool goertzel_descriptors_inited = false;
+static float tone_set_frequency[GOERTZEL_TONE_SET_ENTRIES] =
+{
+    390.0f,     // V.23 low channel
+    980.0f,
+    1180.0f,
+    1270.0f,
+    1300.0f,    // (V.25 Calling tone)
+    1400.0f,
+    1650.0f,
+    1800.0f,
+    2225.0f     // Bell 103 answer tone
+};
+static span_sample_timer_t tone_set_target_duration[GOERTZEL_TONE_SET_ENTRIES] =
+{
+    milliseconds_to_samples(3000),      /* 390Hz */
+    milliseconds_to_samples(1500),      /* 980Hz */
+    0,                                  /* 1180Hz */
+    milliseconds_to_samples(700),       /* 1270Hz */
+    milliseconds_to_samples(1700),      /* 1300Hz */
+    0,                                  /* 1400Hz */
+    milliseconds_to_samples(460),       /* 1650Hz */
+    0,                                  /* 1800Hz */
+    milliseconds_to_samples(460)        /* 2225Hz */
+};
+
+static bool tone_set_enabled[2][GOERTZEL_TONE_SET_ENTRIES] =
+{
+    {
+        true,                           /* 390Hz */
+        true,                           /* 980Hz */
+        true,                           /* 1180Hz */
+        true,                           /* 1270Hz */
+        false,                          /* 1300Hz */
+        true,                           /* 1400Hz */
+        false,                          /* 1650Hz */
+        true,                           /* 1800Hz */
+        true                            /* 2225Hz */
+    },
+    {
+        true,                           /* 390Hz */
+        true,                           /* 980Hz */
+        true,                           /* 1180Hz */
+        true,                           /* 1270Hz */
+        true,                           /* 1300Hz */
+        true,                           /* 1400Hz */
+        true,                           /* 1650Hz */
+        true,                           /* 1800Hz */
+        false                           /* 2225Hz */
+    }
+};
 
 /*! The baudot code to shift from alpha to digits and symbols */
 #define BAUDOT_FIGURE_SHIFT     0x1B
@@ -175,12 +290,12 @@ static const struct dtmf_to_ascii_s dtmf_to_ascii[] =
     {"#*5", 'X'},   // (Note 1) 101 1100
     {"#*6", 'X'},   // (Note 1) 101 1101
 #else
-    {"#*1", 0xE6},  // (Note 1) 111 1011
-    {"#*2", 0xF8},  // (Note 1) 111 1100
-    {"#*3", 0xE5},  // (Note 1) 111 1101
-    {"#*4", 0xC6},  // (Note 1) 101 1011
-    {"#*5", 0xD8},  // (Note 1) 101 1100
-    {"#*6", 0xC5},  // (Note 1) 101 1101
+    {"#*1", 0xE6},  // (Note 1) 111 1011 (UTF-8 C3 86)
+    {"#*2", 0xF8},  // (Note 1) 111 1100 (UTF-8 C3 98)
+    {"#*3", 0xE5},  // (Note 1) 111 1101 (UTF-8 C3 85)
+    {"#*4", 0xC6},  // (Note 1) 101 1011 (UTF-8 C3 A6)
+    {"#*5", 0xD8},  // (Note 1) 101 1100 (UTF-8 C3 B8)
+    {"#*6", 0xC5},  // (Note 1) 101 1101 (UTF-8 C3 A5)
 #endif
     {"#0", '?'},
     {"#1", 'c'},
@@ -275,7 +390,7 @@ static const char *ascii_to_dtmf[128] =
     "",         /* $ */
     "**5",      /* % */
     "**1",      /* & >> + */
-    "",         /* 0x92 */
+    "",         /* ' */
     "**6",      /* ( */
     "**7",      /* ) */
     "#9",       /* _ >> . */
@@ -327,12 +442,12 @@ static const char *ascii_to_dtmf[128] =
     "###8",     /* X */
     "##*9",     /* Y */
     "##9",      /* Z */
-    "#*4",      /* 0xC6 (National code) */
-    "#*5",      /* 0xD8 (National code) */
-    "#*6",      /* 0xC5 (National code) */
+    "#*4",      /* 0xC6 (National code) (UTF-8 C3 86) */
+    "#*5",      /* 0xD8 (National code) (UTF-8 C3 98) */
+    "#*6",      /* 0xC5 (National code) (UTF-8 C3 85) */
     "",         /* ^ */
     "0",        /* _ >> SPACE */
-    "",         /* 0x92 */
+    "",         /* ` */
     "*1",       /* a */
     "1",        /* b */
     "#1",       /* c */
@@ -359,15 +474,12 @@ static const char *ascii_to_dtmf[128] =
     "#8",       /* x */
     "*9",       /* y */
     "9",        /* z */
-    "#*1",      /* 0xE6 (National code) */
-    "#*2",      /* 0xF8 (National code) */
-    "#*3",      /* 0xE5 (National code) */
+    "#*1",      /* 0xE6 (National code) (UTF-8 C3 A6) */
+    "#*2",      /* 0xF8 (National code) (UTF-8 C3 B8) */
+    "#*3",      /* 0xE5 (National code) (UTF-8 C3 A5) */
     "0",        /* ~ >> SPACE */
     "*0"        /* DEL >> BACK SPACE */
 };
-
-#if 0
-static const uint8_t txp[] = "1111111111000101011100001101110000010101";
 
 /* XCI is:
     400 ms mark;
@@ -385,8 +497,17 @@ static const uint8_t xci[] = "01111111110111111111";
 static const int automoding_sequences[][6] =
 {
     {
-        /* Dummy entry 0 */
-        V18_MODE_5BIT_4545,
+        /* Global */
+        V18_MODE_WEITBRECHT_5BIT_4545,
+        V18_MODE_BELL103,
+        V18_MODE_V21TEXTPHONE,
+        V18_MODE_V23VIDEOTEX,
+        V18_MODE_EDT,
+        V18_MODE_DTMF
+    },
+    {
+        /* None */
+        V18_MODE_WEITBRECHT_5BIT_4545,
         V18_MODE_BELL103,
         V18_MODE_V21TEXTPHONE,
         V18_MODE_V23VIDEOTEX,
@@ -395,7 +516,7 @@ static const int automoding_sequences[][6] =
     },
     {
         /* Australia */
-        V18_MODE_5BIT_50,
+        V18_MODE_WEITBRECHT_5BIT_50,
         V18_MODE_V21TEXTPHONE,
         V18_MODE_V23VIDEOTEX,
         V18_MODE_EDT,
@@ -404,7 +525,7 @@ static const int automoding_sequences[][6] =
     },
     {
         /* Ireland */
-        V18_MODE_5BIT_50,
+        V18_MODE_WEITBRECHT_5BIT_50,
         V18_MODE_V21TEXTPHONE,
         V18_MODE_V23VIDEOTEX,
         V18_MODE_EDT,
@@ -416,7 +537,7 @@ static const int automoding_sequences[][6] =
         V18_MODE_EDT,
         V18_MODE_V21TEXTPHONE,
         V18_MODE_V23VIDEOTEX,
-        V18_MODE_5BIT_50,
+        V18_MODE_WEITBRECHT_5BIT_50,
         V18_MODE_DTMF,
         V18_MODE_BELL103
     },
@@ -425,7 +546,7 @@ static const int automoding_sequences[][6] =
         V18_MODE_EDT,
         V18_MODE_V21TEXTPHONE,
         V18_MODE_V23VIDEOTEX,
-        V18_MODE_5BIT_50,
+        V18_MODE_WEITBRECHT_5BIT_50,
         V18_MODE_DTMF,
         V18_MODE_BELL103
     },
@@ -434,7 +555,7 @@ static const int automoding_sequences[][6] =
         V18_MODE_EDT,
         V18_MODE_V21TEXTPHONE,
         V18_MODE_V23VIDEOTEX,
-        V18_MODE_5BIT_50,
+        V18_MODE_WEITBRECHT_5BIT_50,
         V18_MODE_DTMF,
         V18_MODE_BELL103
     },
@@ -443,7 +564,7 @@ static const int automoding_sequences[][6] =
         V18_MODE_EDT,
         V18_MODE_V21TEXTPHONE,
         V18_MODE_V23VIDEOTEX,
-        V18_MODE_5BIT_50,
+        V18_MODE_WEITBRECHT_5BIT_50,
         V18_MODE_DTMF,
         V18_MODE_BELL103
     },
@@ -452,7 +573,7 @@ static const int automoding_sequences[][6] =
         V18_MODE_EDT,
         V18_MODE_V21TEXTPHONE,
         V18_MODE_V23VIDEOTEX,
-        V18_MODE_5BIT_50,
+        V18_MODE_WEITBRECHT_5BIT_50,
         V18_MODE_DTMF,
         V18_MODE_BELL103
     },
@@ -461,7 +582,7 @@ static const int automoding_sequences[][6] =
         V18_MODE_DTMF,
         V18_MODE_V21TEXTPHONE,
         V18_MODE_V23VIDEOTEX,
-        V18_MODE_5BIT_50,
+        V18_MODE_WEITBRECHT_5BIT_50,
         V18_MODE_EDT,
         V18_MODE_BELL103
     },
@@ -469,7 +590,7 @@ static const int automoding_sequences[][6] =
         /* Iceland */
         V18_MODE_V21TEXTPHONE,
         V18_MODE_DTMF,
-        V18_MODE_5BIT_50,
+        V18_MODE_WEITBRECHT_5BIT_50,
         V18_MODE_EDT,
         V18_MODE_V23VIDEOTEX,
         V18_MODE_BELL103
@@ -478,7 +599,7 @@ static const int automoding_sequences[][6] =
         /* Norway */
         V18_MODE_V21TEXTPHONE,
         V18_MODE_DTMF,
-        V18_MODE_5BIT_50,
+        V18_MODE_WEITBRECHT_5BIT_50,
         V18_MODE_EDT,
         V18_MODE_V23VIDEOTEX,
         V18_MODE_BELL103
@@ -487,7 +608,7 @@ static const int automoding_sequences[][6] =
         /* Sweden */
         V18_MODE_V21TEXTPHONE,
         V18_MODE_DTMF,
-        V18_MODE_5BIT_50,
+        V18_MODE_WEITBRECHT_5BIT_50,
         V18_MODE_EDT,
         V18_MODE_V23VIDEOTEX,
         V18_MODE_BELL103
@@ -496,7 +617,7 @@ static const int automoding_sequences[][6] =
         /* Finland */
         V18_MODE_V21TEXTPHONE,
         V18_MODE_DTMF,
-        V18_MODE_5BIT_50,
+        V18_MODE_WEITBRECHT_5BIT_50,
         V18_MODE_EDT,
         V18_MODE_V23VIDEOTEX,
         V18_MODE_BELL103
@@ -505,7 +626,7 @@ static const int automoding_sequences[][6] =
         /* Denmark */
         V18_MODE_V21TEXTPHONE,
         V18_MODE_DTMF,
-        V18_MODE_5BIT_50,
+        V18_MODE_WEITBRECHT_5BIT_50,
         V18_MODE_EDT,
         V18_MODE_V23VIDEOTEX,
         V18_MODE_BELL103
@@ -513,7 +634,7 @@ static const int automoding_sequences[][6] =
     {
         /* UK */
         V18_MODE_V21TEXTPHONE,
-        V18_MODE_5BIT_50,
+        V18_MODE_WEITBRECHT_5BIT_50,
         V18_MODE_V23VIDEOTEX,
         V18_MODE_EDT,
         V18_MODE_DTMF,
@@ -521,7 +642,7 @@ static const int automoding_sequences[][6] =
     },
     {
         /* USA */
-        V18_MODE_5BIT_4545,
+        V18_MODE_WEITBRECHT_5BIT_4545,
         V18_MODE_BELL103,
         V18_MODE_V21TEXTPHONE,
         V18_MODE_V23VIDEOTEX,
@@ -533,7 +654,7 @@ static const int automoding_sequences[][6] =
         V18_MODE_V23VIDEOTEX,
         V18_MODE_EDT,
         V18_MODE_DTMF,
-        V18_MODE_5BIT_50,
+        V18_MODE_WEITBRECHT_5BIT_50,
         V18_MODE_V21TEXTPHONE,
         V18_MODE_BELL103
     },
@@ -542,12 +663,99 @@ static const int automoding_sequences[][6] =
         V18_MODE_V23VIDEOTEX,
         V18_MODE_EDT,
         V18_MODE_DTMF,
-        V18_MODE_5BIT_50,
+        V18_MODE_WEITBRECHT_5BIT_50,
         V18_MODE_V21TEXTPHONE,
         V18_MODE_BELL103
     }
 };
-#endif
+
+SPAN_DECLARE(const char *) v18_status_to_str(int status)
+{
+    switch (status)
+    {
+    case V18_STATUS_SWITCH_TO_NONE:
+        return "Switched to None mode";
+    case V18_STATUS_SWITCH_TO_WEITBRECHT_5BIT_4545:
+        return "Switched to Weitbrecht TDD (45.45bps) mode";
+    case V18_STATUS_SWITCH_TO_WEITBRECHT_5BIT_476:
+        return "Switched to Weitbrecht TDD (47.6bps) mode";
+    case V18_STATUS_SWITCH_TO_WEITBRECHT_5BIT_50:
+        return "Switched to Weitbrecht TDD (50bps) mode";
+    case V18_STATUS_SWITCH_TO_DTMF:
+        return "Switched to DTMF mode";
+    case V18_STATUS_SWITCH_TO_EDT:
+        return "Switched to EDT mode";
+    case V18_STATUS_SWITCH_TO_BELL103:
+        return "Switched to Bell 103 mode";
+    case V18_STATUS_SWITCH_TO_V23VIDEOTEX:
+        return "Switched to V.23 Videotex mode";
+    case V18_STATUS_SWITCH_TO_V21TEXTPHONE:
+        return "Switched to V.21 mode";
+    case V18_STATUS_SWITCH_TO_V18TEXTPHONE:
+        return "Switched to V.18 text telephone mode";
+    }
+    /*endswitch*/
+    return "???";
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(const char *) v18_mode_to_str(int mode)
+{
+    switch ((mode & 0xFFF))
+    {
+    case V18_MODE_NONE:
+        return "None";
+    case V18_MODE_WEITBRECHT_5BIT_4545:
+        return "Weitbrecht TDD (45.45bps)";
+    case V18_MODE_WEITBRECHT_5BIT_476:
+        return "Weitbrecht TDD (47.6bps)";
+    case V18_MODE_WEITBRECHT_5BIT_50:
+        return "Weitbrecht TDD (50bps)";
+    case V18_MODE_DTMF:
+        return "DTMF";
+    case V18_MODE_EDT:
+        return "EDT";
+    case V18_MODE_BELL103:
+        return "Bell 103";
+    case V18_MODE_V23VIDEOTEX:
+        return "V.23 Videotex";
+    case V18_MODE_V21TEXTPHONE:
+        return "V.21";
+    case V18_MODE_V18TEXTPHONE:
+        return "V.18 text telephone";
+    }
+    /*endswitch*/
+    return "???";
+}
+/*- End of function --------------------------------------------------------*/
+
+static const char *v18_tone_to_str(int tone)
+{
+    switch (tone)
+    {
+    case GOERTZEL_TONE_SET_390HZ:
+        return "390Hz tone";
+    case GOERTZEL_TONE_SET_980HZ:
+        return "980Hz tone";
+    case GOERTZEL_TONE_SET_1180HZ:
+        return "1180Hz tone";
+    case GOERTZEL_TONE_SET_1270HZ:
+        return "1270Hz tone";
+    case GOERTZEL_TONE_SET_1300HZ:
+        return "1300Hz tone";
+    case GOERTZEL_TONE_SET_1400HZ:
+        return "1400Hz tone";
+    case GOERTZEL_TONE_SET_1650HZ:
+        return "1650Hz tone";
+    case GOERTZEL_TONE_SET_1800HZ:
+        return "1800Hz tone";
+    case GOERTZEL_TONE_SET_2225HZ:
+        return "2225Hz tone";
+    }
+    /*endswitch*/
+    return "???";
+}
+/*- End of function --------------------------------------------------------*/
 
 static uint16_t encode_baudot(v18_state_t *s, uint8_t ch)
 {
@@ -688,14 +896,17 @@ static uint16_t encode_baudot(v18_state_t *s, uint8_t ch)
     /* Is it a non-existant code? */
     if (ch == 0xFF)
         return 0;
+    /*endif*/
     /* Is it a code present in both character sets? */
     if ((ch & 0x40))
         return 0x8000 | (ch & 0x1F);
+    /*endif*/
     /* Need to allow for a possible character set change. */
     if ((ch & 0x80))
     {
         if (!s->repeat_shifts  &&  s->baudot_tx_shift == 1)
             return ch & 0x1F;
+        /*endif*/
         s->baudot_tx_shift = 1;
         shift = BAUDOT_FIGURE_SHIFT;
     }
@@ -703,9 +914,11 @@ static uint16_t encode_baudot(v18_state_t *s, uint8_t ch)
     {
         if (!s->repeat_shifts  &&  s->baudot_tx_shift == 0)
             return ch & 0x1F;
+        /*endif*/
         s->baudot_tx_shift = 0;
         shift = BAUDOT_LETTER_SHIFT;
     }
+    /*endif*/
     return 0x8000 | (shift << 5) | (ch & 0x1F);
 }
 /*- End of function --------------------------------------------------------*/
@@ -729,6 +942,7 @@ static uint8_t decode_baudot(v18_state_t *s, uint8_t ch)
     default:
         return conv[s->baudot_rx_shift][ch];
     }
+    /*endswitch*/
     /* Return 0xFF if we did not produce a character */
     return 0xFF;
 }
@@ -738,43 +952,58 @@ static int v18_tdd_get_async_byte(void *user_data)
 {
     v18_state_t *s;
     int ch;
-    unsigned int x;
+    uint16_t x;
 
     s = (v18_state_t *) user_data;
 
     if (s->next_byte != 0xFF)
     {
-        s->rx_suppression = (300*SAMPLE_RATE)/1000;
+        s->rx_suppression_timer = milliseconds_to_samples(300);
         x = s->next_byte;
         s->next_byte = (uint8_t) 0xFF;
         return x;
     }
+    /*endif*/
     for (;;)
     {
         if ((ch = queue_read_byte(&s->queue.queue)) < 0)
         {
-            if (s->tx_signal_on)
+            if (s->tx_draining)
             {
                 /* The FSK should now be switched off. */
-                s->tx_signal_on = 0;
+                s->tx_draining = false;
+                return SIG_STATUS_END_OF_DATA;
             }
-            async_tx_presend_bits(&s->async_tx, 42);
+            /*endif*/
+            /* This should give us 300ms of idling before shutdown. It is
+               not exact, and will vary a little with the actual bit rate. */
+            span_log(&s->logging, SPAN_LOG_FLOW, "Tx shutdown with delay\n");
+            async_tx_presend_bits(&s->async_tx, 14);
+            s->tx_draining = true;
+            s->rx_suppression_timer = milliseconds_to_samples(300);
             return SIG_STATUS_LINK_IDLE;
         }
+        /*endif*/
         if ((x = encode_baudot(s, ch)) != 0)
             break;
+        /*endif*/
     }
-    s->rx_suppression = (300*SAMPLE_RATE)/1000;
+    /*endfor*/
+    s->rx_suppression_timer = milliseconds_to_samples(300);
     if (s->tx_signal_on == 1)
     {
+        /* This should give us about 150ms of idling before the first character. It is
+           not exact, and will vary a little with the actual bit rate. */
         async_tx_presend_bits(&s->async_tx, 7);
         s->tx_signal_on = 2;
     }
+    /*endif*/
     if ((x & 0x3E0))
     {
         s->next_byte = (uint8_t) (x & 0x1F);
         return (uint8_t) ((x >> 5) & 0x1F);
     }
+    /*endif*/
     s->next_byte = (uint8_t) 0xFF;
     return (uint8_t) (x & 0x1F);
 }
@@ -788,13 +1017,61 @@ static void v18_dtmf_get(void *user_data)
     const char *t;
 
     s = (v18_state_t *) user_data;
-    if ((ch = queue_read_byte(&s->queue.queue)) >= 0)
+    if (s->tx_suppression_timer)
+        return;
+    /*endif*/
+    if ((ch = queue_read_byte(&s->queue.queue)) < 0)
+        return;
+    /*endif*/
+    if ((ch & 0x80))
     {
-        t = ascii_to_dtmf[ch & 0x7F];
-        len = strlen(t);
-        dtmf_tx_put(&s->dtmf_tx, t, len);
-        s->rx_suppression = ((300 + 100*len)*SAMPLE_RATE)/1000;
+        /* There are a few characters which mean something above 0x7F, as laid out in
+           Table B.1/V.18 and Table B.2/V.18 */
+        /* TODO: Make these work as UTF-8, instead of the current 8 bit encoding */
+        switch (ch)
+        {
+        case 0xC6:
+            /* UTF-8 C3 86 */
+            t = ascii_to_dtmf[0x5B];
+            break;
+        case 0xD8:
+            /* UTF-8 C3 98 */
+            t = ascii_to_dtmf[0x5C];
+            break;
+        case 0xC5:
+            /* UTF-8 C3 85 */
+            t = ascii_to_dtmf[0x5D];
+            break;
+        case 0xE6:
+            /* UTF-8 C3 A6 */
+            t = ascii_to_dtmf[0x7B];
+            break;
+        case 0xF8:
+            /* UTF-8 C3 B8 */
+            t = ascii_to_dtmf[0x7C];
+            break;
+        case 0xE5:
+            /* UTF-8 C3 A5 */
+            t = ascii_to_dtmf[0x7D];
+            break;
+        default:
+            t = "";
+            break;
+        }
+        /*endswitch*/
     }
+    else
+    {
+        t = ascii_to_dtmf[ch];
+    }
+    /*endif*/
+    len = strlen(t);
+    if (len > 0)
+    {
+        dtmf_tx_put(&s->dtmf_tx, t, len);
+        s->rx_suppression_timer = milliseconds_to_samples(300 + 100*len);
+    }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -806,15 +1083,64 @@ static int v18_edt_get_async_byte(void *user_data)
     s = (v18_state_t *) user_data;
     if ((ch = queue_read_byte(&s->queue.queue)) >= 0)
     {
-        s->rx_suppression = (300*SAMPLE_RATE)/1000;
+        s->rx_suppression_timer = milliseconds_to_samples(300);
         return ch;
     }
+    /*endif*/
+    /* Nothing to send */
     if (s->tx_signal_on)
     {
         /* The FSK should now be switched off. */
+        span_log(&s->logging, SPAN_LOG_FLOW, "Turning off the carrier\n");
         s->tx_signal_on = 0;
     }
-    return 0;
+    /*endif*/
+    return SIG_STATUS_LINK_IDLE;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int v18_bell103_get_async_byte(void *user_data)
+{
+    v18_state_t *s;
+    int ch;
+
+    s = (v18_state_t *) user_data;
+    if ((ch = queue_read_byte(&s->queue.queue)) >= 0)
+    {
+        return ch;
+    }
+    /*endif*/
+    return SIG_STATUS_LINK_IDLE;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int v18_videotex_get_async_byte(void *user_data)
+{
+    v18_state_t *s;
+    int ch;
+
+    s = (v18_state_t *) user_data;
+    if ((ch = queue_read_byte(&s->queue.queue)) >= 0)
+    {
+        return ch;
+    }
+    /*endif*/
+    return SIG_STATUS_LINK_IDLE;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int v18_textphone_get_async_byte(void *user_data)
+{
+    v18_state_t *s;
+    int ch;
+
+    s = (v18_state_t *) user_data;
+    if ((ch = queue_read_byte(&s->queue.queue)) >= 0)
+    {
+        return ch;
+    }
+    /*endif*/
+    return SIG_STATUS_LINK_IDLE;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -827,13 +1153,11 @@ static void v18_tdd_put_async_byte(void *user_data, int byte)
     if (byte < 0)
     {
         /* Special conditions */
-        span_log(&s->logging, SPAN_LOG_FLOW, "V.18 signal status is %s (%d)\n", signal_status_to_str(byte), byte);
+        span_log(&s->logging, SPAN_LOG_FLOW, "TDD signal status is %s (%d)\n", signal_status_to_str(byte), byte);
         switch (byte)
         {
         case SIG_STATUS_CARRIER_UP:
-            s->consecutive_ones = 0;
-            s->bit_pos = 0;
-            s->in_progress = 0;
+            s->msg_in_progress_timer = 0;
             s->rx_msg_len = 0;
             break;
         case SIG_STATUS_CARRIER_DOWN:
@@ -842,31 +1166,42 @@ static void v18_tdd_put_async_byte(void *user_data, int byte)
                 /* Whatever we have to date constitutes the message */
                 s->rx_msg[s->rx_msg_len] = '\0';
                 if (s->put_msg)
-                    s->put_msg(s->user_data, s->rx_msg, s->rx_msg_len);
+                    s->put_msg(s->put_msg_user_data, s->rx_msg, s->rx_msg_len);
+                /*endif*/
                 s->rx_msg_len = 0;
             }
+            /*endif*/
             break;
         default:
             span_log(&s->logging, SPAN_LOG_WARNING, "Unexpected special put byte value - %d!\n", byte);
             break;
         }
+        /*endswitch*/
         return;
     }
-    if (s->rx_suppression > 0)
+    /*endif*/
+    if (s->rx_suppression_timer > 0)
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "Rx suppressed byte 0x%02x (%d)\n", byte, s->rx_suppression_timer);
         return;
-    span_log(&s->logging, SPAN_LOG_FLOW, "Rx byte %x\n", byte);
+    }
+    /*endif*/
+    span_log(&s->logging, SPAN_LOG_FLOW, "Rx byte 0x%02x\n", byte);
     if ((octet = decode_baudot(s, byte)) != 0xFF)
     {
         s->rx_msg[s->rx_msg_len++] = octet;
-        span_log(&s->logging, SPAN_LOG_FLOW, "Rx byte 0x%x '%c'\n", octet, octet);
+        span_log(&s->logging, SPAN_LOG_FLOW, "Rx byte 0x%02x '%c'\n", octet, octet);
     }
-    if (s->rx_msg_len > 0) //= 256)
+    /*endif*/
+    if (s->rx_msg_len > 0)
     {
         s->rx_msg[s->rx_msg_len] = '\0';
         if (s->put_msg)
-            s->put_msg(s->user_data, s->rx_msg, s->rx_msg_len);
+            s->put_msg(s->put_msg_user_data, s->rx_msg, s->rx_msg_len);
+        /*endif*/
         s->rx_msg_len = 0;
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -901,12 +1236,16 @@ static int decode_dtmf(v18_state_t *s, char msg[], const char dtmf[])
             *u++ = ss->ascii;
             return len;
         }
+        /*endif*/
         /* Can't match the code. Let's assume this is a code we just don't know, and skip over it */
         while (*t == '#'  ||  *t == '*')
             t++;
+        /*endwhile*/
         if (*t)
             t++;
+        /*endif*/
     }
+    /*endwhile*/
     *u = '\0';
     return u - msg;
 }
@@ -920,8 +1259,17 @@ static void v18_dtmf_put(void *user_data, const char dtmf[], int len)
     int matched;
 
     s = (v18_state_t *) user_data;
-    if (s->rx_suppression > 0)
+    if (s->current_mode != V18_MODE_DTMF)
+    {
+        /* We must have received DTMF while in automoding */
+        s->status_handler(s->status_handler_user_data, V18_STATUS_SWITCH_TO_DTMF);
+        v18_set_modem(s, V18_MODE_DTMF);
+    }
+    /*endif*/
+    s->tx_suppression_timer = milliseconds_to_samples(400);
+    if (s->rx_suppression_timer > 0)
         return;
+    /*endif*/
     for (i = 0;  i < len;  i++)
     {
         s->rx_msg[s->rx_msg_len++] = dtmf[i];
@@ -931,14 +1279,18 @@ static void v18_dtmf_put(void *user_data, const char dtmf[], int len)
             if ((matched = decode_dtmf(s, buf, (const char *) s->rx_msg)) > 0)
             {
                 buf[1] = '\0';
-                s->put_msg(s->user_data, (const uint8_t *) buf, 1);
+                s->put_msg(s->put_msg_user_data, (const uint8_t *) buf, 1);
             }
+            /*endif*/
             if (s->rx_msg_len > matched)
                 memcpy(&s->rx_msg[0], &s->rx_msg[matched], s->rx_msg_len - matched);
+            /*endif*/
             s->rx_msg_len -= matched;
         }
+        /*endif*/
     }
-    s->in_progress = 5*SAMPLE_RATE;
+    /*endfor*/
+    s->msg_in_progress_timer = seconds_to_samples(5);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -946,8 +1298,9 @@ static void v18_edt_put_async_byte(void *user_data, int byte)
 {
     v18_state_t *s;
     s = (v18_state_t *) user_data;
-    if (s->rx_suppression > 0)
+    if (s->rx_suppression_timer > 0)
         return;
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -955,8 +1308,9 @@ static void v18_bell103_put_async_byte(void *user_data, int byte)
 {
     v18_state_t *s;
     s = (v18_state_t *) user_data;
-    if (s->rx_suppression > 0)
+    if (s->rx_suppression_timer > 0)
         return;
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -964,8 +1318,9 @@ static void v18_videotex_put_async_byte(void *user_data, int byte)
 {
     v18_state_t *s;
     s = (v18_state_t *) user_data;
-    if (s->rx_suppression > 0)
+    if (s->rx_suppression_timer > 0)
         return;
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -973,8 +1328,470 @@ static void v18_textphone_put_async_byte(void *user_data, int byte)
 {
     v18_state_t *s;
     s = (v18_state_t *) user_data;
-    if (s->rx_suppression > 0)
+    if (s->rx_suppression_timer > 0)
         return;
+    /*endif*/
+}
+/*- End of function --------------------------------------------------------*/
+
+static int v18_txp_get_bit(void *user_data)
+{
+    /* TXP is:
+        A break (10 1's)
+        A start stop framed 0xD4
+        A start stop framed 0xD8
+        A start stop framed 0x50
+        Repeated */
+    static const uint8_t txp[] = "1111111111000101011100001101110000010101";
+    int bit;
+
+    v18_state_t *s;
+    s = (v18_state_t *) user_data;
+    bit = (txp[s->txp_cnt] == '1')  ?  1  :  0;
+    s->txp_cnt++;
+    if (s->txp_cnt >= 40)
+        s->txp_cnt = 0;
+    /*endif*/
+    return bit;
+}
+/*- End of function --------------------------------------------------------*/
+
+static void v18_set_modem(v18_state_t *s, int mode)
+{
+    int tx_modem;
+    int rx_modem;
+
+    switch (mode)
+    {
+    case V18_MODE_WEITBRECHT_5BIT_4545:
+        s->repeat_shifts = (mode & V18_MODE_REPETITIVE_SHIFTS_OPTION) != 0;
+        fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_WEITBRECHT_4545], async_tx_get_bit, &s->async_tx);
+        async_tx_init(&s->async_tx, 5, ASYNC_PARITY_NONE, 2, false, v18_tdd_get_async_byte, s);
+        /* Schedule an explicit shift at the start of baudot transmission */
+        s->baudot_tx_shift = 2;
+        /* TDD uses 5 bit data, no parity and 1.5 stop bits. We scan for the first stop bit, and
+           ride over the fraction. */
+        fsk_rx_init(&s->fsk_rx,
+                    &preset_fsk_specs[FSK_WEITBRECHT_4545],
+                    FSK_FRAME_MODE_FRAMED,
+                    v18_tdd_put_async_byte,
+                    s);
+        fsk_rx_set_frame_parameters(&s->fsk_rx, 5, ASYNC_PARITY_NONE, 2);
+        s->baudot_rx_shift = 0;
+        s->next_byte = (uint8_t) 0xFF;
+        break;
+    case V18_MODE_WEITBRECHT_5BIT_476:
+        s->repeat_shifts = (mode & V18_MODE_REPETITIVE_SHIFTS_OPTION) != 0;
+        fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_WEITBRECHT_476], async_tx_get_bit, &s->async_tx);
+        async_tx_init(&s->async_tx, 5, ASYNC_PARITY_NONE, 2, false, v18_tdd_get_async_byte, s);
+        /* Schedule an explicit shift at the start of baudot transmission */
+        s->baudot_tx_shift = 2;
+        /* TDD uses 5 bit data, no parity and 1.5 stop bits. We scan for the first stop bit, and
+           ride over the fraction. */
+        fsk_rx_init(&s->fsk_rx,
+                    &preset_fsk_specs[FSK_WEITBRECHT_476],
+                    FSK_FRAME_MODE_FRAMED,
+                    v18_tdd_put_async_byte,
+                    s);
+        fsk_rx_set_frame_parameters(&s->fsk_rx, 5, ASYNC_PARITY_NONE, 2);
+        s->baudot_rx_shift = 0;
+        s->next_byte = (uint8_t) 0xFF;
+        break;
+    case V18_MODE_WEITBRECHT_5BIT_50:
+        s->repeat_shifts = (mode & V18_MODE_REPETITIVE_SHIFTS_OPTION) != 0;
+        fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_WEITBRECHT_50], async_tx_get_bit, &s->async_tx);
+        async_tx_init(&s->async_tx, 5, ASYNC_PARITY_NONE, 2, false, v18_tdd_get_async_byte, s);
+        /* Schedule an explicit shift at the start of baudot transmission */
+        s->baudot_tx_shift = 2;
+        /* TDD uses 5 bit data, no parity and 1.5 stop bits. We scan for the first stop bit, and
+           ride over the fraction. */
+        fsk_rx_init(&s->fsk_rx,
+                    &preset_fsk_specs[FSK_WEITBRECHT_50],
+                    FSK_FRAME_MODE_FRAMED,
+                    v18_tdd_put_async_byte,
+                    s);
+        fsk_rx_set_frame_parameters(&s->fsk_rx, 5, ASYNC_PARITY_NONE, 2);
+        s->baudot_rx_shift = 0;
+        s->next_byte = (uint8_t) 0xFF;
+        break;
+    case V18_MODE_DTMF:
+        dtmf_tx_init(&s->dtmf_tx, v18_dtmf_get, s);
+        dtmf_rx_init(&s->dtmf_rx, v18_dtmf_put, s);
+        break;
+    case V18_MODE_EDT:
+        fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_V21CH1_110], async_tx_get_bit, &s->async_tx);
+        async_tx_init(&s->async_tx, 7, ASYNC_PARITY_EVEN, 2, false, v18_edt_get_async_byte, s);
+        fsk_rx_init(&s->fsk_rx,
+                    &preset_fsk_specs[FSK_V21CH1_110],
+                    FSK_FRAME_MODE_FRAMED,
+                    v18_edt_put_async_byte,
+                    s);
+        fsk_rx_set_frame_parameters(&s->fsk_rx, 7, ASYNC_PARITY_EVEN, 2);
+        break;
+    case V18_MODE_BELL103:
+        if (s->calling_party)
+        {
+            tx_modem = FSK_BELL103CH1;
+            rx_modem = FSK_BELL103CH2;
+        }
+        else
+        {
+            tx_modem = FSK_BELL103CH2;
+            rx_modem = FSK_BELL103CH1;
+        }
+        /*endif*/
+        fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[tx_modem], async_tx_get_bit, &s->async_tx);
+        async_tx_init(&s->async_tx, 7, ASYNC_PARITY_EVEN, 1, false, v18_bell103_get_async_byte, s);
+        fsk_rx_init(&s->fsk_rx,
+                    &preset_fsk_specs[rx_modem],
+                    FSK_FRAME_MODE_FRAMED,
+                    v18_bell103_put_async_byte,
+                    s);
+        fsk_rx_set_frame_parameters(&s->fsk_rx, 7, ASYNC_PARITY_EVEN, 1);
+        span_log(&s->logging, SPAN_LOG_FLOW, "Turning on the carrier\n");
+        s->tx_signal_on = 1;
+        break;
+    case V18_MODE_V23VIDEOTEX:
+        if (s->calling_party)
+        {
+            tx_modem = FSK_V23CH2;
+            rx_modem = FSK_V23CH1;
+        }
+        else
+        {
+            tx_modem = FSK_V23CH1;
+            rx_modem = FSK_V23CH2;
+        }
+        /*endif*/
+        fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[tx_modem], async_tx_get_bit, &s->async_tx);
+        async_tx_init(&s->async_tx, 7, ASYNC_PARITY_EVEN, 1, false, v18_videotex_get_async_byte, s);
+        fsk_rx_init(&s->fsk_rx,
+                    &preset_fsk_specs[rx_modem],
+                    FSK_FRAME_MODE_FRAMED,
+                    v18_videotex_put_async_byte,
+                    s);
+        fsk_rx_set_frame_parameters(&s->fsk_rx, 7, ASYNC_PARITY_EVEN, 1);
+        span_log(&s->logging, SPAN_LOG_FLOW, "Turning on the carrier\n");
+        s->tx_signal_on = 1;
+        break;
+    case V18_MODE_V21TEXTPHONE:
+        if (s->calling_party)
+        {
+            tx_modem = FSK_V21CH1;
+            rx_modem = FSK_V21CH2;
+        }
+        else
+        {
+            tx_modem = FSK_V21CH2;
+            rx_modem = FSK_V21CH1;
+        }
+        /*endif*/
+#if 1
+        fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[tx_modem], async_tx_get_bit, &s->async_tx);
+        async_tx_init(&s->async_tx, 7, ASYNC_PARITY_EVEN, 1, false, v18_textphone_get_async_byte, s);
+#else
+        fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[tx_modem], v18_txp_get_bit, s);
+#endif
+        fsk_rx_init(&s->fsk_rx,
+                    &preset_fsk_specs[rx_modem],
+                    FSK_FRAME_MODE_FRAMED,
+                    v18_textphone_put_async_byte,
+                    s);
+        fsk_rx_set_frame_parameters(&s->fsk_rx, 7, ASYNC_PARITY_EVEN, 1);
+        span_log(&s->logging, SPAN_LOG_FLOW, "Turning on the carrier\n");
+        s->tx_signal_on = 1;
+        break;
+    case V18_MODE_V18TEXTPHONE:
+        fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_V21CH1], async_tx_get_bit, &s->async_tx);
+        async_tx_init(&s->async_tx, 7, ASYNC_PARITY_EVEN, 1, false, v18_textphone_get_async_byte, s);
+        fsk_rx_init(&s->fsk_rx,
+                    &preset_fsk_specs[FSK_V21CH1],
+                    FSK_FRAME_MODE_FRAMED,
+                    v18_textphone_put_async_byte,
+                    s);
+        fsk_rx_set_frame_parameters(&s->fsk_rx, 7, ASYNC_PARITY_EVEN, 1);
+        break;
+    }
+    /*endswitch*/
+    s->current_mode = mode;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int caller_tone_scan(v18_state_t *s, const int16_t amp[], int samples)
+{
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    int32_t tone_set_energy[GOERTZEL_TONE_SET_ENTRIES];
+    int32_t max_energy;
+    int16_t xamp;
+#else
+    float tone_set_energy[GOERTZEL_TONE_SET_ENTRIES];
+    float max_energy;
+    float xamp;
+#endif
+    int sample;
+    int limit;
+    int tone_is;
+    int i;
+    int j;
+
+    dtmf_rx(&s->dtmf_rx, amp, samples);
+    modem_connect_tones_rx(&s->answer_tone_rx, amp, samples);
+    for (sample = 0;  sample < samples;  sample = limit)
+    {
+        /* The block length is optimised to meet the DTMF specs. */
+        if ((samples - sample) >= (GOERTZEL_SAMPLES_PER_BLOCK - s->current_goertzel_sample))
+            limit = sample + (GOERTZEL_SAMPLES_PER_BLOCK - s->current_goertzel_sample);
+        else
+            limit = samples;
+        /*endif*/
+        for (j = sample;  j < limit;  j++)
+        {
+            xamp = amp[j];
+            xamp = goertzel_preadjust_amp(xamp);
+#if defined(SPANDSP_USE_FIXED_POINTx)
+            s->energy += ((int32_t) xamp*xamp);
+#else
+            s->energy += xamp*xamp;
+#endif
+            for (i = 0;  i < GOERTZEL_TONE_SET_ENTRIES;  i++)
+            {
+                goertzel_samplex(&s->tone_set[i], xamp);
+            }
+            /*endfor*/
+        }
+        /*endfor*/
+        if (s->tone_duration < INT_MAX - (limit - sample))
+            s->tone_duration += (limit - sample);
+        /*endif*/
+        s->current_goertzel_sample += (limit - sample);
+        if (s->current_goertzel_sample < GOERTZEL_SAMPLES_PER_BLOCK)
+            continue;
+        /*endif*/
+
+        /* We are at the end of a tone detection block */
+        max_energy = 0;
+        for (i = 0;  i < GOERTZEL_TONE_SET_ENTRIES;  i++)
+        {
+            tone_set_energy[i] = goertzel_result(&s->tone_set[i]);
+            if (tone_set_energy[i] > max_energy)
+            {
+                max_energy = tone_set_energy[i];
+                tone_is = i;
+            }
+            /*endif*/
+        }
+        /*endif*/
+
+        /* Basic signal level test */
+        /* Fraction of total energy test */
+        if (max_energy < s->threshold
+            ||
+            max_energy <= TONE_TO_TOTAL_ENERGY*s->energy)
+        {
+            tone_is = 0;
+        }
+        /*endif*/
+        if (tone_is != s->in_tone)
+        {
+            /* Any change of tone will restart this persistence check. */
+            s->target_tone_duration = tone_set_target_duration[tone_is];
+            s->tone_duration = 0;
+            s->in_tone = tone_is;
+        }
+        else
+        {
+            if (s->target_tone_duration  &&  s->tone_duration >= s->target_tone_duration)
+            {
+                /* We have a confirmed tone */
+                span_log(&s->logging, SPAN_LOG_FLOW, "Tone %s (%d) seen\n", v18_tone_to_str(s->in_tone), s->in_tone);
+                switch (s->in_tone)
+                {
+                case GOERTZEL_TONE_SET_390HZ:
+                    /* Proceed as Annex E in answer mode */
+                    s->status_handler(s->status_handler_user_data, V18_STATUS_SWITCH_TO_V23VIDEOTEX);
+                    v18_set_modem(s, V18_MODE_V23VIDEOTEX);
+                    break;
+                case GOERTZEL_TONE_SET_980HZ:
+                    s->status_handler(s->status_handler_user_data, V18_STATUS_SWITCH_TO_V21TEXTPHONE);
+                    v18_set_modem(s, V18_MODE_V21TEXTPHONE);
+                    break;
+                case GOERTZEL_TONE_SET_1180HZ:
+                    s->status_handler(s->status_handler_user_data, V18_STATUS_SWITCH_TO_V21TEXTPHONE);
+                    v18_set_modem(s, V18_MODE_V21TEXTPHONE);
+                    break;
+                case GOERTZEL_TONE_SET_1270HZ:
+                    /* Proceed as Annex D in answer mode */
+                    s->status_handler(s->status_handler_user_data, V18_STATUS_SWITCH_TO_BELL103);
+                    v18_set_modem(s, V18_MODE_BELL103);
+                    break;
+                case GOERTZEL_TONE_SET_1300HZ:
+                    s->status_handler(s->status_handler_user_data, V18_STATUS_SWITCH_TO_V23VIDEOTEX);
+                    v18_set_modem(s, V18_MODE_V23VIDEOTEX);
+                    break;
+                case GOERTZEL_TONE_SET_1400HZ:
+                case GOERTZEL_TONE_SET_1800HZ:
+                    /* Find the bit rate */
+                    s->status_handler(s->status_handler_user_data, V18_STATUS_SWITCH_TO_WEITBRECHT_5BIT_476);
+                    v18_set_modem(s, V18_MODE_WEITBRECHT_5BIT_476); /* TODO: */
+                    break;
+                case GOERTZEL_TONE_SET_1650HZ:
+                    s->status_handler(s->status_handler_user_data, V18_STATUS_SWITCH_TO_V21TEXTPHONE);
+                    v18_set_modem(s, V18_MODE_V21TEXTPHONE);
+                    break;
+                case GOERTZEL_TONE_SET_2225HZ:
+                    /* Proceed as Annex E in caller mode */
+                    s->status_handler(s->status_handler_user_data, V18_STATUS_SWITCH_TO_BELL103);
+                    v18_set_modem(s, V18_MODE_BELL103);
+                    break;
+                }
+                /*endswitch*/
+                s->target_tone_duration = 0;
+            }
+            /*endif*/
+        }
+        /*endif*/
+        s->energy = FP_SCALE(0.0f);
+        s->current_goertzel_sample = 0;
+    }
+    /*endfor*/
+    return samples;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int answerer_tone_scan(v18_state_t *s, const int16_t amp[], int samples)
+{
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    int32_t tone_set_energy[GOERTZEL_TONE_SET_ENTRIES];
+    int32_t max_energy;
+    int16_t xamp;
+#else
+    float tone_set_energy[GOERTZEL_TONE_SET_ENTRIES];
+    float max_energy;
+    float xamp;
+#endif
+    int sample;
+    int limit;
+    int tone_is;
+    int i;
+    int j;
+
+    dtmf_rx(&s->dtmf_rx, amp, samples);
+    modem_connect_tones_rx(&s->answer_tone_rx, amp, samples);
+    for (sample = 0;  sample < samples;  sample = limit)
+    {
+        /* The block length is optimised to meet the DTMF specs. */
+        if ((samples - sample) >= (GOERTZEL_SAMPLES_PER_BLOCK - s->current_goertzel_sample))
+            limit = sample + (GOERTZEL_SAMPLES_PER_BLOCK - s->current_goertzel_sample);
+        else
+            limit = samples;
+        /*endif*/
+        for (j = sample;  j < limit;  j++)
+        {
+            xamp = amp[j];
+            xamp = goertzel_preadjust_amp(xamp);
+#if defined(SPANDSP_USE_FIXED_POINTx)
+            s->energy += ((int32_t) xamp*xamp);
+#else
+            s->energy += xamp*xamp;
+#endif
+            for (i = 0;  i < GOERTZEL_TONE_SET_ENTRIES;  i++)
+            {
+                goertzel_samplex(&s->tone_set[i], xamp);
+            }
+            /*endfor*/
+        }
+        /*endfor*/
+        if (s->tone_duration < INT_MAX - (limit - sample))
+            s->tone_duration += (limit - sample);
+        /*endif*/
+        s->current_goertzel_sample += (limit - sample);
+        if (s->current_goertzel_sample < GOERTZEL_SAMPLES_PER_BLOCK)
+            continue;
+        /*endif*/
+
+        /* We are at the end of a tone detection block */
+        max_energy = 0;
+        for (i = 0;  i < GOERTZEL_TONE_SET_ENTRIES;  i++)
+        {
+            tone_set_energy[i] = goertzel_result(&s->tone_set[i]);
+            if (tone_set_energy[i] > max_energy)
+            {
+                max_energy = tone_set_energy[i];
+                tone_is = i;
+            }
+            /*endif*/
+        }
+        /*endif*/
+
+        /* Basic signal level test */
+        /* Fraction of total energy test */
+        if (max_energy < s->threshold
+            ||
+            max_energy <= TONE_TO_TOTAL_ENERGY*s->energy)
+        {
+            tone_is = 0;
+        }
+        /*endif*/
+        if (tone_is != s->in_tone)
+        {
+            /* Any change of tone will restart this persistence check. */
+            s->target_tone_duration = tone_set_target_duration[tone_is];
+            s->tone_duration = 0;
+            s->in_tone = tone_is;
+        }
+        else
+        {
+            if (s->target_tone_duration  &&  s->tone_duration >= s->target_tone_duration)
+            {
+                /* We have a confirmed tone */
+                span_log(&s->logging, SPAN_LOG_FLOW, "Tone %s (%d) seen\n", v18_tone_to_str(s->in_tone), s->in_tone);
+                switch (s->in_tone)
+                {
+                case GOERTZEL_TONE_SET_980HZ:
+                    s->status_handler(s->status_handler_user_data, V18_STATUS_SWITCH_TO_V21TEXTPHONE);
+                    v18_set_modem(s, V18_MODE_V21TEXTPHONE);
+                    break;
+                case GOERTZEL_TONE_SET_1180HZ:
+                    s->status_handler(s->status_handler_user_data, V18_STATUS_SWITCH_TO_V21TEXTPHONE);
+                    v18_set_modem(s, V18_MODE_V21TEXTPHONE);
+                    break;
+                case GOERTZEL_TONE_SET_1270HZ:
+                    /* Proceed as Annex D in answer mode */
+                    s->status_handler(s->status_handler_user_data, V18_STATUS_SWITCH_TO_BELL103);
+                    v18_set_modem(s, V18_MODE_BELL103);
+                    break;
+                case GOERTZEL_TONE_SET_1300HZ:
+                    s->status_handler(s->status_handler_user_data, V18_STATUS_SWITCH_TO_V23VIDEOTEX);
+                    v18_set_modem(s, V18_MODE_V23VIDEOTEX);
+                    break;
+                case GOERTZEL_TONE_SET_1400HZ:
+                case GOERTZEL_TONE_SET_1800HZ:
+                    /* Find the bit rate */
+                    s->status_handler(s->status_handler_user_data, V18_STATUS_SWITCH_TO_WEITBRECHT_5BIT_476);
+                    v18_set_modem(s, V18_MODE_WEITBRECHT_5BIT_476); /* TODO: */
+                    break;
+                case GOERTZEL_TONE_SET_1650HZ:
+                    /* Proceed as Annex F in answer mode */
+                    s->status_handler(s->status_handler_user_data, V18_STATUS_SWITCH_TO_V21TEXTPHONE);
+                    v18_set_modem(s, V18_MODE_V21TEXTPHONE);
+                    break;
+                case GOERTZEL_TONE_SET_2225HZ:
+                    /* Proceed as Annex D in caller mode */
+                    s->status_handler(s->status_handler_user_data, V18_STATUS_SWITCH_TO_BELL103);
+                    v18_set_modem(s, V18_MODE_BELL103);
+                    break;
+                }
+                /*endswitch*/
+                s->target_tone_duration = 0;
+            }
+            /*endif*/
+        }
+        /*endif*/
+        s->energy = FP_SCALE(0.0f);
+        s->current_goertzel_sample = 0;
+    }
+    /*endfor*/
+    return samples;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -983,87 +1800,181 @@ SPAN_DECLARE(int) v18_tx(v18_state_t *s, int16_t *amp, int max_len)
     int len;
     int lenx;
 
-    len = tone_gen(&s->alert_tone_gen, amp, max_len);
-    if (s->tx_signal_on)
+    len = 0;
+    if (s->tx_suppression_timer > 0)
     {
-        switch (s->mode)
-        {
-        case V18_MODE_DTMF:
-            if (len < max_len)
-                len += dtmf_tx(&s->dtmf_tx, amp, max_len - len);
-            break;
-        default:
-            if (len < max_len)
-            {
-                if ((lenx = fsk_tx(&s->fsk_tx, amp + len, max_len - len)) <= 0)
-                    s->tx_signal_on = 0;
-                len += lenx;
-            }
-            break;
-        }
+        if (s->tx_suppression_timer > max_len)
+            s->tx_suppression_timer -= max_len;
+        else
+            s->tx_suppression_timer = 0;
+        /*endif*/
     }
+    /*endif*/
+    switch (s->tx_state)
+    {
+    case V18_TX_STATE_ORIGINATING_1:
+        /* Send 1s of silence */
+        break;
+    case V18_TX_STATE_ORIGINATING_2:
+        /* Send CI and XCI as per V.18/5.1.1 */
+        break;
+    case V18_TX_STATE_ORIGINATING_3:
+        /* ??? */
+        break;
+    case V18_TX_STATE_ANSWERING_1:
+        /* Send silence */
+        break;
+    case V18_TX_STATE_ANSWERING_2:
+        /* Send ANSam */
+        break;
+    case V18_TX_STATE_ANSWERING_3:
+        break;
+    case V18_TX_STATE_ORIGINATING_42:
+        //len = tone_gen(&s->alert_tone_gen, amp, max_len);
+        if (s->tx_signal_on)
+        {
+            switch (s->current_mode)
+            {
+            case V18_MODE_NONE:
+                break;
+            case V18_MODE_DTMF:
+                if (len < max_len)
+                    len += dtmf_tx(&s->dtmf_tx, amp, max_len - len);
+                /*endif*/
+                break;
+            default:
+                if (len < max_len)
+                {
+                    if ((lenx = fsk_tx(&s->fsk_tx, amp + len, max_len - len)) <= 0)
+                        s->tx_signal_on = 0;
+                    /*endif*/
+                    len += lenx;
+                }
+                /*endif*/
+                break;
+            }
+            /*endswitch*/
+        }
+        /*endif*/
+        break;
+    }
+    /*endswitch*/
     return len;
 }
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) v18_rx(v18_state_t *s, const int16_t amp[], int len)
 {
-    if (s->rx_suppression > 0)
+    if (s->rx_suppression_timer > 0)
     {
-        if (s->rx_suppression > len)
-            s->rx_suppression -= len;
+        if (s->rx_suppression_timer > len)
+            s->rx_suppression_timer -= len;
         else
-            s->rx_suppression = 0;
+            s->rx_suppression_timer = 0;
+        /*endif*/
     }
-    if ((s->mode & V18_MODE_DTMF))
+    /*endif*/
+    switch (s->rx_state)
     {
-        /* Apply a message timeout. */
-        if (s->in_progress)
+    case V18_RX_STATE_ORIGINATING_1:
+        /* Listen for:
+            ANS
+            ANSam
+            DTMF
+            1400Hz/1800Hz (Weitbrecht)
+            980Hz/1180Hz (V.21)
+            1270Hz/2225Hz (Bell 103)
+            390Hz (V.23 75bps channel)
+        */
+        caller_tone_scan(s, amp, len);
+        break;
+    case V18_RX_STATE_ANSWERING_1:
+        /* Listen for:
+            ANS
+            ANSam
+            CI/XCI
+            DTMF
+            1650Hz/1850Hz (V.21)
+            1270Hz/2225Hz (Bell 103)
+            1300Hz (V.25 calling tone)
+        */
+        answerer_tone_scan(s, amp, len);
+        break;
+    case V18_RX_STATE_ORIGINATING_42:
+        /* We have negotiated, and are now running one of protocols */
+        /* The protocols are either DTMF, or an FSK modem. The modems
+           all function the same, once they are selected, and initialised. */
+        if ((s->current_mode & V18_MODE_DTMF))
         {
-            s->in_progress -= len;
-            if (s->in_progress <= 0)
+            /* Apply a message timeout. */
+            if (s->msg_in_progress_timer)
             {
-                s->in_progress = 0;
-                s->rx_msg_len = 0;
+                s->msg_in_progress_timer -= len;
+                if (s->msg_in_progress_timer <= 0)
+                {
+                    s->msg_in_progress_timer = 0;
+                    s->rx_msg_len = 0;
+                }
+                /*endif*/
             }
+            /*endif*/
+            dtmf_rx(&s->dtmf_rx, amp, len);
         }
-        dtmf_rx(&s->dtmf_rx, amp, len);
+        else
+        {
+            fsk_rx(&s->fsk_rx, amp, len);
+        }
+        /*endif*/
+        break;
     }
-    if ((s->mode & (V18_MODE_5BIT_4545 | V18_MODE_5BIT_476 | V18_MODE_5BIT_50)))
-    {
-        fsk_rx(&s->fsk_rx, amp, len);
-    }
+    /*endswitch*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) v18_rx_fillin(v18_state_t *s, int len)
 {
-    if (s->rx_suppression > 0)
+    if (s->rx_suppression_timer > 0)
     {
-        if (s->rx_suppression > len)
-            s->rx_suppression -= len;
+        if (s->rx_suppression_timer > len)
+            s->rx_suppression_timer -= len;
         else
-            s->rx_suppression = 0;
+            s->rx_suppression_timer = 0;
+        /*endif*/
     }
-    if ((s->mode & V18_MODE_DTMF))
+    /*endif*/
+    if (s->autobauding)
     {
-        /* Apply a message timeout. */
-        if (s->in_progress)
+    }
+    else
+    {
+        if (s->current_mode != V18_MODE_NONE)
         {
-            s->in_progress -= len;
-            if (s->in_progress <= 0)
+            if ((s->current_mode & V18_MODE_DTMF))
             {
-                s->in_progress = 0;
-                s->rx_msg_len = 0;
+                /* Apply a message timeout. */
+                if (s->msg_in_progress_timer)
+                {
+                    s->msg_in_progress_timer -= len;
+                    if (s->msg_in_progress_timer <= 0)
+                    {
+                        s->msg_in_progress_timer = 0;
+                        s->rx_msg_len = 0;
+                    }
+                    /*endif*/
+                }
+                /*endif*/
+                dtmf_rx_fillin(&s->dtmf_rx, len);
             }
+            else
+            {
+                fsk_rx_fillin(&s->fsk_rx, len);
+            }
+            /*endif*/
         }
-        dtmf_rx_fillin(&s->dtmf_rx, len);
+        /*endif*/
     }
-    if ((s->mode & (V18_MODE_5BIT_4545 | V18_MODE_5BIT_476 | V18_MODE_5BIT_50)))
-    {
-        fsk_rx_fillin(&s->fsk_rx, len);
-    }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1079,41 +1990,27 @@ SPAN_DECLARE(int) v18_put(v18_state_t *s, const char msg[], int len)
     {
         if ((len = strlen(msg)) == 0)
             return 0;
+        /*endif*/
     }
+    /*endif*/
     /* TODO: Deal with out of space condition */
     if ((i = queue_write(&s->queue.queue, (const uint8_t *) msg, len)) < 0)
         return i;
-    s->tx_signal_on = 1;
+    /*endif*/
+    /* Begin to send the carrier */
+    if (s->tx_signal_on == 0)
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "Turning on the carrier\n");
+        s->tx_signal_on = 1;
+    }
+    /*endif*/
     return i;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(const char *) v18_mode_to_str(int mode)
+SPAN_DECLARE(int) v18_get_current_mode(v18_state_t *s)
 {
-    switch ((mode & 0xFFF))
-    {
-    case V18_MODE_NONE:
-        return "None";
-    case V18_MODE_5BIT_4545:
-        return "Weitbrecht TDD (45.45bps)";
-    case V18_MODE_5BIT_476:
-        return "Weitbrecht TDD (47.6bps)";
-    case V18_MODE_5BIT_50:
-        return "Weitbrecht TDD (50bps)";
-    case V18_MODE_DTMF:
-        return "DTMF";
-    case V18_MODE_EDT:
-        return "EDT";
-    case V18_MODE_BELL103:
-        return "Bell 103";
-    case V18_MODE_V23VIDEOTEX:
-        return "Videotex";
-    case V18_MODE_V21TEXTPHONE:
-        return "V.21";
-    case V18_MODE_V18TEXTPHONE:
-        return "V.18 text telephone";
-    }
-    return "???";
+    return s->current_mode;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1123,96 +2020,88 @@ SPAN_DECLARE(logging_state_t *) v18_get_logging_state(v18_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void answer_tone_put(void *user_data, int code, int level, int delay)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
+static void init_v18_descriptors(void)
+{
+    int i;
+
+    for (i = 0;  i < GOERTZEL_TONE_SET_ENTRIES;  i++)
+        make_goertzel_descriptor(&tone_set_desc[i], tone_set_frequency[i], GOERTZEL_SAMPLES_PER_BLOCK);
+    /*endfor*/
+    goertzel_descriptors_inited = true;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) v18_set_stored_message(v18_state_t *s, uint8_t *msg)
+{
+    strncpy(s->stored_message, msg, 80);
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(v18_state_t *) v18_init(v18_state_t *s,
                                      bool calling_party,
                                      int mode,
                                      int nation,
-                                     put_msg_func_t put_msg,
-                                     void *user_data)
+                                     span_put_msg_func_t put_msg,
+                                     void *put_msg_user_data,
+                                     span_modem_status_func_t status_handler,
+                                     void *status_handler_user_data)
 {
+    int i;
+
     if (nation < 0  ||  nation >= V18_AUTOMODING_END)
         return NULL;
+    /*endif*/
 
     if (s == NULL)
     {
         if ((s = (v18_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     s->calling_party = calling_party;
-    s->mode = mode & ~V18_MODE_REPETITIVE_SHIFTS_OPTION;
+    s->initial_mode = mode & ~V18_MODE_REPETITIVE_SHIFTS_OPTION;
     s->put_msg = put_msg;
-    s->user_data = user_data;
+    s->put_msg_user_data = put_msg_user_data;
+    s->status_handler = status_handler;
+    s->status_handler_user_data = status_handler_user_data;
 
-    switch (s->mode)
-    {
-    case V18_MODE_5BIT_4545:
-        s->repeat_shifts = mode & V18_MODE_REPETITIVE_SHIFTS_OPTION;
-        fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_WEITBRECHT_4545], async_tx_get_bit, &s->async_tx);
-        async_tx_init(&s->async_tx, 5, ASYNC_PARITY_NONE, 2, false, v18_tdd_get_async_byte, s);
-        /* Schedule an explicit shift at the start of baudot transmission */
-        s->baudot_tx_shift = 2;
-        /* TDD uses 5 bit data, no parity and 1.5 stop bits. We scan for the first stop bit, and
-           ride over the fraction. */
-        fsk_rx_init(&s->fsk_rx, &preset_fsk_specs[FSK_WEITBRECHT_4545], FSK_FRAME_MODE_5N1_FRAMES, v18_tdd_put_async_byte, s);
-        s->baudot_rx_shift = 0;
-        s->next_byte = (uint8_t) 0xFF;
-        break;
-    case V18_MODE_5BIT_476:
-        s->repeat_shifts = mode & V18_MODE_REPETITIVE_SHIFTS_OPTION;
-        fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_WEITBRECHT_476], async_tx_get_bit, &s->async_tx);
-        async_tx_init(&s->async_tx, 5, ASYNC_PARITY_NONE, 2, false, v18_tdd_get_async_byte, s);
-        /* Schedule an explicit shift at the start of baudot transmission */
-        s->baudot_tx_shift = 2;
-        /* TDD uses 5 bit data, no parity and 1.5 stop bits. We scan for the first stop bit, and
-           ride over the fraction. */
-        fsk_rx_init(&s->fsk_rx, &preset_fsk_specs[FSK_WEITBRECHT_476], FSK_FRAME_MODE_5N1_FRAMES, v18_tdd_put_async_byte, s);
-        s->baudot_rx_shift = 0;
-        s->next_byte = (uint8_t) 0xFF;
-        break;
-    case V18_MODE_5BIT_50:
-        s->repeat_shifts = mode & V18_MODE_REPETITIVE_SHIFTS_OPTION;
-        fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_WEITBRECHT_50], async_tx_get_bit, &s->async_tx);
-        async_tx_init(&s->async_tx, 5, ASYNC_PARITY_NONE, 2, false, v18_tdd_get_async_byte, s);
-        /* Schedule an explicit shift at the start of baudot transmission */
-        s->baudot_tx_shift = 2;
-        /* TDD uses 5 bit data, no parity and 1.5 stop bits. We scan for the first stop bit, and
-           ride over the fraction. */
-        fsk_rx_init(&s->fsk_rx, &preset_fsk_specs[FSK_WEITBRECHT_50], FSK_FRAME_MODE_5N1_FRAMES, v18_tdd_put_async_byte, s);
-        s->baudot_rx_shift = 0;
-        s->next_byte = (uint8_t) 0xFF;
-        break;
-    case V18_MODE_DTMF:
-        dtmf_tx_init(&s->dtmf_tx, v18_dtmf_get, s);
-        dtmf_rx_init(&s->dtmf_rx, v18_dtmf_put, s);
-        break;
-    case V18_MODE_EDT:
-        fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_V21CH1_110], async_tx_get_bit, &s->async_tx);
-        async_tx_init(&s->async_tx, 7, ASYNC_PARITY_EVEN, 2, false, v18_edt_get_async_byte, s);
-        fsk_rx_init(&s->fsk_rx, &preset_fsk_specs[FSK_V21CH1_110], FSK_FRAME_MODE_7E2_FRAMES, v18_edt_put_async_byte, s);
-        break;
-    case V18_MODE_BELL103:
-        fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_BELL103CH1], async_tx_get_bit, &s->async_tx);
-        async_tx_init(&s->async_tx, 7, ASYNC_PARITY_EVEN, 1, false, v18_edt_get_async_byte, s);
-        fsk_rx_init(&s->fsk_rx, &preset_fsk_specs[FSK_BELL103CH2], FSK_FRAME_MODE_7E1_FRAMES, v18_bell103_put_async_byte, s);
-        break;
-    case V18_MODE_V23VIDEOTEX:
-        fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_V23CH1], async_tx_get_bit, &s->async_tx);
-        async_tx_init(&s->async_tx, 7, ASYNC_PARITY_EVEN, 1, false, v18_edt_get_async_byte, s);
-        fsk_rx_init(&s->fsk_rx, &preset_fsk_specs[FSK_V23CH2], FSK_FRAME_MODE_7E1_FRAMES, v18_videotex_put_async_byte, s);
-        break;
-    case V18_MODE_V21TEXTPHONE:
-        fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_V21CH1], async_tx_get_bit, &s->async_tx);
-        async_tx_init(&s->async_tx, 7, ASYNC_PARITY_EVEN, 1, false, v18_edt_get_async_byte, s);
-        fsk_rx_init(&s->fsk_rx, &preset_fsk_specs[FSK_V21CH1], FSK_FRAME_MODE_7E1_FRAMES, v18_textphone_put_async_byte, s);
-        break;
-    case V18_MODE_V18TEXTPHONE:
-        fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_V21CH1], async_tx_get_bit, &s->async_tx);
-        async_tx_init(&s->async_tx, 7, ASYNC_PARITY_EVEN, 1, false, v18_edt_get_async_byte, s);
-        fsk_rx_init(&s->fsk_rx, &preset_fsk_specs[FSK_V21CH1], FSK_FRAME_MODE_7E1_FRAMES, v18_textphone_put_async_byte, s);
-        break;
-    }
+    strcpy(s->stored_message, "V.18 pls");
+
+    if (!goertzel_descriptors_inited)
+        init_v18_descriptors();
+    /*endif*/
+    for (i = 0;  i < GOERTZEL_TONE_SET_ENTRIES;  i++)
+        goertzel_init(&s->tone_set[i], &tone_set_desc[i]);
+    /*endfor*/
+    dtmf_rx_init(&s->dtmf_rx, v18_dtmf_put, s);
+    modem_connect_tones_rx_init(&s->answer_tone_rx,
+                                MODEM_CONNECT_TONES_ANSAM_PR,
+                                answer_tone_put,
+                                s);
+
+    v18_set_modem(s, s->initial_mode);
     s->nation = nation;
+    if (nation == V18_AUTOMODING_NONE)
+    {
+        s->autobauding = false;
+        s->current_mode = s->initial_mode;
+        s->tx_state = V18_TX_STATE_ORIGINATING_42;
+        s->rx_state = V18_RX_STATE_ORIGINATING_42;
+    }
+    else
+    {
+        s->autobauding = true;
+        s->current_mode = V18_MODE_NONE;
+    }
+    /*endif*/
     queue_init(&s->queue.queue, 128, QUEUE_READ_ATOMIC | QUEUE_WRITE_ATOMIC);
     return s;
 }

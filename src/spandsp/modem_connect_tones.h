@@ -80,7 +80,13 @@ enum
     MODEM_CONNECT_TONES_BELL_ANS = 8,
     /*! \brief Calling tone is a pure 1300Hz tone, in 0.6s bursts, with 2s silences in between. The
                bursts repeat for as long as is required. */
-    MODEM_CONNECT_TONES_CALLING_TONE = 9
+    MODEM_CONNECT_TONES_CALLING_TONE = 9,
+    
+    /*! \brief A value to OR with the various tone values above, to specify that tone reporting should be
+               real time, as the tone changes (e.g. the 450ms phase reversals in ANSam), which is needed for 
+               applications like RFC4733. The default dehaviour is to only report a tone when it is
+               robustly confirmed. */
+    MODEM_CONNECT_TONES_REAL_TIME_REPORTS = 0x1000
 };
 
 /*! \brief FAX CED tone is the same as ANS tone. */
@@ -166,7 +172,7 @@ SPAN_DECLARE(int) modem_connect_tones_rx_get(modem_connect_tones_rx_state_t *s);
 */
 SPAN_DECLARE(modem_connect_tones_rx_state_t *) modem_connect_tones_rx_init(modem_connect_tones_rx_state_t *s,
                                                                            int tone_type,
-                                                                           tone_report_func_t tone_callback,
+                                                                           span_tone_report_func_t tone_callback,
                                                                            void *user_data);
 
 /*! \brief Release an instance of the modem connect tones detector.

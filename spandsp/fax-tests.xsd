@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<xs:schema xmlns:xs="https://www.w3.org/2001/XMLSchema"
+           xmlns:t='https://www.w3.org/namespace/'>
+ <xs:element name='fax-tests'>
+  <xs:complexType>
+   <xs:choice minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:config'/>
+    <xs:element ref='t:messages'/>
+    <xs:element ref='t:test-group'/>
+   </xs:choice>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='config'>
+  <!-- Overall configuration for running any of the tests in the file. -->
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:path'/>
+     <!-- The file path used to find a group of files used during the tests. -->
+   </xs:sequence>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='path'>
+  <!-- The file path used to find a group of files used during the tests. -->
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:EMPTY'/>
+   </xs:sequence>
+   <xs:attribute name='type' type='string' use='required'/>
+    <!-- The current valid types are "IMAGE". -->
+   <xs:attribute name='value' type='string' use='required'/>
+    <!-- The value is the actual file path. -->
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='messages'>
+  <!-- A place for decriptive material about the tests in the file. Currently no specific message information
+       is specified, and this section is used just to bundle general information comments about the tests. -->
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:message'/>
+   </xs:sequence>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='message'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:EMPTY'/>
+   </xs:sequence>
+   <xs:attribute name='type' type='string' use='required'/>
+   <xs:attribute name='value' type='string' use='required'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='test-group'>
+  <!-- A namable group of tests -->
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <!-- A short name, used to refer to the an individual test. -->
+    <xs:element ref='t:test'/>
+   </xs:sequence>
+   <xs:attribute name='name' type='string' use='optional'/>
+   <!-- A short name, used to refer to the group of tests. -->
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='test'>
+  <!-- A test. This means a series of steps which will establish a call, perform some FAX operations, and clear
+       down the call. -->
+  <xs:complexType>
+   <xs:choice minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:repeat'/>
+     <!-- A repeatable sequence of steps within a test. -->
+    <xs:element ref='t:step'/>
+     <!-- A single step within a test. -->
+   </xs:choice>
+   <!-- A short name, used to refer to the an individual test. -->
+   <xs:attribute name='name' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='repeat'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+     <!-- A single step within a test. -->
+   </xs:sequence>
+   <xs:attribute name='min' type='string' use='optional'/>
+    <!-- The minimum number of times the sequence may repeat. -->
+   <xs:attribute name='max' type='string' use='optional'/>
+    <!-- The maximum number of times the sequence may repeat. -->
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='step'>
+  <!-- A single step within a test. -->
+  <xs:complexType>
+   <xs:choice minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:check'/>
+    <xs:element ref='t:EMPTY'/>
+   </xs:choice>
+   <xs:attribute name='dir' type='string' use='optional'/>
+    <!-- Directions are "T" for a pattern to be transmitted from the test tool
+                        "R" for a pattern expected to be received by the test tool -->
+   <xs:attribute name='type' type='string' use='optional'/>
+    <!-- Types are:
+            "ANSWER"     Answer an incoming call.
+            "CALL"       Initiate an outgoing call.
+            "CED"        Send (T) or receive (R) the CED tone.
+            "CLEAR"      Send (T) or expect (R) a clear down (hang up) of the call.
+            "CNG"        Send (T) or receive (R) the CNG tone.
+            "HDLC"       Send (T) or receive (R) a frame of HDLC data, using V.21.
+            "MSG"        Send (T) or receive (R) a non_ECM message (i.e. inmage).
+            "PP"         Send (T) or receive (R) a partial page of an ECM message (i.e. inmage).
+            "POSTAMBLE"  Send (T) HDLC postamble, for V.21 or ECM data.
+            "PREAMBLE"   Send (T) or receive (R) HDLC preamble, for V.21 or ECM data.
+            "SET"        Set one of the FAX parameters to be sent (T), or expected on receive (R).
+            "SILENCE"    Send a period of silence, specified in milliseconds.
+            "STATUS"     Check the status of the FAX machine under test.
+            "TCF"        Send (T) or receive (R) a period of TCF.
+            "WAIT"       Wait for a specified period before continuing to receive (R). -->
+   <xs:attribute name='modem' type='string' use='optional'/>
+    <!-- Valid modems are:
+            "V.21"
+            "V.17/14400"
+            "V.17/12000"
+            "V.17/9600"
+            "V.17/7200"
+            "V.29/9600"
+            "V.29/7200"
+            "V.27ter/4800"
+            "V.27ter/2400"
+         V.34 is not supported at this time. -->
+   <xs:attribute name='tag' type='string' use='optional'/>
+    <!-- When "type" is "SET" valid tags are:
+            "IDENT"
+            "SUB"
+            "SEP"
+            "PSA"
+            "SID"
+            "PWD"
+            "RXFILE"
+            "TXFILE" -->
+   <xs:attribute name='value' type='string' use='optional'/>
+    <!-- For type "TCF", "value" is the number of bytes of TCF. 
+         For type "TIMEOUT", value is the duration in milliseconds.
+         For type "HDLC", "value is a hexadecimal string of bytes to be sent as the payload of an HDLC frame,
+            in the form "01 23 EF" to send the 3 byte frame 0x12 0x23 0xEF -->
+   <xs:attribute name='timein' type='string' use='optional'/>
+    <!-- "timein" is not currently used. -->
+   <xs:attribute name='timeout' type='string' use='optional'/>
+    <!-- For any receive (R) step, "timeout" is the timeout while waiting for the step to complete, in milliseconds -->
+   <xs:attribute name='crc_error' type='string' use='optional'/>
+    <!-- Setting "crc_error" to a non-zero value will cause transmission of a bad CRC value when sending
+         an HDLC frame. -->
+   <xs:attribute name='pattern' type='string' use='optional'/>
+    <!-- For type "TCF", "patttern" specifies a non-zero pattern to send instead of true TCF -->
+   <xs:attribute name='bad_rows' type='string' use='optional'/>
+    <!-- For non-ECM message (image) data, "bad_rows" is a comma separated list of row numbers to be corrupted
+         on transmission. -->
+   <xs:attribute name='min_bits' type='string' use='optional'/>
+    <!-- The minimum bits in any row of transmitted (T) non-ECM image data. Used to comply with the 
+         minimum row time feature in T.30 -->
+   <xs:attribute name='frame_size' type='string' use='optional'/>
+    <!-- The size of an ECM frame, in bytes of payload data. Valid values are 64 and 256 -->
+   <xs:attribute name='compression' type='string' use='optional'/>
+    <!-- Compressions are valid when "type" is "MSG" or "PP":
+                    "T.4 1D"
+                    "T.4 2D"
+                    "T.6"
+                    "T.85" -->
+   <xs:attribute name='block' type='string' use='optional'/>
+    <!-- Block number of the ECM partial page being exchanged -->
+   <xs:attribute name='xxx' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='check'>
+  <!-- A success/failure check which needs to be performed as a "step" of a test takes place. -->
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:EMPTY'/>
+   </xs:sequence>
+   <xs:attribute name='name' type='string' use='optional'/>
+    <!-- The short name used to refer to the check which needs to be made. -->
+   <xs:attribute name='desc' type='string' use='optional'/>
+    <!-- Some descriptive text, to explain what needs to be checked. -->
+   <xs:attribute name='cond' type='string' use='optional'/>
+    <!-- Some descriptive text, to explain what conditions constitute passing or failing the check. -->
+  </xs:complexType>
+ </xs:element>
+</xs:schema>

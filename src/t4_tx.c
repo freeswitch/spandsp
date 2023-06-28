@@ -195,6 +195,7 @@ static void TIFFFXDefaultDirectory(TIFF *tif)
        allow it to set up the rest of its own methods. */
     if (_ParentExtender)
         (*_ParentExtender)(tif);
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -204,6 +205,7 @@ SPAN_DECLARE(void) TIFF_FX_init(void)
 
     if (!first_time)
         return;
+    /*endif*/
     first_time = false;
 
     /* Grab the inherited method and install */
@@ -237,6 +239,7 @@ static int code_to_x_resolution(int code)
     entry = top_bit(code);
     if (entry < 0  ||  entry > 14)
         return 0;
+    /*endif*/
     return xxx[entry];
 }
 /*- End of function --------------------------------------------------------*/
@@ -266,6 +269,7 @@ static int code_to_y_resolution(int code)
     entry = top_bit(code);
     if (entry < 0  ||  entry > 14)
         return 0;
+    /*endif*/
     return yyy[entry];
 }
 /*- End of function --------------------------------------------------------*/
@@ -279,6 +283,7 @@ static int match_resolution(float actual, const float table[])
 
     if (actual == 0.0f)
         return -1;
+    /*endif*/
 
     best_ratio = 0.0f;
     best_entry = -1;
@@ -288,14 +293,18 @@ static int match_resolution(float actual, const float table[])
             ratio = table[i]/actual;
         else
             ratio = actual/table[i];
+        /*endif*/
         if (ratio > best_ratio)
         {
             best_entry = i;
             best_ratio = ratio;
         }
+        /*endif*/
     }
+    /*endfor*/
     if (best_ratio < 0.95f)
         return -1;
+    /*endif*/
     return best_entry;
 }
 /*- End of function --------------------------------------------------------*/
@@ -324,6 +333,7 @@ static int best_colour_resolution(float actual, int allowed_resolutions)
 
     if (actual == 0.0f)
         return -1;
+    /*endif*/
 
     best_ratio = 0.0f;
     best_entry = 0;
@@ -331,16 +341,20 @@ static int best_colour_resolution(float actual, int allowed_resolutions)
     {
         if (!(allowed_resolutions & x_res_table[i].resolution_code))
             continue;
+        /*endif*/
         if (actual > x_res_table[i].resolution)
             ratio = x_res_table[i].resolution/actual;
         else
             ratio = actual/x_res_table[i].resolution;
+        /*endif*/
         if (ratio > best_ratio)
         {
             best_entry = i;
             best_ratio = ratio;
         }
+        /*endif*/
     }
+    /*endfor*/
     return x_res_table[best_entry].resolution_code;
 }
 /*- End of function --------------------------------------------------------*/
@@ -361,12 +375,14 @@ static int read_colour_map(t4_tx_state_t *s, int bits_per_sample)
     map_z = NULL;
     if (!TIFFGetField(s->tiff.tiff_file, TIFFTAG_COLORMAP, &map_L, &map_a, &map_b, &map_z))
         return -1;
+    /*endif*/
 
     /* TODO: This only allows for 8 bit deep maps */
     span_log(&s->logging, SPAN_LOG_FLOW, "Got a colour map\n");
     s->colour_map_entries = 1 << bits_per_sample;
     if ((s->colour_map = span_realloc(s->colour_map, 3*s->colour_map_entries)) == NULL)
         return -1;
+    /*endif*/
 #if 0
     /* Sweep the colormap in the proper order */
     for (i = 0;  i < s->colour_map_entries;  i++)
@@ -376,6 +392,7 @@ static int read_colour_map(t4_tx_state_t *s, int bits_per_sample)
         s->colour_map[3*i + 2] = (map_b[i] >> 8) & 0xFF;
         span_log(&s->logging, SPAN_LOG_FLOW, "Map %3d - %5d %5d %5d\n", i, s->colour_map[3*i], s->colour_map[3*i + 1], s->colour_map[3*i + 2]);
     }
+    /*endfor*/
 #else
     /* Sweep the colormap in the order that seems to work for l04x_02x.tif */
     for (i = 0;  i < s->colour_map_entries;  i++)
@@ -384,10 +401,12 @@ static int read_colour_map(t4_tx_state_t *s, int bits_per_sample)
         s->colour_map[1*s->colour_map_entries + i] = (map_a[i] >> 8) & 0xFF;
         s->colour_map[2*s->colour_map_entries + i] = (map_b[i] >> 8) & 0xFF;
     }
+    /*endfor*/
 #endif
     lab_to_srgb(&s->lab_params, s->colour_map, s->colour_map, s->colour_map_entries);
     for (i = 0;  i < s->colour_map_entries;  i++)
         span_log(&s->logging, SPAN_LOG_FLOW, "Map %3d - %5d %5d %5d\n", i, s->colour_map[3*i], s->colour_map[3*i + 1], s->colour_map[3*i + 2]);
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -454,6 +473,7 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
         t->image_type = T4_IMAGE_TYPE_COLOUR_12BIT;
     else
         return -1;
+    /*endif*/
 
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
     parm16 = 0;
@@ -467,8 +487,11 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
                 t->image_type = T4_IMAGE_TYPE_COLOUR_8BIT;
             else if (samples_per_pixel == 1  &&  bits_per_sample > 8)
                 t->image_type = T4_IMAGE_TYPE_COLOUR_12BIT;
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endif*/
 #endif
 
     parm32 = 0;
@@ -492,6 +515,7 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
         t->x_resolution /= CM_PER_INCH;
         t->y_resolution /= CM_PER_INCH;
     }
+    /*endif*/
 
     if (((best_x_entry = match_resolution(t->x_resolution, x_res_table)) >= 0)
         &&
@@ -503,6 +527,7 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
     {
         t->resolution_code = 0;
     }
+    /*endif*/
 
     t->photo_metric = PHOTOMETRIC_MINISWHITE;
     TIFFGetField(t->tiff_file, TIFFTAG_PHOTOMETRIC, &t->photo_metric);
@@ -531,6 +556,7 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
         span_log(&s->logging, SPAN_LOG_FLOW, "JPEG\n");
         if (t->photo_metric == PHOTOMETRIC_ITULAB)
             span_log(&s->logging, SPAN_LOG_FLOW, "ITULAB\n");
+        /*endif*/
         break;
     case COMPRESSION_NONE:
         span_log(&s->logging, SPAN_LOG_FLOW, "No compression\n");
@@ -539,6 +565,7 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
         span_log(&s->logging, SPAN_LOG_FLOW, "Unexpected compression %d\n", t->compression);
         break;
     }
+    /*endswitch*/
 
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
     read_colour_map(s, bits_per_sample);
@@ -548,25 +575,31 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
     YCbCrSubsample_vert = 0;
     if (TIFFGetField(t->tiff_file, TIFFTAG_YCBCRSUBSAMPLING, &YCbCrSubsample_horiz, &YCbCrSubsample_vert))
         span_log(&s->logging, SPAN_LOG_FLOW, "Subsampling %d %d\n", YCbCrSubsample_horiz, YCbCrSubsample_vert);
+    /*endif*/
 
     t->fill_order = FILLORDER_LSB2MSB;
 
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
     if (TIFFGetField(t->tiff_file, TIFFTAG_PROFILETYPE, &parm32))
         span_log(&s->logging, SPAN_LOG_FLOW, "Profile type %u\n", parm32);
+    /*endif*/
     if (TIFFGetField(t->tiff_file, TIFFTAG_FAXPROFILE, &parm8))
         span_log(&s->logging, SPAN_LOG_FLOW, "FAX profile %s (%u)\n", tiff_fx_fax_profiles[parm8], parm8);
+    /*endif*/
 
     if (TIFFGetField(t->tiff_file, TIFFTAG_CODINGMETHODS, &parm32))
         span_log(&s->logging, SPAN_LOG_FLOW, "Coding methods 0x%x\n", parm32);
+    /*endif*/
     if (TIFFGetField(t->tiff_file, TIFFTAG_VERSIONYEAR, &u))
     {
         memcpy(uu, u, 4);
         uu[4] = '\0';
         span_log(&s->logging, SPAN_LOG_FLOW, "Version year \"%s\"\n", uu);
     }
+    /*endif*/
     if (TIFFGetField(t->tiff_file, TIFFTAG_MODENUMBER, &parm8))
         span_log(&s->logging, SPAN_LOG_FLOW, "Mode number %u\n", parm8);
+    /*endif*/
 
     switch (t->photo_metric)
     {
@@ -598,6 +631,7 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
         bmax = 0.0f;
         break;
     }
+    /*endswitch*/
 
     if (TIFFGetField(t->tiff_file, TIFFTAG_DECODE, &parm16, &fl_parms))
     {
@@ -609,11 +643,13 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
         bmax = fl_parms[5];
         span_log(&s->logging, SPAN_LOG_FLOW, "Got decode tag %f %f %f %f %f %f\n", lmin, lmax, amin, amax, bmin, bmax);
     }
+    /*endif*/
 
     /* TIFFTAG_IMAGEBASECOLOR */
 
     if (TIFFGetField(t->tiff_file, TIFFTAG_T82OPTIONS, &parm32))
         span_log(&s->logging, SPAN_LOG_FLOW, "T.82 options 0x%x\n", parm32);
+    /*endif*/
 
     /* TIFFTAG_STRIPROWCOUNTS */
     /* TIFFTAG_IMAGELAYER */
@@ -633,24 +669,32 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
             span_log(&s->logging, SPAN_LOG_FLOW, "Global parameters\n");
             if (TIFFGetField(t->tiff_file, TIFFTAG_PROFILETYPE, &parm32))
                 span_log(&s->logging, SPAN_LOG_FLOW, "  Profile type %u\n", parm32);
+            /*endif*/
             if (TIFFGetField(t->tiff_file, TIFFTAG_FAXPROFILE, &parm8))
                 span_log(&s->logging, SPAN_LOG_FLOW, "  FAX profile %s (%u)\n", tiff_fx_fax_profiles[parm8], parm8);
+            /*endif*/
             if (TIFFGetField(t->tiff_file, TIFFTAG_CODINGMETHODS, &parm32))
                 span_log(&s->logging, SPAN_LOG_FLOW, "  Coding methods 0x%x\n", parm32);
+            /*endif*/
             if (TIFFGetField(t->tiff_file, TIFFTAG_VERSIONYEAR, &u))
             {
                 memcpy(uu, u, 4);
                 uu[4] = '\0';
                 span_log(&s->logging, SPAN_LOG_FLOW, "  Version year \"%s\"\n", uu);
             }
+            /*endif*/
             if (TIFFGetField(t->tiff_file, TIFFTAG_MODENUMBER, &parm8))
                 span_log(&s->logging, SPAN_LOG_FLOW, "  Mode number %u\n", parm8);
+            /*endif*/
 
             if (!TIFFSetDirectory(t->tiff_file, (tdir_t) s->current_page))
                 span_log(&s->logging, SPAN_LOG_FLOW, "Failed to set directory to page %d\n", s->current_page);
+            /*endif*/
         }
+        /*endif*/
 #endif
     }
+    /*endif*/
 #endif
     return 0;
 }
@@ -688,13 +732,16 @@ static int test_tiff_directory_info(t4_tx_state_t *s)
         image_type = T4_IMAGE_TYPE_COLOUR_12BIT;
     else
         image_type = -1;
+    /*endif*/
     if (t->image_type != image_type)
         return 1;
+    /*endif*/
 
     parm32 = 0;
     TIFFGetField(t->tiff_file, TIFFTAG_IMAGEWIDTH, &parm32);
     if (s->tiff.image_width != (int) parm32)
         return 2;
+    /*endif*/
 
     x_resolution = 0.0f;
     TIFFGetField(t->tiff_file, TIFFTAG_XRESOLUTION, &x_resolution);
@@ -710,10 +757,13 @@ static int test_tiff_directory_info(t4_tx_state_t *s)
         x_resolution /= CM_PER_INCH;
         y_resolution /= CM_PER_INCH;
     }
+    /*endif*/
     if (s->tiff.x_resolution != (int) x_resolution)
         return 3;
+    /*endif*/
     if (s->tiff.y_resolution != (int) y_resolution)
         return 4;
+    /*endif*/
 
     return 0;
 }
@@ -729,9 +779,11 @@ static int get_tiff_total_pages(t4_tx_state_t *s)
     max = 0;
     while (TIFFSetDirectory(s->tiff.tiff_file, (tdir_t) max))
         max++;
+    /*endwhile*/
     /* Back to the previous page */
     if (!TIFFSetDirectory(s->tiff.tiff_file, (tdir_t) s->current_page))
         return -1;
+    /*endif*/
     return max;
 }
 /*- End of function --------------------------------------------------------*/
@@ -740,6 +792,7 @@ static int open_tiff_input_file(t4_tx_state_t *s, const char *file)
 {
     if ((s->tiff.tiff_file = TIFFOpen(file, "r")) == NULL)
         return -1;
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -751,6 +804,7 @@ static int metadata_row_read_handler(void *user_data, uint8_t buf[], size_t len)
     s = (t4_tx_state_t *) user_data;
     if (s->tiff.row >= s->metadata.image_length)
         return 0;
+    /*endif*/
     memcpy(buf, &s->tiff.image_buffer[s->tiff.row*len], len);
     s->tiff.row++;
     return len;
@@ -766,8 +820,10 @@ static int tiff_row_read_handler(void *user_data, uint8_t buf[], size_t len)
     s = (t4_tx_state_t *) user_data;
     if (s->tiff.row >= s->tiff.image_length)
         return 0;
+    /*endif*/
     if (s->tiff.image_buffer == NULL)
         return 0;
+    /*endif*/
     memcpy(buf, &s->tiff.image_buffer[s->tiff.row*len], len);
     s->tiff.row++;
 
@@ -777,8 +833,10 @@ static int tiff_row_read_handler(void *user_data, uint8_t buf[], size_t len)
     {
         for (j = 0;  j < len;  j++)
             buf[j] |= s->tiff.image_buffer[s->tiff.row*len + j];
+        /*endfor*/
         s->tiff.row++;
     }
+    /*endfor*/
     return len;
 }
 /*- End of function --------------------------------------------------------*/
@@ -805,9 +863,11 @@ static int translate_row_read(void *user_data, uint8_t buf[], size_t len)
 
     if (s->tiff.raw_row >= s->tiff.image_length)
         return 0;
+    /*endif*/
 
     if (TIFFReadScanline(s->tiff.tiff_file, buf, s->tiff.raw_row, 0) < 0)
         return 0;
+    /*endif*/
     s->tiff.raw_row++;
 
     /* If this is a bi-level image which is stretched more vertically than we are able
@@ -822,13 +882,17 @@ static int translate_row_read(void *user_data, uint8_t buf[], size_t len)
 
         if (TIFFReadScanline(s->tiff.tiff_file, extra_buf, s->tiff.raw_row, 0) < 0)
             return 0;
+        /*endif*/
         s->tiff.raw_row++;
         /* We know this is a bi-level image if we are squashing */
         for (j = 0;  j < s->tiff.image_width/8;  j++)
             buf[j] |= extra_buf[s->tiff.image_width/8 + j];
+        /*endfor*/
     }
+    /*endfor*/
     if (s->apply_lab)
         lab_to_srgb(&s->lab_params, buf, buf, len/3);
+    /*endif*/
     return len;
 }
 /*- End of function --------------------------------------------------------*/
@@ -854,6 +918,7 @@ static int embedded_comment_handler(void *user_data, const uint8_t buf[], size_t
         span_log(&s->logging, SPAN_LOG_WARNING, "T.85 comment (%d): %s\n", (int) len, buf);
     else
         span_log(&s->logging, SPAN_LOG_WARNING, "T.85 comment (%d): ---\n", (int) len);
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -869,8 +934,10 @@ static int read_tiff_raw_image(t4_tx_state_t *s)
     total_len = 0;
     for (i = 0;  i < num_strips;  i++)
         total_len += TIFFRawStripSize(s->tiff.tiff_file, i);
+    /*endfor*/
     if ((s->no_encoder.buf = span_realloc(s->no_encoder.buf, total_len)) == NULL)
         return -1;
+    /*endif*/
     total_len = 0;
     for (i = 0;  i < num_strips;  i++, total_len += len)
     {
@@ -880,7 +947,9 @@ static int read_tiff_raw_image(t4_tx_state_t *s)
             span_log(&s->logging, SPAN_LOG_WARNING, "%s: TIFFReadRawStrip error.\n", s->tiff.file);
             return -1;
         }
+        /*endif*/
     }
+    /*endfor*/
     s->no_encoder.buf_len = total_len;
     s->no_encoder.buf_ptr = 0;
     return 0;
@@ -907,9 +976,12 @@ static int read_tiff_t85_image(t4_tx_state_t *s)
         len = TIFFRawStripSize(s->tiff.tiff_file, i);
         if (len > biggest)
             biggest = len;
+        /*endif*/
     }
+    /*endfor*/
     if ((raw_data = span_alloc(biggest)) == NULL)
         return -1;
+    /*endif*/
 
     s->tiff.image_size = s->tiff.image_length*((s->tiff.image_width + 7)/8);
     if (s->tiff.image_size >= s->tiff.image_buffer_size)
@@ -919,9 +991,11 @@ static int read_tiff_t85_image(t4_tx_state_t *s)
             span_free(raw_data);
             return -1;
         }
+        /*endif*/
         s->tiff.image_buffer_size = s->tiff.image_size;
         s->tiff.image_buffer = t;
     }
+    /*endif*/
 
     pack.buf = s->tiff.image_buffer;
     pack.ptr = 0;
@@ -940,11 +1014,15 @@ static int read_tiff_t85_image(t4_tx_state_t *s)
             span_free(raw_data);
             return -1;
         }
+        /*endif*/
         if ((result = t85_decode_put(&t85, raw_data, len)) != T4_DECODE_MORE_DATA)
             break;
+        /*endif*/
     }
+    /*endfor*/
     if (result == T4_DECODE_MORE_DATA)
-        t85_decode_put(&t85, NULL, 0);
+        result = t85_decode_put(&t85, NULL, 0);
+    /*endif*/
 
     len = t85_decode_get_compressed_image_size(&t85);
     span_log(&s->logging, SPAN_LOG_WARNING, "Compressed image is %d bytes, %d rows\n", len/8, s->tiff.image_length);
@@ -984,9 +1062,12 @@ static int read_tiff_t43_image(t4_tx_state_t *s)
         len = TIFFRawStripSize(s->tiff.tiff_file, i);
         if (len > biggest)
             biggest = len;
+        /*endif*/
     }
+    /*endfor*/
     if ((raw_data = span_alloc(biggest)) == NULL)
         return -1;
+    /*endif*/
 
     s->tiff.image_size = samples_per_pixel*s->tiff.image_width*s->tiff.image_length;
     if (s->tiff.image_size >= s->tiff.image_buffer_size)
@@ -996,9 +1077,11 @@ static int read_tiff_t43_image(t4_tx_state_t *s)
             span_free(raw_data);
             return -1;
         }
+        /*endif*/
         s->tiff.image_buffer_size = s->tiff.image_size;
         s->tiff.image_buffer = t;
     }
+    /*endif*/
 
     t43_decode_init(&t43, packing_row_write_handler, &pack);
     t43_decode_set_comment_handler(&t43, 1000, embedded_comment_handler, NULL);
@@ -1021,11 +1104,15 @@ static int read_tiff_t43_image(t4_tx_state_t *s)
             span_free(raw_data);
             return -1;
         }
+        /*endif*/
         if ((result = t43_decode_put(&t43, raw_data, len)) != T4_DECODE_MORE_DATA)
             break;
+        /*endif*/
     }
+    /*endfor*/
     if (result == T4_DECODE_MORE_DATA)
         result = t43_decode_put(&t43, NULL, 0);
+    /*endif*/
 
     t43_decode_release(&t43);
     span_free(raw_data);
@@ -1063,15 +1150,19 @@ static int read_tiff_t42_t81_image(t4_tx_state_t *s)
         total_image_len += (jpeg_table_len - 4);
         span_log(&s->logging, SPAN_LOG_FLOW, "JPEG tables %u\n", jpeg_table_len);
     }
+    /*endif*/
 
     for (i = 0;  i < num_strips;  i++)
         total_image_len += TIFFRawStripSize(s->tiff.tiff_file, i);
+    /*endfor*/
     if ((raw_data = span_alloc(total_image_len)) == NULL)
         return -1;
+    /*endif*/
 
     total_len = 0;
     if (jpeg_table_len > 0)
         total_len += jpeg_table_len - 4;
+    /*endif*/
     for (i = 0;  i < num_strips;  i++, total_len += len)
     {
         if ((len = TIFFReadRawStrip(s->tiff.tiff_file, i, &raw_data[total_len], total_image_len - total_len)) < 0)
@@ -1080,12 +1171,16 @@ static int read_tiff_t42_t81_image(t4_tx_state_t *s)
             span_free(raw_data);
             return -1;
         }
+        /*endif*/
     }
+    /*endfor*/
     if (jpeg_table_len > 0)
         memcpy(raw_data, jpeg_table, jpeg_table_len - 2);
+    /*endif*/
 
     if (total_len != total_image_len)
         span_log(&s->logging, SPAN_LOG_FLOW, "Size mismatch %d %d\n", (int) total_len, (int) total_image_len);
+    /*endif*/
 
     s->tiff.image_size = samples_per_pixel*s->tiff.image_width*s->tiff.image_length;
     if (s->tiff.image_size >= s->tiff.image_buffer_size)
@@ -1095,9 +1190,11 @@ static int read_tiff_t42_t81_image(t4_tx_state_t *s)
             span_free(raw_data);
             return -1;
         }
+        /*endif*/
         s->tiff.image_buffer_size = s->tiff.image_size;
         s->tiff.image_buffer = t;
     }
+    /*endif*/
 
     t42_decode_init(&t42, packing_row_write_handler, &pack);
 
@@ -1129,9 +1226,11 @@ static int read_tiff_decompressed_image(t4_tx_state_t *s)
     {
         if ((t = span_realloc(s->tiff.image_buffer, s->tiff.image_size)) == NULL)
             return -1;
+        /*endif*/
         s->tiff.image_buffer_size = s->tiff.image_size;
         s->tiff.image_buffer = t;
     }
+    /*endif*/
 
     /* Allow for the image being stored in multiple strips. */
     num_strips = TIFFNumberOfStrips(s->tiff.tiff_file);
@@ -1142,18 +1241,23 @@ static int read_tiff_decompressed_image(t4_tx_state_t *s)
             span_log(&s->logging, SPAN_LOG_WARNING, "%s: TIFFReadEncodedStrip error.\n", s->tiff.file);
             return -1;
         }
+        /*endif*/
     }
+    /*endfor*/
     /* We might need to flip all the bits, so 1 = black and 0 = white. */
     if (s->tiff.image_type == T4_IMAGE_TYPE_BILEVEL  &&  s->tiff.photo_metric != PHOTOMETRIC_MINISWHITE)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "%s: Photometric needs swapping.\n", s->tiff.file);
         for (i = 0;  i < s->tiff.image_size;  i++)
             s->tiff.image_buffer[i] = ~s->tiff.image_buffer[i];
+        /*endfor*/
         s->tiff.photo_metric = PHOTOMETRIC_MINISWHITE;
     }
+    /*endif*/
     /* We might need to bit reverse each of the bytes of the image. */
     if (s->tiff.fill_order != FILLORDER_LSB2MSB)
         bit_reverse(s->tiff.image_buffer, s->tiff.image_buffer, s->tiff.image_size);
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1178,6 +1282,7 @@ static int read_tiff_image(t4_tx_state_t *s)
         alter_image = false;
         s->metadata.image_length = s->tiff.image_length;
     }
+    /*endif*/
     s->pack_buf = NULL;
     s->pack_ptr = 0;
     s->pack_row = 0;
@@ -1193,6 +1298,7 @@ static int read_tiff_image(t4_tx_state_t *s)
             {
                 if (read_tiff_t42_t81_image(s) < 0)
                     return -1;
+                /*endif*/
                 s->pack_buf = s->tiff.image_buffer;
             }
             else
@@ -1200,7 +1306,9 @@ static int read_tiff_image(t4_tx_state_t *s)
                 /* Read the raw image, and send it as is */
                 if (read_tiff_raw_image(s) < 0)
                     return -1;
+                /*endif*/
             }
+            /*endif*/
         }
 #if defined(SPANDSP_SUPPORT_T43)
         else if (s->tiff.compression == COMPRESSION_T43)
@@ -1209,6 +1317,7 @@ static int read_tiff_image(t4_tx_state_t *s)
             {
                 if ( read_tiff_t43_image(s) < 0)
                     return -1;
+                /*endif*/
                 s->pack_buf = s->tiff.image_buffer;
             }
             else
@@ -1216,7 +1325,9 @@ static int read_tiff_image(t4_tx_state_t *s)
                 /* Read the raw image, and send it as is */
                 if (read_tiff_raw_image(s) < 0)
                     return -1;
+                /*endif*/
             }
+            /*endif*/
         }
 #endif
 #if defined(SPANDSP_SUPPORT_T45)
@@ -1226,6 +1337,7 @@ static int read_tiff_image(t4_tx_state_t *s)
             {
                 if (read_tiff_t45_image(s) < 0)
                     return -1;
+                /*endif*/
                 s->pack_buf = s->tiff.image_buffer;
             }
             else
@@ -1233,7 +1345,9 @@ static int read_tiff_image(t4_tx_state_t *s)
                 /* Read the raw image, and send it as is */
                 if (read_tiff_raw_image(s) < 0)
                     return -1;
+                /*endif*/
             }
+            /*endif*/
         }
 #endif
         else
@@ -1248,8 +1362,11 @@ static int read_tiff_image(t4_tx_state_t *s)
             {
                 if (read_tiff_decompressed_image(s) < 0)
                     return -1;
+                /*endif*/
             }
+            /*endif*/
         }
+        /*endif*/
 
         set_image_width(s, s->metadata.image_width);
         set_image_length(s, s->metadata.image_length);
@@ -1263,9 +1380,11 @@ static int read_tiff_image(t4_tx_state_t *s)
             {
                 if ((t = span_realloc(s->tiff.image_buffer, s->tiff.image_size)) == NULL)
                     return -1;
+                /*endif*/
                 s->tiff.image_buffer_size = s->tiff.image_size;
                 s->tiff.image_buffer = t;
             }
+            /*endif*/
             s->tiff.raw_row = 0;
             switch (s->tiff.photo_metric)
             {
@@ -1281,10 +1400,14 @@ static int read_tiff_image(t4_tx_state_t *s)
                 set_lab_gamut(&s->lab_params, 0, 100, -85, 85, -75, 125, false);
                 s->apply_lab = true;
                 break;
+            default:
+                break;
             }
+            /*endswitch*/
             total_len = 0;
             for (i = 0;  i < s->metadata.image_length;  i++)
                 total_len += image_translate_row(&s->translator, &s->tiff.image_buffer[total_len], s->metadata.image_width/8);
+            /*endfor*/
             image_translate_release(&s->translator);
             s->row_handler = metadata_row_read_handler;
             s->row_handler_user_data = (void *) s;
@@ -1297,6 +1420,7 @@ static int read_tiff_image(t4_tx_state_t *s)
                 s->tiff.image_buffer = span_realloc(s->tiff.image_buffer, s->metadata.image_width*s->metadata.image_length*3);
                 for (i = 0;  i < s->metadata.image_length;  i++)
                     total_len += image_translate_row(&s->translator, &s->tiff.image_buffer[total_len], s->metadata.image_width);
+                /*endfor*/
                 image_translate_release(&s->translator);
                 s->row_handler = metadata_row_read_handler;
                 s->row_handler_user_data = (void *) s;
@@ -1306,7 +1430,9 @@ static int read_tiff_image(t4_tx_state_t *s)
                 s->row_handler = tiff_row_read_handler;
                 s->row_handler_user_data = (void *) s;
             }
+            /*endif*/
         }
+        /*endif*/
     }
     else
     {
@@ -1325,14 +1451,17 @@ static int read_tiff_image(t4_tx_state_t *s)
                 /* Read the raw image, and send it as is */
                 if (read_tiff_raw_image(s) < 0)
                     return -1;
+                /*endif*/
                 break;
             default:
                 /* libtiff probably cannot decompress T.88, so we must handle it ourselves */
                 /* Decode the whole image into a buffer */
                 if (read_tiff_t88_image(s) < 0)
                     return -1;
+                /*endif*/
                 break;
             }
+            /*endswitch*/
             break;
 #endif
         case COMPRESSION_T85:
@@ -1343,14 +1472,17 @@ static int read_tiff_image(t4_tx_state_t *s)
                 /* Read the raw image, and send it as is */
                 if (read_tiff_raw_image(s) < 0)
                     return -1;
+                /*endif*/
                 break;
             default:
                 /* libtiff probably cannot decompress T.85, so we must handle it ourselves */
                 /* Decode the whole image into a buffer */
                 if (read_tiff_t85_image(s) < 0)
                     return -1;
+                /*endif*/
                 break;
             }
+            /*endswitch*/
             break;
 #if 0
         case COMPRESSION_CCITT_T6:
@@ -1360,14 +1492,17 @@ static int read_tiff_image(t4_tx_state_t *s)
                 /* Read the raw image, and send it as is */
                 if (read_tiff_raw_image(s) < 0)
                     return -1;
+                /*endif*/
                 break;
             default:
                 /* Decode the whole image into a buffer */
                 /* Let libtiff handle the decompression */
                 if (read_tiff_decompressed_image(s) < 0)
                     return -1;
+                /*endif*/
                 break;
             }
+            /*endswitch*/
             break;
 #endif
         default:
@@ -1375,9 +1510,12 @@ static int read_tiff_image(t4_tx_state_t *s)
             /* Let libtiff handle the decompression */
             if (read_tiff_decompressed_image(s) < 0)
                 return -1;
+            /*endif*/
             break;
         }
+        /*endswitch*/
     }
+    /*endif*/
     s->tiff.row = 0;
     return s->metadata.image_length;
 }
@@ -1391,8 +1529,10 @@ static void tiff_tx_release(t4_tx_state_t *s)
         s->tiff.tiff_file = NULL;
         if (s->tiff.file)
             span_free((char *) s->tiff.file);
+        /*endif*/
         s->tiff.file = NULL;
     }
+    /*endif*/
     if (s->tiff.image_buffer)
     {
         span_free(s->tiff.image_buffer);
@@ -1400,6 +1540,7 @@ static void tiff_tx_release(t4_tx_state_t *s)
         s->tiff.image_size = 0;
         s->tiff.image_buffer_size = 0;
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1428,6 +1569,7 @@ static int set_row_read_handler(t4_tx_state_t *s, t4_row_read_handler_t handler,
         return t45_encode_set_row_read_handler(&s->encoder.t45, handler, user_data);
 #endif
     }
+    /*endswitch*/
     return -1;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1446,7 +1588,9 @@ static int make_header(t4_tx_state_t *s)
     {
         if ((s->header_text = span_alloc(132 + 1)) == NULL)
             return -1;
+        /*endif*/
     }
+    /*endif*/
     /* This is very English oriented, but then most FAX machines are, too. Some
        measure of i18n in the time and date, and even the header_info string, is
        entirely possible, although the font area would need some serious work to
@@ -1458,6 +1602,7 @@ static int make_header(t4_tx_state_t *s)
         tz_localtime(s->tz, &tm, now);
     else
         tm = *localtime(&now);
+    /*endif*/
 
     snprintf(s->header_text,
              132,
@@ -1476,11 +1621,18 @@ static int make_header(t4_tx_state_t *s)
 
 static int header_row_read_handler(void *user_data, uint8_t buf[], size_t len)
 {
+    int x_repeats;
     int y_repeats;
     int pattern;
     int pos;
     int row;
     int i;
+    int j;
+    int bits_per_pixel;
+    int bytes_per_pixel;
+    int bytes_per_character;
+    int patt_bit;
+    uint8_t patt;
     char *t;
     t4_tx_state_t *s;
 
@@ -1489,52 +1641,67 @@ static int header_row_read_handler(void *user_data, uint8_t buf[], size_t len)
     {
     default:
     case T4_RESOLUTION_100_100:
+        x_repeats = 1;
         y_repeats = 1;
         break;
     case T4_RESOLUTION_R8_STANDARD:
     case T4_RESOLUTION_200_100:
+        x_repeats = 2;
         y_repeats = 1;
         break;
     case T4_RESOLUTION_R8_FINE:
     case T4_RESOLUTION_200_200:
+        x_repeats = 2;
         y_repeats = 2;
         break;
     case T4_RESOLUTION_300_300:
+        x_repeats = 3;
         y_repeats = 3;
         break;
     case T4_RESOLUTION_R8_SUPERFINE:
     case T4_RESOLUTION_200_400:
+        x_repeats = 2;
         y_repeats = 4;
         break;
     case T4_RESOLUTION_R16_SUPERFINE:
     case T4_RESOLUTION_400_400:
+        x_repeats = 4;
         y_repeats = 4;
         break;
     case T4_RESOLUTION_400_800:
+        x_repeats = 4;
         y_repeats = 8;
         break;
     case T4_RESOLUTION_300_600:
+        x_repeats = 3;
         y_repeats = 6;
         break;
     case T4_RESOLUTION_600_600:
+        x_repeats = 6;
         y_repeats = 6;
         break;
     case T4_RESOLUTION_600_1200:
+        x_repeats = 6;
         y_repeats = 12;
         break;
     case T4_RESOLUTION_1200_1200:
+        x_repeats = 12;
         y_repeats = 12;
         break;
     }
+    /*endswitch*/
     switch (s->metadata.width_code)
     {
     case T4_SUPPORT_WIDTH_215MM:
         break;
     case T4_SUPPORT_WIDTH_255MM:
+        x_repeats *= 2;
         break;
     case T4_SUPPORT_WIDTH_303MM:
+        x_repeats *= 3;
         break;
     }
+    /*endswitch*/
     if (s->header_overlays_image)
     {
         /* Read and dump a row of the real image, allowing for the possibility
@@ -1544,51 +1711,113 @@ static int header_row_read_handler(void *user_data, uint8_t buf[], size_t len)
             set_row_read_handler(s, s->row_handler, s->row_handler_user_data);
             return len;
         }
+        /*endif*/
     }
+    /*endif*/
     t = s->header_text;
     row = s->header_row/y_repeats;
     pos = 0;
     switch (s->metadata.image_type)
     {
     case T4_IMAGE_TYPE_BILEVEL:
-        for (  ;  *t  &&  pos <= len - 2;  t++)
+        bits_per_pixel = x_repeats;
+        bytes_per_character = (bits_per_pixel*16)/8;
+        if (x_repeats == 1)
         {
-            pattern = header_font[(uint8_t) *t][row];
-            buf[pos++] = (uint8_t) (pattern >> 8);
-            buf[pos++] = (uint8_t) (pattern & 0xFF);
+            for (  ;  *t  &&  pos <= len - bytes_per_character;  t++)
+            {
+                pattern = header_font[(uint8_t) *t][row];
+                if (x_repeats == 1)
+                {
+                    buf[pos++] = (uint8_t) (pattern >> 8);
+                    buf[pos++] = (uint8_t) (pattern & 0xFF);
+                }
+                /*endif*/
+            }
+            /*endfor*/
         }
+        else
+        {
+            /* Do x-axis repeats */
+            patt = 0;
+            for (  ;  *t  &&  pos <= len - bytes_per_character;  t++)
+            {
+                pattern = header_font[(uint8_t) *t][row];
+                patt_bit = 0;
+                for (i = 0;  i < 16;  i++)
+                {
+                    for (j = 0;  j < bits_per_pixel;  j++)
+                    {
+                        patt <<= 1;
+                        if ((pattern & 0x8000))
+                            patt |= 1;
+                        /*endif*/
+                        if (patt_bit++ >= 7)
+                        {
+                            buf[pos++] = patt;
+                            if (pos >= len)
+                                break;
+                            /*endif*/
+                            patt = 0;
+                            patt_bit = 0;
+                        }
+                        /*endif*/
+                    }
+                    /*endfor*/
+                    pattern <<= 1;
+                }
+                /*endfor*/
+            }
+            /*endfor*/
+        }
+        /*endif*/
         if (pos < len)
             memset(&buf[pos], 0, len - pos);
+        /*endif*/
         break;
     case T4_IMAGE_TYPE_GRAY_8BIT:
-        for (  ;  *t  &&  pos <= len - 2;  t++)
+        bytes_per_pixel = x_repeats;
+        bytes_per_character = bytes_per_pixel*16;
+        for (  ;  *t  &&  pos <= len - bytes_per_pixel;  t++)
         {
             pattern = header_font[(uint8_t) *t][row];
             for (i = 0;  i < 16;  i++)
             {
-                buf[pos + i] = (pattern & 0x8000)  ?  0  :  0xFF;
+                patt = (pattern & 0x8000)  ?  0  :  0xFF;
+                for (j = 0;  j < bytes_per_pixel;  j++)
+                    buf[pos + j] = patt;
+                /*endfor*/
                 pattern <<= 1;
+                pos += bytes_per_pixel;
             }
-            pos += 16;
+            /*endfor*/
         }
+        /*endfor*/
         if (pos < len)
             memset(&buf[pos], 0xFF, len - pos);
+        /*endif*/
         break;
     case T4_IMAGE_TYPE_COLOUR_8BIT:
-        for (  ;  *t  &&  pos <= len - 2;  t++)
+        bytes_per_pixel = x_repeats*3;
+        bytes_per_character = bytes_per_pixel*16;
+        for (  ;  *t  &&  pos <= len - bytes_per_character;  t++)
         {
             pattern = header_font[(uint8_t) *t][row];
             for (i = 0;  i < 16;  i++)
             {
-                buf[pos + 3*i + 0] =
-                buf[pos + 3*i + 1] =
-                buf[pos + 3*i + 2] = (pattern & 0x8000)  ?  0  :  0xFF;
+                patt = (pattern & 0x8000)  ?  0  :  0xFF;
+                for (j = 0;  j < bytes_per_pixel;  j++)
+                    buf[pos + j] = patt;
+                /*endfor*/
                 pattern <<= 1;
+                pos += bytes_per_pixel;
             }
-            pos += 3*16;
+            /*endfor*/
         }
+        /*endfor*/
         if (pos < len)
             memset(&buf[pos], 0xFF, len - pos);
+        /*endif*/
         break;
     case T4_IMAGE_TYPE_COLOUR_BILEVEL:
     case T4_IMAGE_TYPE_4COLOUR_BILEVEL:
@@ -1599,12 +1828,14 @@ static int header_row_read_handler(void *user_data, uint8_t buf[], size_t len)
     default:
         memset(buf, 0xFF, len);
     }
+    /*endswitch*/
     s->header_row++;
     if (s->header_row >= 16*y_repeats)
     {
         /* End of header. Change to normal image row data. */
         set_row_read_handler(s, s->row_handler, s->row_handler_user_data);
     }
+    /*endif*/
     return len;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1614,12 +1845,15 @@ SPAN_DECLARE(int) t4_tx_next_page_has_different_format(t4_tx_state_t *s)
     span_log(&s->logging, SPAN_LOG_FLOW, "Checking for the existence of page %d\n", s->current_page + 1);
     if (s->current_page >= s->stop_page)
         return -1;
+    /*endif*/
     if (s->tiff.file)
     {
         if (!TIFFSetDirectory(s->tiff.tiff_file, (tdir_t) s->current_page + 1))
             return -1;
+        /*endif*/
         return test_tiff_directory_info(s);
     }
+    /*endif*/
     return -1;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1657,6 +1891,7 @@ static int release_encoder(t4_tx_state_t *s)
         return t45_encode_release(&s->encoder.t45);
 #endif
     }
+    /*endswitch*/
     return -1;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1810,6 +2045,7 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
                 compression = T4_COMPRESSION_T45;
             else if ((supported_compressions & T4_COMPRESSION_SYCC_T81))
                 compression = T4_COMPRESSION_SYCC_T81;
+            /*endif*/
  
             //best_colour_resolution(s->tiff.x_resolution, supported_colour_resolutions);
         }
@@ -1827,6 +2063,7 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
                     span_log(&s->logging, SPAN_LOG_FLOW, "Flattening is not allowed\n");
                     return T4_IMAGE_FORMAT_INCOMPATIBLE;
                 }
+                /*endif*/
                 break;
             case T4_IMAGE_TYPE_GRAY_8BIT:
             case T4_IMAGE_TYPE_GRAY_12BIT:
@@ -1835,13 +2072,19 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
                     span_log(&s->logging, SPAN_LOG_FLOW, "Flattening is not allowed\n");
                     return T4_IMAGE_FORMAT_INCOMPATIBLE;
                 }
+                /*endif*/
+                break;
+            default:
                 break;
             }
+            /*endswitch*/
             /* Squashing to a bi-level image is possible */
             s->metadata.image_type = T4_IMAGE_TYPE_BILEVEL;
             span_log(&s->logging, SPAN_LOG_FLOW, "The image will be flattened to %s\n", t4_image_type_to_str(s->metadata.image_type));
         }
+        /*endif*/
     }
+    /*endif*/
 
     if (s->metadata.image_type == T4_IMAGE_TYPE_BILEVEL)
     {
@@ -1856,7 +2099,9 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
             compression = T4_COMPRESSION_T4_2D;
         else
             compression = T4_COMPRESSION_T4_1D;
+        /*endif*/
     }
+    /*endif*/
 
     /* Deal with the image width/resolution combination. */
     /* Look for a pattern that matches the image */
@@ -1868,7 +2113,10 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
             s->metadata.width_code = width_and_res_info[entry].width_code;
             break;
         }
+        /*endif*/
     }
+    /*endfor*/
+    res = T4_IMAGE_FORMAT_NOSIZESUPPORT;
     s->row_squashing_ratio = 1;
     if (s->metadata.width_code >= 0  &&  (supported_image_sizes & s->metadata.width_code))
     {
@@ -1913,7 +2161,9 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
                         {
                             if ((s->tiff.resolution_code & squashable[i].resolution))
                                 break;
+                            /*endif*/
                         }
+                        /*endfor*/
                         if (i < 4)
                         {
                             /* This is a squashable resolution, so let's see if there is a valid
@@ -1935,11 +2185,17 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
                                     res = T4_IMAGE_FORMAT_OK;
                                     break;
                                 }
+                                /*endif*/
                             }
+                            /*endfor*/
                         }
+                        /*endif*/
                     }
+                    /*endif*/
                 }
+                /*endif*/
             }
+            /*endif*/
             /* If we have not succeeded in matching up the size and resolution, the next step will
                depend on whether the original was a bi-level image. If it was, we are stuck, as you can't
                really resize those. If it was not, a resize might be possible */
@@ -1947,9 +2203,12 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
             {
                 if (s->tiff.image_type == T4_IMAGE_TYPE_BILEVEL)
                     return T4_IMAGE_FORMAT_NORESSUPPORT;
+                /*endif*/
                 if (!(supported_compressions & T4_COMPRESSION_RESCALING))
                     return T4_IMAGE_FORMAT_NOSIZESUPPORT;
+                /*endif*/
             }
+            /*endif*/
             /* TODO */
         }
         else
@@ -1964,8 +2223,11 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
                     s->metadata.y_resolution = code_to_y_resolution(s->metadata.resolution_code);
                     res = T4_IMAGE_FORMAT_OK;
                 }
+                /*endif*/
             }
+            /*endif*/
         }
+        /*endif*/
     }
     else
     {
@@ -1973,8 +2235,10 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
         /* We can't rework a bilevel image that fits none of the patterns */
         if (s->tiff.image_type == T4_IMAGE_TYPE_BILEVEL  ||  s->tiff.image_type == T4_IMAGE_TYPE_COLOUR_BILEVEL)
             return T4_IMAGE_FORMAT_NORESSUPPORT;
+        /*endif*/
         if (!(supported_compressions & T4_COMPRESSION_RESCALING))
             return T4_IMAGE_FORMAT_NOSIZESUPPORT;
+        /*endif*/
         /* Any other kind of image might be resizable */
         res = T4_IMAGE_FORMAT_OK;
         /* TODO: use more sophisticated resizing */
@@ -1983,9 +2247,11 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
         s->metadata.x_resolution = code_to_x_resolution(s->metadata.resolution_code);
         s->metadata.y_resolution = code_to_y_resolution(s->metadata.resolution_code);
     }
+    /*endif*/
 
     if (res != T4_IMAGE_FORMAT_OK)
         return res;
+    /*endif*/
 
     if (s->metadata.image_type != s->tiff.image_type  ||  s->metadata.image_width != s->tiff.image_width)
     {
@@ -2001,8 +2267,10 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
         {
             return T4_IMAGE_FORMAT_INCOMPATIBLE;
         }
+        /*endif*/
         s->metadata.image_length = image_translate_get_output_length(&s->translator);
     }
+    /*endif*/
 
     if (compression != s->metadata.compression)
     {
@@ -2022,10 +2290,12 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
                 t4_t6_encode_init(&s->encoder.t4_t6, compression, s->metadata.image_width, s->metadata.image_length, s->row_handler, s->row_handler_user_data);
                 break;
             }
+            /*endswitch*/
             s->metadata.compression = compression;
             res = T4_IMAGE_FORMAT_OK;
             if (t4_t6_encode_set_encoding(&s->encoder.t4_t6, compression))
                 res = -1;
+            /*endif*/
             break;
         case T4_COMPRESSION_T85:
         case T4_COMPRESSION_T85_L0:
@@ -2039,6 +2309,7 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
                 t85_encode_init(&s->encoder.t85, s->metadata.image_width, s->metadata.image_length, s->row_handler, s->row_handler_user_data);
                 break;
             }
+            /*endswitch*/
             s->metadata.compression = compression;
             res = T4_IMAGE_FORMAT_OK;
             break;
@@ -2052,6 +2323,7 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
                 t88_encode_init(&s->encoder.t88, s->metadata.image_width, s->metadata.image_length, s->row_handler, s->row_handler_user_data);
                 break;
             }
+            /*endswitch*/
             s->metadata.compression = compression;
             res = T4_IMAGE_FORMAT_OK;
             break;
@@ -2068,6 +2340,7 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
                 t42_encode_init(&s->encoder.t42, s->metadata.image_width, s->metadata.image_length, s->row_handler, s->row_handler_user_data);
                 break;
             }
+            /*endswitch*/
             s->metadata.compression = compression;
             res = T4_IMAGE_FORMAT_OK;
             break;
@@ -2081,6 +2354,7 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
                 t43_encode_init(&s->encoder.t43, s->metadata.image_width, s->metadata.image_length, s->row_handler, s->row_handler_user_data);
                 break;
             }
+            /*endswitch*/
             s->metadata.compression = compression;
             res = T4_IMAGE_FORMAT_OK;
             break;
@@ -2095,12 +2369,17 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
                 t45_encode_init(&s->encoder.t45, s->metadata.image_width, s->metadata.image_length, s->row_handler, s->row_handler_user_data);
                 break;
             }
+            /*endswitch*/
             s->metadata.compression = compression;
             res = T4_IMAGE_FORMAT_OK;
             break;
 #endif
+        default:
+            break;
         }
+        /*endswitch*/
     }
+    /*endif*/
 
     switch (s->metadata.compression)
     {
@@ -2109,7 +2388,10 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
     case T4_COMPRESSION_T6:
         t4_t6_encode_set_max_2d_rows_per_1d_row(&s->encoder.t4_t6, -s->metadata.y_resolution);
         break;
+    default:
+        break;
     }
+    /*endswitch*/
 
     set_image_width(s, s->metadata.image_width);
     set_image_length(s, s->metadata.image_length);
@@ -2191,7 +2473,10 @@ static void set_image_width(t4_tx_state_t *s, uint32_t image_width)
         t45_encode_set_image_width(&s->encoder.t45, image_width);
         break;
 #endif
+    default:
+        break;
     }
+    /*endswitch*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -2226,7 +2511,10 @@ static void set_image_length(t4_tx_state_t *s, uint32_t image_length)
         t45_encode_set_image_length(&s->encoder.t45, image_length);
         break;
 #endif
+    default:
+        break;
     }
+    /*endswitch*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -2252,7 +2540,10 @@ static void t4_tx_set_image_type(t4_tx_state_t *s, int image_type)
         t45_encode_set_image_type(&s->encoder.t45, image_type);
         break;
 #endif
+    default:
+        break;
     }
+    /*endswitch*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -2265,7 +2556,10 @@ SPAN_DECLARE(void) t4_tx_set_min_bits_per_row(t4_tx_state_t *s, int bits)
     case T4_COMPRESSION_T6:
         t4_t6_encode_set_min_bits_per_row(&s->encoder.t4_t6, bits);
         break;
+    default:
+        break;
     }
+    /*endswitch*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -2278,7 +2572,10 @@ SPAN_DECLARE(void) t4_tx_set_max_2d_rows_per_1d_row(t4_tx_state_t *s, int max)
     case T4_COMPRESSION_T6:
         t4_t6_encode_set_max_2d_rows_per_1d_row(&s->encoder.t4_t6, max);
         break;
+    default:
+        break;
     }
+    /*endswitch*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -2314,8 +2611,10 @@ SPAN_DECLARE(int) t4_tx_get_pages_in_file(t4_tx_state_t *s)
         max = get_tiff_total_pages(s);
     else
         max = 1;
+    /*endif*/
     if (max >= 0)
         s->tiff.pages_in_file = max;
+    /*endif*/
     return max;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2384,7 +2683,10 @@ SPAN_DECLARE(void) t4_tx_get_transfer_statistics(t4_tx_state_t *s, t4_stats_t *t
         t->line_image_size = t45_encode_get_compressed_image_size(&s->encoder.t45)/8;
         break;
 #endif
+    default:
+        break;
     }
+    /*endswitch*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -2394,8 +2696,10 @@ SPAN_DECLARE(int) t4_tx_image_complete(t4_tx_state_t *s)
     {
         if (s->no_encoder.buf_ptr >= s->no_encoder.buf_len)
             return SIG_STATUS_END_OF_DATA;
+        /*endif*/
         return 0;
     }
+    /*endif*/
 
     switch (s->metadata.compression)
     {
@@ -2419,7 +2723,10 @@ SPAN_DECLARE(int) t4_tx_image_complete(t4_tx_state_t *s)
     case T4_COMPRESSION_T45:
         return t45_encode_image_complete(&s->encoder.t45);
 #endif
+    default:
+        break;
     }
+    /*endswitch*/
     return SIG_STATUS_END_OF_DATA;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2433,14 +2740,17 @@ SPAN_DECLARE(int) t4_tx_get_bit(t4_tx_state_t *s)
     {
         if (s->no_encoder.buf_ptr >= s->no_encoder.buf_len)
             return SIG_STATUS_END_OF_DATA;
+        /*endif*/
         bit = (s->no_encoder.buf[s->no_encoder.buf_ptr] >> s->no_encoder.bit) & 1;
         if (++s->no_encoder.bit >= 8)
         {
             s->no_encoder.bit = 0;
             s->no_encoder.buf_ptr++;
         }
+        /*endif*/
         return bit;
     }
+    /*endif*/
     return t4_t6_encode_get_bit(&s->encoder.t4_t6);
 }
 /*- End of function --------------------------------------------------------*/
@@ -2451,13 +2761,16 @@ SPAN_DECLARE(int) t4_tx_get(t4_tx_state_t *s, uint8_t buf[], size_t max_len)
     {
         if (max_len > (s->no_encoder.buf_len - s->no_encoder.buf_ptr))
             max_len = s->no_encoder.buf_len - s->no_encoder.buf_ptr;
+        /*endif*/
         memcpy(buf, &s->no_encoder.buf[s->no_encoder.buf_ptr], max_len);
         s->no_encoder.buf_ptr += max_len;
         return max_len;
     }
+    /*endif*/
 
     if (s->image_get_handler)
         return s->image_get_handler((void *) &s->encoder, buf, max_len);
+    /*endif*/
 
     return 0;
 }
@@ -2468,18 +2781,22 @@ SPAN_DECLARE(int) t4_tx_start_page(t4_tx_state_t *s)
     span_log(&s->logging, SPAN_LOG_FLOW, "Start tx page %d - compression %s\n", s->current_page, t4_compression_to_str(s->metadata.compression));
     if (s->current_page > s->stop_page)
         return -1;
+    /*endif*/
     if (s->tiff.file)
     {
         if (!TIFFSetDirectory(s->tiff.tiff_file, (tdir_t) s->current_page))
             return -1;
+        /*endif*/
         get_tiff_directory_info(s);
         if (read_tiff_image(s) < 0)
             return -1;
+        /*endif*/
     }
     else
     {
         s->metadata.image_length = UINT32_MAX;
     }
+    /*endif*/
 
     switch (s->metadata.compression)
     {
@@ -2519,6 +2836,7 @@ SPAN_DECLARE(int) t4_tx_start_page(t4_tx_state_t *s)
         s->image_get_handler = NULL;
         break;
     }
+    /*endswitch*/
 
     /* If there is a page header, create that first */
     //if (s->metadata.image_type == T4_IMAGE_TYPE_BILEVEL  &&  s->header_info  &&  s->header_info[0]  &&  make_header(s) == 0)
@@ -2531,6 +2849,7 @@ SPAN_DECLARE(int) t4_tx_start_page(t4_tx_state_t *s)
     {
         set_row_read_handler(s, s->row_handler, s->row_handler_user_data);
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2558,15 +2877,17 @@ SPAN_DECLARE(logging_state_t *) t4_tx_get_logging_state(t4_tx_state_t *s)
 
 SPAN_DECLARE(t4_tx_state_t *) t4_tx_init(t4_tx_state_t *s, const char *file, int start_page, int stop_page)
 {
-    int allocated;
+    bool alloced;
 
-    allocated = false;
+    alloced = false;
     if (s == NULL)
     {
         if ((s = (t4_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
-        allocated = true;
+        /*endif*/
+        alloced = true;
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
     TIFF_FX_init();
@@ -2590,10 +2911,12 @@ SPAN_DECLARE(t4_tx_state_t *) t4_tx_init(t4_tx_state_t *s, const char *file, int
     {
         if (open_tiff_input_file(s, file) < 0)
         {
-            if (allocated)
+            if (alloced)
                 span_free(s);
+            /*endif*/
             return NULL;
         }
+        /*endif*/
         s->tiff.file = strdup(file);
         s->tiff.pages_in_file = -1;
         if (!TIFFSetDirectory(s->tiff.tiff_file, (tdir_t) s->current_page)
@@ -2601,11 +2924,14 @@ SPAN_DECLARE(t4_tx_state_t *) t4_tx_init(t4_tx_state_t *s, const char *file, int
             get_tiff_directory_info(s))
         {
             tiff_tx_release(s);
-            if (allocated)
+            if (alloced)
                 span_free(s);
+            /*endif*/
             return NULL;
         }
+        /*endif*/
     }
+    /*endif*/
     return s;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2614,16 +2940,19 @@ SPAN_DECLARE(int) t4_tx_release(t4_tx_state_t *s)
 {
     if (s->tiff.file)
         tiff_tx_release(s);
+    /*endif*/
     if (s->header_text)
     {
         span_free(s->header_text);
         s->header_text = NULL;
     }
+    /*endif*/
     if (s->colour_map)
     {
         span_free(s->colour_map);
         s->colour_map = NULL;
     }
+    /*endif*/
     return release_encoder(s);
 }
 /*- End of function --------------------------------------------------------*/

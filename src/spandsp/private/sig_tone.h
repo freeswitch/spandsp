@@ -84,12 +84,12 @@ typedef struct
                initial detection at the receiver, but require the tone
                amplitude to drop by a number of dBs if it is sustained,
                to reduce crosstalk levels. */
-    int high_low_timeout;
+    span_sample_timer_t high_low_timeout;
 
     /*! \brief Some signalling tone detectors use a sharp initial filter,
                changing to a broader, flatter, filter after some delay. This
                parameter defines the delay. 0 means it never changes. */
-    int sharp_flat_timeout;
+    span_sample_timer_t sharp_flat_timeout;
 
     /*! \brief Parameters to control the behaviour of the notch filter, used
                to remove the tone from the voice path in some protocols. The
@@ -97,12 +97,12 @@ typedef struct
                is detected. Its removal is delayed by this timeout, to avoid
                clicky noises from repeated switching of the filter on rapid
                pulses of signalling tone. */
-    int notch_lag_time;
+    span_sample_timer_t notch_lag_time;
 
     /*! \brief The tone on persistence check, in audio samples. */
-    int tone_on_check_time;
+    span_sample_timer_t tone_on_check_time;
     /*! \brief The tone off persistence check, in audio samples. */
-    int tone_off_check_time;
+    span_sample_timer_t tone_off_check_time;
 
     /*! \brief The number of tones used. */
     int tones;
@@ -134,7 +134,7 @@ typedef struct
 struct sig_tone_tx_state_s
 {
     /*! \brief The callback function used to handle signalling changes. */
-    tone_report_func_t sig_update;
+    span_tone_report_func_t sig_update;
     /*! \brief A user specified opaque pointer passed to the callback function. */
     void *user_data;
 
@@ -149,14 +149,14 @@ struct sig_tone_tx_state_s
     /*! The scaling values for the one or two tones, and the high and low level of each tone */
     int16_t tone_scaling[2][2];
     /*! The sample timer, used to switch between the high and low level tones. */
-    int high_low_timer;
+    span_sample_timer_t high_low_timer;
 
     /*! \brief Current transmit tone */
     int current_tx_tone;
-    /*! \brief Current transmit timeout */
-    int current_tx_timeout;
-    /*! \brief Time in current signalling state, in samples. */
-    int signalling_state_duration;
+    /*! \brief Current transmit timeout. */
+    span_sample_timer_t current_tx_timeout;
+    /*! \brief Time in current signalling state. */
+    span_sample_timer_t signalling_state_duration;
 };
 
 /*!
@@ -165,7 +165,7 @@ struct sig_tone_tx_state_s
 struct sig_tone_rx_state_s
 {
     /*! \brief The callback function used to handle signalling changes. */
-    tone_report_func_t sig_update;
+    span_tone_report_func_t sig_update;
     /*! \brief A user specified opaque pointer passed to the callback function. */
     void *user_data;
 
@@ -175,7 +175,7 @@ struct sig_tone_rx_state_s
     /*! \brief The current receive tone */
     int current_rx_tone;
     /*! \brief The timeout for switching from the high level to low level tone detector. */
-    int high_low_timer;
+    span_sample_timer_t high_low_timer;
     /*! \brief ??? */
     int current_notch_filter;
 
@@ -208,7 +208,7 @@ struct sig_tone_rx_state_s
     power_meter_t flat_power;
 
     /*! \brief Persistence check for tone present */
-    int tone_persistence_timeout;
+    span_sample_timer_t tone_persistence_timeout;
     /*! \brief The tone pattern on the last audio sample */
     int last_sample_tone_present;
 
@@ -224,14 +224,14 @@ struct sig_tone_rx_state_s
     /*! \brief True if the notch filter is enabled in the media path */
     bool notch_enabled;
     /*! \brief ??? */
-    int flat_mode_timeout;
+    span_sample_timer_t flat_mode_timeout;
     /*! \brief ??? */
-    int notch_insertion_timeout;
+    span_sample_timer_t notch_insertion_timeout;
 
     /*! \brief ??? */
     int signalling_state;
     /*! \brief ??? */
-    int signalling_state_duration;
+    span_sample_timer_t signalling_state_duration;
 };
 
 #endif

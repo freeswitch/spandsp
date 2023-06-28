@@ -74,7 +74,9 @@ SPAN_DECLARE(tone_gen_descriptor_t *) tone_gen_descriptor_init(tone_gen_descript
         {
             return NULL;
         }
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
 
     if (f1)
@@ -88,9 +90,11 @@ SPAN_DECLARE(tone_gen_descriptor_t *) tone_gen_descriptor_init(tone_gen_descript
         s->tone[0].phase_rate = dds_phase_ratef((float) f1);
         if (f2 < 0)
             s->tone[0].phase_rate = -s->tone[0].phase_rate;
+        /*endif*/
         s->tone[0].gain = dds_scaling_dbm0f((float) l1);
 #endif
     }
+    /*endif*/
     if (f2)
     {
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -101,6 +105,7 @@ SPAN_DECLARE(tone_gen_descriptor_t *) tone_gen_descriptor_init(tone_gen_descript
         s->tone[1].gain = (f2 < 0)  ?  (float) l2/100.0f  :  dds_scaling_dbm0f((float) l2);
 #endif
     }
+    /*endif*/
 
     s->duration[0] = d1*SAMPLE_RATE/1000;
     s->duration[1] = d2*SAMPLE_RATE/1000;
@@ -132,19 +137,20 @@ SPAN_DECLARE(int) tone_gen(tone_gen_state_t *s, int16_t amp[], int max_samples)
 
     if (s->current_section < 0)
         return 0;
-
+    /*endif*/
     for (samples = 0;  samples < max_samples;  )
     {
         limit = samples + s->duration[s->current_section] - s->current_position;
         if (limit > max_samples)
             limit = max_samples;
-
+        /*endif*/
         s->current_position += (limit - samples);
         if (s->current_section & 1)
         {
             /* A silent section */
             for (  ;  samples < limit;  samples++)
                 amp[samples] = 0;
+            /*endfor*/
         }
         else
         {
@@ -164,6 +170,7 @@ SPAN_DECLARE(int) tone_gen(tone_gen_state_t *s, int16_t amp[], int max_samples)
                     amp[samples] = (int16_t) lfastrintf(xamp);
 #endif
                 }
+                /*endfor*/
             }
             else
             {
@@ -178,12 +185,14 @@ SPAN_DECLARE(int) tone_gen(tone_gen_state_t *s, int16_t amp[], int max_samples)
                     {
                         if (s->tone[i].phase_rate == 0)
                             break;
+                        /*endif*/
 #if defined(SPANDSP_USE_FIXED_POINT)
                         xamp += dds_mod(&s->phase[i], s->tone[i].phase_rate, s->tone[i].gain, 0);
 #else
                         xamp += dds_modf(&s->phase[i], s->tone[i].phase_rate, s->tone[i].gain, 0);
 #endif
                     }
+                    /*endfor*/
                     /* Saturation of the answer is the right thing at this point.
                        However, we are normally generating well controlled tones,
                        that cannot clip. So, the overhead of doing saturation is
@@ -207,10 +216,14 @@ SPAN_DECLARE(int) tone_gen(tone_gen_state_t *s, int16_t amp[], int max_samples)
                     s->current_section = -1;
                     break;
                 }
+                /*endif*/
                 s->current_section = 0;
             }
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endfor*/
     return samples;
 }
 /*- End of function --------------------------------------------------------*/
@@ -225,7 +238,9 @@ SPAN_DECLARE(tone_gen_state_t *) tone_gen_init(tone_gen_state_t *s, tone_gen_des
         {
             return NULL;
         }
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
 
     for (i = 0;  i < 4;  i++)
@@ -233,9 +248,11 @@ SPAN_DECLARE(tone_gen_state_t *) tone_gen_init(tone_gen_state_t *s, tone_gen_des
         s->tone[i] = t->tone[i];
         s->phase[i] = 0;
     }
+    /*endfor*/
 
     for (i = 0;  i < 4;  i++)
         s->duration[i] = t->duration[i];
+    /*endfor*/
     s->repeat = t->repeat;
 
     s->current_section = 0;
@@ -254,6 +271,7 @@ SPAN_DECLARE(int) tone_gen_free(tone_gen_state_t *s)
 {
     if (s)
         span_free(s);
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

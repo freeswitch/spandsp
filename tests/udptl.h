@@ -1,11 +1,12 @@
 /*
  * SpanDSP - a series of DSP components for telephony
  *
- * udptl.c
+ * udptl.h - An implementation of the UDPTL protocol defined in
+ *           ITU T.38, less the packet exchange part.
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
- * Copyright (C) 2009 Steve Underwood
+ * Copyright (C) 2009, 2022 Steve Underwood
  *
  * All rights reserved.
  *
@@ -82,6 +83,9 @@ struct udptl_state_s
 
     udptl_fec_tx_buffer_t tx[UDPTL_BUF_MASK + 1];
     udptl_fec_rx_buffer_t rx[UDPTL_BUF_MASK + 1];
+
+    /*! \brief Error and flow logging control */
+    logging_state_t logging;
 };
 
 enum
@@ -102,15 +106,15 @@ extern "C" {
     \param buf The UDPTL packet buffer.
     \param len The length of the packet.
     \return 0 for OK. */
-int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len);
+SPAN_DECLARE(int) udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len);
 
 /*! \brief Construct a UDPTL packet, ready for transmission.
     \param s The UDPTL context.
     \param buf The UDPTL packet buffer.
     \param msg The primary packet.
-    \param len The length of the primary packet.
+    \param msg_len The length of the primary packet.
     \return The length of the constructed UDPTL packet. */
-int udptl_build_packet(udptl_state_t *s, uint8_t buf[], const uint8_t msg[], int msg_len);
+SPAN_DECLARE(int) udptl_build_packet(udptl_state_t *s, uint8_t buf[], const uint8_t msg[], int msg_len);
 
 /*! \brief Change the error correction settings of a UDPTL context.
     \param s The UDPTL context.
@@ -118,7 +122,7 @@ int udptl_build_packet(udptl_state_t *s, uint8_t buf[], const uint8_t msg[], int
     \param span The packet span over which error correction should be applied.
     \param entries The number of error correction entries to include in packets.
     \return 0 for OK. */
-int udptl_set_error_correction(udptl_state_t *s, int ec_scheme, int span, int entries);
+SPAN_DECLARE(int) udptl_set_error_correction(udptl_state_t *s, int ec_scheme, int span, int entries);
 
 /*! \brief Check the error correction settings of a UDPTL context.
     \param s The UDPTL context.
@@ -126,15 +130,21 @@ int udptl_set_error_correction(udptl_state_t *s, int ec_scheme, int span, int en
     \param span The packet span over which error correction is being applied.
     \param entries The number of error correction being included in packets.
     \return 0 for OK. */
-int udptl_get_error_correction(udptl_state_t *s, int *ec_scheme, int *span, int *entries);
+SPAN_DECLARE(int) udptl_get_error_correction(udptl_state_t *s, int *ec_scheme, int *span, int *entries);
 
-int udptl_set_local_max_datagram(udptl_state_t *s, int max_datagram);
+SPAN_DECLARE(int) udptl_set_local_max_datagram(udptl_state_t *s, int max_datagram);
 
-int udptl_get_local_max_datagram(udptl_state_t *s);
+SPAN_DECLARE(int) udptl_get_local_max_datagram(udptl_state_t *s);
 
-int udptl_set_far_max_datagram(udptl_state_t *s, int max_datagram);
+SPAN_DECLARE(int) udptl_set_far_max_datagram(udptl_state_t *s, int max_datagram);
 
-int udptl_get_far_max_datagram(udptl_state_t *s);
+SPAN_DECLARE(int) udptl_get_far_max_datagram(udptl_state_t *s);
+
+/*! Get the logging context associated with a UDPTL context.
+    \brief Get the logging context associated with a UDPTL context.
+    \param s The modem context.
+    \return A pointer to the logging context */
+SPAN_DECLARE(logging_state_t *) udptl_get_logging_state(udptl_state_t *s);
 
 /*! \brief Initialise a UDPTL context.
     \param s The UDPTL context.
@@ -144,15 +154,21 @@ int udptl_get_far_max_datagram(udptl_state_t *s);
     \param rx_packet_handler The callback function, used to report arriving IFP packets.
     \param user_data An opaque pointer supplied to rx_packet_handler.
     \return A pointer to the UDPTL context, or NULL if there was a problem. */
-udptl_state_t *udptl_init(udptl_state_t *s, int ec_scheme, int span, int entries, udptl_rx_packet_handler_t rx_packet_handler, void *user_data);
+SPAN_DECLARE(udptl_state_t *) udptl_init(udptl_state_t *s, int ec_scheme, int span, int entries, udptl_rx_packet_handler_t rx_packet_handler, void *user_data);
 
 /*! \brief Release a UDPTL context.
     \param s The UDPTL context.
     \return 0 for OK. */
-int udptl_release(udptl_state_t *s);
+SPAN_DECLARE(int) udptl_release(udptl_state_t *s);
+
+/*! \brief Free a UDPTL context.
+    \param s The UDPTL context.
+    \return 0 for OK. */
+SPAN_DECLARE(int) udptl_free(udptl_state_t *s);
 
 #if defined(__cplusplus)
 }
 #endif
+
 #endif
 /*- End of file ------------------------------------------------------------*/

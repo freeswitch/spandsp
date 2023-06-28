@@ -91,8 +91,8 @@ SPAN_DECLARE(data_modems_state_t *) data_modems_init(data_modems_state_t *s,
                                                      void *at_tx_user_data,
                                                      data_modems_control_handler_t modem_control_handler,
                                                      void *modem_control_user_data,
-                                                     put_msg_func_t put_msg,
-                                                     get_msg_func_t get_msg,
+                                                     span_put_msg_func_t put_msg,
+                                                     span_get_msg_func_t get_msg,
                                                      void *user_data);
 
 SPAN_DECLARE(int) data_modems_release(data_modems_state_t *s);

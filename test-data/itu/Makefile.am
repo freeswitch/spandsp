@@ -16,9 +16,9 @@
 ## License along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-SUBDIRS = fax
+SUBDIRS = fax tiff-fx
 
-DIST_SUBDIRS = fax
+DIST_SUBDIRS = fax tiff-fx
 
 all: 
 

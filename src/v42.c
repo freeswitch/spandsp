@@ -47,6 +47,7 @@
 
 #include "spandsp/telephony.h"
 #include "spandsp/alloc.h"
+#include "spandsp/unaligned.h"
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/async.h"
@@ -409,8 +410,8 @@ static void transmit_xid(v42_state_t *ss, uint8_t addr)
     /* Parameter negotiation group */
     group_len = 20;
     *buf++ = GI_PARAM_NEGOTIATION;
-    *buf++ = (group_len >> 8) & 0xFF;
-    *buf++ = group_len & 0xFF;
+    put_net_unaligned_uint16(buf, group_len);
+    buf += 2;
     len += 3;
 
     /* For conformance with the encoding rules in ISO/IEC 8885, the transmitter of an XID command frame shall
@@ -424,24 +425,19 @@ static void transmit_xid(v42_state_t *ss, uint8_t addr)
            capability. */
     *buf++ = PI_HDLC_OPTIONAL_FUNCTIONS;
     *buf++ = 4;
-    *buf++ = 0x8A;  /* Bits 2, 4, and 8 set */
-    *buf++ = 0x89;  /* Bits 9, 12, and 16 set */
-    *buf++ = 0x00;
-    *buf++ = 0x00;
+    put_net_unaligned_uint32(buf, 0x8A890000);  /* Bits 2, 4, 8 , 9, 12, and 16 set */
 
     /* Send the maximum as a number of bits, rather than octets */
-    param_val = ss->config.v42_tx_n401 << 3;
     *buf++ = PI_TX_INFO_MAXSIZE;
     *buf++ = 2;
-    *buf++ = (param_val >> 8) & 0xFF;
-    *buf++ = (param_val & 0xFF);
+    put_net_unaligned_uint16(buf, ss->config.v42_tx_n401 << 3);
+    buf += 2;
 
     /* Send the maximum as a number of bits, rather than octets */
-    param_val = ss->config.v42_rx_n401 << 3;
     *buf++ = PI_RX_INFO_MAXSIZE;
     *buf++ = 2;
-    *buf++ = (param_val >> 8) & 0xFF;
-    *buf++ = (param_val & 0xFF);
+    put_net_unaligned_uint16(buf, ss->config.v42_rx_n401 << 3);
+    buf += 2;
 
     *buf++ = PI_TX_WINDOW_SIZE;
     *buf++ = 1;
@@ -458,8 +454,8 @@ static void transmit_xid(v42_state_t *ss, uint8_t addr)
         /* Private parameter negotiation group */
         group_len = 15;
         *buf++ = GI_PRIVATE_NEGOTIATION;
-        *buf++ = (group_len >> 8) & 0xFF;
-        *buf++ = group_len & 0xFF;
+        put_net_unaligned_uint16(buf, group_len);
+        buf += 2;
         len += 3;
 
         /* Private parameter for V.42 (ASCII for V42). V.42 says ".42", but V.42bis says "V42",
@@ -480,11 +476,10 @@ static void transmit_xid(v42_state_t *ss, uint8_t addr)
         *buf++ = ss->config.comp;
 
         /* V.42bis P1 */
-        param_val = ss->config.comp_dict_size;
         *buf++ = PI_V42BIS_NUM_CODEWORDS;
         *buf++ = 2;
-        *buf++ = (param_val >> 8) & 0xFF;
-        *buf++ = param_val & 0xFF;
+        put_net_unaligned_uint16(buf, ss->config.comp_dict_size);
+        buf += 2;
 
         /* V.42bis P2 */
         *buf++ = PI_V42BIS_MAX_STRING_LENGTH;
@@ -789,7 +784,7 @@ static void rx_supervisory_cmd_frame(v42_state_t *ss, const uint8_t *frame, int 
     lapm_state_t *s;
 
     s = &ss->lapm;
-    /* If l->local_busy each RR,RNR,REJ with p=1 should be replied by RNR with f=1 (8.4.7) */
+    /* If s->local_busy each RR,RNR,REJ with p=1 should be replied by RNR with f=1 (8.4.7) */
     switch (frame[1] & 0x0C)
     {
     case LAPM_S_RR:
@@ -1442,9 +1437,9 @@ SPAN_DECLARE(int) v42_tx_bit(void *user_data)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) v42_set_local_busy_status(v42_state_t *s, int busy)
+SPAN_DECLARE(bool) v42_set_local_busy_status(v42_state_t *s, bool busy)
 {
-    int previous_busy;
+    bool previous_busy;
 
     previous_busy = s->lapm.local_busy;
     s->lapm.local_busy = busy;
@@ -1452,7 +1447,7 @@ SPAN_DECLARE(int) v42_set_local_busy_status(v42_state_t *s, int busy)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) v42_get_far_busy_status(v42_state_t *s)
+SPAN_DECLARE(bool) v42_get_far_busy_status(v42_state_t *s)
 {
     return s->lapm.far_busy;
 }
@@ -1464,7 +1459,7 @@ SPAN_DECLARE(logging_state_t *) v42_get_logging_state(v42_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) v42_set_status_callback(v42_state_t *s, modem_status_func_t status_handler, void *user_data)
+SPAN_DECLARE(void) v42_set_status_callback(v42_state_t *s, span_modem_status_func_t status_handler, void *user_data)
 {
     s->lapm.status_handler = status_handler;
     s->lapm.status_user_data = user_data;
@@ -1503,8 +1498,8 @@ SPAN_DECLARE(void) v42_restart(v42_state_t *s)
 SPAN_DECLARE(v42_state_t *) v42_init(v42_state_t *ss,
                                      bool calling_party,
                                      bool detect,
-                                     get_msg_func_t iframe_get,
-                                     put_msg_func_t iframe_put,
+                                     span_get_msg_func_t iframe_get,
+                                     span_put_msg_func_t iframe_put,
                                      void *user_data)
 {
     lapm_state_t *s;

@@ -131,32 +131,40 @@ static int parse_tone(super_tone_rx_descriptor_t *desc, int tone_id, super_tone_
                 sscanf((char *) x, "%f+%f [%f%%]", &f1, &f2, &f_tol);
                 printf(" Frequency=%.2f+%.2f [%.2f%%]", f1, f2, f_tol);
             }
+            /*endif*/
             if ((x = xmlGetProp(cur, (const xmlChar *) "level")))
             {
                 if (sscanf((char *) x, "%f+%f", &l1, &l2) < 2)
                     l2 = l1;
+                /*endif*/
                 printf(" Level=%.2f+%.2f", l1, l2);
             }
+            /*endif*/
             if ((x = xmlGetProp(cur, (const xmlChar *) "length")))
             {
                 sscanf((char *) x, "%f [%f%%]", &length, &length_tol);
                 printf(" Length=%.2f [%.2f%%]", length, length_tol);
             }
+            /*endif*/
             if ((x = xmlGetProp(cur, (const xmlChar *) "recognition-length")))
             {
                 sscanf((char *) x, "%f [%f%%]", &recognition_length, &recognition_length_tol);
                 printf(" Recognition length=%.2f [%.2f%%]", recognition_length, recognition_length_tol);
             }
+            /*endif*/
             if ((x = xmlGetProp(cur, (const xmlChar *) "cycles")))
             {
                 if (strcasecmp((char *) x, "endless") == 0)
                     cycles = 0;
                 else
                     cycles = atoi((char *) x);
+                /*endif*/
                 printf(" Cycles='%d' ", cycles);
             }
+            /*endif*/
             if ((x = xmlGetProp(cur, (const xmlChar *) "recorded-announcement")))
                 printf(" Recorded announcement='%s'", x);
+            /*endif*/
             printf("\n");
             if (f1  ||  f2  ||  length)
             {
@@ -167,6 +175,7 @@ static int parse_tone(super_tone_rx_descriptor_t *desc, int tone_id, super_tone_
                         min_duration = recognition_length*1000.0 + 0.5;
                     else
                         min_duration = 700;
+                    /*endif*/
                     max_duration = 0;
                 }
                 else
@@ -175,11 +184,14 @@ static int parse_tone(super_tone_rx_descriptor_t *desc, int tone_id, super_tone_
                         min_duration = recognition_length*1000.0 + 0.5;
                     else
                         min_duration = (length*1000.0 + 0.5)*(1.0 - length_tol/100.0) - 30;
+                    /*endif*/
                     max_duration = (length*1000.0 + 0.5)*(1.0 + length_tol/100.0) + 30;
                 }
+                /*endif*/
                 printf(">>>Detector element %10d %10d %10d %10d\n", (int) (f1 + 0.5), (int) (f2 + 0.5), min_duration, max_duration);
                 super_tone_rx_add_element(desc, tone_id, f1 + 0.5, f2 + 0.5, min_duration, max_duration);
             }
+            /*endif*/
             treep = super_tone_tx_make_step(NULL,
                                             f1,
                                             l1,
@@ -280,6 +292,7 @@ static void get_tone_set(super_tone_rx_descriptor_t *desc, const char *tone_file
         printf("Test failed\n");
         exit(2);
     }
+    /*endif*/
     /* parse the file, activating the DTD validation option */
     if ((doc = xmlCtxtReadFile(ctxt, tone_file, NULL, XML_PARSE_XINCLUDE | XML_PARSE_DTDVALID)) == NULL)
     {
@@ -287,14 +300,16 @@ static void get_tone_set(super_tone_rx_descriptor_t *desc, const char *tone_file
         printf("Test failed\n");
         exit(2);
     }
+    /*endif*/
     if (ctxt->valid == 0)
     {
         fprintf(stderr, "Failed to validate the XML document\n");
-    	xmlFreeDoc(doc);
+        xmlFreeDoc(doc);
         xmlFreeParserCtxt(ctxt);
         printf("Test failed\n");
         exit(2);
     }
+    /*endif*/
     xmlFreeParserCtxt(ctxt);
 
     /* Check the document is of the right kind */
@@ -327,6 +342,7 @@ static void get_tone_set(super_tone_rx_descriptor_t *desc, const char *tone_file
             {
                 if (strcmp((char *) x, set_id) == 0)
                     parse_tone_set(desc, doc, ns, cur);
+                /*endif*/
             }
             /*endif*/
         }
@@ -360,6 +376,7 @@ static void wakeup(void *data, int code, int level, int delay)
         printf("Current tone is %d '%s' '%s'\n", code, (tone_names[code])  ?  tone_names[code]  :  "???", (char *) data);
     else
         printf("Tone off '%s'\n", (char *) data);
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -371,6 +388,7 @@ static void tone_segment(void *data, int f1, int f2, int duration)
         printf("Result %5d %4d\n", duration, f1);
     else
         printf("Result %5d %4d + %4d\n", duration, f1, f2);
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -391,6 +409,7 @@ static int talk_off_tests(super_tone_rx_state_t *super)
             printf("    Cannot open audio file '%s'\n", bellcore_files[j]);
             exit(2);
         }
+        /*endif*/
         while ((frames = sf_readf_short(inhandle, amp, 8000)))
         {
             for (sample = 0;  sample < frames;  )
@@ -398,13 +417,17 @@ static int talk_off_tests(super_tone_rx_state_t *super)
                 x = super_tone_rx(super, amp + sample, frames - sample);
                 sample += x;
             }
+            /*endfor*/
         }
+        /*endwhile*/
         if (sf_close_telephony(inhandle))
         {
             printf("    Cannot close speech file '%s'\n", bellcore_files[j]);
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -430,9 +453,12 @@ static int detection_range_tests(super_tone_rx_state_t *super)
         {
             for (i = 0;  i < SAMPLES_PER_CHUNK;  i++)
                 amp[i] = (dds(&phase, phase_inc)*scale) >> 15;
+            /*endfor*/
             super_tone_rx(super, amp, SAMPLES_PER_CHUNK);
         }
+        /*endfor*/
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -454,22 +480,26 @@ static int file_decode_tests(super_tone_rx_state_t *super, const char *file_name
         fprintf(stderr, "    Cannot open audio file '%s'\n", file_name);
         exit(2);
     }
+    /*endif*/
     while ((frames = sf_readf_short(inhandle, amp, 8000)))
     {
         /* Add some noise to the signal for a more meaningful test. */
         //for (sample = 0;  sample < frames;  sample++)
-        //    amp[sample] += sat_add16(amp[sample], awgn (&noise_source));
+        //    amp[sample] += sat_add16(amp[sample], awgn(&noise_source));
         for (sample = 0;  sample < frames;  )
         {
             x = super_tone_rx(super, amp + sample, frames - sample);
             sample += x;
         }
+        /*endfor*/
     }
+    /*endwhile*/
     if (sf_close_telephony(inhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", file_name);
         exit(2);
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -490,6 +520,7 @@ int main(int argc, char *argv[])
         printf("    Failed to create detector.\n");
         exit(2);
     }
+    /*endif*/
     super_tone_rx_segment_callback(super, tone_segment);
 
     detection_range_tests(super);

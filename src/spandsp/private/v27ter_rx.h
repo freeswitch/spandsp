@@ -53,12 +53,12 @@ struct v27ter_rx_state_s
     /*! \brief The bit rate of the modem. Valid values are 2400 and 4800. */
     int bit_rate;
     /*! \brief The callback function used to put each bit received. */
-    put_bit_func_t put_bit;
+    span_put_bit_func_t put_bit;
     /*! \brief A user specified opaque pointer passed to the put_bit routine. */
     void *put_bit_user_data;
 
     /*! \brief The callback function used to report modem status changes. */
-    modem_status_func_t status_handler;
+    span_modem_status_func_t status_handler;
     /*! \brief A user specified opaque pointer passed to the status function. */
     void *status_user_data;
 

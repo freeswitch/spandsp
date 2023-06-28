@@ -87,6 +87,7 @@ static void lpc10_pack(lpc10_encode_state_t *s, uint8_t ibits[], lpc10_frame_t *
     itab[2] = 0;
     for (i = 0;  i < LPC10_ORDER;  i++)
         itab[i + 3] = t->irc[LPC10_ORDER - 1 - i] & 0x7FFF;
+    /*endfor*/
     /* Put 54 bits into the output buffer */
     x = 0;
     for (i = 0;  i < 53;  i++)
@@ -94,8 +95,10 @@ static void lpc10_pack(lpc10_encode_state_t *s, uint8_t ibits[], lpc10_frame_t *
         x = (x << 1) | (itab[iblist[i] - 1] & 1);
         if ((i & 7) == 7)
             ibits[i >> 3] = (uint8_t) (x & 0xFF);
+        /*endif*/
         itab[iblist[i] - 1] >>= 1;
     }
+    /*endfor*/
     x = (x << 1) | (s->isync & 1);
     s->isync ^= 1;
     x <<= 2;
@@ -164,6 +167,7 @@ static int encode(lpc10_encode_state_t *s,
     t->irms = (int32_t) rms;
     for (i = 0;  i < LPC10_ORDER;  i++)
         t->irc[i] = (int32_t) (rc[i]*32768.0f);
+    /*endfor*/
     if (voice[0] != 0  &&  voice[1] != 0)
     {
         t->ipitch = entau[pitch - 1];
@@ -175,12 +179,15 @@ static int encode(lpc10_encode_state_t *s,
             t->ipitch = 0;
             if (voice[0] != voice[1])
                 t->ipitch = 127;
+            /*endif*/
         }
         else
         {
             t->ipitch = (voice[0] << 1) + voice[1];
         }
+        /*endif*/
     }
+    /*endif*/
     /* Encode RMS by binary table search */
     j = 32;
     idel = 16;
@@ -189,12 +196,16 @@ static int encode(lpc10_encode_state_t *s,
     {
         if (t->irms > rmst[j - 1])
             j -= idel;
+        /*endif*/
         if (t->irms < rmst[j - 1])
             j += idel;
+        /*endif*/
         idel /= 2;
     }
+    /*endwhile*/
     if (t->irms > rmst[j - 1])
         --j;
+    /*endif*/
     t->irms = 31 - j/2;
     /* Encode RC(1) and (2) as log-area-ratios */
     for (i = 0;  i < 2;  i++)
@@ -206,12 +217,15 @@ static int encode(lpc10_encode_state_t *s,
             i2 = -i2;
             mrk = 1;
         }
+        /*endif*/
         i2 = min(i2/512, 63);
         i2 = entab6[i2];
         if (mrk != 0)
             i2 = -i2;
+        /*endif*/
         t->irc[i] = i2;
     }
+    /*endfor*/
     /* Encode RC(3) - (10) linearly, remove bias then scale */
     for (i = 2;  i < LPC10_ORDER;  i++)
     {
@@ -223,8 +237,10 @@ static int encode(lpc10_encode_state_t *s,
         i2 /= pow_ii(2, nbit);
         if (i3)
             i2--;
+        /*endif*/
         t->irc[i] = i2;
     }
+    /*endfor*/
     /* Protect the most significant bits of the most
        important parameters during non-voiced frames.
        RC(1) - RC(4) are protected using 20 parity bits
@@ -240,7 +256,9 @@ static int encode(lpc10_encode_state_t *s,
             t->irc[8] = enctab[(t->irc[3] & 0x1E) >> 1] >> 1;
             t->irc[9] = enctab[(t->irc[3] & 0x1E) >> 1] & 1;
         }
+        /*endif*/
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -265,6 +283,7 @@ static void high_pass_100hz(lpc10_encode_state_t *s, float speech[], int start, 
         s->z12 = err;
         speech[i] = si*0.902428f;
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -277,7 +296,9 @@ SPAN_DECLARE(lpc10_encode_state_t *) lpc10_encode_init(lpc10_encode_state_t *s, 
     {
         if ((s = (lpc10_encode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
 
     s->error_correction = error_correction;
 
@@ -293,14 +314,18 @@ SPAN_DECLARE(lpc10_encode_state_t *) lpc10_encode_init(lpc10_encode_state_t *s, 
         s->inbuf[i] = 0.0f;
         s->pebuf[i] = 0.0f;
     }
+    /*endfor*/
     for (i = 0;  i < 696;  i++)
         s->lpbuf[i] = 0.0f;
+    /*endfor*/
     for (i = 0;  i < 312;  i++)
         s->ivbuf[i] = 0.0f;
+    /*endfor*/
     s->bias = 0.0f;
     s->osptr = 1;
     for (i = 0;  i < 3;  i++)
         s->obound[i] = 0;
+    /*endfor*/
     s->vwin[2][0] = 307;
     s->vwin[2][1] = 462;
     s->awin[2][0] = 307;
@@ -310,13 +335,17 @@ SPAN_DECLARE(lpc10_encode_state_t *) lpc10_encode_init(lpc10_encode_state_t *s, 
         s->voibuf[i][0] = 0;
         s->voibuf[i][1] = 0;
     }
+    /*endfor*/
     for (i = 0;  i < 3;  i++)
         s->rmsbuf[i] = 0.0f;
+    /*endfor*/
     for (i = 0;  i < 3;  i++)
     {
         for (j = 0;  j < 10;  j++)
             s->rcbuf[i][j] = 0.0f;
+        /*endfor*/
     }
+    /*endfor*/
     s->zpre = 0.0f;
 
     /* State used by function onset */
@@ -324,6 +353,7 @@ SPAN_DECLARE(lpc10_encode_state_t *) lpc10_encode_init(lpc10_encode_state_t *s, 
     s->d__ = 1.0f;
     for (i = 0;  i < 16;  i++)
         s->l2buf[i] = 0.0f;
+    /*endfor*/
     s->l2sum1 = 0.0f;
     s->l2ptr1 = 1;
     s->l2ptr2 = 9;
@@ -337,6 +367,7 @@ SPAN_DECLARE(lpc10_encode_state_t *) lpc10_encode_init(lpc10_encode_state_t *s, 
         s->voice[i][0] = 0.0f;
         s->voice[i][1] = 0.0f;
     }
+    /*endfor*/
     s->lbve = 3000;
     s->fbve = 3000;
     s->fbue = 187;
@@ -350,11 +381,14 @@ SPAN_DECLARE(lpc10_encode_state_t *) lpc10_encode_init(lpc10_encode_state_t *s, 
     /* State used by function dynamic_pitch_tracking */
     for (i = 0;  i < 60;  i++)
         s->s[i] = 0.0f;
+    /*endfor*/
     for (i = 0;  i < 2;  i++)
     {
         for (j = 0;  j < 60;  j++)
             s->p[i][j] = 0;
+        /*endfor*/
     }
+    /*endfor*/
     s->ipoint = 0;
     s->alphax = 0.0f;
 
@@ -399,6 +433,7 @@ SPAN_DECLARE(int) lpc10_encode(lpc10_encode_state_t *s, uint8_t code[], const in
         encode(s, &frame, voice, pitch, rms, rc);
         lpc10_pack(s, &code[7*i], &frame);
     }
+    /*endfor*/
     return len*7;
 }
 /*- End of function --------------------------------------------------------*/

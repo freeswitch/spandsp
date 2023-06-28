@@ -64,6 +64,7 @@ SPAN_DECLARE(int16_t) noise(noise_state_t *s)
         s->rndnum = 1664525U*s->rndnum + 1013904223U;
         val += ((int32_t) s->rndnum) >> 22;
     }
+    /*endfor*/
     if (s->class_of_noise == NOISE_CLASS_HOTH)
     {
         /* Hoth noise is room-like. It should be sculpted, at the high and low ends,
@@ -75,6 +76,7 @@ SPAN_DECLARE(int16_t) noise(noise_state_t *s)
            simple approx. leaves the signal about 0.35dB low. */
         val = s->state << 1;
     }
+    /*endif*/
     return saturate16((val*s->rms) >> 10);
 }
 /*- End of function --------------------------------------------------------*/
@@ -87,7 +89,9 @@ SPAN_DECLARE(noise_state_t *) noise_init_dbov(noise_state_t *s, int seed, float 
     {
         if ((s = (noise_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     s->rndnum = (uint32_t) seed;
     rms = 32768.0f*powf(10.0f, level/20.0f);
@@ -97,11 +101,13 @@ SPAN_DECLARE(noise_state_t *) noise_init_dbov(noise_state_t *s, int seed, float 
         s->quality = 20;
     else
         s->quality = quality;
+    /*endif*/
     if (class_of_noise == NOISE_CLASS_HOTH)
     {
         /* Allow for the gain of the filter */
         rms *= 1.043f;
     }
+    /*endif*/
     s->rms = (int32_t) (rms*sqrtf(12.0f/s->quality));
     s->class_of_noise = class_of_noise;
     return s;

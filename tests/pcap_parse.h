@@ -34,13 +34,14 @@ extern "C"
 #endif
 
 typedef int (pcap_timing_update_handler_t)(void *user_data, struct timeval *ts);
-typedef int (pcap_packet_handler_t)(void *user_data, const uint8_t *pkt, int len);
+typedef int (pcap_packet_handler_t)(void *user_data, const uint8_t *pkt, int len, bool forward);
 
 int pcap_scan_pkts(const char *file,
-                   uint32_t src_addr,
+                   const uint8_t src_addr[INET6_ADDRSTRLEN],
                    uint16_t src_port,
-                   uint32_t dest_addr,
+                   const uint8_t dest_addr[INET6_ADDRSTRLEN],
                    uint16_t dest_port,
+                   bool bothways,
                    pcap_timing_update_handler_t *timing_update_handler,
                    pcap_packet_handler_t *packet_handler,
                    void *user_data);

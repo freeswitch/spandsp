@@ -56,19 +56,19 @@ SPAN_DECLARE(void) v42_stop(v42_state_t *s);
     \param busy The new local end busy status.
     \return The previous local end busy status.
 */
-SPAN_DECLARE(int) v42_set_local_busy_status(v42_state_t *s, int busy);
+SPAN_DECLARE(bool) v42_set_local_busy_status(v42_state_t *s, bool busy);
 
 /*! Get the busy status of the far end of a V.42 context.
     \param s The V.42 context.
     \return The far end busy status.
 */
-SPAN_DECLARE(int) v42_get_far_busy_status(v42_state_t *s);
+SPAN_DECLARE(bool) v42_get_far_busy_status(v42_state_t *s);
 
 SPAN_DECLARE(void) v42_rx_bit(void *user_data, int bit);
 
 SPAN_DECLARE(int) v42_tx_bit(void *user_data);
 
-SPAN_DECLARE(void) v42_set_status_callback(v42_state_t *s, modem_status_func_t callback, void *user_data);
+SPAN_DECLARE(void) v42_set_status_callback(v42_state_t *s, span_modem_status_func_t callback, void *user_data);
 
 /*! Get the logging context associated with a V.42 context.
     \brief Get the logging context associated with a V.42 context.
@@ -88,8 +88,8 @@ SPAN_DECLARE(logging_state_t *) v42_get_logging_state(v42_state_t *s);
 SPAN_DECLARE(v42_state_t *) v42_init(v42_state_t *s,
                                      bool calling_party,
                                      bool detect,
-                                     get_msg_func_t iframe_get,
-                                     put_msg_func_t iframe_put,
+                                     span_get_msg_func_t iframe_get,
+                                     span_put_msg_func_t iframe_put,
                                      void *user_data);
 
 /*! Restart a V.42 context.

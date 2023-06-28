@@ -81,6 +81,7 @@ enum
     V8_CM_ON,
     V8_CJ_ON,
     V8_CM_WAIT,
+    V8_POST_CM_WAIT,
 
     V8_SIGC,
     V8_JM_ON,
@@ -116,6 +117,32 @@ enum
 };
 
 #define Te_TIMEOUT      500
+
+SPAN_DECLARE(const char *) v8_status_to_str(int status)
+{
+    switch (status)
+    {
+    case V8_STATUS_IN_PROGRESS:
+        return "Negotiation in progress";
+    case V8_STATUS_V8_OFFERED:
+        return "V.8 offered by the other party";
+    case V8_STATUS_V8_CALL:
+        return "V.8 call negotiation successful";
+    case V8_STATUS_NON_V8_CALL:
+        return "Non-V.8 call negotiation successful";
+    case V8_STATUS_FAILED:
+        return "Call negotiation failed";
+    case V8_STATUS_CALL_FUNCTION_RECEIVED:
+        return "Call function (CI) received";
+    case V8_STATUS_CALLING_TONE_RECEIVED:
+        return "Calling tone received";
+    case V8_STATUS_FAX_CNG_TONE_RECEIVED:
+        return "FAX CNG tone received";
+    }
+    /*endswitch*/
+    return "Unknown status";
+}
+/*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(const char *) v8_call_function_to_str(int call_function)
 {
@@ -318,8 +345,8 @@ static int report_event(v8_state_t *s)
 
 static const uint8_t *process_call_function(v8_state_t *s, const uint8_t *p)
 {
-    s->result.call_function = (*p >> 5) & 0x07;
-    span_log(&s->logging, SPAN_LOG_FLOW, "%s\n", v8_call_function_to_str(s->result.call_function));
+    s->result.jm_cm.call_function = (*p >> 5) & 0x07;
+    span_log(&s->logging, SPAN_LOG_FLOW, "%s\n", v8_call_function_to_str(s->result.jm_cm.call_function));
     return ++p;
 }
 /*- End of function --------------------------------------------------------*/
@@ -389,7 +416,7 @@ static const uint8_t *process_modulation_mode(v8_state_t *s, const uint8_t *p)
         /*endif*/
     }
     /*endif*/
-    s->result.modulations = modulations;
+    s->result.jm_cm.modulations = modulations;
     v8_log_supported_modulations(s, modulations);
     return p;
 }
@@ -397,16 +424,16 @@ static const uint8_t *process_modulation_mode(v8_state_t *s, const uint8_t *p)
 
 static const uint8_t *process_protocols(v8_state_t *s, const uint8_t *p)
 {
-    s->result.protocol = (*p >> 5) & 0x07;
-    span_log(&s->logging, SPAN_LOG_FLOW, "%s\n", v8_protocol_to_str(s->result.protocol));
+    s->result.jm_cm.protocols = (*p >> 5) & 0x07;
+    span_log(&s->logging, SPAN_LOG_FLOW, "%s\n", v8_protocol_to_str(s->result.jm_cm.protocols));
     return ++p;
 }
 /*- End of function --------------------------------------------------------*/
 
 static const uint8_t *process_pstn_access(v8_state_t *s, const uint8_t *p)
 {
-    s->result.pstn_access = (*p >> 5) & 0x07;
-    span_log(&s->logging, SPAN_LOG_FLOW, "%s\n", v8_pstn_access_to_str(s->result.pstn_access));
+    s->result.jm_cm.pstn_access = (*p >> 5) & 0x07;
+    span_log(&s->logging, SPAN_LOG_FLOW, "%s\n", v8_pstn_access_to_str(s->result.jm_cm.pstn_access));
     return ++p;
 }
 /*- End of function --------------------------------------------------------*/
@@ -414,33 +441,39 @@ static const uint8_t *process_pstn_access(v8_state_t *s, const uint8_t *p)
 static const uint8_t *process_non_standard_facilities(v8_state_t *s, const uint8_t *p)
 {
     /* TODO: This is wrong */
-    s->result.nsf = (*p >> 5) & 0x07;
-    span_log(&s->logging, SPAN_LOG_FLOW, "%s\n", v8_nsf_to_str(s->result.nsf));
+    s->result.jm_cm.nsf = (*p >> 5) & 0x07;
+    span_log(&s->logging, SPAN_LOG_FLOW, "%s\n", v8_nsf_to_str(s->result.jm_cm.nsf));
     return p;
 }
 /*- End of function --------------------------------------------------------*/
 
 static const uint8_t *process_pcm_modem_availability(v8_state_t *s, const uint8_t *p)
 {
-    s->result.pcm_modem_availability = (*p >> 5) & 0x07;
-    span_log(&s->logging, SPAN_LOG_FLOW, "%s\n", v8_pcm_modem_availability_to_str(s->result.pcm_modem_availability));
+    s->result.jm_cm.pcm_modem_availability = (*p >> 5) & 0x07;
+    span_log(&s->logging, SPAN_LOG_FLOW, "%s\n", v8_pcm_modem_availability_to_str(s->result.jm_cm.pcm_modem_availability));
     return ++p;
 }
 /*- End of function --------------------------------------------------------*/
 
 static const uint8_t *process_t66(v8_state_t *s, const uint8_t *p)
 {
-    s->result.t66 = (*p >> 5) & 0x07;
-    span_log(&s->logging, SPAN_LOG_FLOW, "%s\n", v8_t66_to_str(s->result.t66));
+    s->result.jm_cm.t66 = (*p >> 5) & 0x07;
+    span_log(&s->logging, SPAN_LOG_FLOW, "%s\n", v8_t66_to_str(s->result.jm_cm.t66));
     return ++p;
 }
 /*- End of function --------------------------------------------------------*/
 
 static void ci_decode(v8_state_t *s)
 {
+    if (s->got_ci)
+        return;
+    /*endif*/
     if ((s->rx_data[0] & 0x1F) == V8_CALL_FUNCTION_TAG)
         process_call_function(s, &s->rx_data[0]);
     /*endif*/
+    s->got_ci = true;
+    s->result.status = V8_STATUS_CALL_FUNCTION_RECEIVED;
+    report_event(s);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -448,6 +481,8 @@ static void cm_jm_decode(v8_state_t *s)
 {
     const uint8_t *p;
 
+    /* If we have seen a complete clean CM or JM message, we should ignore repeats of
+       that message */
     if (s->got_cm_jm)
         return;
     /*endif*/
@@ -473,7 +508,7 @@ static void cm_jm_decode(v8_state_t *s)
     /* Zero indicates the end */
     s->cm_jm_data[s->cm_jm_len] = 0;
 
-    s->result.modulations = 0;
+    s->result.jm_cm.modulations = 0;
     p = s->cm_jm_data;
 
     while (*p)
@@ -554,12 +589,15 @@ static void put_bit(void *user_data, int bit)
     switch (s->bit_stream)
     {
     case 0x803FF:
+        //span_log(&s->logging, SPAN_LOG_FLOW, "New preamble CI\n");
         new_preamble_type = V8_SYNC_CI;
         break;
     case 0xF03FF:
+        //span_log(&s->logging, SPAN_LOG_FLOW, "New preamble CM/JM\n");
         new_preamble_type = V8_SYNC_CM_JM;
         break;
     case 0xAABFF:
+        //span_log(&s->logging, SPAN_LOG_FLOW, "New preamble V.92\n");
         new_preamble_type = V8_SYNC_V92;
         break;
     default:
@@ -570,7 +608,6 @@ static void put_bit(void *user_data, int bit)
     if (new_preamble_type != V8_SYNC_UNKNOWN)
     {
         /* We have seen a fresh sync code */
-        /* Debug */
         if (span_log_test(&s->logging, SPAN_LOG_FLOW))
         {
             if (s->preamble_type != V8_SYNC_UNKNOWN)
@@ -654,10 +691,11 @@ static void v8_decode_init(v8_state_t *s)
                 FSK_FRAME_MODE_ASYNC,
                 put_bit,
                 s);
-    fsk_rx_signal_cutoff(&s->v21rx, -45.5f);
+    fsk_rx_set_signal_cutoff(&s->v21rx, -45.5f);
     s->preamble_type = V8_SYNC_UNKNOWN;
     s->bit_stream = 0;
     s->cm_jm_len = 0;
+    s->got_ci = false;
     s->got_cm_jm = false;
     s->got_cj = false;
     s->zero_byte_count = 0;
@@ -689,7 +727,7 @@ static void v8_put_preamble(v8_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void v8_put_bytes(v8_state_t *s, uint8_t buf[], int len)
+static void v8_put_bytes(v8_state_t *s, const uint8_t buf[], int len)
 {
     int i;
     int j;
@@ -717,7 +755,7 @@ static void v8_put_bytes(v8_state_t *s, uint8_t buf[], int len)
 static void send_cm_jm(v8_state_t *s)
 {
     int val;
-    unsigned int offered_modulations;
+    uint32_t offered_modulations;
     int bytes;
     uint8_t buf[10];
     int ptr;
@@ -727,10 +765,10 @@ static void send_cm_jm(v8_state_t *s)
     ptr = 0;
     buf[ptr++] = V8_CM_JM_SYNC_OCTET;
     /* Data call */
-    buf[ptr++] = (s->result.call_function << 5) | V8_CALL_FUNCTION_TAG;
+    buf[ptr++] = (s->result.jm_cm.call_function << 5) | V8_CALL_FUNCTION_TAG;
 
     /* Supported modulations */
-    offered_modulations = s->result.modulations;
+    offered_modulations = s->result.jm_cm.modulations;
     bytes = 0;
     val = 0x05;
     if (offered_modulations & V8_MOD_V90)
@@ -785,17 +823,17 @@ static void send_cm_jm(v8_state_t *s)
         buf[ptr++] = val;
     }
     /*endif*/
-    if (s->parms.protocol)
-        buf[ptr++] = (s->parms.protocol << 5) | V8_PROTOCOLS_TAG;
+    if (s->parms.jm_cm.protocols)
+        buf[ptr++] = (s->parms.jm_cm.protocols << 5) | V8_PROTOCOLS_TAG;
     /*endif*/
-    if (s->parms.pstn_access)
-        buf[ptr++] = (s->parms.pstn_access << 5) | V8_PSTN_ACCESS_TAG;
+    if (s->parms.jm_cm.pstn_access)
+        buf[ptr++] = (s->parms.jm_cm.pstn_access << 5) | V8_PSTN_ACCESS_TAG;
     /*endif*/
-    if (s->parms.pcm_modem_availability)
-        buf[ptr++] = (s->parms.pcm_modem_availability << 5) | V8_PCM_MODEM_AVAILABILITY_TAG;
+    if (s->parms.jm_cm.pcm_modem_availability)
+        buf[ptr++] = (s->parms.jm_cm.pcm_modem_availability << 5) | V8_PCM_MODEM_AVAILABILITY_TAG;
     /*endif*/
-    if (s->parms.t66 >= 0)
-        buf[ptr++] = (s->parms.t66 << 5) | V8_T66_TAG;
+    if (s->parms.jm_cm.t66 >= 0)
+        buf[ptr++] = (s->parms.jm_cm.t66 << 5) | V8_T66_TAG;
     /*endif*/
     /* No NSF */
     //buf[ptr++] = (0 << 5) | V8_NSF_TAG;
@@ -810,38 +848,38 @@ SPAN_DECLARE(int) v8_tx(v8_state_t *s, int16_t *amp, int max_len)
 
     //span_log(&s->logging, SPAN_LOG_FLOW, "v8_tx state %d\n", s->state);
     len = 0;
-    if (s->modem_connect_tone_tx_on)
+    if (s->modem_connect_tone_tx_timer)
     {
-        if (s->modem_connect_tone_tx_on == (milliseconds_to_samples(75) + 2))
+        if (s->modem_connect_tone_tx_timer == (milliseconds_to_samples(75) + 2))
         {
             if (s->fsk_tx_on)
             {
                 /* The initial silence is over */
-                s->modem_connect_tone_tx_on = 0;
+                s->modem_connect_tone_tx_timer = 0;
             }
             /*endif*/
         }
-        else if (s->modem_connect_tone_tx_on == (milliseconds_to_samples(75) + 1))
+        else if (s->modem_connect_tone_tx_timer == (milliseconds_to_samples(75) + 1))
         {
             /* Send the ANSam tone */
             len = modem_connect_tones_tx(&s->ansam_tx, amp, max_len);
             if (len < max_len)
             {
                 span_log(&s->logging, SPAN_LOG_FLOW, "ANSam or ANSam/ ended\n");
-                s->modem_connect_tone_tx_on = milliseconds_to_samples(75);
+                s->modem_connect_tone_tx_timer = milliseconds_to_samples(75);
             }
             /*endif*/
         }
         else
         {
             /* Send the 75ms of silence after the ANSam tone */
-            if (max_len > s->modem_connect_tone_tx_on)
-                len = s->modem_connect_tone_tx_on;
+            if (max_len > s->modem_connect_tone_tx_timer)
+                len = s->modem_connect_tone_tx_timer;
             else
                 len = max_len;
             /*endif*/
             vec_zeroi16(amp, len);
-            s->modem_connect_tone_tx_on -= len;
+            s->modem_connect_tone_tx_timer -= len;
         }
         /*endif*/
     }
@@ -900,7 +938,7 @@ static void send_ci(v8_state_t *s)
     {
         v8_put_preamble(s);
         buf[0] = V8_CI_SYNC_OCTET;
-        buf[1] = (s->result.call_function << 5) | V8_CALL_FUNCTION_TAG;
+        buf[1] = (s->result.jm_cm.call_function << 5) | V8_CALL_FUNCTION_TAG;
         span_log_buf(&s->logging, SPAN_LOG_FLOW, "<CI: ", &buf[1], 1);
         v8_put_bytes(s, buf, 2);
     }
@@ -908,7 +946,7 @@ static void send_ci(v8_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void handle_modem_connect_tone(v8_state_t *s, int tone)
+static void handle_calling_modem_connect_tone(v8_state_t *s, int tone)
 {
     s->result.modem_connect_tone = tone;
     span_log(&s->logging, SPAN_LOG_FLOW, "'%s' recognised\n", modem_connect_tone_to_str(tone));
@@ -936,6 +974,64 @@ static void handle_modem_connect_tone(v8_state_t *s, int tone)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void handle_answering_modem_connect_tone(v8_state_t *s, int tone)
+{
+    s->result.modem_connect_tone = tone;
+    span_log(&s->logging, SPAN_LOG_FLOW, "'%s' recognised\n", modem_connect_tone_to_str(tone));
+    if (tone == MODEM_CONNECT_TONES_CALLING_TONE)
+    {
+        s->state = V8_PARKED;
+        s->result.status = V8_STATUS_CALLING_TONE_RECEIVED;
+        report_event(s);
+    }
+    else if (tone == MODEM_CONNECT_TONES_FAX_CNG)
+    {
+        s->state = V8_PARKED;
+        s->result.status = V8_STATUS_FAX_CNG_TONE_RECEIVED;
+        report_event(s);
+    }
+    else
+    {
+        /* If we found a connect tone, and it isn't one of the modulated answer tones,
+           indicating V.8 startup, we are not going to do V.8 processing. */
+        span_log(&s->logging, SPAN_LOG_FLOW, "Non-V.8 modem connect tone detected\n");
+        s->state = V8_PARKED;
+        s->result.status = V8_STATUS_FAILED;
+        report_event(s);
+    }
+    /*endif*/
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) v8_decode_rx(v8_state_t *s, const int16_t *amp, int len)
+{
+    int tone;
+
+    /* This function is for pure decode, to do things like analyse recordings of V.8
+       signals, to extract the messages. */
+    modem_connect_tones_rx(&s->ansam_rx, amp, len);
+    if ((tone = modem_connect_tones_rx_get(&s->ansam_rx)) != MODEM_CONNECT_TONES_NONE)
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "'%s' recognised\n", modem_connect_tone_to_str(tone));
+    }
+    /*endif*/
+    modem_connect_tones_rx(&s->calling_tone_rx, amp, len);
+    if ((tone = modem_connect_tones_rx_get(&s->calling_tone_rx)) != MODEM_CONNECT_TONES_NONE)
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "'%s' recognised\n", modem_connect_tone_to_str(tone));
+    }
+    /*endif*/
+    modem_connect_tones_rx(&s->cng_tone_rx, amp, len);
+    if ((tone = modem_connect_tones_rx_get(&s->cng_tone_rx)) != MODEM_CONNECT_TONES_NONE)
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "'%s' recognised\n", modem_connect_tone_to_str(tone));
+    }
+    /*endif*/
+    fsk_rx(&s->v21rx, amp, len);
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int) v8_rx(v8_state_t *s, const int16_t *amp, int len)
 {
     int residual_samples;
@@ -944,219 +1040,275 @@ SPAN_DECLARE(int) v8_rx(v8_state_t *s, const int16_t *amp, int len)
 
     //span_log(&s->logging, SPAN_LOG_FLOW, "v8_rx state %d\n", s->state);
     residual_samples = 0;
-    switch (s->state)
+    do
     {
-    case V8_WAIT_1S:
-        residual_samples = modem_connect_tones_rx(&s->ansam_rx, amp, len);
-        /* Wait 1 second before sending the first CI packet */
-        if ((s->negotiation_timer -= len) > 0)
-            break;
-        /*endif*/
-        fsk_tx_restart(&s->v21tx, &preset_fsk_specs[FSK_V21CH1]);
-        send_ci(s);
-        s->state = V8_CI_ON;
-        s->fsk_tx_on = true;
-        break;
-    case V8_CI_ON:
-        residual_samples = modem_connect_tones_rx(&s->ansam_rx, amp, len);
-        /* Check if an ANSam or ANSam/ tone has been detected */
-        if ((tone = modem_connect_tones_rx_get(&s->ansam_rx)) != MODEM_CONNECT_TONES_NONE)
+        switch (s->state)
         {
-            handle_modem_connect_tone(s, tone);
+        case V8_WAIT_1S:
+            residual_samples = modem_connect_tones_rx(&s->ansam_rx, amp, len);
+            /* Wait 1 second before sending the first CI packet */
+            if ((s->negotiation_timer -= len) > 0)
+                break;
+            /*endif*/
+            fsk_tx_restart(&s->v21tx, &preset_fsk_specs[FSK_V21CH1]);
+            send_ci(s);
+            s->state = V8_CI_ON;
+            s->fsk_tx_on = true;
             break;
-        }
-        /*endif*/
-        if (!s->fsk_tx_on)
-        {
-            s->state = V8_CI_OFF;
-            s->ci_timer = milliseconds_to_samples(Te_TIMEOUT);
-            s->negotiation_timer = milliseconds_to_samples(5000);
-            break;
-        }
-        /*endif*/
-        break;
-    case V8_CI_OFF:
-        residual_samples = modem_connect_tones_rx(&s->ansam_rx, amp, len);
-        /* Check if an ANSam or ANSam/ tone has been detected */
-        if ((tone = modem_connect_tones_rx_get(&s->ansam_rx)) != MODEM_CONNECT_TONES_NONE)
-        {
-            handle_modem_connect_tone(s, tone);
-            break;
-        }
-        /*endif*/
-        if ((s->ci_timer -= len) <= 0)
-        {
-            if (++s->ci_count >= 10)
+        case V8_CI_ON:
+            residual_samples = modem_connect_tones_rx(&s->ansam_rx, amp, len);
+            /* Check if an ANSam or ANSam/ tone has been detected */
+            if ((tone = modem_connect_tones_rx_get(&s->ansam_rx)) != MODEM_CONNECT_TONES_NONE)
             {
-                /* The spec says we should give up now. */
-                span_log(&s->logging, SPAN_LOG_FLOW, "Timeout waiting for modem connect tone\n");
+                handle_calling_modem_connect_tone(s, tone);
+                break;
+            }
+            /*endif*/
+            if (!s->fsk_tx_on)
+            {
+                s->state = V8_CI_OFF;
+                s->ci_timer = milliseconds_to_samples(Te_TIMEOUT);
+                s->negotiation_timer = milliseconds_to_samples(5000);
+                break;
+            }
+            /*endif*/
+            break;
+        case V8_CI_OFF:
+            residual_samples = modem_connect_tones_rx(&s->ansam_rx, amp, len);
+            /* Check if an ANSam or ANSam/ tone has been detected */
+            if ((tone = modem_connect_tones_rx_get(&s->ansam_rx)) != MODEM_CONNECT_TONES_NONE)
+            {
+                handle_calling_modem_connect_tone(s, tone);
+                break;
+            }
+            /*endif*/
+            if ((s->ci_timer -= len) <= 0)
+            {
+                if (++s->ci_repetition_count >= 10)
+                {
+                    /* The spec says we should give up now. */
+                    span_log(&s->logging, SPAN_LOG_FLOW, "Timeout waiting for modem connect tone\n");
+                    s->state = V8_PARKED;
+                    s->result.status = V8_STATUS_FAILED;
+                    report_event(s);
+                }
+                else
+                {
+                    /* Try again */
+                    fsk_tx_restart(&s->v21tx, &preset_fsk_specs[FSK_V21CH1]);
+                    send_ci(s);
+                    s->state = V8_CI_ON;
+                    s->fsk_tx_on = true;
+                }
+                /*endif*/
+            }
+            /*endif*/
+            break;
+        case V8_AWAIT_ANSAM:
+            residual_samples = modem_connect_tones_rx(&s->ansam_rx, amp, len);
+            /* Check if an ANSam or ANSam/ tone has been detected */
+            if ((tone = modem_connect_tones_rx_get(&s->ansam_rx)) != MODEM_CONNECT_TONES_NONE)
+                handle_calling_modem_connect_tone(s, tone);
+            /*endif*/
+            break;
+        case V8_HEARD_ANSAM:
+            /* We have heard the ANSam or ANSam/ signal, but we still need to wait for the
+               end of the Te timeout period to comply with the spec. */
+            if ((s->ci_timer -= len) <= 0)
+            {
+                v8_decode_init(s);
+                s->negotiation_timer = milliseconds_to_samples(5000);
+                fsk_tx_restart(&s->v21tx, &preset_fsk_specs[FSK_V21CH1]);
+                conditionally_send_v92(s);
+                send_cm_jm(s);
+                s->fsk_tx_on = true;
+                s->state = V8_CM_ON;
+            }
+            /*endif*/
+            /* Fall through */
+        case V8_CM_ON:
+            residual_samples = fsk_rx(&s->v21rx, amp, len);
+            if (s->got_cm_jm)
+            {
+                span_log(&s->logging, SPAN_LOG_FLOW, "JM recognised\n");
+                /* Now JM has been detected, we send CJ and wait for 75 ms
+                   before finishing the V.8 analysis. */
+                fsk_tx_restart(&s->v21tx, &preset_fsk_specs[FSK_V21CH1]);
+                memset(buf, 0, 3);
+                v8_put_bytes(s, buf, 3);
+                span_log_buf(&s->logging, SPAN_LOG_FLOW, "<CJ: ", &buf[1], 2);
+                s->state = V8_CJ_ON;
+                s->fsk_tx_on = true;
+                break;
+            }
+            /*endif*/
+            if ((s->negotiation_timer -= len) <= 0)
+            {
+                /* Timeout */
+                span_log(&s->logging, SPAN_LOG_FLOW, "Timeout waiting for JM\n");
                 s->state = V8_PARKED;
                 s->result.status = V8_STATUS_FAILED;
                 report_event(s);
             }
+            /*endif*/
+            if (queue_contents(s->tx_queue) < 10)
+            {
+                /* Send CM again */
+                send_cm_jm(s);
+            }
+            /*endif*/
+            break;
+        case V8_CJ_ON:
+            residual_samples = fsk_rx(&s->v21rx, amp, len);
+            if (!s->fsk_tx_on)
+            {
+#if 0
+                s->negotiation_timer = milliseconds_to_samples(75);
+                s->state = V8_SIGC;
+            }
+            /*endif*/
+            break;
+        case V8_SIGC:
+            if ((s->negotiation_timer -= len) <= 0)
+            {
+#endif
+                /* The V.8 negotiation has succeeded. */
+                span_log(&s->logging, SPAN_LOG_FLOW, "Negotiation succeeded\n");
+                s->state = V8_PARKED;
+                s->result.status = V8_STATUS_V8_CALL;
+                report_event(s);
+            }
+            /*endif*/
+            break;
+        case V8_CM_WAIT:
+            modem_connect_tones_rx(&s->calling_tone_rx, amp, len);
+            modem_connect_tones_rx(&s->cng_tone_rx, amp, len);
+            if ((tone = modem_connect_tones_rx_get(&s->calling_tone_rx)) != MODEM_CONNECT_TONES_NONE)
+                handle_answering_modem_connect_tone(s, tone);
+            else if ((tone = modem_connect_tones_rx_get(&s->cng_tone_rx)) != MODEM_CONNECT_TONES_NONE)
+                handle_answering_modem_connect_tone(s, tone);
+            /*endif*/
+            residual_samples = fsk_rx(&s->v21rx, amp, len);
+            if (s->got_cm_jm)
+            {
+                span_log(&s->logging, SPAN_LOG_FLOW, "CM recognised\n");
+
+                s->result.status = V8_STATUS_V8_OFFERED;
+                report_event(s);
+
+                /* If we are simply running a V.8 end point, we can simply continue with
+                   the protocol. If we are running V.8 for a gateway, we need to pause at
+                   this point, to see what the other side wants to do. */
+                if (s->parms.gateway_mode)
+                {
+                    s->state = V8_POST_CM_WAIT;
+                }
+                else
+                {
+                    /* Stop sending ANSam or ANSam/ and send JM instead */
+                    fsk_tx_init(&s->v21tx, &preset_fsk_specs[FSK_V21CH2], get_bit, s);
+                    /* Set the timeout for JM */
+                    s->negotiation_timer = milliseconds_to_samples(5000);
+                    s->state = V8_JM_ON;
+                    send_cm_jm(s);
+                    s->modem_connect_tone_tx_timer = milliseconds_to_samples(75);
+                    s->fsk_tx_on = true;
+                }
+                /*endif*/
+            }
             else
             {
-                /* Try again */
-                fsk_tx_restart(&s->v21tx, &preset_fsk_specs[FSK_V21CH1]);
-                send_ci(s);
-                s->state = V8_CI_ON;
+                if ((s->negotiation_timer -= len) <= 0)
+                {
+                    /* Timeout */
+                    span_log(&s->logging, SPAN_LOG_FLOW, "Timeout waiting for CM\n");
+                    s->state = V8_PARKED;
+                    s->result.status = V8_STATUS_FAILED;
+                    report_event(s);
+                }
+                /*endif*/
+            }
+            /*endif*/
+            break;
+        case V8_POST_CM_WAIT:
+            if (s->proceed)
+            {
+                /* Stop sending ANSam or ANSam/ and send JM instead */
+                fsk_tx_init(&s->v21tx, &preset_fsk_specs[FSK_V21CH2], get_bit, s);
+                /* Set the timeout for JM */
+                s->negotiation_timer = milliseconds_to_samples(5000);
+                s->state = V8_JM_ON;
+                send_cm_jm(s);
+                s->modem_connect_tone_tx_timer = milliseconds_to_samples(75);
                 s->fsk_tx_on = true;
             }
             /*endif*/
-        }
-        /*endif*/
-        break;
-    case V8_AWAIT_ANSAM:
-        residual_samples = modem_connect_tones_rx(&s->ansam_rx, amp, len);
-        /* Check if an ANSam or ANSam/ tone has been detected */
-        if ((tone = modem_connect_tones_rx_get(&s->ansam_rx)) != MODEM_CONNECT_TONES_NONE)
-            handle_modem_connect_tone(s, tone);
-        /*endif*/
-        break;
-    case V8_HEARD_ANSAM:
-        /* We have heard the ANSam or ANSam/ signal, but we still need to wait for the
-           end of the Te timeout period to comply with the spec. */
-        if ((s->ci_timer -= len) <= 0)
-        {
-            fsk_tx_restart(&s->v21tx, &preset_fsk_specs[FSK_V21CH1]);
-            conditionally_send_v92(s);
-            send_cm_jm(s);
-            s->fsk_tx_on = true;
-            s->state = V8_CM_ON;
-        }
-        /*endif*/
-        /* Fall through */
-    case V8_CM_ON:
-        residual_samples = fsk_rx(&s->v21rx, amp, len);
-        if (s->got_cm_jm)
-        {
-            span_log(&s->logging, SPAN_LOG_FLOW, "JM recognised\n");
-            /* Now JM has been detected, we send CJ and wait for 75 ms
-               before finishing the V.8 analysis. */
-            fsk_tx_restart(&s->v21tx, &preset_fsk_specs[FSK_V21CH1]);
-            memset(buf, 0, 3);
-            v8_put_bytes(s, buf, 3);
-            span_log_buf(&s->logging, SPAN_LOG_FLOW, "<CJ: ", &buf[1], 2);
-            s->state = V8_CJ_ON;
-            s->fsk_tx_on = true;
+            break;
+        case V8_JM_ON:
+            residual_samples = fsk_rx(&s->v21rx, amp, len);
+            if (s->got_cj)
+            {
+                span_log(&s->logging, SPAN_LOG_FLOW, "CJ recognised\n");
+                /* Stop sending JM, flushing anything left in the buffer, and wait 75 ms */
+                queue_flush(s->tx_queue);
+                s->negotiation_timer = milliseconds_to_samples(75);
+                s->state = V8_SIGA;
+                break;
+            }
+            /*endif*/
+            if ((s->negotiation_timer -= len) <= 0)
+            {
+                /* Timeout */
+                span_log(&s->logging, SPAN_LOG_FLOW, "Timeout waiting for CJ\n");
+                s->state = V8_PARKED;
+                s->result.status = V8_STATUS_FAILED;
+                report_event(s);
+                break;
+            }
+            /*endif*/
+            if (queue_contents(s->tx_queue) < 10)
+            {
+                /* Send JM */
+                send_cm_jm(s);
+            }
+            /*endif*/
+            break;
+        case V8_SIGA:
+            if (!s->fsk_tx_on)
+            //if ((s->negotiation_timer -= len) <= 0)
+            {
+                /* The V.8 negotiation has succeeded. */
+                span_log(&s->logging, SPAN_LOG_FLOW, "Negotiation succeeded\n");
+                s->state = V8_PARKED;
+                s->result.status = V8_STATUS_V8_CALL;
+                report_event(s);
+            }
+            /*endif*/
+            break;
+        case V8_PARKED:
+            residual_samples = len;
             break;
         }
-        /*endif*/
-        if ((s->negotiation_timer -= len) <= 0)
+        /*endswitch*/
+        if (residual_samples > 0)
         {
-            /* Timeout */
-            span_log(&s->logging, SPAN_LOG_FLOW, "Timeout waiting for JM\n");
-            s->state = V8_PARKED;
-            s->result.status = V8_STATUS_FAILED;
-            report_event(s);
+            /* Prepare to feed these residual samples back into the next step of the
+               V.8 protocol. */
+            amp += (len - residual_samples);
+            len = residual_samples;
         }
         /*endif*/
-        if (queue_contents(s->tx_queue) < 10)
-        {
-            /* Send CM again */
-            send_cm_jm(s);
-        }
-        /*endif*/
-        break;
-    case V8_CJ_ON:
-        residual_samples = fsk_rx(&s->v21rx, amp, len);
-        if (!s->fsk_tx_on)
-        {
-#if 0
-            s->negotiation_timer = milliseconds_to_samples(75);
-            s->state = V8_SIGC;
-        }
-        /*endif*/
-        break;
-    case V8_SIGC:
-        if ((s->negotiation_timer -= len) <= 0)
-        {
-#endif
-            /* The V.8 negotiation has succeeded. */
-            span_log(&s->logging, SPAN_LOG_FLOW, "Negotiation succeeded\n");
-            s->state = V8_PARKED;
-            s->result.status = V8_STATUS_V8_CALL;
-            report_event(s);
-        }
-        /*endif*/
-        break;
-    case V8_CM_WAIT:
-        residual_samples = fsk_rx(&s->v21rx, amp, len);
-        if (s->got_cm_jm)
-        {
-            span_log(&s->logging, SPAN_LOG_FLOW, "CM recognised\n");
-
-            s->result.status = V8_STATUS_V8_OFFERED;
-            report_event(s);
-
-            /* Stop sending ANSam or ANSam/ and send JM instead */
-            fsk_tx_init(&s->v21tx, &preset_fsk_specs[FSK_V21CH2], get_bit, s);
-            /* Set the timeout for JM */
-            s->negotiation_timer = milliseconds_to_samples(5000);
-            s->state = V8_JM_ON;
-            send_cm_jm(s);
-            s->modem_connect_tone_tx_on = milliseconds_to_samples(75);
-            s->fsk_tx_on = true;
-            break;
-        }
-        /*endif*/
-        if ((s->negotiation_timer -= len) <= 0)
-        {
-            /* Timeout */
-            span_log(&s->logging, SPAN_LOG_FLOW, "Timeout waiting for CM\n");
-            s->state = V8_PARKED;
-            s->result.status = V8_STATUS_FAILED;
-            report_event(s);
-        }
-        /*endif*/
-        break;
-    case V8_JM_ON:
-        residual_samples = fsk_rx(&s->v21rx, amp, len);
-        if (s->got_cj)
-        {
-            span_log(&s->logging, SPAN_LOG_FLOW, "CJ recognised\n");
-            /* Stop sending JM, flushing anything left in the buffer, and wait 75 ms */
-            queue_flush(s->tx_queue);
-            s->negotiation_timer = milliseconds_to_samples(75);
-            s->state = V8_SIGA;
-            break;
-        }
-        /*endif*/
-        if ((s->negotiation_timer -= len) <= 0)
-        {
-            /* Timeout */
-            span_log(&s->logging, SPAN_LOG_FLOW, "Timeout waiting for CJ\n");
-            s->state = V8_PARKED;
-            s->result.status = V8_STATUS_FAILED;
-            report_event(s);
-            break;
-        }
-        /*endif*/
-        if (queue_contents(s->tx_queue) < 10)
-        {
-            /* Send JM */
-            send_cm_jm(s);
-        }
-        /*endif*/
-        break;
-    case V8_SIGA:
-        if (!s->fsk_tx_on)
-        //if ((s->negotiation_timer -= len) <= 0)
-        {
-            /* The V.8 negotiation has succeeded. */
-            span_log(&s->logging, SPAN_LOG_FLOW, "Negotiation succeeded\n");
-            s->state = V8_PARKED;
-            s->result.status = V8_STATUS_V8_CALL;
-            report_event(s);
-        }
-        /*endif*/
-        break;
-    case V8_PARKED:
-        residual_samples = len;
-        break;
     }
-    /*endswitch*/
+    while (residual_samples > 0  &&  s->state != V8_PARKED);
     return residual_samples;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) v8_continue(v8_state_t *s, v8_parms_t *parms)
+{
+    memcpy(&s->parms.jm_cm, parms, sizeof(s->parms.jm_cm));
+    s->proceed = true;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1172,41 +1324,45 @@ SPAN_DECLARE(int) v8_restart(v8_state_t *s, bool calling_party, v8_parms_t *parm
     memset(&s->result, 0, sizeof(s->result));
 
     s->result.status = V8_STATUS_IN_PROGRESS;
+    s->proceed = false;
+    s->result.send_ci = s->parms.send_ci;
     s->result.modem_connect_tone = MODEM_CONNECT_TONES_NONE;
-    s->result.modulations = s->parms.modulations;
-    s->result.call_function = s->parms.call_function;
-    s->result.nsf = -1;
-    s->result.t66 = -1;
+    s->result.jm_cm.modulations = s->parms.jm_cm.modulations;
+    s->result.jm_cm.call_function = s->parms.jm_cm.call_function;
+    s->result.jm_cm.nsf = -1;
+    s->result.jm_cm.t66 = -1;
 
     s->modulation_bytes = 3;
 
     s->ci_timer = 0;
     s->calling_party = calling_party;
+    modem_connect_tones_rx_init(&s->ansam_rx, MODEM_CONNECT_TONES_ANS_PR, NULL, NULL);
+    modem_connect_tones_rx_init(&s->calling_tone_rx, MODEM_CONNECT_TONES_CALLING_TONE, NULL, NULL);
+    modem_connect_tones_rx_init(&s->cng_tone_rx, MODEM_CONNECT_TONES_FAX_CNG, NULL, NULL);
+    v8_decode_init(s);
     if (s->calling_party)
     {
-        if (s->result.send_ci)
+        if (s->parms.send_ci)
         {
             s->state = V8_WAIT_1S;
             s->negotiation_timer = milliseconds_to_samples(1000);
-            s->ci_count = 0;
+            s->ci_repetition_count = 0;
         }
         else
         {
             s->state = V8_AWAIT_ANSAM;
         }
         /*endif*/
-        modem_connect_tones_rx_init(&s->ansam_rx, MODEM_CONNECT_TONES_ANS_PR, NULL, NULL);
         fsk_tx_init(&s->v21tx, &preset_fsk_specs[FSK_V21CH1], get_bit, s);
-        s->modem_connect_tone_tx_on = milliseconds_to_samples(75) + 2;
+        s->modem_connect_tone_tx_timer = milliseconds_to_samples(75) + 2;
     }
     else
     {
         /* Send the ANSam or ANSam/ tone */
         s->state = V8_CM_WAIT;
         s->negotiation_timer = milliseconds_to_samples(200 + 5000);
-        v8_decode_init(s);
         modem_connect_tones_tx_init(&s->ansam_tx, s->parms.modem_connect_tone);
-        s->modem_connect_tone_tx_on = milliseconds_to_samples(75) + 1;
+        s->modem_connect_tone_tx_timer = milliseconds_to_samples(75) + 1;
     }
     /*endif*/
     if (s->tx_queue)

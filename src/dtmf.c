@@ -138,6 +138,7 @@ SPAN_DECLARE(int) dtmf_rx(dtmf_rx_state_t *s, const int16_t amp[], int samples)
             limit = sample + (DTMF_SAMPLES_PER_BLOCK - s->current_sample);
         else
             limit = samples;
+        /*endif*/
         /* The following unrolled loop takes only 35% (rough estimate) of the
            time of a rolled loop on the machine on which it was developed */
         for (j = sample;  j < limit;  j++)
@@ -160,6 +161,7 @@ SPAN_DECLARE(int) dtmf_rx(dtmf_rx_state_t *s, const int16_t amp[], int samples)
                 s->z440[0] = v1;
                 xamp = famp;
             }
+            /*endif*/
             xamp = goertzel_preadjust_amp(xamp);
 #if defined(SPANDSP_USE_FIXED_POINT)
             s->energy += ((int32_t) xamp*xamp);
@@ -175,11 +177,14 @@ SPAN_DECLARE(int) dtmf_rx(dtmf_rx_state_t *s, const int16_t amp[], int samples)
             goertzel_samplex(&s->row_out[3], xamp);
             goertzel_samplex(&s->col_out[3], xamp);
         }
+        /*endfor*/
         if (s->duration < INT_MAX - (limit - sample))
             s->duration += (limit - sample);
+        /*endif*/
         s->current_sample += (limit - sample);
         if (s->current_sample < DTMF_SAMPLES_PER_BLOCK)
             continue;
+        /*endif*/
 
         /* We are at the end of a DTMF detection block */
         /* Find the peak row and the peak column */
@@ -192,10 +197,13 @@ SPAN_DECLARE(int) dtmf_rx(dtmf_rx_state_t *s, const int16_t amp[], int samples)
             row_energy[i] = goertzel_result(&s->row_out[i]);
             if (row_energy[i] > row_energy[best_row])
                 best_row = i;
+            /*endif*/
             col_energy[i] = goertzel_result(&s->col_out[i]);
             if (col_energy[i] > col_energy[best_col])
                 best_col = i;
+            /*endif*/
         }
+        /*endfor*/
         hit = 0;
         /* Basic signal level test and the twist test */
         if (row_energy[best_row] >= s->threshold
@@ -215,7 +223,9 @@ SPAN_DECLARE(int) dtmf_rx(dtmf_rx_state_t *s, const int16_t amp[], int samples)
                     {
                         break;
                     }
+                    /*endif*/
                 }
+                /*endfor*/
                 /* ... and fraction of total energy test */
                 if (i >= 4
                     &&
@@ -224,7 +234,9 @@ SPAN_DECLARE(int) dtmf_rx(dtmf_rx_state_t *s, const int16_t amp[], int samples)
                     /* Got a hit */
                     hit = dtmf_positions[(best_row << 2) + best_col];
                 }
+                /*endif*/
             }
+            /*endif*/
             if (span_log_test(&s->logging, SPAN_LOG_FLOW))
             {
                 /* Log information about the quality of the signal, to aid analysis of detection problems */
@@ -241,7 +253,9 @@ SPAN_DECLARE(int) dtmf_rx(dtmf_rx_state_t *s, const int16_t amp[], int samples)
                          s->duration,
                          (hit)  ?  "hit"  :  "miss");
             }
+            /*endif*/
         }
+        /*endif*/
         /* The logic in the next test should ensure the following for different successive hit patterns:
                 -----ABB = start of digit B.
                 ----B-BB = start of digit B
@@ -281,6 +295,7 @@ SPAN_DECLARE(int) dtmf_rx(dtmf_rx_state_t *s, const int16_t amp[], int samples)
                     s->realtime_callback(s->realtime_callback_data, hit, i, s->duration);
                     s->duration = 0;
                 }
+                /*endif*/
             }
             else
             {
@@ -295,25 +310,32 @@ SPAN_DECLARE(int) dtmf_rx(dtmf_rx_state_t *s, const int16_t amp[], int samples)
                             s->digits_callback(s->digits_callback_data, s->digits, s->current_digits);
                             s->current_digits = 0;
                         }
+                        /*endif*/
                     }
                     else
                     {
                         s->lost_digits++;
                     }
+                    /*endif*/
                 }
+                /*endif*/
             }
+            /*endif*/
             s->in_digit = hit;
         }
+        /*endif*/
         s->last_hit = hit;
         s->energy = FP_SCALE(0.0f);
         s->current_sample = 0;
     }
+    /*endfor*/
     if (s->current_digits  &&  s->digits_callback)
     {
         s->digits_callback(s->digits_callback_data, s->digits, s->current_digits);
         s->digits[0] = '\0';
         s->current_digits = 0;
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -328,6 +350,7 @@ SPAN_DECLARE(int) dtmf_rx_fillin(dtmf_rx_state_t *s, int samples)
         goertzel_reset(&s->row_out[i]);
         goertzel_reset(&s->col_out[i]);
     }
+    /*endfor*/
     s->energy = FP_SCALE(0.0f);
     s->current_sample = 0;
     /* Don't update the hit detection. Pretend it never happened. */
@@ -340,8 +363,10 @@ SPAN_DECLARE(int) dtmf_rx_status(dtmf_rx_state_t *s)
 {
     if (s->in_digit)
         return s->in_digit;
+    /*endif*/
     if (s->last_hit)
         return 'x';
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -350,19 +375,21 @@ SPAN_DECLARE(size_t) dtmf_rx_get(dtmf_rx_state_t *s, char *buf, int max)
 {
     if (max > s->current_digits)
         max = s->current_digits;
+    /*endif*/
     if (max > 0)
     {
         memcpy(buf, s->digits, max);
         memmove(s->digits, s->digits + max, s->current_digits - max);
         s->current_digits -= max;
     }
+    /*endif*/
     buf[max] = '\0';
     return max;
 }
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(void) dtmf_rx_set_realtime_callback(dtmf_rx_state_t *s,
-                                                 tone_report_func_t callback,
+                                                 span_tone_report_func_t callback,
                                                  void *user_data)
 {
     s->realtime_callback = callback;
@@ -387,10 +414,13 @@ SPAN_DECLARE(void) dtmf_rx_parms(dtmf_rx_state_t *s,
         s->z440[1] = 0.0f;
         s->filter_dialtone = filter_dialtone;
     }
+    /*endif*/
     if (twist >= 0)
         s->normal_twist = powf(10.0f, twist/10.0f);
+    /*endif*/
     if (reverse_twist >= 0)
         s->reverse_twist = powf(10.0f, reverse_twist/10.0f);
+    /*endif*/
     if (threshold > -99)
     {
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -400,6 +430,7 @@ SPAN_DECLARE(void) dtmf_rx_parms(dtmf_rx_state_t *s,
 #endif
         s->threshold = x*x;
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -419,7 +450,9 @@ SPAN_DECLARE(dtmf_rx_state_t *) dtmf_rx_init(dtmf_rx_state_t *s,
     {
         if ((s = (dtmf_rx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "DTMF");
@@ -442,13 +475,16 @@ SPAN_DECLARE(dtmf_rx_state_t *) dtmf_rx_init(dtmf_rx_state_t *s,
             make_goertzel_descriptor(&dtmf_detect_row[i], dtmf_row[i], DTMF_SAMPLES_PER_BLOCK);
             make_goertzel_descriptor(&dtmf_detect_col[i], dtmf_col[i], DTMF_SAMPLES_PER_BLOCK);
         }
+        /*endfor*/
         dtmf_rx_inited = true;
     }
+    /*endif*/
     for (i = 0;  i < 4;  i++)
     {
         goertzel_init(&s->row_out[i], &dtmf_detect_row[i]);
         goertzel_init(&s->col_out[i], &dtmf_detect_col[i]);
     }
+    /*endfor*/
     s->energy = FP_SCALE(0.0f);
     s->current_sample = 0;
     s->lost_digits = 0;
@@ -478,6 +514,7 @@ static void dtmf_tx_initialise(void)
 
     if (dtmf_tx_inited)
         return;
+    /*endif*/
     for (row = 0;  row < 4;  row++)
     {
         for (col = 0;  col < 4;  col++)
@@ -493,7 +530,9 @@ static void dtmf_tx_initialise(void)
                                      0,
                                      false);
         }
+        /*endfor*/
     }
+    /*endfor*/
     dtmf_tx_inited = true;
 }
 /*- End of function --------------------------------------------------------*/
@@ -510,6 +549,7 @@ SPAN_DECLARE(int) dtmf_tx(dtmf_tx_state_t *s, int16_t amp[], int max_samples)
         /* Deal with the fragment left over from last time */
         len = tone_gen(&s->tones, amp, max_samples);
     }
+    /*endif*/
 
     while (len < max_samples)
     {
@@ -519,14 +559,19 @@ SPAN_DECLARE(int) dtmf_tx(dtmf_tx_state_t *s, int16_t amp[], int max_samples)
             /* See if we can get some more digits */
             if (s->callback == NULL)
                 break;
+            /*endif*/
             s->callback(s->callback_data);
             if ((digit = queue_read_byte(&s->queue.queue)) < 0)
                 break;
+            /*endif*/
         }
+        /*endif*/
         if (digit == 0)
             continue;
+        /*endif*/
         if ((cp = strchr(dtmf_positions, digit)) == NULL)
             continue;
+        /*endif*/
         tone_gen_init(&s->tones, &dtmf_digit_tones[cp - dtmf_positions]);
         s->tones.tone[0].gain = s->low_level;
         s->tones.tone[1].gain = s->high_level;
@@ -534,6 +579,7 @@ SPAN_DECLARE(int) dtmf_tx(dtmf_tx_state_t *s, int16_t amp[], int max_samples)
         s->tones.duration[1] = s->off_time;
         len += tone_gen(&s->tones, amp + len, max_samples - len);
     }
+    /*endwhile*/
     return len;
 }
 /*- End of function --------------------------------------------------------*/
@@ -549,11 +595,15 @@ SPAN_DECLARE(int) dtmf_tx_put(dtmf_tx_state_t *s, const char *digits, int len)
     {
         if ((len = strlen(digits)) == 0)
             return 0;
+        /*endif*/
     }
+    /*endif*/
     if ((space = queue_free_space(&s->queue.queue)) < (size_t) len)
         return len - (int) space;
+    /*endif*/
     if (queue_write(&s->queue.queue, (const uint8_t *) digits, len) >= 0)
         return 0;
+    /*endif*/
     return -1;
 }
 /*- End of function --------------------------------------------------------*/
@@ -580,10 +630,13 @@ SPAN_DECLARE(dtmf_tx_state_t *) dtmf_tx_init(dtmf_tx_state_t *s,
     {
         if ((s = (dtmf_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     if (!dtmf_tx_inited)
         dtmf_tx_initialise();
+    /*endif*/
     s->callback = callback;
     s->callback_data = user_data;
     tone_gen_init(&s->tones, &dtmf_digit_tones[0]);

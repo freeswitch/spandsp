@@ -156,9 +156,9 @@ static void terminal_callback(void *user_data, const uint8_t msg[], int len)
 
 static int termios_callback(void *user_data, struct termios *termios)
 {
-    data_modems_state_t *s;
+    //data_modems_state_t *s;
 
-    s = (data_modems_state_t *) user_data;
+    //s = (data_modems_state_t *) user_data;
     printf("termios callback\n");
     return 0;
 }
@@ -227,7 +227,7 @@ static int modem_tests(int use_gui, int log_audio, bool calling_party)
     /* Now set up and run the modems */
     if ((data_modem_state = data_modems_init(NULL,
                                              calling_party,
-                                             terminal_write,
+                                             socket_harness_terminal_write,
                                              NULL,
                                              modem_call_control,
                                              NULL,
@@ -261,7 +261,7 @@ static int modem_tests(int use_gui, int log_audio, bool calling_party)
     }
     /*endif*/
 
-    data_modems_set_at_tx_handler(data_modem_state, terminal_write, s);
+    data_modems_set_at_tx_handler(data_modem_state, socket_harness_terminal_write, s);
 
     wave_handle = NULL;
     if (log_audio)

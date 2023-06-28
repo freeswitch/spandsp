@@ -176,16 +176,16 @@ extern void gsm0610_long_term_predictor(gsm0610_state_t *s,
                                         int16_t *bc);
 
 extern void gsm0610_lpc_analysis(gsm0610_state_t *s,
-                                 int16_t amp[160],
+                                 int16_t amp[GSM0610_FRAME_LEN],
                                  int16_t LARc[8]);
 
 extern void gsm0610_preprocess(gsm0610_state_t *s,
-                               const int16_t amp[],
-                               int16_t so[]);
+                               const int16_t amp[GSM0610_FRAME_LEN],
+                               int16_t so[GSM0610_FRAME_LEN]);
 
 extern void gsm0610_short_term_analysis_filter(gsm0610_state_t *s,
                                                int16_t LARc[8],
-                                               int16_t amp[160]);
+                                               int16_t amp[GSM0610_FRAME_LEN]);
 
 extern void gsm0610_long_term_synthesis_filtering(gsm0610_state_t *s,
                                                   int16_t Ncr,
@@ -196,7 +196,7 @@ extern void gsm0610_long_term_synthesis_filtering(gsm0610_state_t *s,
 extern void gsm0610_rpe_decoding(gsm0610_state_t *s,
                                  int16_t xmaxcr,
                                  int16_t Mcr,
-                                 int16_t *xMcr,             /* [0..12], 3 bits             IN      */
+                                 int16_t xMcr[13],          /* [0..12], 3 bits             IN      */
                                  int16_t erp[40]);
 
 extern void gsm0610_rpe_encoding(gsm0610_state_t *s,
@@ -207,8 +207,8 @@ extern void gsm0610_rpe_encoding(gsm0610_state_t *s,
 
 extern void gsm0610_short_term_synthesis_filter(gsm0610_state_t *s,
                                                 int16_t LARcr[8],
-                                                int16_t drp[40],
-                                                int16_t amp[160]);
+                                                int16_t wt[GSM0610_FRAME_LEN],
+                                                int16_t amp[GSM0610_FRAME_LEN]);
 
 extern int16_t gsm0610_norm(int32_t a);
 

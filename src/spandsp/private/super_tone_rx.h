@@ -54,7 +54,7 @@ struct super_tone_rx_state_s
     float energy;
     int detected_tone;
     int rotation;
-    tone_report_func_t tone_callback;
+    span_tone_report_func_t tone_callback;
     tone_segment_func_t segment_callback;
     void *callback_data;
     super_tone_rx_segment_t segments[11];

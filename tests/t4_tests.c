@@ -73,9 +73,12 @@ static void dump_image_as_xxx(t4_rx_state_t *state)
         {
             for (k = 0;  k < 8;  k++)
                 printf((state->image_buffer[i*state->t4_t6.bytes_per_row + j] & (0x80 >> k))  ?  "X"  :  " ");
+            /*endfor*/
         }
+        /*endfor*/
         printf("\n");
     }
+    /*endfor*/
 #endif
 }
 /*- End of function --------------------------------------------------------*/
@@ -126,6 +129,7 @@ static int detect_non_ecm_page_end(int bit, int page_ended)
         expected_eols = (page_ended == T4_COMPRESSION_T6)  ?  2  :  6;
         return 0;
     }
+    /*endif*/
 
     /* Monitor whether the EOLs are there in the correct amount */
     if (bit == 0)
@@ -143,11 +147,14 @@ static int detect_non_ecm_page_end(int bit, int page_ended)
                 consecutive_eols++;
             else
                 consecutive_eols = 0;
+            /*endif*/
             consecutive_zeros = 0;
             consecutive_ones = 0;
         }
+        /*endif*/
         if (max_consecutive_eols < consecutive_eols)
             max_consecutive_eols = consecutive_eols;
+        /*endif*/
     }
     else if (bit == SIG_STATUS_END_OF_DATA)
     {
@@ -158,6 +165,7 @@ static int detect_non_ecm_page_end(int bit, int page_ended)
                 printf("Only %d EOLs (should be %d)\n", max_consecutive_eols, expected_eols);
                 return 2;
             }
+            /*endif*/
             consecutive_zeros = 0;
             consecutive_eols = 0;
             max_consecutive_eols = 0;
@@ -171,10 +179,13 @@ static int detect_non_ecm_page_end(int bit, int page_ended)
                 printf("Receiver missed the end of page mark\n");
                 return 2;
             }
+            /*endif*/
             return 0;
         }
+        /*endif*/
         return 1;
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -253,7 +264,7 @@ int main(int argc, char *argv[])
     block_size = 1;
     bit_error_rate = 0;
     dump_as_xxx = false;
-    while ((opt = getopt(argc, argv, "b:c:d:ehHrR:i:m:t:x")) != -1)
+    while ((opt = getopt(argc, argv, "b:c:d:ehHrR:i:m:t:xX:Y:")) != -1)
     {
         switch (opt)
         {
@@ -264,6 +275,7 @@ int main(int argc, char *argv[])
                 printf("Block size too large. Must be 1024 or less\n");
                 exit(2);
             }
+            /*endif*/
             break;
         case 'c':
             if (strcmp(optarg, "T41D") == 0)
@@ -315,6 +327,7 @@ int main(int argc, char *argv[])
                 printf("Unrecognised compression.\n");
                 exit(2);
             }
+            /*endif*/
             break;
         case 'd':
             decode_file_name = optarg;
@@ -346,6 +359,7 @@ int main(int argc, char *argv[])
             {
                 y_resolution = T4_Y_RESOLUTION_SUPERFINE;
             }
+            /*endif*/
             break;
         case 'i':
             in_file_name = optarg;
@@ -359,12 +373,20 @@ int main(int argc, char *argv[])
         case 'x':
             dump_as_xxx = true;
             break;
+        case 'X':
+            x_resolution = atoi(optarg);
+            break;
+        case 'Y':
+            y_resolution = atoi(optarg);
+            break;
         default:
             //usage();
             exit(2);
             break;
         }
+        /*endswitch*/
     }
+    /*endwhile*/
 
     end_of_page = T4_DECODE_MORE_DATA;
     if (decode_file_name)
@@ -375,12 +397,14 @@ int main(int argc, char *argv[])
             x_resolution = T4_X_RESOLUTION_R8;
         if (y_resolution < 0)
             y_resolution = T4_Y_RESOLUTION_STANDARD;
+        /*endif*/
         /* Receive end puts TIFF to a new file. We assume the receive width here. */
         if ((receive_state = t4_rx_init(NULL, OUT_FILE_NAME, T4_COMPRESSION_T4_2D)) == NULL)
         {
             printf("Failed to init T.4 rx\n");
             exit(2);
         }
+        /*endif*/
         span_log_set_level(t4_rx_get_logging_state(receive_state), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_FLOW);
         t4_rx_set_rx_encoding(receive_state, compression);
         t4_rx_set_x_resolution(receive_state, x_resolution);
@@ -399,8 +423,10 @@ int main(int argc, char *argv[])
                 {
                     if (sscanf(&buf[18 + 3*i], "%x", (unsigned int *) &bit) != 1)
                         break;
+                    /*endif*/
                     block[i] = bit;
                 }
+                /*endfor*/
                 end_of_page = t4_rx_put(receive_state, block, i);
             }
             else if (sscanf(buf, "HDLC:  %x", &pkt_no) == 1)
@@ -410,8 +436,10 @@ int main(int argc, char *argv[])
                 {
                     if (sscanf(&buf[19 + 3*i], "%x", (unsigned int *) &bit) != 1)
                         break;
+                    /*endif*/
                     block[i] = bit;
                 }
+                /*endfor*/
                 end_of_page = t4_rx_put(receive_state, block, i);
             }
             else if (sscanf(buf, "%*d:%*d:%*d.%*d T.38 Rx %d: IFP %x %x %x %x %x %n", &pkt_no, (unsigned int *) &bit, (unsigned int *) &bit, (unsigned int *) &bit, (unsigned int *) &bit, (unsigned int *) &bit, &match_pos) == 6)
@@ -419,13 +447,16 @@ int main(int argc, char *argv[])
                 /* Useful for breaking up T.38 non-ECM logs */
                 if (pkt_no != last_pkt_no + 1)
                     printf("Packet %u\n", pkt_no);
+                /*endif*/
                 last_pkt_no = pkt_no;
                 for (i = 0;  i < 256;  i++)
                 {
                     if (sscanf(&buf[match_pos + 3*i], "%x", (unsigned int *) &bit) != 1)
                         break;
+                    /*endif*/
                     block[i] = bit_reverse8(bit);
                 }
+                /*endfor*/
                 end_of_page = t4_rx_put(receive_state, block, i);
             }
             else if (strlen(buf) > 2  &&  sscanf(buf, "T.30 Rx:  %x %x %x %x", (unsigned int *) &bit, (unsigned int *) &bit, (unsigned int *) &bit, (unsigned int *) &pkt_no) == 4)
@@ -433,13 +464,16 @@ int main(int argc, char *argv[])
                 /* Useful for breaking up ECM logs */
                 if (pkt_no != last_pkt_no + 1)
                     printf("Packet %u\n", pkt_no);
+                /*endif*/
                 last_pkt_no = pkt_no;
                 for (i = 0;  i < 256;  i++)
                 {
                     if (sscanf(&buf[22 + 3*i], "%x", (unsigned int *) &bit) != 1)
                         break;
+                    /*endif*/
                     block[i] = bit_reverse8(bit);
                 }
+                /*endfor*/
                 end_of_page = t4_rx_put(receive_state, block, i);
             }
             else if (sscanf(buf, "%04x  %02x %02x %02x", (unsigned int *) &bit, (unsigned int *) &bit, (unsigned int *) &bit, (unsigned int *) &bit) == 4)
@@ -448,8 +482,10 @@ int main(int argc, char *argv[])
                 {
                     if (sscanf(&buf[6 + 3*i], "%x", (unsigned int *) &bit) != 1)
                         break;
+                    /*endif*/
                     block[i] = bit_reverse8(bit);
                 }
+                /*endfor*/
                 end_of_page = t4_rx_put(receive_state, block, i);
             }
             else if (sscanf(buf, "%08x  %02x %02x %02x", (unsigned int *) &bit, (unsigned int *) &bit, (unsigned int *) &bit, (unsigned int *) &bit) == 4)
@@ -458,8 +494,10 @@ int main(int argc, char *argv[])
                 {
                     if (sscanf(&buf[10 + 3*i], "%x", (unsigned int *) &bit) != 1)
                         break;
+                    /*endif*/
                     block[i] = bit_reverse8(bit);
                 }
+                /*endfor*/
                 end_of_page = t4_rx_put(receive_state, block, i);
             }
             else if (sscanf(buf, "Rx bit %*d - %d", &bit) == 1)
@@ -469,11 +507,15 @@ int main(int argc, char *argv[])
                     printf("End of page detected\n");
                     break;
                 }
+                /*endif*/
             }
+            /*endif*/
         }
+        /*endwhile*/
         fclose(file);
         if (dump_as_xxx)
             dump_image_as_xxx(receive_state);
+        /*endif*/
         t4_rx_end_page(receive_state);
         display_page_stats(receive_state);
         t4_rx_free(receive_state);
@@ -488,6 +530,7 @@ int main(int argc, char *argv[])
             printf("Failed to init T.4 send\n");
             exit(2);
         }
+        /*endif*/
         span_log_set_level(t4_tx_get_logging_state(send_state), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_FLOW);
         t4_tx_set_min_bits_per_row(send_state, min_row_bits);
         t4_tx_set_local_ident(send_state, "111 2222 3333");
@@ -498,6 +541,7 @@ int main(int argc, char *argv[])
             printf("Failed to init T.4 rx for '%s'\n", OUT_FILE_NAME);
             exit(2);
         }
+        /*endif*/
         span_log_set_level(t4_rx_get_logging_state(receive_state), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_FLOW);
 
         /* Now send and receive all the pages in the source TIFF file */
@@ -505,25 +549,30 @@ int main(int argc, char *argv[])
         /* If we are stepping around the compression schemes, reset to the start of the sequence. */
         if (compression_step > 0)
             compression_step = 0;
+        /*endif*/
         for (;;)
         {
             end_marks = 0;
             /* Add a header line to alternate pages, if required */
-            if (add_page_headers  &&  (sends & 2))
+            if (add_page_headers  &&  (sends & 1) == 0)
                 t4_tx_set_header_info(send_state, "Header");
             else
                 t4_tx_set_header_info(send_state, NULL);
+            /*endif*/
             if (page_header_tz  &&  page_header_tz[0])
             {
                 if (tz_init(&tz, page_header_tz))
                     t4_tx_set_header_tz(send_state, &tz);
+                /*endif*/
             }
+            /*endif*/
             t4_tx_set_header_overlays_image(send_state, overlay_page_headers);
             if (restart_pages  &&  (sends & 1))
             {
                 /* Use restart, to send the page a second time */
                 if (t4_tx_restart_page(send_state))
                     break;
+                /*endif*/
             }
             else
             {
@@ -535,7 +584,9 @@ int main(int argc, char *argv[])
                         compression_step = 0;
                         compression = compression_sequence[compression_step++];
                     }
+                    /*endif*/
                 }
+                /*endif*/
                 if (t4_tx_set_tx_image_format(send_state,
                                               compression,
                                               T4_SUPPORT_WIDTH_215MM
@@ -565,14 +616,17 @@ int main(int argc, char *argv[])
                 {
                     break;
                 }
+                /*endif*/
                 t4_rx_set_rx_encoding(receive_state, compression);
 
                 if (t4_tx_start_page(send_state))
                     break;
+                /*endif*/
                 t4_rx_set_x_resolution(receive_state, t4_tx_get_tx_x_resolution(send_state));
                 t4_rx_set_y_resolution(receive_state, t4_tx_get_tx_y_resolution(send_state));
                 t4_rx_set_image_width(receive_state, t4_tx_get_tx_image_width(send_state));
             }
+            /*endif*/
             t4_rx_start_page(receive_state);
             detect_non_ecm_page_end(-1, compression);
             page_ended = false;
@@ -590,11 +644,14 @@ int main(int argc, char *argv[])
                         tests_failed += (res - 1);
                         break;
                     }
+                    /*endif*/
                     if (bit_error_rate)
                     {
                         if ((rand() % bit_error_rate) == 0)
                             bit ^= 1;
+                        /*endif*/
                     }
+                    /*endif*/
                     end_of_page = t4_rx_put_bit(receive_state, bit);
                 }
                 while (end_of_page != T4_DECODE_OK)
@@ -606,11 +663,14 @@ int main(int argc, char *argv[])
                         tests_failed++;
                         break;
                     }
+                    /*endif*/
                 }
+                /*endwhile*/
                 /* Now throw junk at the receive context, to ensure stuff occuring
                    after the end of page condition has no bad effect. */
                 for (i = 0;  i < 1000;  i++)
                     t4_rx_put_bit(receive_state, (rand() >> 10) & 1);
+                /*endfor*/
                 break;
             default:
                 do
@@ -618,6 +678,7 @@ int main(int argc, char *argv[])
                     len = t4_tx_get(send_state, block, block_size);
                     if (len > 0)
                         end_of_page = t4_rx_put(receive_state, block, len);
+                    /*endif*/
                 }
                 while (len > 0);
                 /* Some decoders require a few extra bits before they recognise the end
@@ -632,17 +693,22 @@ int main(int argc, char *argv[])
                         tests_failed++;
                         break;
                     }
+                    /*endif*/
                 }
+                /*endwhile*/
                 break;
             }
             if (dump_as_xxx)
                 dump_image_as_xxx(receive_state);
+            /*endif*/
             display_page_stats(receive_state);
             if (!restart_pages  ||  (sends & 1))
                 t4_tx_end_page(send_state);
+            /*endif*/
             t4_rx_end_page(receive_state);
             sends++;
         }
+        /*endfor*/
         t4_tx_free(send_state);
         t4_rx_free(receive_state);
         /* And we should now have a matching received TIFF file. Note this will only match
@@ -655,9 +721,11 @@ int main(int argc, char *argv[])
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
 #endif
         printf("Tests passed\n");
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

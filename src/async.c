@@ -93,6 +93,8 @@ SPAN_DECLARE(const char *) signal_status_to_str(int status)
 SPAN_DECLARE(void) async_rx_put_bit(void *user_data, int bit)
 {
     async_rx_state_t *s;
+    int parity_bit_a;
+    int parity_bit_b;
 
     s = (async_rx_state_t *) user_data;
     if (bit < 0)
@@ -108,66 +110,116 @@ SPAN_DECLARE(void) async_rx_put_bit(void *user_data, int bit)
         case SIG_STATUS_END_OF_DATA:
             s->put_byte(s->user_data, bit);
             s->bitpos = 0;
-            s->byte_in_progress = 0;
+            s->frame_in_progress = 0;
             break;
         default:
             //printf("Eh!\n");
             break;
         }
-        return;
-    }
-    if (s->bitpos == 0)
-    {
-        /* Search for the start bit */
-        s->bitpos += (bit ^ 1);
-        s->parity_bit = 0;
-        s->byte_in_progress = 0;
-    }
-    else if (s->bitpos <= s->data_bits)
-    {
-        s->byte_in_progress = (s->byte_in_progress >> 1) | (bit << 7);
-        s->parity_bit ^= bit;
-        s->bitpos++;
-    }
-    else if (s->parity  &&  s->bitpos == s->data_bits + 1)
-    {
-        if (s->parity == ASYNC_PARITY_ODD)
-            s->parity_bit ^= 1;
-
-        if (s->parity_bit != bit)
-            s->parity_errors++;
-        s->bitpos++;
+        /*endswitch*/
     }
     else
     {
-        /* Stop bit */
-        if (bit == 1)
+        if (s->bitpos == 0)
         {
-            /* Align the received value */
-            if (s->data_bits < 8)
-                s->byte_in_progress = (s->byte_in_progress & 0xFF) >> (8 - s->data_bits);
-            s->put_byte(s->user_data, s->byte_in_progress);
-            s->bitpos = 0;
+            /* Search for the start bit */
+            s->bitpos += (bit ^ 1);
+            s->frame_in_progress = 0;
         }
-        else if (s->use_v14)
+        else if (s->bitpos <= s->total_data_bits)
         {
-            /* This is actually the start bit for the next character, and
-               the stop bit has been dropped from the stream. This is the
-               rate adaption specified in V.14 */
-            /* Align the received value */
-            if (s->data_bits < 8)
-                s->byte_in_progress = (s->byte_in_progress & 0xFF) >> (8 - s->data_bits);
-            s->put_byte(s->user_data, s->byte_in_progress);
-            s->bitpos = 1;
-            s->parity_bit = 0;
-            s->byte_in_progress = 0;
+            s->frame_in_progress = (s->frame_in_progress >> 1) | (bit << 15);
+            s->bitpos++;
         }
         else
         {
-            s->framing_errors++;
-            s->bitpos = 0;
+            /* We should be at the first stop bit */
+            if (bit == 0  &&  !s->use_v14)
+            {
+                s->framing_errors++;
+                s->bitpos = 0;
+            }
+            else
+            {
+                /* Check and remove any parity bit */
+                if (s->parity != ASYNC_PARITY_NONE)
+                {
+                    parity_bit_a = (s->frame_in_progress >> 15) & 0x01;
+                    /* Trim off the parity bit */
+                    s->frame_in_progress &= 0x7FFF;
+                    s->frame_in_progress >>= (16 - s->total_data_bits);
+                    switch (s->parity)
+                    {
+                    case ASYNC_PARITY_ODD:
+                        parity_bit_b = parity8(s->frame_in_progress) ^ 1;
+                        break;
+                    case ASYNC_PARITY_EVEN:
+                        parity_bit_b = parity8(s->frame_in_progress);
+                        break;
+                    case ASYNC_PARITY_MARK:
+                        parity_bit_b = 1;
+                        break;
+                    case ASYNC_PARITY_SPACE:
+                        parity_bit_b = 0;
+                        break;
+                    }
+                    /*endswitch*/
+                    if (parity_bit_a == parity_bit_b)
+                        s->put_byte(s->user_data, s->frame_in_progress);
+                    else
+                        s->parity_errors++;
+                    /*endif*/
+                }
+                else
+                {
+                    s->frame_in_progress >>= (16 - s->total_data_bits);
+                    s->put_byte(s->user_data, s->frame_in_progress);
+                }
+                /*endif*/
+                if (bit == 1)
+                {
+                    /* This is the first of any stop bits */
+                    s->bitpos = 0;
+                }
+                else
+                {
+                    /* There might be a framing error, but we have to assume the stop
+                       bit has been dropped by the rate adaption mechanism described in
+                       V.14. */
+                    s->bitpos = 1;
+                    s->frame_in_progress = 0;
+                }
+                /*endif*/
+            }
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endif*/
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) async_rx_get_parity_errors(async_rx_state_t *s, bool reset)
+{
+    int errors;
+
+    errors = s->parity_errors;
+    if (reset)
+        s->parity_errors = 0;
+    /*endif*/
+    return errors;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) async_rx_get_framing_errors(async_rx_state_t *s, bool reset)
+{
+    int errors;
+
+    errors = s->framing_errors;
+    if (reset)
+        s->framing_errors = 0;
+    /*endif*/
+    return errors;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -176,25 +228,31 @@ SPAN_DECLARE(async_rx_state_t *) async_rx_init(async_rx_state_t *s,
                                                int parity,
                                                int stop_bits,
                                                bool use_v14,
-                                               put_byte_func_t put_byte,
+                                               span_put_byte_func_t put_byte,
                                                void *user_data)
 {
     if (s == NULL)
     {
         if ((s = (async_rx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
+    /* We don't record the stop bits, as they are currently only in the function
+       call for completeness, and future compatibility. */
     s->data_bits = data_bits;
     s->parity = parity;
-    s->stop_bits = stop_bits;
+    s->total_data_bits = data_bits;
+    if (parity != ASYNC_PARITY_NONE)
+        s->total_data_bits++;
+    /*endif*/
     s->use_v14 = use_v14;
 
     s->put_byte = put_byte;
     s->user_data = user_data;
 
-    s->byte_in_progress = 0;
+    s->frame_in_progress = 0;
     s->bitpos = 0;
-    s->parity_bit = 0;
 
     s->parity_errors = 0;
     s->framing_errors = 0;
@@ -220,6 +278,7 @@ SPAN_DECLARE(int) async_tx_get_bit(void *user_data)
     async_tx_state_t *s;
     int bit;
     int parity_bit;
+    int32_t next_byte;
 
     s = (async_tx_state_t *) user_data;
     if (s->bitpos == 0)
@@ -229,38 +288,51 @@ SPAN_DECLARE(int) async_tx_get_bit(void *user_data)
             s->presend_bits--;
             return 1;
         }
-        if ((s->byte_in_progress = s->get_byte(s->user_data)) < 0)
+        /*endif*/
+        if ((next_byte = s->get_byte(s->user_data)) < 0)
         {
-            if (s->byte_in_progress != SIG_STATUS_LINK_IDLE)
-                return s->byte_in_progress;
+            if (next_byte != SIG_STATUS_LINK_IDLE)
+                return next_byte;
+            /*endif*/
             /* Idle for a bit time. If the get byte call configured a presend
                time we might idle for longer. */
             return 1;
         }
-        s->byte_in_progress &= (0xFFFF >> (16 - s->data_bits));
-        if (s->parity != ASYNC_PARITY_NONE)
+        /*endif*/
+        s->frame_in_progress = next_byte;
+        /* Trim off any upper bits */
+        s->frame_in_progress &= (0xFFFF >> (16 - s->data_bits));
+        /* Now insert any parity bit */
+        switch (s->parity)
         {
-            parity_bit = parity8(s->byte_in_progress);
-            if (s->parity == ASYNC_PARITY_ODD)
-                parity_bit ^= 1;
-            s->byte_in_progress |= (parity_bit << s->data_bits);
-            s->byte_in_progress |= (0xFFFF << (s->data_bits + 1));
+        case ASYNC_PARITY_MARK:
+            s->frame_in_progress |= (1 << s->data_bits);
+            break;
+        case ASYNC_PARITY_EVEN:
+            parity_bit = parity8(s->frame_in_progress);
+            s->frame_in_progress |= (parity_bit << s->data_bits);
+            break;
+        case ASYNC_PARITY_ODD:
+            parity_bit = parity8(s->frame_in_progress) ^ 1;
+            s->frame_in_progress |= (parity_bit << s->data_bits);
+            break;
         }
-        else
-        {
-            s->byte_in_progress |= (0xFFFF << s->data_bits);
-        }
+        /*endswitch*/
+        /* Insert some stop bits above the data and parity ones */
+        s->frame_in_progress |= (0xFFFF << s->total_data_bits);
         /* Start bit */
         bit = 0;
         s->bitpos++;
     }
     else
     {
-        bit = s->byte_in_progress & 1;
-        s->byte_in_progress >>= 1;
+        bit = s->frame_in_progress & 1;
+        s->frame_in_progress >>= 1;
         if (++s->bitpos > s->total_bits)
             s->bitpos = 0;
+        /*endif*/
     }
+    /*endif*/
     return bit;
 }
 /*- End of function --------------------------------------------------------*/
@@ -276,27 +348,30 @@ SPAN_DECLARE(async_tx_state_t *) async_tx_init(async_tx_state_t *s,
                                                int parity,
                                                int stop_bits,
                                                bool use_v14,
-                                               get_byte_func_t get_byte,
+                                               span_get_byte_func_t get_byte,
                                                void *user_data)
 {
     if (s == NULL)
     {
         if ((s = (async_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     /* We have a use_v14 parameter for completeness, but right now V.14 only
        applies to the receive side. We are unlikely to have an application where
        flow control does not exist, so V.14 stuffing is not needed. */
     s->data_bits = data_bits;
     s->parity = parity;
-    s->total_bits = data_bits + stop_bits;
+    s->total_data_bits = data_bits;
     if (parity != ASYNC_PARITY_NONE)
-        s->total_bits++;
-
+        s->total_data_bits++;
+    /*endif*/
+    s->total_bits = s->total_data_bits + stop_bits;
     s->get_byte = get_byte;
     s->user_data = user_data;
 
-    s->byte_in_progress = 0;
+    s->frame_in_progress = 0;
     s->bitpos = 0;
     s->presend_bits = 0;
     return s;

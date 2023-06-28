@@ -56,6 +56,7 @@
 
 #include "spandsp/telephony.h"
 #include "spandsp/alloc.h"
+#include "spandsp/unaligned.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/logging.h"
 #include "spandsp/saturated.h"
@@ -204,34 +205,6 @@ static const UVT uvt[31] =
     {0.33724, 0.36051, -116.450}
 };
 
-static __inline__ uint16_t pack_16(const uint8_t *s)
-{
-    uint16_t value;
-
-    value = ((uint16_t) s[0] << 8) | (uint16_t) s[1];
-    return value;
-}
-/*- End of function --------------------------------------------------------*/
-
-#if 0
-static __inline__ uint32_t pack_32(const uint8_t *s)
-{
-    uint32_t value;
-
-    value = ((uint32_t) s[0] << 24) | ((uint32_t) s[1] << 16) | ((uint32_t) s[2] << 8) | (uint32_t) s[3];
-    return value;
-}
-/*- End of function --------------------------------------------------------*/
-#endif
-
-static __inline__ int unpack_16(uint8_t *s, uint16_t value)
-{
-    s[0] = (value >> 8) & 0xFF;
-    s[1] = value & 0xFF;
-    return sizeof(uint16_t);
-}
-/*- End of function --------------------------------------------------------*/
-
 SPAN_DECLARE(bool) t42_analyse_header(uint32_t *width, uint32_t *length, const uint8_t data[], size_t len)
 {
     int type;
@@ -243,23 +216,26 @@ SPAN_DECLARE(bool) t42_analyse_header(uint32_t *width, uint32_t *length, const u
     *width = 0;
 
     pos = 0;
-    if (pack_16(&data[pos]) != 0xFFD8)
+    if (get_net_unaligned_uint16(&data[pos]) != 0xFFD8)
         return false;
+    /*endif*/
     pos += 2;
     while (pos < len)
     {
-        type = pack_16(&data[pos]);
+        type = get_net_unaligned_uint16(&data[pos]);
         pos += 2;
-        seg = pack_16(&data[pos]) - 2;
+        seg = get_net_unaligned_uint16(&data[pos]) - 2;
         pos += 2;
         if (type == 0xFFC0)
         {
-            *length = pack_16(&data[pos + 1]);
-            *width = pack_16(&data[pos + 3]);
+            *length = get_net_unaligned_uint16(&data[pos + 1]);
+            *width = get_net_unaligned_uint16(&data[pos + 3]);
             return true;
         }
+        /*endif*/
         pos += seg;
     }
+    /*endwhile*/
     return false;
 }
 /*- End of function --------------------------------------------------------*/
@@ -276,6 +252,7 @@ SPAN_DECLARE(int) xyz_to_corrected_color_temp(float *temp, float xyz[3])
     /* Protect against possible divide-by-zero failure */
     if ((xyz[0] < 1.0e-20f)  &&  (xyz[1] < 1.0e-20f)  &&  (xyz[2] < 1.0e-20f))
         return -1;
+    /*endif*/
     us = (4.0f*xyz[0])/(xyz[0] + 15.0f*xyz[1] + 3.0f*xyz[2]);
     vs = (6.0f*xyz[1])/(xyz[0] + 15.0f*xyz[1] + 3.0f*xyz[2]);
     dm = 0.0f;
@@ -284,13 +261,16 @@ SPAN_DECLARE(int) xyz_to_corrected_color_temp(float *temp, float xyz[3])
         di = (vs - uvt[i].v) - uvt[i].t*(us - uvt[i].u);
         if ((i > 0)  &&  (((di < 0.0f)  &&  (dm >= 0.0f))  ||  ((di >= 0.0f)  &&  (dm < 0.0f))))
             break;  /* found lines bounding (us, vs) : i-1 and i */
+        /*endif*/
         dm = di;
     }
+    /*endfor*/
     if (i == 31)
     {
         /* Bad XYZ input, color temp would be less than minimum of 1666.7 degrees, or too far towards blue */
         return -1;
     }
+    /*endif*/
     di = di/sqrtf(1.0f + uvt[i    ].t*uvt[i    ].t);
     dm = dm/sqrtf(1.0f + uvt[i - 1].t*uvt[i - 1].t);
     p = dm/(dm - di);     /* p = interpolation parameter, 0.0 : i-1, 1.0 : i */
@@ -313,6 +293,7 @@ SPAN_DECLARE(int) colour_temp_to_xyz(float xyz[3], float temp)
         x = -0.2661239e9f/(temp*temp*temp) - 0.2343580e6f/(temp*temp) + 0.8776956e3f/temp + 0.179910f;
     else
         x = -3.0258469e9f/(temp*temp*temp) + 2.1070379e6f/(temp*temp) + 0.2226347e3f/temp + 0.240390f;
+    /*endif*/
 
     if (temp < 2222.0f)
         y = -1.1063814f*x*x*x - 1.34811020f*x*x + 2.18555832f*x - 0.20219683f;
@@ -320,6 +301,7 @@ SPAN_DECLARE(int) colour_temp_to_xyz(float xyz[3], float temp)
         y = -0.9549476f*x*x*x - 1.37418593f*x*x + 2.09137015f*x - 0.16748867f;
     else
         y =  3.0817580f*x*x*x - 5.87338670f*x*x + 3.75112997f*x - 0.37001483f;
+    /*endif*/
 
     xyz[0] = x/y;
     xyz[1] = 1.0f;
@@ -343,6 +325,7 @@ SPAN_DECLARE(void) set_lab_illuminant(lab_params_t *lab, float new_xn, float new
         lab->y_n = new_yn;
         lab->z_n = new_zn;
     }
+    /*endif*/
     lab->x_rn = 1.0f/lab->x_n;
     lab->y_rn = 1.0f/lab->y_n;
     lab->z_rn = 1.0f/lab->z_n;
@@ -397,16 +380,17 @@ int set_illuminant_from_code(logging_state_t *logging, lab_params_t *lab, const 
 {
     int i;
     int colour_temp;
-    float xyz[3] = { 0 };
+    float xyz[3];
 
     if (memcmp(code, "CT", 2) == 0)
     {
-        colour_temp = pack_16(&code[2]);
+        colour_temp = get_net_unaligned_uint16(&code[2]);
         span_log(logging, SPAN_LOG_FLOW, "Illuminant colour temp %dK\n", colour_temp);
         colour_temp_to_xyz(xyz, (float) colour_temp);
         set_lab_illuminant(lab, xyz[0], xyz[1], xyz[2]);
         return colour_temp;
     }
+    /*endif*/
     for (i = 0;  illuminants[i].name[0];  i++)
     {
         if (memcmp(code, illuminants[i].tag, 4) == 0)
@@ -415,9 +399,12 @@ int set_illuminant_from_code(logging_state_t *logging, lab_params_t *lab, const 
             set_lab_illuminant(lab, illuminants[i].xn, illuminants[i].yn, illuminants[i].zn);
             return 0;
         }
+        /*endif*/
     }
+    /*endfor*/
     if (illuminants[i].name[0] == '\0')
         span_log(logging, SPAN_LOG_FLOW, "Unrecognised illuminant 0x%x 0x%x 0x%x 0x%x\n", code[0], code[1], code[2], code[3]);
+    /*endif*/
     return -1;
 }
 /*- End of function --------------------------------------------------------*/
@@ -428,7 +415,8 @@ void set_gamut_from_code(logging_state_t *logging, lab_params_t *s, const uint8_
     int val[6];
 
     for (i = 0;  i < 6;  i++)
-        val[i] = pack_16(&code[2*i]);
+        val[i] = get_net_unaligned_uint16(&code[2*i]);
+    /*endfor*/
     span_log(logging,
              SPAN_LOG_FLOW,
              "Gamut L=[%d,%d], a*=[%d,%d], b*=[%d,%d]\n",
@@ -456,6 +444,7 @@ static __inline__ void itu_to_lab(lab_params_t *s, cielab_t *lab, const uint8_t 
         a += 128;
         b += 128;
     }
+    /*endif*/
     lab->a = s->range_a*(a - s->offset_a);
     lab->b = s->range_b*(b - s->offset_b);
 }
@@ -472,6 +461,7 @@ static __inline__ void lab_to_itu(lab_params_t *s, uint8_t out[3], const cielab_
         out[1] -= 128;
         out[2] -= 128;
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -528,6 +518,7 @@ SPAN_DECLARE(void) srgb_to_lab(lab_params_t *s, uint8_t lab[], const uint8_t srg
 
         lab += 3;
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -586,6 +577,7 @@ SPAN_DECLARE(void) lab_to_srgb(lab_params_t *s, uint8_t srgb[], const uint8_t la
 #endif
         lab += 3;
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -600,8 +592,10 @@ static int is_itu_fax(t42_decode_state_t *s, jpeg_saved_marker_ptr ptr)
     {
         if (ptr->marker != (JPEG_APP0 + 1))
             continue;
+        /*endif*/
         if (ptr->data_length < 6)
             return false;
+        /*endif*/
         /* Markers are:
             JPEG_RST0
             JPEG_EOI
@@ -610,6 +604,7 @@ static int is_itu_fax(t42_decode_state_t *s, jpeg_saved_marker_ptr ptr)
         data = (const uint8_t *) ptr->data;
         if (strncmp((const char *) data, "G3FAX", 5))
             return false;
+        /*endif*/
         switch (data[5])
         {
         case 0:
@@ -618,8 +613,9 @@ static int is_itu_fax(t42_decode_state_t *s, jpeg_saved_marker_ptr ptr)
                 span_log(&s->logging, SPAN_LOG_FLOW, "Got bad G3FAX0 length - %d\n", ptr->data_length);
                 return false;
             }
-            val[0] = pack_16(&data[6]);
-            s->spatial_resolution = pack_16(&data[6 + 2]);
+            /*endif*/
+            val[0] = get_net_unaligned_uint16(&data[6]);
+            s->spatial_resolution = get_net_unaligned_uint16(&data[6 + 2]);
             span_log(&s->logging, SPAN_LOG_FLOW, "Version %d, resolution %ddpi\n", val[0], s->spatial_resolution);
             ok = true;
             break;
@@ -630,6 +626,7 @@ static int is_itu_fax(t42_decode_state_t *s, jpeg_saved_marker_ptr ptr)
                 span_log(&s->logging, SPAN_LOG_FLOW, "Got bad G3FAX1 length - %d\n", ptr->data_length);
                 return false;
             }
+            /*endif*/
             set_gamut_from_code(&s->logging, &s->lab, &data[6]);
             break;
         case 2:
@@ -639,13 +636,16 @@ static int is_itu_fax(t42_decode_state_t *s, jpeg_saved_marker_ptr ptr)
                 span_log(&s->logging, SPAN_LOG_FLOW, "Got bad G3FAX2 length - %d\n", ptr->data_length);
                 return false;
             }
+            /*endif*/
             s->illuminant_colour_temperature = set_illuminant_from_code(&s->logging, &s->lab, &data[6]);
             break;
         default:
             span_log(&s->logging, SPAN_LOG_FLOW, "Got unexpected G3FAX%d length - %d\n", data[5], ptr->data_length);
             return false;
         }
+        /*endswitch*/
     }
+    /*endfor*/
 
     return ok;
 }
@@ -657,8 +657,8 @@ static void set_itu_fax(t42_encode_state_t *s)
     int val[6];
 
     memcpy(data, "G3FAX\0", 6);
-    unpack_16(&data[6 + 0], 1994);
-    unpack_16(&data[6 + 2], s->spatial_resolution);
+    put_net_unaligned_uint16(&data[6 + 0], 1994);
+    put_net_unaligned_uint16(&data[6 + 2], s->spatial_resolution);
     jpeg_write_marker(&s->compressor, (JPEG_APP0 + 1), data, 6 + 4);
 
     if (s->lab.offset_L != 0
@@ -676,14 +676,15 @@ static void set_itu_fax(t42_encode_state_t *s)
         span_log(&s->logging, SPAN_LOG_FLOW, "Putting G3FAX1\n");
         memcpy(data, "G3FAX\1", 6);
         get_lab_gamut2(&s->lab, &val[0], &val[1], &val[2], &val[3], &val[4], &val[5]);
-        unpack_16(&data[6 + 0], val[0]);
-        unpack_16(&data[6 + 2], val[1]);
-        unpack_16(&data[6 + 4], val[2]);
-        unpack_16(&data[6 + 6], val[3]);
-        unpack_16(&data[6 + 8], val[4]);
-        unpack_16(&data[6 + 10], val[5]);
+        put_net_unaligned_uint16(&data[6 + 0], val[0]);
+        put_net_unaligned_uint16(&data[6 + 2], val[1]);
+        put_net_unaligned_uint16(&data[6 + 4], val[2]);
+        put_net_unaligned_uint16(&data[6 + 6], val[3]);
+        put_net_unaligned_uint16(&data[6 + 8], val[4]);
+        put_net_unaligned_uint16(&data[6 + 10], val[5]);
         jpeg_write_marker(&s->compressor, (JPEG_APP0 + 1), data, 6 + 12);
     }
+    /*endif*/
 
     if (memcmp(s->illuminant_code, "\0\0\0\0", 4) != 0
         ||
@@ -698,10 +699,12 @@ static void set_itu_fax(t42_encode_state_t *s)
         else
         {
             memcpy(&data[6 + 0], "CT", 2);
-            unpack_16(&data[6 + 2], s->illuminant_colour_temperature);
+            put_net_unaligned_uint16(&data[6 + 2], s->illuminant_colour_temperature);
         }
+        /*endif*/
         jpeg_write_marker(&s->compressor, (JPEG_APP0 + 1), data, 6 + 4);
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -750,6 +753,7 @@ SPAN_DECLARE(int) t42_encode_image_complete(t42_encode_state_t *s)
 {
     //if (????)
     //    return SIG_STATUS_END_OF_DATA;
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -788,18 +792,22 @@ static int t42_srgb_to_itulab_jpeg(t42_encode_state_t *s)
             span_log(&s->logging, SPAN_LOG_FLOW, "%s\n", s->error_message);
         else
             span_log(&s->logging, SPAN_LOG_FLOW, "Unspecified libjpeg error.\n");
+        /*endif*/
         if (s->scan_line_out)
         {
             span_free(s->scan_line_out);
             s->scan_line_out = NULL;
         }
+        /*endif*/
         if (s->out)
         {
             fclose(s->out);
             s->out = NULL;
         }
+        /*endif*/
         return -1;
     }
+    /*endif*/
 
     s->compressor.err = jpeg_std_error(&encode_error_handler);
     s->compressor.client_data = (void *) s;
@@ -820,6 +828,7 @@ static int t42_srgb_to_itulab_jpeg(t42_encode_state_t *s)
         s->compressor.in_color_space = JCS_GRAYSCALE;
         s->compressor.input_components = s->samples_per_pixel;
     }
+    /*endif*/
 
     jpeg_set_defaults(&s->compressor);
     /* Limit to baseline-JPEG values */
@@ -837,6 +846,7 @@ static int t42_srgb_to_itulab_jpeg(t42_encode_state_t *s)
         s->compressor.comp_info[0].h_samp_factor = 2;
         s->compressor.comp_info[0].v_samp_factor = 2;
     }
+    /*endif*/
     s->compressor.comp_info[1].h_samp_factor = 1;
     s->compressor.comp_info[1].v_samp_factor = 1;
     s->compressor.comp_info[2].h_samp_factor = 1;
@@ -852,11 +862,13 @@ static int t42_srgb_to_itulab_jpeg(t42_encode_state_t *s)
 
     if ((s->scan_line_in = (JSAMPROW) span_alloc(s->samples_per_pixel*s->image_width)) == NULL)
         return -1;
+    /*endif*/
 
     if (s->image_type == T4_IMAGE_TYPE_COLOUR_8BIT)
     {
         if ((s->scan_line_out = (JSAMPROW) span_alloc(s->samples_per_pixel*s->image_width)) == NULL)
             return -1;
+        /*endif*/
 
         for (i = 0;  i < s->compressor.image_height;  i++)
         {
@@ -864,6 +876,7 @@ static int t42_srgb_to_itulab_jpeg(t42_encode_state_t *s)
             srgb_to_lab(&s->lab, s->scan_line_out, s->scan_line_in, s->image_width);
             jpeg_write_scanlines(&s->compressor, &s->scan_line_out, 1);
         }
+        /*endfor*/
     }
     else
     {
@@ -872,13 +885,16 @@ static int t42_srgb_to_itulab_jpeg(t42_encode_state_t *s)
             s->row_read_handler(s->row_read_user_data, s->scan_line_in, s->image_width);
             jpeg_write_scanlines(&s->compressor, &s->scan_line_in, 1);
         }
+        /*endfor*/
     }
+    /*endif*/
 
     if (s->scan_line_out)
     {
         span_free(s->scan_line_out);
         s->scan_line_out = NULL;
     }
+    /*endif*/
     jpeg_finish_compress(&s->compressor);
     jpeg_destroy_compress(&s->compressor);
 
@@ -891,6 +907,7 @@ static int t42_srgb_to_itulab_jpeg(t42_encode_state_t *s)
     s->compressed_image_size = ftell(s->out);
     if ((s->compressed_buf = span_alloc(s->compressed_image_size)) == NULL)
         return -1;
+    /*endif*/
     if (fseek(s->out, 0, SEEK_SET) != 0)
     {
         fclose(s->out);
@@ -899,6 +916,7 @@ static int t42_srgb_to_itulab_jpeg(t42_encode_state_t *s)
         s->compressed_buf = NULL;
         return -1;
     }
+    /*endif*/
     if (fread(s->compressed_buf, 1, s->compressed_image_size, s->out) != s->compressed_image_size)
     {
         fclose(s->out);
@@ -907,11 +925,13 @@ static int t42_srgb_to_itulab_jpeg(t42_encode_state_t *s)
         s->compressed_buf = NULL;
         return -1;
     }
+    /*endif*/
     if (s->out)
     {
         fclose(s->out);
         s->out = NULL;
     }
+    /*endif*/
 #endif
 
     return 0;
@@ -929,11 +949,14 @@ SPAN_DECLARE(int) t42_encode_get(t42_encode_state_t *s, uint8_t buf[], size_t ma
             span_log(&s->logging, SPAN_LOG_FLOW, "Failed to convert to ITULAB.\n");
             return -1;
         }
+        /*endif*/
     }
+    /*endif*/
     if (s->compressed_image_size >= s->compressed_image_ptr + max_len)
         len = max_len;
     else
         len = s->compressed_image_size - s->compressed_image_ptr;
+    /*endif*/
     memcpy(buf, &s->compressed_buf[s->compressed_image_ptr], len);
     s->compressed_image_ptr += len;
     return len;
@@ -1009,12 +1032,15 @@ SPAN_DECLARE(int) t42_encode_restart(t42_encode_state_t *s, uint32_t image_width
         span_log(&s->logging, SPAN_LOG_FLOW, "Failed to open_memstream().\n");
         return -1;
     }
+    /*endif*/
 #else
     if ((s->out = tmpfile()) == NULL)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Failed to tmpfile().\n");
         return -1;
+        /*endif*/
     }
+    /*endif*/
 #endif
     s->scan_line_out = NULL;
 
@@ -1032,7 +1058,9 @@ SPAN_DECLARE(t42_encode_state_t *) t42_encode_init(t42_encode_state_t *s,
     {
         if ((s = (t42_encode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "T.42");
@@ -1095,6 +1123,7 @@ static int t42_itulab_jpeg_to_srgb(t42_decode_state_t *s)
 
     if (s->compressed_buf == NULL)
         return -1;
+    /*endif*/
 
 #if defined(HAVE_OPEN_MEMSTREAM)
     if ((s->in = fmemopen(s->compressed_buf, s->compressed_image_size, "r")) == NULL)
@@ -1102,24 +1131,28 @@ static int t42_itulab_jpeg_to_srgb(t42_decode_state_t *s)
         span_log(&s->logging, SPAN_LOG_FLOW, "Failed to fmemopen().\n");
         return -1;
     }
+    /*endif*/
 #else
     if ((s->in = tmpfile()) == NULL)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Failed to tmpfile().\n");
         return -1;
     }
+    /*endif*/
     if (fwrite(s->compressed_buf, 1, s->compressed_image_size, s->in) != s->compressed_image_size)
     {
         fclose(s->in);
         s->in = NULL;
         return -1;
     }
+    /*endif*/
     if (fseek(s->in, 0, SEEK_SET) != 0)
     {
         fclose(s->in);
         s->in = NULL;
         return -1;
     }
+    /*endif*/
 #endif
     s->scan_line_out = NULL;
 
@@ -1129,16 +1162,19 @@ static int t42_itulab_jpeg_to_srgb(t42_decode_state_t *s)
             span_log(&s->logging, SPAN_LOG_FLOW, "%s\n", s->error_message);
         else
             span_log(&s->logging, SPAN_LOG_FLOW, "Unspecified libjpeg error.\n");
+        /*endif*/
         if (s->scan_line_out)
         {
             span_free(s->scan_line_out);
             s->scan_line_out = NULL;
         }
+        /*endif*/
         if (s->in)
         {
             fclose(s->in);
             s->in = NULL;
         }
+        /*endif*/
         return -1;
     }
     /* Create input decompressor. */
@@ -1151,6 +1187,7 @@ static int t42_itulab_jpeg_to_srgb(t42_decode_state_t *s)
     /* Get the FAX tags */
     for (i = 0;  i < 16;  i++)
         jpeg_save_markers(&s->decompressor, JPEG_APP0 + i, 0xFFFF);
+    /*endfor*/
 
     /* Take the header */
     jpeg_read_header(&s->decompressor, false);
@@ -1160,6 +1197,7 @@ static int t42_itulab_jpeg_to_srgb(t42_decode_state_t *s)
         span_log(&s->logging, SPAN_LOG_FLOW, "Is not an ITU FAX.\n");
         return -1;
     }
+    /*endif*/
     /* Copy size, resolution, etc */
     s->image_width = s->decompressor.image_width;
     s->image_length = s->decompressor.image_height;
@@ -1188,16 +1226,19 @@ static int t42_itulab_jpeg_to_srgb(t42_decode_state_t *s)
                  s->decompressor.comp_info[0].h_samp_factor,
                  s->decompressor.comp_info[0].v_samp_factor); 
     }
+    /*endif*/
 
     jpeg_start_decompress(&s->decompressor);
 
     if ((s->scan_line_in = span_alloc(s->samples_per_pixel*s->image_width)) == NULL)
         return -1;
+    /*endif*/
 
     if (s->samples_per_pixel == 3)
     {
         if ((s->scan_line_out = span_alloc(s->samples_per_pixel*s->image_width)) == NULL)
             return -1;
+        /*endif*/
 
         while (s->decompressor.output_scanline < s->image_length)
         {
@@ -1205,6 +1246,7 @@ static int t42_itulab_jpeg_to_srgb(t42_decode_state_t *s)
             lab_to_srgb(&s->lab, s->scan_line_out, s->scan_line_in, s->image_width);
             s->row_write_handler(s->row_write_user_data, s->scan_line_out, s->samples_per_pixel*s->image_width);
         }
+        /*endwhile*/
     }
     else
     {
@@ -1213,18 +1255,22 @@ static int t42_itulab_jpeg_to_srgb(t42_decode_state_t *s)
             jpeg_read_scanlines(&s->decompressor, &s->scan_line_in, 1);
             s->row_write_handler(s->row_write_user_data, s->scan_line_in, s->image_width);
         }
+        /*endwhile*/
     }
+    /*endif*/
 
     if (s->scan_line_in)
     {
         span_free(s->scan_line_in);
         s->scan_line_in = NULL;
     }
+    /*endif*/
     if (s->scan_line_out)
     {
         span_free(s->scan_line_out);
         s->scan_line_out = NULL;
     }
+    /*endif*/
     jpeg_finish_decompress(&s->decompressor);
     jpeg_destroy_decompress(&s->decompressor);
     fclose(s->in);
@@ -1252,13 +1298,16 @@ SPAN_DECLARE(void) t42_decode_rx_status(t42_decode_state_t *s, int status)
         {
             if (t42_itulab_jpeg_to_srgb(s))
                 span_log(&s->logging, SPAN_LOG_FLOW, "Failed to convert from ITULAB.\n");
+            /*endif*/
             s->end_of_data = true;
         }
+        /*endif*/
         break;
     default:
         span_log(&s->logging, SPAN_LOG_WARNING, "Unexpected rx status - %d!\n", status);
         break;
     }
+    /*endswitch*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1272,18 +1321,23 @@ SPAN_DECLARE(int) t42_decode_put(t42_decode_state_t *s, const uint8_t data[], si
         {
             if (t42_itulab_jpeg_to_srgb(s))
                 span_log(&s->logging, SPAN_LOG_FLOW, "Failed to convert from ITULAB.\n");
+            /*endif*/
             s->end_of_data = true;
         }
+        /*endif*/
         return T4_DECODE_OK;
     }
+    /*endif*/
 
     if (s->compressed_image_size + len > s->buf_size)
     {
         if ((buf = (uint8_t *) span_realloc(s->compressed_buf, s->compressed_image_size + len + 10000)) == NULL)
             return -1;
+        /*endif*/
         s->buf_size = s->compressed_image_size + len + 10000;
         s->compressed_buf = buf;
     }
+    /*endif*/
     memcpy(&s->compressed_buf[s->compressed_image_size], data, len);
     s->compressed_image_size += len;
     return 0;
@@ -1362,6 +1416,7 @@ SPAN_DECLARE(int) t42_decode_restart(t42_decode_state_t *s)
         set_lab_illuminant(&s->lab, 100.0f, 100.0f, 100.0f);
         set_lab_gamut(&s->lab, 0, 100, -85, 85, -75, 125, false);
     }
+    /*endif*/
 
     s->end_of_data = false;
     s->compressed_image_size = 0;
@@ -1380,7 +1435,9 @@ SPAN_DECLARE(t42_decode_state_t *) t42_decode_init(t42_decode_state_t *s,
     {
         if ((s = (t42_decode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "T.42");
@@ -1404,22 +1461,26 @@ SPAN_DECLARE(int) t42_decode_release(t42_decode_state_t *s)
         span_free(s->scan_line_in);
         s->scan_line_in = NULL;
     }
+    /*endif*/
     if (s->scan_line_out)
     {
         span_free(s->scan_line_out);
         s->scan_line_out = NULL;
     }
+    /*endif*/
     jpeg_destroy_decompress(&s->decompressor);
     if (s->in)
     {
         fclose(s->in);
         s->in = NULL;
     }
+    /*endif*/
     if (s->comment)
     {
         span_free(s->comment);
         s->comment = NULL;
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

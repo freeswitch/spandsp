@@ -165,13 +165,13 @@ SPAN_DECLARE(void) at_call_event(at_state_t *s, int event);
 
 SPAN_DECLARE(void) at_interpreter(at_state_t *s, const char *cmd, int len);
 
-SPAN_DECLARE(void) at_set_class1_handler(at_state_t *s, at_class1_handler_t handler, void *user_data);
-
 /*! Get the logging context associated with an AT interpreter context.
     \brief Get the logging context associated with an AT interpreter context.
     \param s The AT context.
     \return A pointer to the logging context */
 SPAN_DECLARE(logging_state_t *) at_get_logging_state(at_state_t *s);
+
+SPAN_DECLARE(void) at_set_class1_handler(at_state_t *s, at_class1_handler_t handler, void *user_data);
 
 SPAN_DECLARE(void) at_set_modem_control_handler(at_state_t *s,
                                                 at_modem_control_handler_t modem_control_handler,

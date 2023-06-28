@@ -84,6 +84,7 @@ SPAN_DECLARE(uint32_t) crc_itu32_calc(const uint8_t *buf, int len, uint32_t crc)
 
     for (i = 0;  i < len;  i++)
         crc = ((crc >> 8) & 0x00FFFFFF) ^ crc_itu32_table[(crc ^ buf[i]) & 0xFF];
+    /*endfor*/
     return crc;
 }
 /*- End of function --------------------------------------------------------*/
@@ -98,6 +99,7 @@ SPAN_DECLARE(int) crc_itu32_append(uint8_t *buf, int len)
     new_len = len + 4;
     for (i = 0;  i < len;  i++)
         crc = ((crc >> 8) & 0x00FFFFFF) ^ crc_itu32_table[(crc ^ buf[i]) & 0xFF];
+    /*endfor*/
     crc ^= 0xFFFFFFFF;
     buf[i++] = (uint8_t) crc;
     buf[i++] = (uint8_t) (crc >> 8);
@@ -115,6 +117,7 @@ SPAN_DECLARE(bool) crc_itu32_check(const uint8_t *buf, int len)
     crc = 0xFFFFFFFF;
     for (i = 0;  i < len;  i++)
         crc = ((crc >> 8) & 0x00FFFFFF) ^ crc_itu32_table[(crc ^ buf[i]) & 0xFF];
+    /*endfor*/
     return (crc == 0xDEBB20E3);
 }
 /*- End of function --------------------------------------------------------*/
@@ -161,6 +164,7 @@ SPAN_DECLARE(uint16_t) crc_itu16_calc(const uint8_t *buf, int len, uint16_t crc)
 
     for (i = 0;  i < len;  i++)
         crc = (crc >> 8) ^ crc_itu16_table[(crc ^ buf[i]) & 0xFF];
+    /*endfor*/
     return crc;
 }
 /*- End of function --------------------------------------------------------*/
@@ -175,8 +179,10 @@ SPAN_DECLARE(uint16_t) crc_itu16_bits(uint8_t buf, int len, uint16_t crc)
             crc = (crc >> 1) ^ 0x8408;
         else
             crc = crc >> 1;
+        /*endif*/
         buf >>= 1;
     }
+    /*endfor*/
     return crc;
 }
 /*- End of function --------------------------------------------------------*/
@@ -191,6 +197,7 @@ SPAN_DECLARE(int) crc_itu16_append(uint8_t *buf, int len)
     new_len = len + 2;
     for (i = 0;  i < len;  i++)
         crc = (crc >> 8) ^ crc_itu16_table[(crc ^ buf[i]) & 0xFF];
+    /*endfor*/
     crc ^= 0xFFFF;
     buf[i++] = (uint8_t) crc;
     buf[i++] = (uint8_t) (crc >> 8);
@@ -206,6 +213,7 @@ SPAN_DECLARE(bool) crc_itu16_check(const uint8_t *buf, int len)
     crc = 0xFFFF;
     for (i = 0;  i < len;  i++)
         crc = (crc >> 8) ^ crc_itu16_table[(crc ^ buf[i]) & 0xFF];
+    /*endfor*/
     return (crc & 0xFFFF) == 0xF0B8;
 }
 /*- End of function --------------------------------------------------------*/

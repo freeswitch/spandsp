@@ -34,12 +34,12 @@ struct fsk_tx_state_s
 {
     int baud_rate;
     /*! \brief The callback function used to get the next bit to be transmitted. */
-    get_bit_func_t get_bit;
+    span_get_bit_func_t get_bit;
     /*! \brief A user specified opaque pointer passed to the get_bit function. */
     void *get_bit_user_data;
 
     /*! \brief The callback function used to report modem status changes. */
-    modem_status_func_t status_handler;
+    span_modem_status_func_t status_handler;
     /*! \brief A user specified opaque pointer passed to the status function. */
     void *status_user_data;
 
@@ -58,15 +58,19 @@ struct fsk_tx_state_s
 struct fsk_rx_state_s
 {
     int baud_rate;
-    /*! \brief Synchronous/asynchronous framing control */
+    /*! \brief Synchronous/asynchronous/framed control */
     int framing_mode;
+    int data_bits;
+    int parity;
+    int stop_bits;
+    int total_data_bits;
     /*! \brief The callback function used to put each bit received. */
-    put_bit_func_t put_bit;
+    span_put_bit_func_t put_bit;
     /*! \brief A user specified opaque pointer passed to the put_bit routine. */
     void *put_bit_user_data;
 
     /*! \brief The callback function used to report modem status changes. */
-    modem_status_func_t status_handler;
+    span_modem_status_func_t status_handler;
     /*! \brief A user specified opaque pointer passed to the status function. */
     void *status_user_data;
 
@@ -87,11 +91,16 @@ struct fsk_rx_state_s
     complexi32_t dot[2];
     int buf_ptr;
 
-    int frame_state;
-    unsigned int frame_bits;
+    int frame_pos;
+    uint16_t frame_in_progress;
     int baud_phase;
     int last_bit;
     int scaling_shift;
+
+    /*! A count of the number of parity errors seen. */
+    int parity_errors;
+    /*! A count of the number of character framing errors seen. */
+    int framing_errors;
 };
 
 #endif

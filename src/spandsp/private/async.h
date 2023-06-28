@@ -34,26 +34,24 @@
 struct async_tx_state_s
 {
     /*! \brief The number of data bits per character. */
-    int data_bits;
+    int16_t data_bits;
     /*! \brief The type of parity. */
-    int parity;
-    /*! \brief The number of stop bits per character. */
-    int stop_bits;
-    /*! \brief Total number of bits per character, including the parity and stop bits. */
-    int total_bits;
+    int16_t parity;
+    /*! \brief Total number of bits per frame, including any parity bit. */
+    int16_t total_data_bits;
+    /*! \brief Total number of bits per frame, including any parity bit and the stop bits. */
+    int16_t total_bits;
     /*! \brief A pointer to the callback routine used to get characters to be transmitted. */
-    get_byte_func_t get_byte;
+    span_get_byte_func_t get_byte;
     /*! \brief An opaque pointer passed when calling get_byte. */
     void *user_data;
     /*! \brief The minimum number of stop bits to send before character transmission begins. */
     int presend_bits;
 
-    /*! \brief A current, partially transmitted, character. */
-    int32_t byte_in_progress;
+    /*! \brief A current, partially transmitted, character with its optional parity bit attached. */
+    uint16_t frame_in_progress;
     /*! \brief The current bit position within a partially transmitted character. */
-    int bitpos;
-    /*! \brief Parity bit. */
-    int parity_bit;
+    int16_t bitpos;
 };
 
 /*!
@@ -64,24 +62,22 @@ struct async_tx_state_s
 struct async_rx_state_s
 {
     /*! \brief The number of data bits per character. */
-    int data_bits;
+    int16_t data_bits;
     /*! \brief The type of parity. */
-    int parity;
-    /*! \brief The number of stop bits per character. */
-    int stop_bits;
+    int16_t parity;
+    /*! \brief Total number of bits per frame, including any parity bit. */
+    int16_t total_data_bits;
     /*! \brief True if V.14 rate adaption processing should be performed. */
     bool use_v14;
     /*! \brief A pointer to the callback routine used to handle received characters. */
-    put_byte_func_t put_byte;
+    span_put_byte_func_t put_byte;
     /*! \brief An opaque pointer passed when calling put_byte. */
     void *user_data;
 
     /*! \brief A current, partially complete, character. */
-    int32_t byte_in_progress;
+    uint16_t frame_in_progress;
     /*! \brief The current bit position within a partially complete character. */
-    int bitpos;
-    /*! \brief Parity bit. */
-    int parity_bit;
+    int16_t bitpos;
 
     /*! A count of the number of parity errors seen. */
     int parity_errors;

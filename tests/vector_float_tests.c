@@ -143,7 +143,6 @@ static int test_vec_negatef(void)
     vec_negatef(zb + 3, x + 1, 29);
     for (i = 0;  i < 99;  i++)
     {
-printf("C %d %f %f %f\n", i, x[i], za[i], zb[i]);
         if (za[i] != zb[i])
         {
             printf("vec_negatef() - %d %f %f\n", i, za[i], zb[i]);

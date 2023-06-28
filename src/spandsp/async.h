@@ -27,21 +27,33 @@
 
 /*! \page async_page Asynchronous bit stream processing
 \section async_page_sec_1 What does it do?
-The asynchronous serial bit stream processing module provides
-generation and decoding facilities for most asynchronous data
-formats. It supports:
+The asynchronous processing module converts between hard bit streams, containing
+start-stop framed asynchronous characters, and actual characters.
+
+It supports:
+ - 5, 6, 7, 8 or 9 bit characters.
+ - Odd, even, mark, space or no parity.
  - 1 or 2 stop bits.
- - Odd, even or no parity.
- - 5, 6, 7, or 8 bit characters.
  - V.14 rate adaption.
-The input to this module is a bit stream. This means any symbol synchronisation
-and decoding must occur before data is fed to this module.
+
+V.14 rate adaption is a mechanism where some stop bits may be omitted within a
+data burst. This is needed to make inherently synchronous modems, like V.22 up to
+V.34, behave like an asynchronous modem, and interface to the "RS232C" world.
+Currently it only supports this for bit stream to character conversion.
+
+Soft bit processing is outside the scope of this module. For truly asynchronous
+modems, such as V.21, soft bit processing can produce more robust results, and
+may be preferrable.
 
 \section async_page_sec_2 The transmitter
 ???.
 
 \section async_page_sec_3 The receiver
 ???.
+
+Because the input to this module is a hard bit stream, any symbol synchronisation
+and decoding must occur before this module, to provide the hard bit stream it
+requires.
 */
 
 #if !defined(_SPANDSP_ASYNC_H_)
@@ -92,25 +104,32 @@ enum
 };
 
 /*! Message put function for data pumps */
-typedef void (*put_msg_func_t)(void *user_data, const uint8_t *msg, int len);
+typedef void (*span_put_msg_func_t)(void *user_data, const uint8_t *msg, int len);
+typedef void (*put_msg_func_t)(void *user_data, const uint8_t *msg, int len);   /* For backward compatibility */
 
 /*! Message get function for data pumps */
-typedef int (*get_msg_func_t)(void *user_data, uint8_t *msg, int max_len);
+typedef int (*span_get_msg_func_t)(void *user_data, uint8_t *msg, int max_len);
+typedef int (*get_msg_func_t)(void *user_data, uint8_t *msg, int max_len);   /* For backward compatibility */
 
 /*! Byte put function for data pumps */
-typedef void (*put_byte_func_t)(void *user_data, int byte);
+typedef void (*span_put_byte_func_t)(void *user_data, int byte);
+typedef void (*put_byte_func_t)(void *user_data, int byte);   /* For backward compatibility */
 
 /*! Byte get function for data pumps */
-typedef int (*get_byte_func_t)(void *user_data);
+typedef int (*span_get_byte_func_t)(void *user_data);
+typedef int (*get_byte_func_t)(void *user_data);   /* For backward compatibility */
 
 /*! Bit put function for data pumps */
-typedef void (*put_bit_func_t)(void *user_data, int bit);
+typedef void (*span_put_bit_func_t)(void *user_data, int bit);
+typedef void (*put_bit_func_t)(void *user_data, int bit);   /* For backward compatibility */
 
 /*! Bit get function for data pumps */
-typedef int (*get_bit_func_t)(void *user_data);
+typedef int (*span_get_bit_func_t)(void *user_data);
+typedef int (*get_bit_func_t)(void *user_data);   /* For backward compatibility */
 
 /*! Status change callback function for data pumps */
-typedef void (*modem_status_func_t)(void *user_data, int status);
+typedef void (*span_modem_status_func_t)(void *user_data, int status);
+typedef void (*modem_status_func_t)(void *user_data, int status);   /* For backward compatibility */
 
 /*!
     Asynchronous data transmit descriptor. This defines the state of a single
@@ -133,7 +152,9 @@ enum
     /*! An even parity bit will exist, after the data bits */
     ASYNC_PARITY_EVEN,
     /*! An odd parity bit will exist, after the data bits */
-    ASYNC_PARITY_ODD
+    ASYNC_PARITY_ODD,
+    ASYNC_PARITY_MARK,
+    ASYNC_PARITY_SPACE
 };
 
 #if defined(__cplusplus)
@@ -158,11 +179,15 @@ SPAN_DECLARE(const char *) signal_status_to_str(int status);
         - SIG_STATUS_END_OF_DATA */
 SPAN_DECLARE(void) async_rx_put_bit(void *user_data, int bit);
 
+SPAN_DECLARE(int) async_rx_get_parity_errors(async_rx_state_t *s, bool reset);
+
+SPAN_DECLARE(int) async_rx_get_framing_errors(async_rx_state_t *s, bool reset);
+
 /*! Initialise an asynchronous data receiver context.
     \brief Initialise an asynchronous data receiver context.
     \param s The receiver context.
     \param data_bits The number of data bits.
-    \param parity_bits The type of parity.
+    \param parity The type of parity.
     \param stop_bits The number of stop bits.
     \param use_v14 True if V.14 rate adaption processing should be used.
     \param put_byte The callback routine used to put the received data.
@@ -170,10 +195,10 @@ SPAN_DECLARE(void) async_rx_put_bit(void *user_data, int bit);
     \return A pointer to the initialised context, or NULL if there was a problem. */
 SPAN_DECLARE(async_rx_state_t *) async_rx_init(async_rx_state_t *s,
                                                int data_bits,
-                                               int parity_bits,
+                                               int parity,
                                                int stop_bits,
                                                bool use_v14,
-                                               put_byte_func_t put_byte,
+                                               span_put_byte_func_t put_byte,
                                                void *user_data);
 
 SPAN_DECLARE(int) async_rx_release(async_rx_state_t *s);
@@ -189,14 +214,15 @@ SPAN_DECLARE(void) async_tx_presend_bits(async_tx_state_t *s, int bits);
 /*! Get the next bit of a transmitted serial bit stream.
     \brief Get the next bit of a transmitted serial bit stream.
     \param user_data An opaque point which must point to a transmitter context.
-    \return the next bit, or PUTBIT_END_OF_DATA to indicate the data stream has ended. */
+    \return the next bit, or a status value passed through from the routine which
+            gets the data bytes. */
 SPAN_DECLARE(int) async_tx_get_bit(void *user_data);
 
 /*! Initialise an asynchronous data transmit context.
     \brief Initialise an asynchronous data transmit context.
     \param s The transmitter context.
     \param data_bits The number of data bit.
-    \param parity_bits The type of parity.
+    \param parity The type of parity.
     \param stop_bits The number of stop bits.
     \param use_v14 True if V.14 rate adaption processing should be used.
     \param get_byte The callback routine used to get the data to be transmitted.
@@ -204,10 +230,10 @@ SPAN_DECLARE(int) async_tx_get_bit(void *user_data);
     \return A pointer to the initialised context, or NULL if there was a problem. */
 SPAN_DECLARE(async_tx_state_t *) async_tx_init(async_tx_state_t *s,
                                                int data_bits,
-                                               int parity_bits,
+                                               int parity,
                                                int stop_bits,
                                                bool use_v14,
-                                               get_byte_func_t get_byte,
+                                               span_get_byte_func_t get_byte,
                                                void *user_data);
 
 SPAN_DECLARE(int) async_tx_release(async_tx_state_t *s);

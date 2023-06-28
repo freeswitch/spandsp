@@ -73,6 +73,7 @@ The T.31 and TSB85 parts are incomplete right now.
 #if !defined(_WIN32)
 #include <unistd.h>
 #endif
+#include <arpa/inet.h>
 
 #if defined(HAVE_LIBXML_XMLMEMORY_H)
 #include <libxml/xmlmemory.h>
@@ -84,9 +85,9 @@ The T.31 and TSB85 parts are incomplete right now.
 #include <libxml/xinclude.h>
 #endif
 
-#include "udptl.h"
 #include "spandsp.h"
 #include "spandsp-sim.h"
+#include "udptl.h"
 
 #if defined(ENABLE_GUI)
 #include "media_monitor.h"

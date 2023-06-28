@@ -111,10 +111,12 @@ static __inline__ int get_scrambled_bit(v29_tx_state_t *s)
            have shut down completely. */
         if (s->status_handler)
             s->status_handler(s->status_user_data, SIG_STATUS_END_OF_DATA);
+        /*endif*/
         s->current_get_bit = fake_get_bit;
         s->in_training = true;
         bit = 1;
     }
+    /*endif*/
     out_bit = (bit ^ (s->scramble_reg >> (18 - 1)) ^ (s->scramble_reg >> (23 - 1))) & 1;
     s->scramble_reg = (s->scramble_reg << 1) | out_bit;
     return out_bit;
@@ -156,14 +158,17 @@ static __inline__ complexf_t getbaud(v29_tx_state_t *s)
                     /* Optional segment: Unmodulated carrier (talker echo protection) */
                     return v29_9600_constellation[0];
                 }
+                /*endif*/
                 if (s->training_step <= V29_TRAINING_SEG_2)
                 {
                     /* Segment 1: silence */
                     return zero;
                 }
+                /*endif*/
                 /* Segment 2: ABAB... */
                 return v29_abab_constellation[(s->training_step & 1) + s->training_offset];
             }
+            /*endif*/
             /* Segment 3: CDCD... */
             /* Apply the 1 + x^-6 + x^-7 training scrambler */
             bit = s->training_scramble_reg & 1;
@@ -171,6 +176,7 @@ static __inline__ complexf_t getbaud(v29_tx_state_t *s)
             s->training_scramble_reg |= (((bit ^ s->training_scramble_reg) & 1) << 6);
             return v29_cdcd_constellation[bit + s->training_offset];
         }
+        /*endif*/
         /* We should be in the block of test ones, or shutdown ones, if we get here. */
         /* There is no graceful shutdown procedure defined for V.29. Just
            send some ones, to ensure we get the real data bits through, even
@@ -182,12 +188,16 @@ static __inline__ complexf_t getbaud(v29_tx_state_t *s)
             s->current_get_bit = s->get_bit;
             s->in_training = false;
         }
+        /*endif*/
         if (s->training_step == V29_TRAINING_SHUTDOWN_END)
         {
             if (s->status_handler)
                 s->status_handler(s->status_user_data, SIG_STATUS_SHUTDOWN_COMPLETE);
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endif*/
     /* 9600bps uses the full constellation.
        7200bps uses only the first half of the full constellation.
        4800bps uses the smaller constellation. */
@@ -207,6 +217,7 @@ static __inline__ complexf_t getbaud(v29_tx_state_t *s)
         bits = (bits << 1) | get_scrambled_bit(s);
         bits = phase_steps_9600[bits];
     }
+    /*endif*/
     s->constellation_state = (s->constellation_state + bits) & 7;
     return v29_9600_constellation[amp | s->constellation_state];
 }
@@ -232,6 +243,7 @@ SPAN_DECLARE(int) v29_tx(v29_tx_state_t *s, int16_t amp[], int len)
         /* Once we have sent the shutdown symbols, we stop sending completely. */
         return 0;
     }
+    /*endif*/
     for (sample = 0;  sample < len;  sample++)
     {
         if ((s->baud_phase += 3) >= 10)
@@ -242,7 +254,9 @@ SPAN_DECLARE(int) v29_tx(v29_tx_state_t *s, int16_t amp[], int len)
             s->rrc_filter_im[s->rrc_filter_step] = v.im;
             if (++s->rrc_filter_step >= V29_TX_FILTER_STEPS)
                 s->rrc_filter_step = 0;
+            /*endif*/
         }
+        /*endif*/
 #if defined(SPANDSP_USE_FIXED_POINT)
         /* Root raised cosine pulse shaping at baseband */
         x.re = vec_circular_dot_prodi16(s->rrc_filter_re, tx_pulseshaper[TX_PULSESHAPER_COEFF_SETS - 1 - s->baud_phase], V29_TX_FILTER_STEPS, s->rrc_filter_step) >> 4;
@@ -263,6 +277,7 @@ SPAN_DECLARE(int) v29_tx(v29_tx_state_t *s, int16_t amp[], int len)
         amp[sample] = (int16_t) lfastrintf(famp*s->gain);
 #endif
     }
+    /*endfor*/
     return sample;
 }
 /*- End of function --------------------------------------------------------*/
@@ -284,6 +299,7 @@ static void set_working_gain(v29_tx_state_t *s)
     default:
         break;
     }
+    /*endswitch*/
 #else
     switch (s->bit_rate)
     {
@@ -299,6 +315,7 @@ static void set_working_gain(v29_tx_state_t *s)
     default:
         break;
     }
+    /*endswitch*/
 #endif
 }
 /*- End of function --------------------------------------------------------*/
@@ -320,16 +337,17 @@ SPAN_DECLARE(void) v29_tx_power(v29_tx_state_t *s, float power)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) v29_tx_set_get_bit(v29_tx_state_t *s, get_bit_func_t get_bit, void *user_data)
+SPAN_DECLARE(void) v29_tx_set_get_bit(v29_tx_state_t *s, span_get_bit_func_t get_bit, void *user_data)
 {
     if (s->get_bit == s->current_get_bit)
         s->current_get_bit = get_bit;
+    /*endif*/
     s->get_bit = get_bit;
     s->get_bit_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) v29_tx_set_modem_status_handler(v29_tx_state_t *s, modem_status_func_t handler, void *user_data)
+SPAN_DECLARE(void) v29_tx_set_modem_status_handler(v29_tx_state_t *s, span_modem_status_func_t handler, void *user_data)
 {
     s->status_handler = handler;
     s->status_user_data = user_data;
@@ -361,6 +379,7 @@ SPAN_DECLARE(int) v29_tx_restart(v29_tx_state_t *s, int bit_rate, bool tep)
     default:
         return -1;
     }
+    /*endswitch*/
 #if defined(SPANDSP_USE_FIXED_POINT)
     vec_zeroi16(s->rrc_filter_re, sizeof(s->rrc_filter_re)/sizeof(s->rrc_filter_re[0]));
     vec_zeroi16(s->rrc_filter_im, sizeof(s->rrc_filter_im)/sizeof(s->rrc_filter_im[0]));
@@ -381,7 +400,7 @@ SPAN_DECLARE(int) v29_tx_restart(v29_tx_state_t *s, int bit_rate, bool tep)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(v29_tx_state_t *) v29_tx_init(v29_tx_state_t *s, int bit_rate, bool tep, get_bit_func_t get_bit, void *user_data)
+SPAN_DECLARE(v29_tx_state_t *) v29_tx_init(v29_tx_state_t *s, int bit_rate, bool tep, span_get_bit_func_t get_bit, void *user_data)
 {
     switch (bit_rate)
     {
@@ -392,11 +411,14 @@ SPAN_DECLARE(v29_tx_state_t *) v29_tx_init(v29_tx_state_t *s, int bit_rate, bool
     default:
         return NULL;
     }
+    /*endswitch*/
     if (s == NULL)
     {
         if ((s = (v29_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "V.29 TX");

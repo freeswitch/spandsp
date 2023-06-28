@@ -204,11 +204,13 @@ static void block4(g722_band_t *s, int16_t dx)
     wd32 = ((p ^ s->p[0]) & 0x8000)  ?  wd1  :  -wd1;
     if (wd32 > 32767)
         wd32 = 32767;
+    /*endif*/
     wd3 = (int16_t) ((((p ^ s->p[1]) & 0x8000)  ?  -128  :  128)
                      + (wd32 >> 7)
                      + (((int32_t) s->a[1]*32512) >> 15));
     if (abs(wd3) > 12288)
         wd3 = (wd3 < 0)  ?  -12288  :  12288;
+    /*endif*/
     ap[1] = wd3;
 
     /* UPPOL1 */
@@ -219,6 +221,7 @@ static void block4(g722_band_t *s, int16_t dx)
     wd3 = sat_sub16(15360, ap[1]);
     if (abs(ap[0]) > wd3)
         ap[0] = (ap[0] < 0)  ?  -wd3  :  wd3;
+    /*endif*/
 
     /* FILTEP */
     wd1 = sat_add16(r, r);
@@ -247,49 +250,11 @@ static void block4(g722_band_t *s, int16_t dx)
         sz += ((int32_t) s->b[i]*wd3) >> 15;
         s->d[i + 1] = s->d[i];
     }
+    /*endfor*/
     s->sz = saturate16(sz);
 
     /* PREDIC */
     s->s = sat_add16(sp, s->sz);
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(g722_decode_state_t *) g722_decode_init(g722_decode_state_t *s, int rate, int options)
-{
-    if (s == NULL)
-    {
-        if ((s = (g722_decode_state_t *) span_alloc(sizeof(*s))) == NULL)
-            return NULL;
-    }
-    memset(s, 0, sizeof(*s));
-    if (rate == 48000)
-        s->bits_per_sample = 6;
-    else if (rate == 56000)
-        s->bits_per_sample = 7;
-    else
-        s->bits_per_sample = 8;
-    if ((options & G722_SAMPLE_RATE_8000))
-        s->eight_k = true;
-    if ((options & G722_PACKED)  &&  s->bits_per_sample != 8)
-        s->packed = true;
-    else
-        s->packed = false;
-    s->band[0].det = 32;
-    s->band[1].det = 8;
-    return s;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) g722_decode_release(g722_decode_state_t *s)
-{
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) g722_decode_free(g722_decode_state_t *s)
-{
-    span_free(s);
-    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -319,6 +284,7 @@ SPAN_DECLARE(int) g722_decode(g722_decode_state_t *s, int16_t amp[], const uint8
                 s->in_buffer |= (g722_data[j++] << s->in_bits);
                 s->in_bits += 8;
             }
+            /*endif*/
             code = s->in_buffer & ((1 << s->bits_per_sample) - 1);
             s->in_buffer >>= s->bits_per_sample;
             s->in_bits -= s->bits_per_sample;
@@ -327,6 +293,7 @@ SPAN_DECLARE(int) g722_decode(g722_decode_state_t *s, int16_t amp[], const uint8
         {
             code = g722_data[j++];
         }
+        /*endif*/
 
         switch (s->bits_per_sample)
         {
@@ -349,6 +316,7 @@ SPAN_DECLARE(int) g722_decode(g722_decode_state_t *s, int16_t amp[], const uint8
             wd2 = qm4[wd1];
             break;
         }
+        /*endswitch*/
         /* Block 5L, LOW BAND INVQBL */
         wd2 = ((int32_t) s->band[0].det*wd2) >> 15;
         /* Block 5L, RECONS */
@@ -367,6 +335,7 @@ SPAN_DECLARE(int) g722_decode(g722_decode_state_t *s, int16_t amp[], const uint8
             wd1 = 0;
         else if (wd1 > 18432)
             wd1 = 18432;
+        /*endif*/
         s->band[0].nb = (int16_t) wd1;
 
         /* Block 3L, SCALEL */
@@ -394,6 +363,7 @@ SPAN_DECLARE(int) g722_decode(g722_decode_state_t *s, int16_t amp[], const uint8
                 wd1 = 0;
             else if (wd1 > 22528)
                 wd1 = 22528;
+            /*endif*/
             s->band[1].nb = (int16_t) wd1;
 
             /* Block 3H, SCALEH */
@@ -404,6 +374,7 @@ SPAN_DECLARE(int) g722_decode(g722_decode_state_t *s, int16_t amp[], const uint8
 
             block4(&s->band[1], dhigh);
         }
+        /*endif*/
 
         if (s->itu_test_mode)
         {
@@ -424,24 +395,30 @@ SPAN_DECLARE(int) g722_decode(g722_decode_state_t *s, int16_t amp[], const uint8
                 s->y[s->ptr] = (int16_t) (rlow - rhigh);
                 if (++s->ptr >= 12)
                     s->ptr = 0;
+                /*endif*/
                 /* We shift by 12 to allow for the QMF filters (DC gain = 4096), less 1
                    to allow for the 15 bit input to the G.722 algorithm. */
                 amp[outlen++] = saturate16(vec_circular_dot_prodi16(s->y, qmf_coeffs_rev, 12, s->ptr) >> 11);
                 amp[outlen++] = saturate16(vec_circular_dot_prodi16(s->x, qmf_coeffs_fwd, 12, s->ptr) >> 11);
             }
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endfor*/
     return outlen;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(g722_encode_state_t *) g722_encode_init(g722_encode_state_t *s, int rate, int options)
+SPAN_DECLARE(g722_decode_state_t *) g722_decode_init(g722_decode_state_t *s, int rate, int options)
 {
     if (s == NULL)
     {
-        if ((s = (g722_encode_state_t *) span_alloc(sizeof(*s))) == NULL)
+        if ((s = (g722_decode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     if (rate == 48000)
         s->bits_per_sample = 6;
@@ -449,25 +426,28 @@ SPAN_DECLARE(g722_encode_state_t *) g722_encode_init(g722_encode_state_t *s, int
         s->bits_per_sample = 7;
     else
         s->bits_per_sample = 8;
+    /*endif*/
     if ((options & G722_SAMPLE_RATE_8000))
         s->eight_k = true;
+    /*endif*/
     if ((options & G722_PACKED)  &&  s->bits_per_sample != 8)
         s->packed = true;
     else
         s->packed = false;
+    /*endif*/
     s->band[0].det = 32;
     s->band[1].det = 8;
     return s;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) g722_encode_release(g722_encode_state_t *s)
+SPAN_DECLARE(int) g722_decode_release(g722_decode_state_t *s)
 {
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) g722_encode_free(g722_encode_state_t *s)
+SPAN_DECLARE(int) g722_decode_free(g722_decode_state_t *s)
 {
     span_free(s);
     return 0;
@@ -531,7 +511,9 @@ SPAN_DECLARE(int) g722_encode(g722_encode_state_t *s, uint8_t g722_data[], const
                 xlow = (int16_t) ((sumeven + sumodd) >> 14);
                 xhigh = (int16_t) ((sumeven - sumodd) >> 14);
             }
+            /*endif*/
         }
+        /*endif*/
         /* Block 1L, SUBTRA */
         el = sat_sub16(xlow, s->band[0].s);
 
@@ -543,7 +525,9 @@ SPAN_DECLARE(int) g722_encode(g722_encode_state_t *s, uint8_t g722_data[], const
             wd1 = ((int32_t) q6[i]*s->band[0].det) >> 12;
             if (wd < wd1)
                 break;
+            /*endif*/
         }
+        /*endfor*/
         ilow = (el < 0)  ?  iln[i]  :  ilp[i];
 
         /* Block 2L, INVQAL */
@@ -559,6 +543,7 @@ SPAN_DECLARE(int) g722_encode(g722_encode_state_t *s, uint8_t g722_data[], const
             s->band[0].nb = 0;
         else if (s->band[0].nb > 18432)
             s->band[0].nb = 18432;
+        /*endif*/
 
         /* Block 3L, SCALEL */
         wd1 = (s->band[0].nb >> 6) & 31;
@@ -596,6 +581,7 @@ SPAN_DECLARE(int) g722_encode(g722_encode_state_t *s, uint8_t g722_data[], const
                 s->band[1].nb = 0;
             else if (s->band[1].nb > 22528)
                 s->band[1].nb = 22528;
+            /*endif*/
 
             /* Block 3H, SCALEH */
             wd1 = (s->band[1].nb >> 6) & 31;
@@ -606,6 +592,7 @@ SPAN_DECLARE(int) g722_encode(g722_encode_state_t *s, uint8_t g722_data[], const
             block4(&s->band[1], dhigh);
             code = ((ihigh << 6) | ilow) >> (8 - s->bits_per_sample);
         }
+        /*endif*/
 
         if (s->packed)
         {
@@ -618,13 +605,59 @@ SPAN_DECLARE(int) g722_encode(g722_encode_state_t *s, uint8_t g722_data[], const
                 s->out_bits -= 8;
                 s->out_buffer >>= 8;
             }
+            /*endif*/
         }
         else
         {
             g722_data[g722_bytes++] = (uint8_t) code;
         }
+        /*endif*/
     }
+    /*endfor*/
     return g722_bytes;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(g722_encode_state_t *) g722_encode_init(g722_encode_state_t *s, int rate, int options)
+{
+    if (s == NULL)
+    {
+        if ((s = (g722_encode_state_t *) span_alloc(sizeof(*s))) == NULL)
+            return NULL;
+        /*endif*/
+    }
+    /*endif*/
+    memset(s, 0, sizeof(*s));
+    if (rate == 48000)
+        s->bits_per_sample = 6;
+    else if (rate == 56000)
+        s->bits_per_sample = 7;
+    else
+        s->bits_per_sample = 8;
+    /*endif*/
+    if ((options & G722_SAMPLE_RATE_8000))
+        s->eight_k = true;
+    if ((options & G722_PACKED)  &&  s->bits_per_sample != 8)
+        s->packed = true;
+    else
+        s->packed = false;
+    /*endif*/
+    s->band[0].det = 32;
+    s->band[1].det = 8;
+    return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) g722_encode_release(g722_encode_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) g722_encode_free(g722_encode_state_t *s)
+{
+    span_free(s);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

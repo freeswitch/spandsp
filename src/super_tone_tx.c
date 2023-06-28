@@ -81,7 +81,9 @@ SPAN_DECLARE(super_tone_tx_step_t *) super_tone_tx_make_step(super_tone_tx_step_
     {
         if ((s = (super_tone_tx_step_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     if (f1 >= 1.0f)
     {
         s->tone[0].phase_rate = dds_phase_ratef(f1);
@@ -92,6 +94,7 @@ SPAN_DECLARE(super_tone_tx_step_t *) super_tone_tx_make_step(super_tone_tx_step_
         s->tone[0].phase_rate = 0;
         s->tone[0].gain = 0.0f;
     }
+    /*endif*/
     if (f2 >= 1.0f)
     {
         s->tone[1].phase_rate = dds_phase_ratef(f2);
@@ -102,6 +105,7 @@ SPAN_DECLARE(super_tone_tx_step_t *) super_tone_tx_make_step(super_tone_tx_step_
         s->tone[1].phase_rate = 0;
         s->tone[1].gain = 0.0f;
     }
+    /*endif*/
     s->tone_on = (f1 > 0.0f);
     s->length = length*SAMPLE_RATE/1000;
     s->cycles = cycles;
@@ -120,10 +124,12 @@ SPAN_DECLARE(int) super_tone_tx_free_tone(super_tone_tx_step_t *s)
         /* Follow nesting... */
         if (s->nest)
             super_tone_tx_free_tone(s->nest);
+        /*endif*/
         t = s;
         s = s->next;
         span_free(t);
     }
+    /*endwhile*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -132,11 +138,14 @@ SPAN_DECLARE(super_tone_tx_state_t *) super_tone_tx_init(super_tone_tx_state_t *
 {
     if (tree == NULL)
         return NULL;
+    /*endif*/
     if (s == NULL)
     {
         if ((s = (super_tone_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     s->level = 0;
     s->levels[0] = tree;
@@ -157,6 +166,7 @@ SPAN_DECLARE(int) super_tone_tx_free(super_tone_tx_state_t *s)
 {
     if (s)
         span_free(s);
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -172,6 +182,7 @@ SPAN_DECLARE(int) super_tone_tx(super_tone_tx_state_t *s, int16_t amp[], int max
 
     if (s->level < 0  ||  s->level >= SUPER_TONE_TX_MAX_LEVELS)
         return 0;
+    /*endif*/
     samples = 0;
     tree = s->levels[s->level];
     while (tree  &&  samples < max_samples)
@@ -184,7 +195,9 @@ SPAN_DECLARE(int) super_tone_tx(super_tone_tx_state_t *s, int16_t amp[], int max
                 /* New step - prepare the tone generator */
                 for (i = 0;  i < SUPER_TONE_TX_MAX_TONES;  i++)
                     s->tone[i] = tree->tone[i];
+                /*endfor*/
             }
+            /*endif*/
             len = tree->length - s->current_position;
             if (tree->length == 0)
             {
@@ -201,6 +214,7 @@ SPAN_DECLARE(int) super_tone_tx(super_tone_tx_state_t *s, int16_t amp[], int max
             {
                 s->current_position = 0;
             }
+            /*endif*/
             if (s->tone[0].phase_rate < 0)
             {
                 for (limit = len + samples;  samples < limit;  samples++)
@@ -210,6 +224,7 @@ SPAN_DECLARE(int) super_tone_tx(super_tone_tx_state_t *s, int16_t amp[], int max
                          *(1.0f + dds_modf(&s->phase[1], s->tone[1].phase_rate, s->tone[1].gain, 0));
                     amp[samples] = (int16_t) lfastrintf(xamp);
                 }
+                /*endfor*/
             }
             else
             {
@@ -220,13 +235,18 @@ SPAN_DECLARE(int) super_tone_tx(super_tone_tx_state_t *s, int16_t amp[], int max
                     {
                         if (s->tone[i].phase_rate == 0)
                             break;
+                        /*endif*/
                         xamp += dds_modf(&s->phase[i], s->tone[i].phase_rate, s->tone[i].gain, 0);
                     }
+                    /*endfor*/
                     amp[samples] = (int16_t) lfastrintf(xamp);
                 }
+                /*endfor*/
             }
+            /*endif*/
             if (s->current_position)
                 return samples;
+            /*endif*/
         }
         else if (tree->length)
         {
@@ -243,11 +263,14 @@ SPAN_DECLARE(int) super_tone_tx(super_tone_tx_state_t *s, int16_t amp[], int max
             {
                 s->current_position = 0;
             }
+            /*endif*/
             memset(amp + samples, 0, sizeof(uint16_t)*len);
             samples += len;
             if (s->current_position)
                 return samples;
+            /*endif*/
         }
+        /*endif*/
         /* Nesting has priority... */
         if (tree->nest)
         {
@@ -259,6 +282,7 @@ SPAN_DECLARE(int) super_tone_tx(super_tone_tx_state_t *s, int16_t amp[], int max
                 s->levels[++s->level] = tree;
                 s->cycles[s->level] = tree->cycles;
             }
+            /*endif*/
         }
         else
         {
@@ -274,6 +298,7 @@ SPAN_DECLARE(int) super_tone_tx(super_tone_tx_state_t *s, int16_t amp[], int max
                     s->cycles[s->level] = tree->cycles;
                     break;
                 }
+                /*endif*/
                 /* If we are nested we need to pop, otherwise this is the end. */
                 if (s->level <= 0)
                 {
@@ -281,10 +306,14 @@ SPAN_DECLARE(int) super_tone_tx(super_tone_tx_state_t *s, int16_t amp[], int max
                     s->levels[0] = NULL;
                     break;
                 }
+                /*endif*/
                 tree = s->levels[--s->level];
             }
+            /*endwhile*/
         }
+        /*endif*/
     }
+    /*endwhile*/
     return samples;
 }
 /*- End of function --------------------------------------------------------*/

@@ -43,18 +43,25 @@ struct data_modems_state_s
         silent audio. */
     bool transmit_on_idle;
 
+    /*! \brief The number of data bits per character. */
+    int16_t data_bits;
+    /*! \brief The type of parity. */
+    int16_t parity;
+    /*! \brief The number of stop bits. */
+    int16_t stop_bits;
+
     at_state_t at_state;
     data_modems_control_handler_t modem_control_handler;
     void *modem_control_user_data;
-    get_bit_func_t get_bit;
+    span_get_bit_func_t get_bit;
     void *get_user_data;
-    put_bit_func_t put_bit;
+    span_put_bit_func_t put_bit;
     void *put_user_data;
 
     void *user_data;
 
-    put_msg_func_t put_msg;
-    get_msg_func_t get_msg;
+    span_put_msg_func_t put_msg;
+    span_get_msg_func_t get_msg;
 
     v42_state_t v42;
     v42bis_state_t v42bis;

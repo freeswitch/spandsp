@@ -57,6 +57,7 @@ static playout_frame_t *queue_get(playout_state_t *s, timestamp_t sender_stamp)
 
     if ((frame = s->first_frame) == NULL)
         return NULL;
+    /*endif*/
 
     if (sender_stamp >= frame->sender_stamp)
     {
@@ -72,8 +73,10 @@ static playout_frame_t *queue_get(playout_state_t *s, timestamp_t sender_stamp)
             s->first_frame = NULL;
             s->last_frame = NULL;
         }
+        /*endif*/
         return frame;
     }
+    /*endif*/
 
     return NULL;
 }
@@ -105,6 +108,7 @@ SPAN_DECLARE(playout_frame_t *) playout_get_unconditional(playout_state_t *s)
            The caller *must* copy the data before this frame has any chance
            of being reused. */
     }
+    /*endif*/
     return frame;
 }
 /*- End of function --------------------------------------------------------*/
@@ -121,6 +125,7 @@ SPAN_DECLARE(int) playout_get(playout_state_t *s, playout_frame_t *frameout, tim
         s->frames_missing++;
         return PLAYOUT_FILLIN;
     }
+    /*endif*/
 
     if (s->dynamic  &&  frame->type == PLAYOUT_TYPE_SPEECH)
     {
@@ -131,6 +136,7 @@ SPAN_DECLARE(int) playout_get(playout_state_t *s, playout_frame_t *frameout, tim
             s->not_first = true;
             s->latest_expected = frame->receiver_stamp + s->min_length;
         }
+        /*endif*/
         /* Leaky integrate the rate of occurance of frames received just in time and late */
         s->state_late += ((((frame->receiver_stamp > s->latest_expected)  ?  0x10000000  :  0) - s->state_late) >> 8);
         s->state_just_in_time += ((((frame->receiver_stamp > s->latest_expected - frame->sender_len)  ?  0x10000000  :  0) - s->state_just_in_time) >> 8);
@@ -151,6 +157,7 @@ SPAN_DECLARE(int) playout_get(playout_state_t *s, playout_frame_t *frameout, tim
 
                     s->last_speech_sender_stamp -= 3*s->last_speech_sender_len;
                 }
+                /*endif*/
             }
             else
             {
@@ -165,7 +172,9 @@ SPAN_DECLARE(int) playout_get(playout_state_t *s, playout_frame_t *frameout, tim
 
                     s->last_speech_sender_stamp -= s->last_speech_sender_len;
                 }
+                /*endif*/
             }
+            /*endif*/
         }
         else if (s->since_last_step > 500  &&  s->state_just_in_time < s->dropable_threshold)
         {
@@ -180,9 +189,12 @@ SPAN_DECLARE(int) playout_get(playout_state_t *s, playout_frame_t *frameout, tim
 
                 s->last_speech_sender_stamp += s->last_speech_sender_len;
             }
+            /*endif*/
         }
+        /*endif*/
         s->since_last_step++;
     }
+    /*endif*/
 
     /* If its not a speech frame, just return it. */
     if (frame->type != PLAYOUT_TYPE_SPEECH)
@@ -198,6 +210,7 @@ SPAN_DECLARE(int) playout_get(playout_state_t *s, playout_frame_t *frameout, tim
         s->frames_out++;
         return PLAYOUT_OK;
     }
+    /*endif*/
     if (frame->sender_stamp < s->last_speech_sender_stamp)
     {
         /* This speech frame is late */
@@ -213,9 +226,11 @@ SPAN_DECLARE(int) playout_get(playout_state_t *s, playout_frame_t *frameout, tim
         s->frames_missing--;
         return PLAYOUT_DROP;
     }
+    /*endif*/
     /* Keep track of frame sizes, to allow for variable sized frames */
     if (frame->sender_len > 0)
         s->last_speech_sender_len = frame->sender_len;
+    /*endif*/
 
     /* Normal case. Return the frame, and increment stuff */
     *frameout = *frame;
@@ -246,7 +261,9 @@ SPAN_DECLARE(int) playout_put(playout_state_t *s, void *data, int type, timestam
     {
         if ((frame = (playout_frame_t *) span_alloc(sizeof(*frame))) == NULL)
             return PLAYOUT_ERROR;
+        /*endif*/
     }
+    /*endif*/
 
     /* Fill out the frame */
     frame->data = data;
@@ -281,6 +298,7 @@ SPAN_DECLARE(int) playout_put(playout_state_t *s, void *data, int type, timestam
         p = s->last_frame;
         while (sender_stamp < p->sender_stamp  &&  p->earlier)
             p = p->earlier;
+        /*endwhile*/
 
         if (p->earlier)
         {
@@ -298,7 +316,9 @@ SPAN_DECLARE(int) playout_put(playout_state_t *s, void *data, int type, timestam
             p->earlier = frame;
             s->first_frame = frame;
         }
+        /*endif*/
     }
+    /*endif*/
 
     if (s->start  &&  type == PLAYOUT_TYPE_SPEECH)
     {
@@ -306,6 +326,7 @@ SPAN_DECLARE(int) playout_put(playout_state_t *s, void *data, int type, timestam
         s->last_speech_sender_len = sender_len;
         s->start = false;
     }
+    /*endif*/
 
     return PLAYOUT_OK;
 }
@@ -322,6 +343,7 @@ SPAN_DECLARE(void) playout_restart(playout_state_t *s, int min_length, int max_l
         next = frame->later;
         span_free(frame);
     }
+    /*endfor*/
 
     memset(s, 0, sizeof(*s));
     s->dynamic = (min_length < max_length);
@@ -342,6 +364,7 @@ SPAN_DECLARE(playout_state_t *) playout_init(int min_length, int max_length)
 
     if ((s = (playout_state_t *) span_alloc(sizeof(playout_state_t))) == NULL)
         return NULL;
+    /*endif*/
     memset(s, 0, sizeof(*s));
     playout_restart(s, min_length, max_length);
     return s;
@@ -360,12 +383,14 @@ SPAN_DECLARE(int) playout_release(playout_state_t *s)
         next = frame->later;
         span_free(frame);
     }
+    /*endfor*/
     /* Free all the frames on the free list */
     for (frame = s->free_frames;  frame;  frame = next)
     {
         next = frame->later;
         span_free(frame);
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -378,6 +403,7 @@ SPAN_DECLARE(int) playout_free(playout_state_t *s)
         /* Finally, free ourselves! */
         span_free(s);
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

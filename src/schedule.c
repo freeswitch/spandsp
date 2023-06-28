@@ -150,6 +150,7 @@ SPAN_DECLARE(int) span_schedule_release(span_sched_state_t *s)
         span_free(s->sched);
         s->sched = NULL;
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -161,6 +162,7 @@ SPAN_DECLARE(int) span_schedule_free(span_sched_state_t *s)
         span_schedule_release(s);
         span_free(s);
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

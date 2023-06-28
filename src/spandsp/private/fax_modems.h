@@ -36,7 +36,7 @@ struct fax_modems_state_s
     /*! True is talker echo protection should be sent for the image modems */
     bool use_tep;
     /*! \brief The callback function used to report detected tones. */
-    tone_report_func_t tone_callback;
+    span_tone_report_func_t tone_callback;
     /*! \brief A user specified opaque pointer passed to the tone_callback function. */
     void *tone_callback_user_data;
 
@@ -99,15 +99,15 @@ struct fax_modems_state_s
     int current_tx_type;
 
     int bit_rate;
-    int short_train;
+    bool short_train;
 
     /*! \brief The callback function used to put each bit received. */
-    put_bit_func_t put_bit;
+    span_put_bit_func_t put_bit;
     /*! \brief A user specified opaque pointer passed to the put_bit routine. */
     void *put_bit_user_data;
 
     /*! \brief The callback function used to get the next bit to be transmitted. */
-    get_bit_func_t get_bit;
+    span_get_bit_func_t get_bit;
     /*! \brief A user specified opaque pointer passed to the get_bit function. */
     void *get_bit_user_data;
 

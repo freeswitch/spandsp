@@ -112,38 +112,7 @@ SPAN_DECLARE(int) gsm0610_set_packing(gsm0610_state_t *s, int packing)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(gsm0610_state_t *) gsm0610_init(gsm0610_state_t *s, int packing)
-{
-    if (s == NULL)
-    {
-        if ((s = (gsm0610_state_t *) span_alloc(sizeof(*s))) == NULL)
-            return NULL;
-        /*endif*/
-    }
-    /*endif*/
-    memset((char *) s, '\0', sizeof(gsm0610_state_t));
-    s->nrp = 40;
-    s->packing = packing;
-    return s;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) gsm0610_release(gsm0610_state_t *s)
-{
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) gsm0610_free(gsm0610_state_t *s)
-{
-    if (s)
-        span_free(s);
-    /*endif*/
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) gsm0610_pack_none(uint8_t c[], const gsm0610_frame_t *s)
+SPAN_DECLARE(int) gsm0610_pack_none(uint8_t c[76], const gsm0610_frame_t *s)
 {
     int i;
     int j;
@@ -152,6 +121,7 @@ SPAN_DECLARE(int) gsm0610_pack_none(uint8_t c[], const gsm0610_frame_t *s)
     i = 0;
     for (j = 0;  j < 8;  j++)
         c[i++] = (uint8_t) s->LARc[j];
+    /*endfor*/
     for (j = 0;  j < 4;  j++)
     {
         c[i++] = (uint8_t) s->Nc[j];
@@ -160,13 +130,14 @@ SPAN_DECLARE(int) gsm0610_pack_none(uint8_t c[], const gsm0610_frame_t *s)
         c[i++] = (uint8_t) s->xmaxc[j];
         for (k = 0;  k < 13;  k++)
             c[i++] = (uint8_t) s->xMc[j][k];
+        /*endfor*/
     }
     /*endfor*/
     return 76;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) gsm0610_pack_wav49(uint8_t c[], const gsm0610_frame_t *s)
+SPAN_DECLARE(int) gsm0610_pack_wav49(uint8_t c[65], const gsm0610_frame_t *s)
 {
     uint16_t sr;
     int i;
@@ -336,6 +307,37 @@ SPAN_DECLARE(int) gsm0610_encode(gsm0610_state_t *s, uint8_t code[], const int16
     }
     /*endfor*/
     return bytes;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(gsm0610_state_t *) gsm0610_init(gsm0610_state_t *s, int packing)
+{
+    if (s == NULL)
+    {
+        if ((s = (gsm0610_state_t *) span_alloc(sizeof(*s))) == NULL)
+            return NULL;
+        /*endif*/
+    }
+    /*endif*/
+    memset((char *) s, '\0', sizeof(gsm0610_state_t));
+    s->nrp = 40;
+    s->packing = packing;
+    return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) gsm0610_release(gsm0610_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) gsm0610_free(gsm0610_state_t *s)
+{
+    if (s)
+        span_free(s);
+    /*endif*/
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

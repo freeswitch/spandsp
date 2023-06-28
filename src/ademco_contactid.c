@@ -480,9 +480,12 @@ SPAN_DECLARE(int) encode_msg(char buf[], const ademco_contactid_report_t *report
             x = *s - '0';
             if (x == 0)
                 x = 10;
+            /*endif*/
         }
+        /*endif*/
         sum += x;
     }
+    /*endfor*/
     sum = ((sum + 15)/15)*15 - sum;
     if (sum == 0)
         sum = 'C';
@@ -490,6 +493,7 @@ SPAN_DECLARE(int) encode_msg(char buf[], const ademco_contactid_report_t *report
         sum += '0';
     else
         sum = remap[sum - 10];
+    /*endif*/
     *s++ = sum;
     *s = '\0';
     return s - buf;
@@ -534,6 +538,7 @@ SPAN_DECLARE(int) decode_msg(ademco_contactid_report_t *report, const char buf[]
             x = *s;
             break;
         }
+        /*endswitch*/
         *t = x;
         if (x > '9')
         {
@@ -545,14 +550,19 @@ SPAN_DECLARE(int) decode_msg(ademco_contactid_report_t *report, const char buf[]
                 x = 10;
             else
                 x -= '0';
+            /*endif*/
         }
+        /*endif*/
         sum += x;
     }
+    /*endif*/
     *t = '\0';
     if (sum%15 != 0)
         return -1;
+    /*endif*/
     if (sscanf(buf2, "%04x%02x%1x%03x%02x%03x", &report->acct, &report->mt, &report->q, &report->xyz, &report->gg, &report->ccc) != 6)
         return -1;
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -568,6 +578,7 @@ SPAN_DECLARE(const char *) ademco_contactid_msg_qualifier_to_str(int q)
     case ADEMCO_CONTACTID_QUALIFIER_STATUS_REPORT:
         return "Status report";
     }
+    /*endswitch*/
     return "???";
 }
 /*- End of function --------------------------------------------------------*/
@@ -580,7 +591,9 @@ SPAN_DECLARE(const char *) ademco_contactid_event_to_str(int xyz)
     {
         if (xyz == ademco_codes[entry].code)
             return ademco_codes[entry].name;
+        /*endif*/
     }
+    /*endfor*/
     return "???";
 }
 /*- End of function --------------------------------------------------------*/
@@ -601,6 +614,7 @@ SPAN_DECLARE(int) ademco_contactid_receiver_log_msg(ademco_contactid_receiver_st
         t = "???";
         break;
     }
+    /*endswitch*/
     span_log(&s->logging, SPAN_LOG_FLOW, "    Message type %s (%X)\n", t, report->mt);
     t = ademco_contactid_msg_qualifier_to_str(report->q);
     span_log(&s->logging, SPAN_LOG_FLOW, "    Qualifier %s (%X)\n", t, report->q);
@@ -625,23 +639,26 @@ SPAN_DECLARE(int) ademco_contactid_receiver_tx(ademco_contactid_receiver_state_t
         s->remaining_samples -= samples;
         if (s->remaining_samples > 0)
             return samples;
+        /*endif*/
         span_log(&s->logging, SPAN_LOG_FLOW, "Initial silence finished\n");
         s->step++;
         s->tone_phase_rate = dds_phase_rate(1400.0);
         s->tone_level = dds_scaling_dbm0(-11);
         s->tone_phase = 0;
-        s->remaining_samples = ms_to_samples(100);
+        s->remaining_samples = milliseconds_to_samples(100);
         return samples;
     case 1:
         samples = (s->remaining_samples > max_samples)  ?  max_samples  :  s->remaining_samples;
         for (i = 0;  i < samples;  i++)
             amp[i] = dds_mod(&s->tone_phase, s->tone_phase_rate, s->tone_level, 0);
+        /*endfor*/
         s->remaining_samples -= samples;
         if (s->remaining_samples > 0)
             return samples;
+        /*endif*/
         span_log(&s->logging, SPAN_LOG_FLOW, "1400Hz tone finished\n");
         s->step++;
-        s->remaining_samples = ms_to_samples(100);
+        s->remaining_samples = milliseconds_to_samples(100);
         return samples;
     case 2:
         samples = (s->remaining_samples > max_samples)  ?  max_samples  :  s->remaining_samples;
@@ -649,23 +666,26 @@ SPAN_DECLARE(int) ademco_contactid_receiver_tx(ademco_contactid_receiver_state_t
         s->remaining_samples -= samples;
         if (s->remaining_samples > 0)
             return samples;
+        /*endif*/
         span_log(&s->logging, SPAN_LOG_FLOW, "Second silence finished\n");
         s->step++;
         s->tone_phase_rate = dds_phase_rate(2300.0);
         s->tone_level = dds_scaling_dbm0(-11);
         s->tone_phase = 0;
-        s->remaining_samples = ms_to_samples(100);
+        s->remaining_samples = milliseconds_to_samples(100);
         return samples;
     case 3:
         samples = (s->remaining_samples > max_samples)  ?  max_samples  :  s->remaining_samples;
         for (i = 0;  i < samples;  i++)
             amp[i] = dds_mod(&s->tone_phase, s->tone_phase_rate, s->tone_level, 0);
+        /*endfor*/
         s->remaining_samples -= samples;
         if (s->remaining_samples > 0)
             return samples;
+        /*endif*/
         span_log(&s->logging, SPAN_LOG_FLOW, "2300Hz tone finished\n");
         s->step++;
-        s->remaining_samples = ms_to_samples(100);
+        s->remaining_samples = milliseconds_to_samples(100);
         return samples;
     case 4:
         /* Idle here, waiting for a response */
@@ -676,25 +696,29 @@ SPAN_DECLARE(int) ademco_contactid_receiver_tx(ademco_contactid_receiver_state_t
         s->remaining_samples -= samples;
         if (s->remaining_samples > 0)
             return samples;
+        /*endif*/
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending kissoff\n");
         s->step++;
         s->tone_phase_rate = dds_phase_rate(1400.0);
         s->tone_level = dds_scaling_dbm0(-11);
         s->tone_phase = 0;
-        s->remaining_samples = ms_to_samples(850);
+        s->remaining_samples = milliseconds_to_samples(850);
         return samples;
     case 6:
         samples = (s->remaining_samples > max_samples)  ?  max_samples  :  s->remaining_samples;
         for (i = 0;  i < samples;  i++)
             amp[i] = dds_mod(&s->tone_phase, s->tone_phase_rate, s->tone_level, 0);
+        /*endfor*/
         s->remaining_samples -= samples;
         if (s->remaining_samples > 0)
             return samples;
+        /*endif*/
         span_log(&s->logging, SPAN_LOG_FLOW, "1400Hz tone finished\n");
         s->step = 4;
-        s->remaining_samples = ms_to_samples(100);
+        s->remaining_samples = milliseconds_to_samples(100);
         return samples;
     }
+    /*endswitch*/
     return max_samples;
 }
 /*- End of function --------------------------------------------------------*/
@@ -733,10 +757,13 @@ static void dtmf_digit_delivery(void *user_data, const char *digits, int len)
             ademco_contactid_receiver_log_msg(s, &report);
             if (s->callback)
                 s->callback(s->callback_user_data, &report);
+            /*endif*/
             s->step++;
         }
+        /*endif*/
         s->rx_digits_len = 0;
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -757,7 +784,9 @@ SPAN_DECLARE(ademco_contactid_receiver_state_t *) ademco_contactid_receiver_init
     {
         if ((s = (ademco_contactid_receiver_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "Ademco");
@@ -769,7 +798,7 @@ SPAN_DECLARE(ademco_contactid_receiver_state_t *) ademco_contactid_receiver_init
     s->callback_user_data = user_data;
 
     s->step = 0;
-    s->remaining_samples = ms_to_samples(500);
+    s->remaining_samples = milliseconds_to_samples(500);
     return s;
 }
 /*- End of function --------------------------------------------------------*/
@@ -801,7 +830,7 @@ SPAN_DECLARE(int) ademco_contactid_sender_tx(ademco_contactid_sender_state_t *s,
                 return 0;
             s->clear_to_send = false;
             s->step++;
-            s->remaining_samples = ms_to_samples(250);
+            s->remaining_samples = milliseconds_to_samples(250);
             /* Fall through */
         case 1:
             samples = (s->remaining_samples > (max_samples - sample))  ?  (max_samples - sample)  :  s->remaining_samples;
@@ -809,6 +838,7 @@ SPAN_DECLARE(int) ademco_contactid_sender_tx(ademco_contactid_sender_state_t *s,
             s->remaining_samples -= samples;
             if (s->remaining_samples > 0)
                 return samples;
+            /*endif*/
             span_log(&s->logging, SPAN_LOG_FLOW, "Pre-send silence finished\n");
             s->step++;
             break;
@@ -820,11 +850,14 @@ SPAN_DECLARE(int) ademco_contactid_sender_tx(ademco_contactid_sender_state_t *s,
                 s->step = 0;
                 return sample;
             }
+            /*endif*/
             break;
         default:
             return sample;
         }
+        /*endswitch*/
     }
+    /*endfor*/
     return sample;
 }
 /*- End of function --------------------------------------------------------*/
@@ -851,6 +884,7 @@ SPAN_DECLARE(int) ademco_contactid_sender_rx(ademco_contactid_sender_state_t *s,
             limit = sample + (GOERTZEL_SAMPLES_PER_BLOCK - s->current_sample);
         else
             limit = samples;
+        /*endif*/
         for (j = sample;  j < limit;  j++)
         {
             xamp = amp[j];
@@ -863,9 +897,11 @@ SPAN_DECLARE(int) ademco_contactid_sender_rx(ademco_contactid_sender_state_t *s,
             goertzel_samplex(&s->tone_1400, xamp);
             goertzel_samplex(&s->tone_2300, xamp);
         }
+        /*endfor*/
         s->current_sample += (limit - sample);
         if (s->current_sample < GOERTZEL_SAMPLES_PER_BLOCK)
             continue;
+        /*endif*/
 
         energy_1400 = goertzel_result(&s->tone_1400);
         energy_2300 = goertzel_result(&s->tone_2300);
@@ -876,13 +912,17 @@ SPAN_DECLARE(int) ademco_contactid_sender_rx(ademco_contactid_sender_state_t *s,
             {
                 if (energy_1400 > TONE_TO_TOTAL_ENERGY*s->energy)
                     hit = 1;
+                /*endif*/
             }
             else
             {
                 if (energy_2300 > TONE_TO_TOTAL_ENERGY*s->energy)
                     hit = 2;
+                /*endif*/
             }
+            /*endif*/
         }
+        /*endif*/
         if (hit != s->in_tone  &&  hit == s->last_hit)
         {
             /* We have two successive indications that something has changed to a
@@ -897,12 +937,13 @@ SPAN_DECLARE(int) ademco_contactid_sender_rx(ademco_contactid_sender_state_t *s,
                     s->tone_state = 1;
                     s->duration = 0;
                 }
+                /*endif*/
                 break;
             case 1:
                 /* We are looking for a burst of 1400Hz which is 100ms +- 5% long */
                 if (hit == 0)
                 {
-                    if (s->duration < ms_to_samples(70)  ||  s->duration > ms_to_samples(130))
+                    if (s->duration < milliseconds_to_samples(70)  ||  s->duration > milliseconds_to_samples(130))
                     {
                         span_log(&s->logging, SPAN_LOG_FLOW, "Bad initial 1400Hz tone duration\n");
                         s->tone_state = 0;
@@ -912,13 +953,15 @@ SPAN_DECLARE(int) ademco_contactid_sender_rx(ademco_contactid_sender_state_t *s,
                         span_log(&s->logging, SPAN_LOG_FLOW, "Received 1400Hz tone\n");
                         s->tone_state = 2;
                     }
+                    /*endif*/
                     s->in_tone = hit;
                     s->duration = 0;
                 }
+                /*endif*/
                 break;
             case 2:
                 /* We are looking for 100ms +-5% of silence after the 1400Hz tone */
-                if (s->duration < ms_to_samples(70)  ||  s->duration > ms_to_samples(130))
+                if (s->duration < milliseconds_to_samples(70)  ||  s->duration > milliseconds_to_samples(130))
                 {
                     span_log(&s->logging, SPAN_LOG_FLOW, "Bad silence length\n");
                     s->tone_state = 0;
@@ -935,13 +978,14 @@ SPAN_DECLARE(int) ademco_contactid_sender_rx(ademco_contactid_sender_state_t *s,
                     s->tone_state = 0;
                     s->in_tone = 0;
                 }
+                /*endif*/
                 s->duration = 0;
                 break;
             case 3:
                 /* We are looking for a burst of 2300Hz which is 100ms +- 5% long */
                 if (hit == 0)
                 {
-                    if (s->duration < ms_to_samples(70)  ||  s->duration > ms_to_samples(130))
+                    if (s->duration < milliseconds_to_samples(70)  ||  s->duration > milliseconds_to_samples(130))
                     {
                         span_log(&s->logging, SPAN_LOG_FLOW, "Bad initial 2300Hz tone duration\n");
                         s->tone_state = 0;
@@ -951,16 +995,20 @@ SPAN_DECLARE(int) ademco_contactid_sender_rx(ademco_contactid_sender_state_t *s,
                         span_log(&s->logging, SPAN_LOG_FLOW, "Received 2300Hz\n");
                         if (s->callback)
                             s->callback(s->callback_user_data, -1, 0, 0);
+                        /*endif*/
                         s->tone_state = 4;
                         /* Release the transmit side, and it will time the 250ms post tone delay */
                         s->clear_to_send = true;
                         s->tries = 0;
                         if (s->tx_digits_len)
-                            s->timer = ms_to_samples(3000);
+                            s->timer = milliseconds_to_samples(3000);
+                        /*endif*/
                     }
+                    /*endif*/
                     s->in_tone = hit;
                     s->duration = 0;
                 }
+                /*endif*/
                 break;
             case 4:
                 if (hit == 1)
@@ -970,18 +1018,19 @@ SPAN_DECLARE(int) ademco_contactid_sender_rx(ademco_contactid_sender_state_t *s,
                     s->in_tone = hit;
                     s->duration = 0;
                 }
+                /*endif*/
                 break;
             case 5:
                 if (hit == 0)
                 {
                     s->busy = false;
-                    if (s->duration < ms_to_samples(400)  ||  s->duration > ms_to_samples(1500))
+                    if (s->duration < milliseconds_to_samples(400)  ||  s->duration > milliseconds_to_samples(1500))
                     {
                         span_log(&s->logging, SPAN_LOG_FLOW, "Bad kissoff duration %d\n", s->duration);
                         if (++s->tries < 4)
                         {
                             dtmf_tx_put(&s->dtmf, s->tx_digits, s->tx_digits_len);
-                            s->timer = ms_to_samples(3000);
+                            s->timer = milliseconds_to_samples(3000);
                             s->tone_state = 4;
                         }
                         else
@@ -989,7 +1038,9 @@ SPAN_DECLARE(int) ademco_contactid_sender_rx(ademco_contactid_sender_state_t *s,
                             s->timer = 0;
                             if (s->callback)
                                 s->callback(s->callback_user_data, false, 0, 0);
+                            /*endif*/
                         }
+                        /*endif*/
                     }
                     else
                     {
@@ -998,18 +1049,24 @@ SPAN_DECLARE(int) ademco_contactid_sender_rx(ademco_contactid_sender_state_t *s,
                         s->tx_digits_len = 0;
                         if (s->callback)
                             s->callback(s->callback_user_data, true, 0, 0);
+                        /*endif*/
                         s->tone_state = 4;
                         s->clear_to_send = true;
                         s->tries = 0;
                         if (s->tx_digits_len)
-                            s->timer = ms_to_samples(3000);
+                            s->timer = milliseconds_to_samples(3000);
+                        /*endif*/
                     }
+                    /*endif*/
                     s->in_tone = hit;
                     s->duration = 0;
                 }
+                /*endif*/
                 break;
             }
+            /*endswitch*/
         }
+        /*endif*/
         s->last_hit = hit;
         s->duration += GOERTZEL_SAMPLES_PER_BLOCK;
         if (s->timer > 0)
@@ -1023,20 +1080,26 @@ SPAN_DECLARE(int) ademco_contactid_sender_rx(ademco_contactid_sender_state_t *s,
                     if (++s->tries < 4)
                     {
                         dtmf_tx_put(&s->dtmf, s->tx_digits, s->tx_digits_len);
-                        s->timer = ms_to_samples(3000);
+                        s->timer = milliseconds_to_samples(3000);
                     }
                     else
                     {
                         s->timer = 0;
                         if (s->callback)
                             s->callback(s->callback_user_data, false, 0, 0);
+                        /*endif*/
                     }
+                    /*endif*/
                 }
+                /*endif*/
             }
+            /*endif*/
         }
+        /*endif*/
         s->energy = 0;
         s->current_sample = 0;
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1062,8 +1125,10 @@ SPAN_DECLARE(int) ademco_contactid_sender_put(ademco_contactid_sender_state_t *s
 {
     if (s->busy)
         return -1;
+    /*endif*/
     if ((s->tx_digits_len = encode_msg(s->tx_digits, report)) < 0)
         return -1;
+    /*endif*/
     s->busy = true;
     return dtmf_tx_put(&s->dtmf, s->tx_digits, s->tx_digits_len);
 }
@@ -1076,7 +1141,7 @@ SPAN_DECLARE(logging_state_t *) ademco_contactid_sender_get_logging_state(ademco
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(void) ademco_contactid_sender_set_realtime_callback(ademco_contactid_sender_state_t *s,
-                                                                 tone_report_func_t callback,
+                                                                 span_tone_report_func_t callback,
                                                                  void *user_data)
 {
     s->callback = callback;
@@ -1085,14 +1150,16 @@ SPAN_DECLARE(void) ademco_contactid_sender_set_realtime_callback(ademco_contacti
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(ademco_contactid_sender_state_t *) ademco_contactid_sender_init(ademco_contactid_sender_state_t *s,
-                                                                             tone_report_func_t callback,
+                                                                             span_tone_report_func_t callback,
                                                                              void *user_data)
 {
     if (s == NULL)
     {
         if ((s = (ademco_contactid_sender_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "Ademco");
@@ -1103,6 +1170,7 @@ SPAN_DECLARE(ademco_contactid_sender_state_t *) ademco_contactid_sender_init(ade
         make_goertzel_descriptor(&tone_2300_desc, 2300.0f, GOERTZEL_SAMPLES_PER_BLOCK);
         tone_rx_init = true;
     }
+    /*endif*/
     goertzel_init(&s->tone_1400, &tone_1400_desc);
     goertzel_init(&s->tone_2300, &tone_2300_desc);
     s->current_sample = 0;
@@ -1111,7 +1179,7 @@ SPAN_DECLARE(ademco_contactid_sender_state_t *) ademco_contactid_sender_init(ade
     s->callback_user_data = user_data;
 
     s->step = 0;
-    s->remaining_samples = ms_to_samples(100);
+    s->remaining_samples = milliseconds_to_samples(100);
     dtmf_tx_init(&s->dtmf, NULL, NULL);
     /* The specified timing is 50-60ms on, 50-60ms off */
     dtmf_tx_set_timing(&s->dtmf, 55, 55);

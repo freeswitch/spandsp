@@ -58,7 +58,7 @@ struct dtmf_rx_state_s
     /*! An opaque pointer passed to the callback function. */
     void *digits_callback_data;
     /*! Optional callback funcion to deliver real time digit state changes. */
-    tone_report_func_t realtime_callback;
+    span_tone_report_func_t realtime_callback;
     /*! An opaque pointer passed to the real time callback function. */
     void *realtime_callback_data;
     /*! True if dialtone should be filtered before processing */

@@ -70,7 +70,7 @@ typedef struct
     /*! Impulse height, based on MTU and bit rate */
     double impulse_height;
     /*! Impulse decay coefficient for the single pole IIR filter. */
-    double impulse_coeff;
+    double impulse_decay_coeff;
 
     /*! Probability of packet loss due to occupancy. */
     double prob_packet_loss;
@@ -98,11 +98,10 @@ typedef struct
 /*! The model definition for the core network (backbone) segment */
 typedef struct
 {
-    /*! Basic delay of the backbone for regional paths */
+    /*! Basic delay of the backbone for regional paths. */
     double base_regional_delay;
-    /*! Basic delay of the backbone for intercontinental paths */
+    /*! Basic delay of the backbone for intercontinental paths. */
     double base_intercontinental_delay;
-    /*! Percentage packet loss of the backbone */
     /*! Percentage packet loss of the backbone. */
     double percentage_packet_loss;
     /*! Maximum jitter in the backbone. */
@@ -165,7 +164,7 @@ typedef struct
     /*! The maximum permitted height of impulses. */
     double impulse_height;
     /*! The impulse decay coefficient. */
-    double impulse_coeff;
+    double impulse_decay_coeff;
 
     /*! The basic serial delay due to the link. */
     double serial_delay;

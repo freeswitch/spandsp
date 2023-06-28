@@ -41,6 +41,7 @@
 
 #include "spandsp/telephony.h"
 #include "spandsp/alloc.h"
+#include "spandsp/unaligned.h"
 #include "spandsp/logging.h"
 #include "spandsp/async.h"
 #include "spandsp/timezone.h"
@@ -61,18 +62,6 @@ enum
     NEWLEN_HANDLED = 2
 };
 
-static __inline__ void unpack_32(uint8_t *s, int32_t value)
-{
-    s[3] = value & 0xFF;
-    value >>= 8;
-    s[2] = value & 0xFF;
-    value >>= 8;
-    s[1] = value & 0xFF;
-    value >>= 8;
-    s[0] = value & 0xFF;
-}
-/*- End of function --------------------------------------------------------*/
-
 static void put_stuff(t85_encode_state_t *s, const uint8_t buf[], int len)
 {
     uint8_t *new_buf;
@@ -86,9 +75,11 @@ static void put_stuff(t85_encode_state_t *s, const uint8_t buf[], int len)
         bytes_per_row = (s->xd + 7) >> 3;
         if ((new_buf = span_realloc(s->bitstream, s->bitstream_len + len + bytes_per_row)) == NULL)
             return;
+        /*endif*/
         s->bitstream = new_buf;
         s->bitstream_len += (len + bytes_per_row);
     }
+    /*endif*/
     memcpy(&s->bitstream[s->bitstream_iptr], buf, len);
     s->bitstream_iptr += len;
     s->compressed_image_size += len;
@@ -125,15 +116,17 @@ static __inline__ void output_newlen(t85_encode_state_t *s)
     {
         buf[0] = T82_ESC;
         buf[1] = T82_NEWLEN;
-        unpack_32(&buf[2], s->yd);
+        put_net_unaligned_uint32(&buf[2], s->yd);
         put_stuff(s, buf, 6);
         if (s->y == s->yd)
         {
             /* See T.82/6.2.6.2 */
             output_esc_code(s, T82_SDNORM);
         }
+        /*endif*/
         s->newlen = NEWLEN_HANDLED;
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -145,12 +138,13 @@ static __inline__ void output_comment(t85_encode_state_t *s)
     {
         buf[0] = T82_ESC;
         buf[1] = T82_COMMENT;
-        unpack_32(&buf[2], s->comment_len);
+        put_net_unaligned_uint32(&buf[2], s->comment_len);
         put_stuff(s, buf, 6);
         put_stuff(s, s->comment, s->comment_len);
         s->comment = NULL;
         s->comment_len = 0;
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -163,11 +157,12 @@ static __inline__ void output_atmove(t85_encode_state_t *s)
         s->tx = s->new_tx;
         buf[0] = T82_ESC;
         buf[1] = T82_ATMOVE;
-        unpack_32(&buf[2], 0);
+        put_net_unaligned_uint32(&buf[2], 0);
         buf[6] = s->tx;
         buf[7] = 0;
         put_stuff(s, buf, 8);
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -182,11 +177,11 @@ static void generate_bih(t85_encode_state_t *s, uint8_t *buf)
     /* Unspecified */
     buf[3] = 0;
     /* XD - Horizontal image size at layer D */
-    unpack_32(&buf[4], s->xd);
+    put_net_unaligned_uint32(&buf[4], s->xd);
     /* YD - Vertical image size at layer D */
-    unpack_32(&buf[8], s->yd);
+    put_net_unaligned_uint32(&buf[8], s->yd);
     /* L0 - Rows per stripe, at the lowest resolution */
-    unpack_32(&buf[12], s->l0);
+    put_net_unaligned_uint32(&buf[12], s->l0);
     /* MX - Maximum horizontal offset allowed for AT pixel */
     buf[16] = s->mx;
     /* MY - Maximum vertical offset allowed for AT pixel */
@@ -224,10 +219,13 @@ SPAN_DECLARE(void) t85_encode_set_options(t85_encode_state_t *s,
     /* Its still OK to change things */
     if (l0 >= 1  &&  l0 <= s->yd)
         s->l0 = l0;
+    /*endif*/
     if (mx >= 0  &&  mx <= 127)
         s->mx = mx;
+    /*endif*/
     if (options >= 0)
         s->options = options & (T85_TPBON | T85_VLENGTH | T85_LRLTWO);
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -257,6 +255,7 @@ static int get_next_row(t85_encode_state_t *s)
         /* We have already finished pumping out the image */
         return -1;
     }
+    /*endif*/
 
     s->bitstream_iptr = 0;
     s->bitstream_optr = 0;
@@ -282,14 +281,18 @@ static int get_next_row(t85_encode_state_t *s)
                to the current size. */
             if (t85_encode_set_image_length(s, 1) == 0)
                 return 0;
+            /*endif*/
             /* We can't clip the image to the current length. We will have to
                continue up to the original length with blank (all white) rows. */
             s->fill_with_white = true;
             memset(s->prev_row[0], 0, bytes_per_row);
         }
+        /*endif*/
     }
+    /*endif*/
     if ((s->xd & 7))
         s->prev_row[0][bytes_per_row - 1] &= ~((1 << (8 - (s->xd & 7))) - 1);
+    /*endif*/
 
     if (s->current_bit_plane == 0  &&  s->y == 0)
     {
@@ -297,6 +300,7 @@ static int get_next_row(t85_encode_state_t *s)
         generate_bih(s, buf);
         put_stuff(s, buf, 20);
     }
+    /*endif*/
 
     if (s->i == 0)
     {
@@ -316,9 +320,12 @@ static int get_next_row(t85_encode_state_t *s)
             s->c_all = 0;
             for (i = 0;  i <= s->mx;  i++)
                 s->c[i] = 0;
+            /*endfor*/
         }
+        /*endif*/
         t81_t82_arith_encode_restart(&s->s, true);
     }
+    /*endif*/
 
     /* Typical prediction */
     ltp = false;
@@ -331,6 +338,7 @@ static int get_next_row(t85_encode_state_t *s)
                              (ltp == s->prev_ltp));
         s->prev_ltp = ltp;
     }
+    /*endif*/
 
     if (!ltp)
     {
@@ -352,6 +360,7 @@ static int get_next_row(t85_encode_state_t *s)
                 row_h[1] |= hp[1][1];
                 row_h[2] |= hp[2][1];
             }
+            /*endif*/
             if ((s->options & T85_LRLTWO))
             {
                 /* Two row template */
@@ -369,11 +378,13 @@ static int get_next_row(t85_encode_state_t *s)
                             o = (j - s->tx) - (j & ~7);
                             cx |= (((hp[0][o >> 3] >> (7 - (o & 7))) & 1) << 4);
                         }
+                        /*endif*/
                     }
                     else
                     {
                         cx |= ((row_h[1] >> 10) & 0x3F0);
                     }
+                    /*endif*/
                     p = (row_h[0] >> 8) & 1;
                     t81_t82_arith_encode(&s->s, cx, p);
 
@@ -383,20 +394,26 @@ static int get_next_row(t85_encode_state_t *s)
                     {
                         if (p == ((row_h[1] >> 14) & 1))
                             s->c[0]++;
+                        /*endif*/
                         for (t = 5;  t <= s->mx  &&  t <= j;  t++)
                         {
                             o = (j - t) - (j & ~7);
                             a = (hp[0][o >> 3] >> (7 - (o & 7))) & 1;
                             if (a == p)
                                 s->c[t]++;
+                            /*endif*/
                         }
+                        /*endfor*/
                         if (p == 0)
                         {
                             for (  ;  t <= s->mx;  t++)
                                 s->c[t]++;
+                            /*endfor*/
                         }
+                        /*endif*/
                         ++s->c_all;
                     }
+                    /*endif*/
                 }
                 while ((++j & 7)  &&  j < s->xd);
             }
@@ -417,11 +434,13 @@ static int get_next_row(t85_encode_state_t *s)
                             o = (j - s->tx) - (j & ~7);
                             cx |= (((hp[0][o >> 3] >> (7 - (o & 7))) & 1) << 2);
                         }
+                        /*endif*/
                     }
                     else
                     {
                         cx |= ((row_h[1] >> 12) & 0x07C);
                     }
+                    /*endif*/
                     p = (row_h[0] >> 8) & 1;
                     t81_t82_arith_encode(&s->s, cx, p);
 
@@ -431,28 +450,37 @@ static int get_next_row(t85_encode_state_t *s)
                     {
                         if (p == ((row_h[1] >> 14) & 1))
                             s->c[0]++;
+                        /*endif*/
                         for (t = 3;  t <= s->mx  &&  t <= j;  t++)
                         {
                             o = (j - t) - (j & ~7);
                             a = (hp[0][o >> 3] >> (7 - (o & 7))) & 1;
                             if (a == p)
                                 s->c[t]++;
+                            /*endif*/
                         }
+                        /*endfor*/
                         if (p == 0)
                         {
                             for (  ;  t <= s->mx;  t++)
                                 s->c[t]++;
+                            /*endfor*/
                         }
+                        /*endif*/
                         ++s->c_all;
                     }
+                    /*endif*/
                 }
                 while ((++j & 7)  &&  j < s->xd);
             }
+            /*endif*/
             hp[0]++;
             hp[1]++;
             hp[2]++;
         }
+        /*endif*/
     }
+    /*endif*/
 
     s->i++;
     s->y++;
@@ -464,6 +492,7 @@ static int get_next_row(t85_encode_state_t *s)
         s->i = 0;
         output_newlen(s);
     }
+    /*endif*/
 
     /* T.82/Annex C - is it time for an adaptive template change? */
     if (s->new_tx < 0  &&  s->c_all > 2048)
@@ -477,10 +506,13 @@ static int get_next_row(t85_encode_state_t *s)
         {
             if (s->c[i] > c_max)
                 c_max = s->c[i];
+            /*endif*/
             if (s->c[i] < c_min)
                 c_min = s->c[i];
+            /*endif*/
             if (s->c[i] > s->c[t_max])
                 t_max = i;
+            /*endif*/
         }
         cl_min = (s->c[0] < c_min)  ?  s->c[0]  :  c_min;
         cl_max = (s->c[0] > c_max)  ?  s->c[0]  :  c_max;
@@ -507,7 +539,9 @@ static int get_next_row(t85_encode_state_t *s)
             /* Disable further analysis */
             s->new_tx = s->tx;
         }
+        /*endif*/
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -519,13 +553,16 @@ SPAN_DECLARE(int) t85_encode_set_image_width(t85_encode_state_t *s, uint32_t ima
 
     if (s->xd == image_width)
         return 0;
+    /*endif*/
     /* Are we too late to change the width for this page? */
     if (s->y > 0)
         return -1;
+    /*endif*/
     s->xd = image_width;
     bytes_per_row = (s->xd + 7) >> 3;
     if ((t = (uint8_t *) span_realloc(s->row_buf, 3*bytes_per_row)) == NULL)
         return -1;
+    /*endif*/
     s->row_buf = t;
     memset(s->row_buf, 0, 3*bytes_per_row);
     s->prev_row[0] = s->row_buf;
@@ -546,15 +583,19 @@ SPAN_DECLARE(int) t85_encode_set_image_length(t85_encode_state_t *s, uint32_t im
         /* Invalid parameter */
         return -1;
     }
+    /*endif*/
     if (s->y > 0)
     {
         /* TODO: If we are already beyond the new length, we scale back the new length silently.
                  Is there any downside to this? */
         if (image_length < s->y)
             image_length = s->y;
+        /*endif*/
         if (s->yd != image_length)
             s->newlen = NEWLEN_PENDING;
+        /*endif*/
     }
+    /*endif*/
     s->yd = image_length;
     if (s->y == s->yd)
     {
@@ -565,8 +606,10 @@ SPAN_DECLARE(int) t85_encode_set_image_length(t85_encode_state_t *s, uint32_t im
             output_esc_code(s, T82_SDNORM);
             s->i = 0;
         }
+        /*endif*/
         output_newlen(s);
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -591,6 +634,7 @@ SPAN_DECLARE(int) t85_encode_image_complete(t85_encode_state_t *s)
 {
     if (s->y >= s->yd)
         return SIG_STATUS_END_OF_DATA;
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -606,13 +650,17 @@ SPAN_DECLARE(int) t85_encode_get(t85_encode_state_t *s, uint8_t buf[], size_t ma
         {
             if (get_next_row(s) < 0)
                 return len;
+            /*endif*/
         }
+        /*endif*/
         n = s->bitstream_iptr - s->bitstream_optr;
         if (n > max_len - len)
             n = max_len - len;
+        /*endif*/
         memcpy(&buf[len], &s->bitstream[s->bitstream_optr], n);
         s->bitstream_optr += n;
     }
+    /*endfor*/
     return len;
 }
 /*- End of function --------------------------------------------------------*/
@@ -678,6 +726,7 @@ SPAN_DECLARE(int) t85_encode_restart(t85_encode_state_t *s, uint32_t image_width
         span_free(s->bitstream);
         s->bitstream = NULL;
     }
+    /*endif*/
     s->bitstream_len = 0;
     s->fill_with_white = false;
     s->compressed_image_size = 0;
@@ -697,7 +746,9 @@ SPAN_DECLARE(t85_encode_state_t *) t85_encode_init(t85_encode_state_t *s,
     {
         if ((s = (t85_encode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "T.85");
@@ -731,12 +782,14 @@ SPAN_DECLARE(int) t85_encode_release(t85_encode_state_t *s)
         span_free(s->row_buf);
         s->row_buf = NULL;
     }
+    /*endif*/
     if (s->bitstream)
     {
         span_free(s->bitstream);
         s->bitstream = NULL;
         s->bitstream_len = 0;
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

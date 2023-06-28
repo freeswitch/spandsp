@@ -99,6 +99,7 @@ SPAN_DECLARE(void) bit_reverse(uint8_t to[], const uint8_t from[], int len)
        some machines make it desparately slow) or fails. */
     for (i = 0;  i < len;  i++)
         to[i] = bit_reverse8(from[i]);
+    /*endfor*/
 #else
     /* This code is this is based on the woolly assumption that the start of the buffers
        is memory aligned. If it isn't, the routine will be less efficient on some machines,
@@ -114,6 +115,7 @@ SPAN_DECLARE(void) bit_reverse(uint8_t to[], const uint8_t from[], int len)
         *z8++ = ((x8 & 0xAAAAAAAAAAAAAAAALLU) >> 1) | ((x8 & 0x5555555555555555LLU) << 1);
         len -= sizeof(uint64_t);
     }
+    /*endwhile*/
     y4 = (const uint32_t *) y8;
     z4 = (uint32_t *) z8;
 #else
@@ -128,10 +130,12 @@ SPAN_DECLARE(void) bit_reverse(uint8_t to[], const uint8_t from[], int len)
         *z4++ = ((x4 & 0xAAAAAAAA) >> 1) | ((x4 & 0x55555555) << 1);
         len -= sizeof(uint32_t);
     }
+    /*endwhile*/
     y1 = (const uint8_t *) y4;
     z1 = (uint8_t *) z4;
     while (len-- > 0)
         *z1++ = bit_reverse8(*y1++);
+    /*endwhile*/
 #endif
 }
 /*- End of function --------------------------------------------------------*/

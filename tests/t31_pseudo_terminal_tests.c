@@ -80,7 +80,7 @@ double when = 0.0;
 
 int t38_mode = false;
 
-struct modem_s modem[10];
+pseudo_terminal_state_t pty[10];
 
 char *decode_test_file = NULL;
 int countdown = 0;
@@ -147,7 +147,7 @@ static int at_tx_handler(void *user_data, const uint8_t *buf, size_t len)
 #else
     int res;
 #endif
-    modem_t *modem;
+    pseudo_terminal_state_t *pty;
 
 int i;
 
@@ -156,7 +156,7 @@ for (i = 0;  i < len;  i++)
     printf(" 0x%02x", buf[i]);
 printf("\n");
 
-    modem = (modem_t *) user_data;
+    pty = (pseudo_terminal_state_t *) user_data;
 #if defined(WIN32)
     o.hEvent = CreateEvent(NULL, true, false, NULL);
     /* Initialize the rest of the OVERLAPPED structure to zero. */
@@ -165,11 +165,11 @@ printf("\n");
     o.Offset = 0;
     o.OffsetHigh = 0;
     assert(o.hEvent);
-    if (!WriteFile(modem->master, buf, (DWORD) len, &res, &o))
-        GetOverlappedResult(modem->master, &o, &res, true);
+    if (!WriteFile(modem->master_fd, buf, (DWORD) len, &res, &o))
+        GetOverlappedResult(modem->master_fd, &o, &res, true);
     CloseHandle(o.hEvent);
 #else
-    res = write(modem->master, buf, len);
+    res = write(pty->master_fd, buf, len);
 #endif
     if (res != len)
     {
@@ -178,9 +178,9 @@ printf("\n");
         if (res == -1)
             res = 0;
 #if !defined(WIN32)
-        if (tcflush(modem->master, TCOFLUSH))
+        if (tcflush(pty->master_fd, TCOFLUSH))
             printf("Unable to flush pty master buffer: %s\n", strerror(errno));
-        else if (tcflush(modem->slave, TCOFLUSH))
+        else if (tcflush(pty->slave_fd, TCOFLUSH))
             printf("Unable to flush pty slave buffer: %s\n", strerror(errno));
         else
             printf("Successfully flushed pty buffer\n");
@@ -193,10 +193,10 @@ printf("\n");
 static int t31_call_control(t31_state_t *s, void *user_data, int op, const char *num)
 {
     uint8_t x[2];
-    modem_t *modem;
+    pseudo_terminal_state_t *pty;
 
     printf("Modem control - %s", at_modem_control_to_str(op));
-    modem = (modem_t *) user_data;
+    pty = (pseudo_terminal_state_t *) user_data;
     switch (op)
     {
     case AT_MODEM_CONTROL_CALL:
@@ -231,7 +231,7 @@ static int t31_call_control(t31_state_t *s, void *user_data, int op, const char 
             break;
         }
         /*endswitch*/
-        modem->block_read = (num == NULL);
+        pty->block_read = (num == NULL);
         break;
     case AT_MODEM_CONTROL_CAR:
         printf(" %d", (int) (intptr_t) num);
@@ -291,7 +291,7 @@ static int t31_tx_packet_handler(t38_core_state_t *s, void *user_data, const uin
 /*- End of function --------------------------------------------------------*/
 
 #if defined(WIN32)
-static int modem_wait_sock(modem_t *modem, int ms, modem_poll_t flags)
+static int modem_wait_sock(pseudo_terminal_state_t *pty, int ms, modem_poll_t flags)
 {
     /* This method ignores ms and waits infinitely */
     DWORD dwEvtMask;
@@ -303,7 +303,7 @@ static int modem_wait_sock(modem_t *modem, int ms, modem_poll_t flags)
     HANDLE arHandles[2];
 
     ret = MODEM_POLL_ERROR;
-    arHandles[0] = modem->threadAbort;
+    arHandles[0] = pty->threadAbort;
 
     o.hEvent = CreateEvent(NULL, true, false, NULL);
     arHandles[1] = o.hEvent;
@@ -315,25 +315,25 @@ static int modem_wait_sock(modem_t *modem, int ms, modem_poll_t flags)
     o.OffsetHigh = 0;
     assert(o.hEvent);
 
-    if ((result = WaitCommEvent(modem->master, &dwEvtMask, &o)) == 0)
+    if ((result = WaitCommEvent(pty->master_fd, &dwEvtMask, &o)) == 0)
     {
         if (GetLastError() != ERROR_IO_PENDING)
         {
             /* Something went horribly wrong with WaitCommEvent(), so
                clear all errors and try again */
-            ClearCommError(modem->master, &comerrors, 0);
+            ClearCommError(pty->master_fd, &comerrors, 0);
         }
         else
         {
             /* IO is pending, wait for it to finish */
             dwWait = WaitForMultipleObjects(2, arHandles, false, INFINITE);
-            if (dwWait == WAIT_OBJECT_0 + 1  &&  !modem->block_read)
+            if (dwWait == WAIT_OBJECT_0 + 1  &&  !pty->block_read)
                 ret = MODEM_POLL_READ;
         }
     }
     else
     {
-        if (!modem->block_read)
+        if (!pty->block_read)
             ret = MODEM_POLL_READ;
     }
 
@@ -357,7 +357,7 @@ static int modem_wait_sock(int sock, uint32_t ms, modem_poll_t flags)
     if ((flags & MODEM_POLL_ERROR))
         pfds[0].events |= POLLERR;
 
-    s = poll(pfds, (modem->block_read)  ?  0  :  1, ms);
+    s = poll(pfds, (pty->block_read)  ?  0  :  1, ms);
 
     ret = 0;
     if (s < 0)
@@ -540,7 +540,7 @@ static int t30_tests(int t38_mode, int use_ecm, int use_gui, int log_audio, int 
     memset(t30_amp, 0, sizeof(t30_amp));
 
     /* Now set up and run the T.31 modem */
-    if ((t31_state = t31_init(NULL, at_tx_handler, &modem[0], t31_call_control, &modem[0], t31_tx_packet_handler, NULL)) == NULL)
+    if ((t31_state = t31_init(NULL, at_tx_handler, &pty[0], t31_call_control, &pty[0], t31_tx_packet_handler, NULL)) == NULL)
     {
         fprintf(stderr, "    Cannot start the T.31 modem\n");
         exit(2);
@@ -605,7 +605,7 @@ printf("ZZZ\n");
             }
         }
 
-        ret = modem_wait_sock(modem[0].master, 20, MODEM_POLL_READ);
+        ret = modem_wait_sock(pty[0].master_fd, 20, MODEM_POLL_READ);
         if ((ret & MODEM_POLL_READ))
         {
 #if defined(WIN32)
@@ -617,12 +617,12 @@ printf("ZZZ\n");
             o.Offset = 0;
             o.OffsetHigh = 0;
             assert(o.hEvent);
-            if (!ReadFile(modem->master, buf, avail, &read_bytes, &o))
-                GetOverlappedResult(modem->master, &o, &read_bytes, true);
+            if (!ReadFile(pty[0].master_fd, buf, avail, &read_bytes, &o))
+                GetOverlappedResult(pty[0].master_fd, &o, &read_bytes, true);
             CloseHandle (o.hEvent);
             if ((len = read_bytes))
 #else
-            if ((len = read(modem[0].master, buf, 1024)))
+            if ((len = read(pty[0].master_fd, buf, 1024)))
 #endif
 {
 int i;
@@ -765,9 +765,6 @@ int main(int argc, char *argv[])
     int g1050_model_no;
     int g1050_speed_pattern_no;
     int opt;
-#if !defined(WIN32)
-    int tioflags;
-#endif
 
     decode_test_file = NULL;
     log_audio = false;
@@ -820,17 +817,11 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (pseudo_terminal_create(&modem[0]))
+    if (pseudo_terminal_init(&pty[0]))
         printf("Failure\n");
 
-#if !defined(WIN32)
-    ioctl(modem[0].slave, TIOCMGET, &tioflags);
-    tioflags |= TIOCM_RI;
-    ioctl(modem[0].slave, TIOCMSET, &tioflags);
-#endif
-
     t30_tests(t38_mode, use_ecm, use_gui, log_audio, test_sending, g1050_model_no, g1050_speed_pattern_no);
-    if (pseudo_terminal_close(&modem[0]))
+    if (pseudo_terminal_release(&pty[0]))
         printf("Failure\n");
     printf("Tests passed\n");
     return 0;

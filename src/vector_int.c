@@ -253,6 +253,7 @@ SPAN_DECLARE(int32_t) vec_dot_prodi16(const int16_t x[], const int16_t y[], int 
     z = 0;
     for (i = 0;  i < n;  i++)
         z += (int32_t) x[i]*(int32_t) y[i];
+    /*endfor*/
 #endif
     return z;
 }
@@ -274,6 +275,7 @@ SPAN_DECLARE(void) vec_lmsi16(const int16_t x[], int16_t y[], int n, int16_t err
 
     for (i = 0;  i < n;  i++)
         y[i] += (int16_t) (((int32_t) x[i]*(int32_t) error) >> 15);
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -616,9 +618,11 @@ SPAN_DECLARE(int32_t) vec_min_maxi16(const int16_t x[], int n, int16_t out[])
         out[0] = max;
         out[1] = min;
     }
+    /*endif*/
     z = abs(min);
     if (z > max)
         return z;
+    /*endif*/
 #endif
     return max;
 }

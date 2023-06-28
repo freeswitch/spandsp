@@ -23,6 +23,10 @@ DIST_SUBDIRS =
 EXTRA_DIST = dam9_lpc55.wav \
              dam9.wav \
              lenna-colour.tif \
+             lenna-bw.tif \
+             lenna-bw-bilevel.tif \
+             lenna-colour-bilevel.tif \
+             lenna-colour-out.tif \
              short_nb_voice.wav \
              short_wb_voice.wav
 

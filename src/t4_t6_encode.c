@@ -365,8 +365,10 @@ static void update_row_bit_info(t4_t6_encode_state_t *s)
 {
     if (s->row_bits > s->max_row_bits)
         s->max_row_bits = s->row_bits;
+    /*endif*/
     if (s->row_bits < s->min_row_bits)
         s->min_row_bits = s->row_bits;
+    /*endif*/
     s->row_bits = 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -378,16 +380,19 @@ static int free_buffers(t4_t6_encode_state_t *s)
         span_free(s->cur_runs);
         s->cur_runs = NULL;
     }
+    /*endif*/
     if (s->ref_runs)
     {
         span_free(s->ref_runs);
         s->ref_runs = NULL;
     }
+    /*endif*/
     if (s->bitstream)
     {
         span_free(s->bitstream);
         s->bitstream = NULL;
     }
+    /*endif*/
     s->bytes_per_row = 0;
     return 0;
 }
@@ -406,6 +411,7 @@ static __inline__ int put_encoded_bits(t4_t6_encode_state_t *s, uint32_t bits, i
         s->tx_bitstream >>= 8;
         s->tx_bits -= 8;
     }
+    /*endwhile*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -423,17 +429,22 @@ static __inline__ int put_1d_span(t4_t6_encode_state_t *s, int32_t span, const t
     {
         if (put_encoded_bits(s, te->code, te->length))
             return -1;
+        /*endif*/
         span -= te->run_length;
     }
+    /*endwhile*/
     te = &tab[63 + (span >> 6)];
     if (span >= 64)
     {
         if (put_encoded_bits(s, te->code, te->length))
             return -1;
+        /*endif*/
         span -= te->run_length;
     }
+    /*endif*/
     if (put_encoded_bits(s, tab[span].code, tab[span].length))
         return -1;
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -481,10 +492,13 @@ static int row_to_run_lengths(uint32_t list[], const uint8_t row[], int width)
                 flip ^= 0xFFFFFFFF;
                 rem -= frag;
             }
+            /*endwhile*/
             /* Save the remainder of the word */
             span = (i << 3) + 32 - rem;
         }
+        /*endif*/
     }
+    /*endwhile*/
     /* Now deal with some whole bytes, if there are any left. */
     limit = width >> 3;
     flip &= 0xFF000000;
@@ -511,11 +525,15 @@ static int row_to_run_lengths(uint32_t list[], const uint8_t row[], int width)
                     flip ^= 0xFF000000;
                     rem -= frag;
                 }
+                /*endwhile*/
                 /* Save the remainder of the word */
                 span = (i << 3) + 8 - rem;
             }
+            /*endif*/
         }
+        /*endfor*/
     }
+    /*endif*/
     /* Deal with any left over fractional byte. */
     span = (i << 3) - span;
     if ((rem = width & 7))
@@ -527,6 +545,7 @@ static int row_to_run_lengths(uint32_t list[], const uint8_t row[], int width)
             frag = 31 - top_bit(x ^ flip);
             if (frag > rem)
                 frag = rem;
+            /*endif*/
             pos += (span + frag);
             list[entry++] = pos;
             x <<= frag;
@@ -543,7 +562,9 @@ static int row_to_run_lengths(uint32_t list[], const uint8_t row[], int width)
             pos += span;
             list[entry++] = pos;
         }
+        /*endif*/
     }
+    /*endif*/
 #if defined(T4_STATE_DEBUGGING)
     /* Dump the runs of black and white for analysis */
     {
@@ -586,6 +607,7 @@ static void encode_eol(t4_t6_encode_state_t *s)
         code = 0x800;
         length = 12;
     }
+    /*endif*/
     if (s->row_bits)
     {
         /* We may need to pad the row to a minimum length, unless we are in T.6 mode.
@@ -595,7 +617,9 @@ static void encode_eol(t4_t6_encode_state_t *s)
         {
             if (s->row_bits + length < s->min_bits_per_row)
                 put_encoded_bits(s, 0, s->min_bits_per_row - (s->row_bits + length));
+            /*endif*/
         }
+        /*endif*/
         put_encoded_bits(s, code, length);
         update_row_bit_info(s);
     }
@@ -608,6 +632,7 @@ static void encode_eol(t4_t6_encode_state_t *s)
            end of page EOL, with no padding. */
         s->row_bits = 0;
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -744,13 +769,17 @@ static void encode_2d_row(t4_t6_encode_state_t *s, const uint8_t *row_buf)
                     put_1d_span(s, a1 - a0, t4_black_codes);
                     put_1d_span(s, a2 - a1, t4_white_codes);
                 }
+                /*endif*/
                 a0 = a2;
                 a_cursor += 2;
             }
+            /*endif*/
             if (a0 >= s->image_width)
                 break;
+            /*endif*/
             if (a_cursor >= cur_steps)
                 a_cursor = cur_steps - 1;
+            /*endif*/
             a1 = s->cur_runs[a_cursor];
         }
         else
@@ -762,7 +791,9 @@ static void encode_2d_row(t4_t6_encode_state_t *s, const uint8_t *row_buf)
             a0 = b2;
             if (a0 >= s->image_width)
                 break;
+            /*endif*/
         }
+        /*endif*/
         /* We need to hunt for the correct position in the reference row, as the
            runs there have no particular alignment with the runs in the current
            row. */
@@ -770,13 +801,16 @@ static void encode_2d_row(t4_t6_encode_state_t *s, const uint8_t *row_buf)
             b_cursor |= 1;
         else
             b_cursor &= ~1;
+        /*endif*/
         if (a0 < (int) s->ref_runs[b_cursor])
         {
             for (  ;  b_cursor >= 0;  b_cursor -= 2)
             {
                 if (a0 >= (int) s->ref_runs[b_cursor])
                     break;
+                /*endif*/
             }
+            /*endwhile*/
             b_cursor += 2;
         }
         else
@@ -785,12 +819,17 @@ static void encode_2d_row(t4_t6_encode_state_t *s, const uint8_t *row_buf)
             {
                 if (a0 < (int) s->ref_runs[b_cursor])
                     break;
+                /*endif*/
             }
+            /*endfor*/
             if (b_cursor >= s->ref_steps)
                 b_cursor = s->ref_steps - 1;
+            /*endif*/
         }
+        /*endif*/
         b1 = s->ref_runs[b_cursor];
     }
+    /*endfor*/
     /* Swap the buffers */
     s->ref_steps = cur_steps;
     p = s->cur_runs;
@@ -813,6 +852,7 @@ static void encode_1d_row(t4_t6_encode_state_t *s, const uint8_t *row_buf)
     put_1d_span(s, s->ref_runs[0], t4_white_codes);
     for (i = 1;  i < s->ref_steps;  i++)
         put_1d_span(s, s->ref_runs[i] - s->ref_runs[i - 1], (i & 1)  ?  t4_black_codes  :  t4_white_codes);
+    /*endfor*/
     /* Stretch the row a little, so when we step by 2 we are guaranteed to
        hit an entry showing the row length */
     s->ref_runs[s->ref_steps] =
@@ -844,12 +884,14 @@ static int encode_row(t4_t6_encode_state_t *s, const uint8_t *row_buf, size_t le
             encode_1d_row(s, row_buf);
             s->row_is_2d = true;
         }
+        /*endif*/
         if (s->rows_to_next_1d_row <= 0)
         {
             /* Insert a row of 1D encoding */
             s->row_is_2d = false;
             s->rows_to_next_1d_row = s->max_rows_to_next_1d_row - 1;
         }
+        /*endif*/
         break;
     default:
     case T4_COMPRESSION_T4_1D:
@@ -857,6 +899,7 @@ static int encode_row(t4_t6_encode_state_t *s, const uint8_t *row_buf, size_t le
         encode_1d_row(s, row_buf);
         break;
     }
+    /*endswitch*/
     s->image_length++;
     return 0;
 }
@@ -871,6 +914,7 @@ static int finalise_page(t4_t6_encode_state_t *s)
         /* Attach an EOFB (end of facsimile block == 2 x EOLs) to the end of the page */
         for (i = 0;  i < EOLS_TO_END_T6_TX_PAGE;  i++)
             encode_eol(s);
+        /*endfor*/
     }
     else
     {
@@ -878,7 +922,9 @@ static int finalise_page(t4_t6_encode_state_t *s)
         s->row_is_2d = false;
         for (i = 0;  i < EOLS_TO_END_T4_TX_PAGE;  i++)
             encode_eol(s);
+        /*endfor*/
     }
+    /*endif*/
     /* Force any partial byte in progress to flush using ones. Any post EOL padding when
        sending is normally ones, so this is consistent. */
     put_encoded_bits(s, 0xFF, 7);
@@ -899,6 +945,7 @@ static int get_next_row(t4_t6_encode_state_t *s)
 
     if (s->row_bits < 0  ||  s->row_read_handler == NULL)
         return -1;
+    /*endif*/
     s->bitstream_iptr = 0;
     s->bitstream_optr = 0;
     s->bit_pos = 7;
@@ -912,6 +959,7 @@ static int get_next_row(t4_t6_encode_state_t *s)
             encode_row(s, row_buf, len);
         else
             finalise_page(s);
+        /*endif*/
     }
     while (len > 0  &&  s->bitstream_iptr == 0);
     s->compressed_image_size += 8*s->bitstream_iptr;
@@ -925,7 +973,9 @@ SPAN_DECLARE(int) t4_t6_encode_image_complete(t4_t6_encode_state_t *s)
     {
         if (get_next_row(s) < 0)
             return SIG_STATUS_END_OF_DATA;
+        /*endif*/
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -938,13 +988,16 @@ SPAN_DECLARE(int) t4_t6_encode_get_bit(t4_t6_encode_state_t *s)
     {
         if (get_next_row(s) < 0)
             return SIG_STATUS_END_OF_DATA;
+        /*endif*/
     }
+    /*endif*/
     bit = (s->bitstream[s->bitstream_optr] >> (7 - s->bit_pos)) & 1;
     if (--s->bit_pos < 0)
     {
         s->bitstream_optr++;
         s->bit_pos = 7;
     }
+    /*endif*/
     return bit;
 }
 /*- End of function --------------------------------------------------------*/
@@ -960,13 +1013,17 @@ SPAN_DECLARE(int) t4_t6_encode_get(t4_t6_encode_state_t *s, uint8_t buf[], int m
         {
             if (get_next_row(s) < 0)
                 return len;
+            /*endif*/
         }
+        /*endif*/
         n = s->bitstream_iptr - s->bitstream_optr;
         if (n > max_len - len)
             n = max_len - len;
+        /*endif*/
         memcpy(&buf[len], &s->bitstream[s->bitstream_optr], n);
         s->bitstream_optr += n;
     }
+    /*endfor*/
     return len;
 }
 /*- End of function --------------------------------------------------------*/
@@ -995,6 +1052,7 @@ SPAN_DECLARE(int) t4_t6_encode_set_encoding(t4_t6_encode_state_t *s, int encodin
         s->row_is_2d = (s->encoding == T4_COMPRESSION_T6);
         return 0;
     }
+    /*endswitch*/
     return -1;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1011,6 +1069,7 @@ SPAN_DECLARE(void) t4_t6_encode_set_min_bits_per_row(t4_t6_encode_state_t *s, in
         s->min_bits_per_row = bits;
         break;
     }
+    /*endswitch*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1029,14 +1088,18 @@ SPAN_DECLARE(int) t4_t6_encode_set_image_width(t4_t6_encode_state_t *s, int imag
 
         if ((bufptr = (uint32_t *) span_realloc(s->cur_runs, run_space)) == NULL)
             return -1;
+        /*endif*/
         s->cur_runs = bufptr;
         if ((bufptr = (uint32_t *) span_realloc(s->ref_runs, run_space)) == NULL)
             return -1;
+        /*endif*/
         s->ref_runs = bufptr;
         if ((bufptr8 = (uint8_t *) span_realloc(s->bitstream, (s->image_width + 1)*sizeof(uint16_t))) == NULL)
             return -1;
+        /*endif*/
         s->bitstream = bufptr8;
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1101,8 +1164,11 @@ SPAN_DECLARE(void) t4_t6_encode_set_max_2d_rows_per_1d_row(t4_t6_encode_state_t 
                 max = y_res_table[i].max_rows;
                 break;
             }
+            /*endif*/
         }
+        /*endfor*/
     }
+    /*endif*/
     s->max_rows_to_next_1d_row = max;
     s->rows_to_next_1d_row = max - 1;
     s->row_is_2d = false;
@@ -1154,7 +1220,9 @@ SPAN_DECLARE(t4_t6_encode_state_t *) t4_t6_encode_init(t4_t6_encode_state_t *s,
     {
         if ((s = (t4_t6_encode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "T.4/T.6");

@@ -116,7 +116,7 @@ SPAN_DECLARE(float) v22bis_rx_signal_power(v22bis_state_t *s);
 /*! Set the power level at which the carrier detection will cut in
     \param s The modem context.
     \param cutoff The signal cutoff power, in dBm0. */
-SPAN_DECLARE(void) v22bis_rx_signal_cutoff(v22bis_state_t *s, float cutoff);
+SPAN_DECLARE(void) v22bis_rx_set_signal_cutoff(v22bis_state_t *s, float cutoff);
 
 /*! Set a handler routine to process QAM status reports
     \param s The modem context.
@@ -180,9 +180,9 @@ SPAN_DECLARE(v22bis_state_t *) v22bis_init(v22bis_state_t *s,
                                            int bit_rate,
                                            int guard,
                                            bool calling_party,
-                                           get_bit_func_t get_bit,
+                                           span_get_bit_func_t get_bit,
                                            void *get_bit_user_data,
-                                           put_bit_func_t put_bit,
+                                           span_put_bit_func_t put_bit,
                                            void *put_bit_user_data);
 
 /*! Release a V.22bis modem receive context.
@@ -208,21 +208,21 @@ SPAN_DECLARE(logging_state_t *) v22bis_get_logging_state(v22bis_state_t *s);
     \param s The modem context.
     \param get_bit The callback routine used to get the data to be transmitted.
     \param user_data An opaque pointer. */
-SPAN_DECLARE(void) v22bis_set_get_bit(v22bis_state_t *s, get_bit_func_t get_bit, void *user_data);
+SPAN_DECLARE(void) v22bis_set_get_bit(v22bis_state_t *s, span_get_bit_func_t get_bit, void *user_data);
 
 /*! Change the get_bit function associated with a V.22bis modem context.
     \brief Change the put_bit function associated with a V.22bis modem context.
     \param s The modem context.
     \param put_bit The callback routine used to process the data received.
     \param user_data An opaque pointer. */
-SPAN_DECLARE(void) v22bis_set_put_bit(v22bis_state_t *s, put_bit_func_t put_bit, void *user_data);
+SPAN_DECLARE(void) v22bis_set_put_bit(v22bis_state_t *s, span_put_bit_func_t put_bit, void *user_data);
 
 /*! Change the modem status report function associated with a V.22bis modem receive context.
     \brief Change the modem status report function associated with a V.22bis modem receive context.
     \param s The modem context.
     \param handler The callback routine used to report modem status changes.
     \param user_data An opaque pointer. */
-SPAN_DECLARE(void) v22bis_set_modem_status_handler(v22bis_state_t *s, modem_status_func_t handler, void *user_data);
+SPAN_DECLARE(void) v22bis_set_modem_status_handler(v22bis_state_t *s, span_modem_status_func_t handler, void *user_data);
 
 #if defined(__cplusplus)
 }

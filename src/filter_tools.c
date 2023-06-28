@@ -90,6 +90,7 @@ static void fftx(complex_t data[], complex_t temp[], int n)
             temp[i] = data[i2];         /* Even */
             temp[h + i] = data[i2 + 1]; /* Odd */
         }
+        /*endfor*/
         fftx(&temp[0], &data[0], h);
         fftx(&temp[h], &data[h], h);
         p = 0;
@@ -101,7 +102,9 @@ static void fftx(complex_t data[], complex_t temp[], int n)
             data[h + i] = complex_sub(&temp[i], &wkt);
             p += t;
         }
+        /*endfor*/
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -117,6 +120,7 @@ void ifft(complex_t data[], int len)
         x = (2.0*3.1415926535*i)/(double) MAX_FFT_LEN;
         circle[i] = expj(x);
     }
+    /*endfor*/
     fftx(data, temp, len);
 }
 /*- End of function --------------------------------------------------------*/
@@ -151,12 +155,16 @@ void compute_raised_cosine_filter(double coeffs[],
             vec[i] = complex_set(0.5*(1.0 + cos((3.1415926535*tau/beta)*(f - f1))), 0.0);
         else
             vec[i] = complex_set(0.0, 0.0);
+        /*endif*/
     }
+    /*endfor*/
     if (root)
     {
         for (i = 0;  i <= SEQ_LEN/2;  i++)
             vec[i].re = sqrt(vec[i].re);
+        /*endfor*/
     }
+    /*endif*/
     if (sinc_compensate)
     {
         for (i = 1;  i <= SEQ_LEN/2;  i++)
@@ -164,11 +172,15 @@ void compute_raised_cosine_filter(double coeffs[],
             x = 3.1415926535*(double) i/(double) SEQ_LEN;
             vec[i].re *= (x/sin(x));
         }
+        /*endfor*/
     }
+    /*endif*/
     for (i = 0;  i <= SEQ_LEN/2;  i++)
         vec[i].re *= tau;
+    /*endfor*/
     for (i = 1;  i < SEQ_LEN/2;  i++)
         vec[SEQ_LEN - i] = vec[i];
+    /*endfor*/
     ifft(vec, SEQ_LEN);
     h = (len - 1)/2;
     for (i = 0;  i < len;  i++)
@@ -176,6 +188,7 @@ void compute_raised_cosine_filter(double coeffs[],
         j = (SEQ_LEN - h + i)%SEQ_LEN;
         coeffs[i] = vec[j].re/(double) SEQ_LEN;
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -200,7 +213,9 @@ void compute_hilbert_transform(double coeffs[], int len)
             coeffs[h + i] =
             coeffs[h - i] = 0.0;
         }
+        /*endif*/
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -217,6 +232,7 @@ void apply_hamming_window(double coeffs[], int len)
         coeffs[h + i] *= w;
         coeffs[h - i] *= w;
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -238,6 +254,7 @@ void truncate_coeffs(double coeffs[], int len, int bits, int hilbert)
         x = coeffs[i]*scale;           /* Scale coeffs so max is (fac - 1.0)/fac */
         coeffs[i] = fix(x*fac)/fac;    /* Truncate */
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

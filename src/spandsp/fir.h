@@ -255,6 +255,9 @@ static __inline__ const float *fir_float_create(fir_float_state_t *fir,
                                                 const float *coeffs,
                                                 int taps)
 {
+    if (fir == NULL)
+        return NULL;
+    /*endif*/
     fir->taps = taps;
     fir->curr_pos = taps - 1;
     fir->coeffs = coeffs;

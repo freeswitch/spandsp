@@ -43,7 +43,7 @@ run_fax_squash_test()
 {
     # Test with lengthwise squashing of a bilevel image
     rm -f fax_tests.tif
-    echo ./fax_tests -b ${SQ} -b ${SQ} ${OPTS} -i ${IN_FILE}
+    echo ./fax_tests -b ${SQ} ${OPTS} -i ${IN_FILE}
     ./fax_tests -b ${SQ} ${OPTS} -i ${IN_FILE} >xyzzy 2>xyzzy2
     RETVAL=$?
     if [ $RETVAL != 0 ]

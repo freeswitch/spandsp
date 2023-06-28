@@ -42,11 +42,11 @@ struct adsi_tx_state_s
     /*! */
     tone_gen_state_t alert_tone_gen;
     /*! */
-    fsk_tx_state_t fsktx;
+    fsk_tx_state_t fsk_tx;
     /*! */
-    dtmf_tx_state_t dtmftx;
+    dtmf_tx_state_t dtmf_tx;
     /*! */
-    async_tx_state_t asynctx;
+    async_tx_state_t async_tx;
 
     /*! */
     int tx_signal_on;
@@ -85,14 +85,14 @@ struct adsi_rx_state_s
     /*! */
     int standard;
     /*! */
-    put_msg_func_t put_msg;
+    span_put_msg_func_t put_msg;
     /*! */
     void *user_data;
 
     /*! */
-    fsk_rx_state_t fskrx;
+    fsk_rx_state_t fsk_rx;
     /*! */
-    dtmf_rx_state_t dtmfrx;
+    dtmf_rx_state_t dtmf_rx;
 
     /*! */
     int consecutive_ones;

@@ -240,16 +240,19 @@ static level_measurement_device_t *level_measurement_device_create(int type)
     int i;
 
     dev = (level_measurement_device_t *) malloc(sizeof(level_measurement_device_t));
-    dev->fir = (fir_float_state_t *) malloc(sizeof(fir_float_state_t));
-    fir_float_create(dev->fir,
-                     level_measurement_bp_coeffs,
-                     sizeof(level_measurement_bp_coeffs)/sizeof(float));
-    for (i = 0;  i < 35*8;  i++)
-        dev->history[i] = 0.0f;
-    dev->pos = 0;
-    dev->factor = expf(-1.0f/((float) SAMPLE_RATE*0.035f));
-    dev->power = 0;
-    dev->type = type;
+    if (dev)
+    {
+        dev->fir = (fir_float_state_t *) malloc(sizeof(fir_float_state_t));
+        fir_float_create(dev->fir,
+                         level_measurement_bp_coeffs,
+                         sizeof(level_measurement_bp_coeffs)/sizeof(float));
+        for (i = 0;  i < 35*8;  i++)
+            dev->history[i] = 0.0f;
+        dev->pos = 0;
+        dev->factor = expf(-1.0f/((float) SAMPLE_RATE*0.035f));
+        dev->power = 0;
+        dev->type = type;
+    }
     return dev;
 }
 /*- End of function --------------------------------------------------------*/
