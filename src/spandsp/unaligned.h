@@ -33,9 +33,17 @@ extern "C"
 {
 #endif
 
-struct __dealign_uint16 { uint16_t datum; } __attribute__((packed));
-struct __dealign_uint32 { uint32_t datum; } __attribute__((packed));
-struct __dealign_uint64 { uint64_t datum; } __attribute__((packed));
+#ifdef __GNUC__
+#define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
+#endif
+
+#ifdef _MSC_VER
+#define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop))
+#endif
+
+PACK(struct __dealign_uint16 { uint16_t datum; };)
+PACK(struct __dealign_uint32 { uint32_t datum; };)
+PACK(struct __dealign_uint64 { uint64_t datum; };)
 
 #if defined(__GNUC__)
 
