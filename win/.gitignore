@@ -1,0 +1,15 @@
+.vs
+x64
+Win32
+libs/win32/7za*
+libs/win32/libjpeg/Win32
+libs/win32/libjpeg/x64
+libs/win32/libtiff/Win32
+libs/win32/libtiff/x64
+libs/win32/spandsp/Win32
+libs/win32/spandsp/x64
+libs/win32/spandsp/spandsp.h
+libs/jpeg*
+libs/tiff-*
+libs/PaxHeaders*
+*.vcxproj.user
