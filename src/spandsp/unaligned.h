@@ -41,9 +41,9 @@ extern "C"
 #define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop))
 #endif
 
-PACK(struct __dealign_uint16 { uint16_t datum; };)
-PACK(struct __dealign_uint32 { uint32_t datum; };)
-PACK(struct __dealign_uint64 { uint64_t datum; };)
+PACK(struct __dealign_uint16 { uint16_t datum; });
+PACK(struct __dealign_uint32 { uint32_t datum; });
+PACK(struct __dealign_uint64 { uint64_t datum; });
 
 #if defined(__GNUC__)
 
