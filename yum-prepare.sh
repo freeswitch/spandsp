@@ -5,12 +5,13 @@
 #
 yum groupinstall "Development tools"
 yum install fftw-devel \
-            libtiff-tools \
             libtiff-devel \
+            libtiff-tools \
             libjpeg-turbo-devel \
             libpcap-devel \
             libxml2-devel \
             libsndfile-devel \
+            libuv-devel \
             fltk-devel \
             fltk-fluid \
             libstdc++-devel \

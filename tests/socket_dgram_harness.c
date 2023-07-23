@@ -39,6 +39,7 @@
 #include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stddef.h>
 #include <fcntl.h>
 #include <string.h>
 #include <assert.h>
