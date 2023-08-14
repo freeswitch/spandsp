@@ -1,0 +1,10 @@
+This directory should contain a file name mitel-cm7291-talkoff.wav, which
+is a transcription of the talk-off test section of the Mitel DTMF test tape
+(i.e. side two of the original cassette tape). Since it is copyright
+material it cannot be included.
+
+Note that the DTMF tests in the test directory fully emulate all the tests
+on the first side of the Mitel test tape, by synthesising the signals from
+scratch.
+
+Steve Underwood <steveu@coppice.org>

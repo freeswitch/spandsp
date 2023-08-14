@@ -35,7 +35,6 @@ EXTRA_DIST = autogen.sh \
              debian/libspandsp3-dev.install \
              debian/libspandsp3-doc.install \
              debian/rules \
-             debian/watch \
              README.testdata \
              spandsp.spec \
              spandsp/fax-tests.dtd \

@@ -24,15 +24,8 @@ LIBS += -L$(top_builddir)/src -lspandsp $(SIMLIBS)
 MAINTAINERCLEANFILES = Makefile.in
 
 EXTRA_DIST = libspandsp_sim.dsp \
-             libspandsp_sim.2005.vcproj \
-             libspandsp_sim.2008.vcproj \
-             msvc/make_line_models.2008.vcproj \
              msvc/msvcproj.head \
-             msvc/msvcproj.foot \
-             msvc/vc8proj.head \
-             msvc/vc8proj.foot \
-             msvc/vc9proj.head \
-             msvc/vc9proj.foot
+             msvc/msvcproj.foot
 
 AM_CPPFLAGS = -I$(top_builddir) -I$(top_builddir)/src -DDATADIR="\"$(pkgdatadir)\""
 
@@ -70,15 +63,11 @@ line_models.c: make_line_models$(EXEEXT)
 	./make_line_models$(EXEEXT)
     
 DSP = libspandsp_sim.dsp
-VCPROJ8 = libspandsp_sim.2005.vcproj
-VCPROJ9 = libspandsp_sim.2008.vcproj
 
 WIN32SOURCES = $(libspandsp_sim_la_SOURCES)
 WIN32HEADERS = $(nobase_include_HEADERS)
 
 DSPOUT = | awk '{printf("%s\r\n", $$0)}' >> $(DSP)
-VCPROJOUT8 = | awk '{printf("%s\r\n", $$0)}' >> $(VCPROJ8)
-VCPROJOUT9 = | awk '{printf("%s\r\n", $$0)}' >> $(VCPROJ9)
 
 $(DSP): msvc/msvcproj.head msvc/msvcproj.foot Makefile.am
 	echo "creating $(DSP)"

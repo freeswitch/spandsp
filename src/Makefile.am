@@ -39,14 +39,7 @@ MOSTLYCLEANFILES = ${DISTCLEANFILES}
 MAINTAINERCLEANFILES = ${DISTCLEANFILES}
 
 EXTRA_DIST = floating_fudge.h \
-             libspandsp.2005.sln \
-             libspandsp.2008.sln \
-             libspandsp.2005.vcproj \
-             libspandsp.2008.vcproj \
-             libspandsp.2010.vcproj \
              libspandsp.2012.vcxproj \
-             libtiff.2005.vcproj \
-             libtiff.2008.vcproj \
              filter_tools.c \
              make_at_dictionary.c \
              make_cielab_luts.c \
@@ -54,15 +47,9 @@ EXTRA_DIST = floating_fudge.h \
              make_modem_filter.c \
              make_t43_gray_code_tables.c \
              msvc/config.h \
-             msvc/Download_TIFF.2005.vcproj \
-             msvc/Download_TIFF.2008.vcproj \
              msvc/getopt.c \
              msvc/gettimeofday.c \
              msvc/inttypes.h \
-             msvc/make_at_dictionary.2005.vcproj \
-             msvc/make_at_dictionary.2008.vcproj \
-             msvc/make_modem_filter.2005.vcproj \
-             msvc/make_modem_filter.2008.vcproj \
              msvc/msvcproj.head \
              msvc/msvcproj.foot \
              msvc/spandsp.h \
@@ -70,12 +57,6 @@ EXTRA_DIST = floating_fudge.h \
              msvc/tiff/cleancount \
              msvc/unistd.h \
              msvc/util.vbs \
-             msvc/vc8proj.foot \
-             msvc/vc8proj.head \
-             msvc/vc9proj.foot \
-             msvc/vc9proj.head \
-             msvc/vc10proj.foot \
-             msvc/vc10proj.head \
              msvc/vc12proj.foot \
              msvc/vc12proj.head \
              msvc/sys/time.h \
@@ -512,54 +493,12 @@ v29tx.lo: ${V29_TX_INCL}
 v29tx_rrc.h: make_modem_filter$(EXEEXT)
 	./make_modem_filter$(EXEEXT) -m V.29 -t >v29tx_rrc.h
 
-VCPROJ8 = libspandsp.2005.vcproj
-VCPROJ9 = libspandsp.2008.vcproj
-VCPROJ10 = libspandsp.2010.vcproj
 VCPROJ12 = libspandsp.2012.vcxproj
 
 WIN32SOURCES = $(libspandsp_la_SOURCES) .\\msvc\\gettimeofday.c
 WIN32HEADERS = $(nobase_include_HEADERS) spandsp.h
 
-VCPROJOUT8 = | awk '{printf("%s\r\n", $$0)}' >> $(VCPROJ8)
-VCPROJOUT9 = | awk '{printf("%s\r\n", $$0)}' >> $(VCPROJ9)
-VCPROJOUT10 = | awk '{printf("%s\r\n", $$0)}' >> $(VCPROJ10)
 VCPROJOUT12 = | awk '{printf("%s\r\n", $$0)}' >> $(VCPROJ12)
-
-$(VCPROJ8): msvc/vc8proj.head msvc/vc8proj.foot Makefile.am
-	echo "creating $(VCPROJ8)"
-	@(cp $(srcdir)/msvc/vc8proj.head $(VCPROJ8); \
-	for file in $(WIN32SOURCES); do \
-		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT8); \
-	done; \
-	echo "</Filter><Filter  Name=\"Header Files\">" $(VCPROJOUT8); \
-	for file in $(WIN32HEADERS); do \
-		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT8); \
-	done; \
-	cat $(srcdir)/msvc/vc8proj.foot $(VCPROJOUT8) )
-
-$(VCPROJ9): msvc/vc9proj.head msvc/vc9proj.foot Makefile.am
-	echo "creating $(VCPROJ9)"
-	@(cp $(srcdir)/msvc/vc9proj.head $(VCPROJ9); \
-	for file in $(WIN32SOURCES); do \
-		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT9); \
-	done; \
-	echo "</Filter><Filter  Name=\"Header Files\">" $(VCPROJOUT9); \
-	for file in $(WIN32HEADERS); do \
-		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT9); \
-	done; \
-	cat $(srcdir)/msvc/vc9proj.foot $(VCPROJOUT9) )
-
-$(VCPROJ10): msvc/vc10proj.head msvc/vc10proj.foot Makefile.am
-	echo "creating $(VCPROJ10)"
-	@(cp $(srcdir)/msvc/vc10proj.head $(VCPROJ10); \
-	for file in $(WIN32SOURCES); do \
-		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT10); \
-	done; \
-	echo "</Filter><Filter  Name=\"Header Files\">" $(VCPROJOUT10); \
-	for file in $(WIN32HEADERS); do \
-		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT10); \
-	done; \
-	cat $(srcdir)/msvc/vc10proj.foot $(VCPROJOUT10) )
 
 $(VCPROJ12): msvc/vc12proj.head msvc/vc12proj.foot Makefile.am
 	echo "creating $(VCPROJ12)"

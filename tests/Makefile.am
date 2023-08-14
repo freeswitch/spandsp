@@ -28,22 +28,35 @@ EXTRA_DIST = fax_tests.sh \
              tsb85_extra_tests.sh \
              tsb85_tests.sh \
              v42bis_tests.sh \
-             msvc/adsi_tests.vcproj \
-             msvc/complex_tests.vcproj \
-             msvc/complex_vector_float_tests.vcproj \
-             msvc/complex_vector_int_tests.vcproj \
-             msvc/dtmf_rx_tests.vcproj \
-             msvc/dtmf_tx_tests.vcproj \
-             msvc/queue_tests.vcproj \
-             msvc/t38_core_tests.vcproj \
-             msvc/t38_non_ecm_buffer_tests.vcproj \
-             msvc/v22bis_tests.vcproj \
-             msvc/v29_tests.vcproj \
-             msvc/v8_tests.vcproj \
-             msvc/v80_tests.vcproj \
-             msvc/vector_float_tests.vcproj \
-             msvc/vector_int_tests.vcproj
- 
+             msvc/complex_tests.2012.vcxproj \
+             msvc/complex_tests.2012.vcxproj.filters \
+             msvc/complex_vector_float_tests.2012.vcxproj \
+             msvc/complex_vector_float_tests.2012.vcxproj.filters \
+             msvc/complex_vector_int_tests.2012.vcxproj \
+             msvc/complex_vector_int_tests.2012.vcxproj.filters \
+             msvc/dtmf_rx_tests.2012.vcxproj \
+             msvc/dtmf_rx_tests.2012.vcxproj.filters \
+             msvc/dtmf_tx_tests.2012.vcxproj \
+             msvc/dtmf_tx_tests.2012.vcxproj.filters \
+             msvc/queue_tests.2012.vcxproj \
+             msvc/queue_tests.2012.vcxproj.filters \
+             msvc/t38_core_tests.2012.vcxproj \
+             msvc/t38_core_tests.2012.vcxproj.filters \
+             msvc/t38_non_ecm_buffer_tests.2012.vcxproj \
+             msvc/t38_non_ecm_buffer_tests.2012.vcxproj.filters \
+             msvc/v22bis_tests.2012.vcxproj \
+             msvc/v22bis_tests.2012.vcxproj.filters \
+             msvc/v29_tests.2012.vcxproj \
+             msvc/v29_tests.2012.vcxproj.filters \
+             msvc/v80_tests.2012.vcxproj \
+             msvc/v80_tests.2012.vcxproj.filters \
+             msvc/v8_tests.2012.vcxproj \
+             msvc/v8_tests.2012.vcxproj.filters \
+             msvc/vector_float_tests.2012.vcxproj \
+             msvc/vector_float_tests.2012.vcxproj.filters \
+             msvc/vector_int_tests.2012.vcxproj \
+             msvc/vector_int_tests.2012.vcxproj.filters
+
 MAINTAINERCLEANFILES = Makefile.in
 
 AM_CPPFLAGS = -I$(top_builddir)/src -I$(top_builddir)/spandsp-sim -DDATADIR="\"$(pkgdatadir)\""

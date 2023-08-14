@@ -16,9 +16,9 @@
 ## License along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-SUBDIRS = etsi itu
+SUBDIRS = bellcore etsi itu local mitel
 
-DIST_SUBDIRS = bellcore etsi itu local mitel 
+DIST_SUBDIRS = bellcore etsi itu local mitel
 
 all:
 

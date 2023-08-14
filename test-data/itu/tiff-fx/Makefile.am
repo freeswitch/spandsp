@@ -20,19 +20,21 @@ SUBDIRS =
 
 DIST_SUBDIRS =
 
-EXTRA_DIST = c03x_02x.tif \
-             c03x_02x-bilevel.tif \
-             f03x_02x.tif \
-             f05x_02x.tif \
-             f06x_01x.tif \
-             j01x_02x.tif \
-             l02x_02x.tif \
-             l02x_02x-bilevel.tif \
-             l04x_02x.tif \
-             l04x_02x-bilevel.tif \
-             m02x_04x.tif \
-             m06x-03x.tif \
-             m11x_02x.tif
+EXTRA_DIST = README
+
+#            c03x_02x.tif \
+#            c03x_02x-bilevel.tif \
+#            f03x_02x.tif \
+#            f05x_02x.tif \
+#            f06x_01x.tif \
+#            j01x_02x.tif \
+#            l02x_02x.tif \
+#            l02x_02x-bilevel.tif \
+#            l04x_02x.tif \
+#            l04x_02x-bilevel.tif \
+#            m02x_04x.tif \
+#            m06x-03x.tif \
+#            m11x_02x.tif
 
 all: 
 

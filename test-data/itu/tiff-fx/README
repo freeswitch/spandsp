@@ -1,0 +1,14 @@
+The ITU web site contains a set of 10 test files for TIFF-FX, as follows:
+
+    [TIFF-FX-TC-001]    c03x_02x.tif
+    [TIFF-FX-TC-002]    f03x_02x.tif
+    [TIFF-FX-TC-003]    f05x_02x.tif
+    [TIFF-FX-TC-004]    f06x_01x.tif
+    [TIFF-FX-TC-005]    j01x_02x.tif
+    [TIFF-FX-TC-006]    l02x_02x.tif
+    [TIFF-FX-TC-007]    l04x_02x.tif
+    [TIFF-FX-TC-008]    m02x_04x.tif
+    [TIFF-FX-TC-009]    m06x_03x.tif
+    [TIFF-FX-TC-010]    m11x_02x.tif
+
+These should be downloaded, and placed in this directory.
