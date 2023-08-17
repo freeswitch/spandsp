@@ -524,14 +524,10 @@ static void process_acknowledgements(sprt_state_t *s, int noa, int tcn[3], int s
 }
 /*- End of function --------------------------------------------------------*/
 
-static int sprt_deliver(sprt_state_t *s)
+static void sprt_deliver(sprt_state_t *s)
 {
-    int i;
     int channel;
-    uint16_t base_sequence_no;
-    uint16_t sequence_no;
     int iptr;
-    int diff;
     sprt_chan_t *chan;
 
     for (channel = SPRT_TCID_MIN_RELIABLE;  channel <= SPRT_TCID_MAX_RELIABLE;  channel++)
@@ -1258,18 +1254,18 @@ SPAN_DECLARE(sprt_state_t *) sprt_init(sprt_state_t *s,
     s->rx.payload_type = rx_payload_type;
     s->tx.payload_type = tx_payload_type;
 
-    s->tx.ta01_timeout = default_channel_parms[SPRT_TCID_RELIABLE_SEQUENCED].timer_ta01;
+    s->tx.ta01_timeout = parms[SPRT_TCID_RELIABLE_SEQUENCED].timer_ta01;
     for (i = SPRT_TCID_MIN;  i <= SPRT_TCID_MAX;  i++)
     {
-        s->rx.chan[i].max_payload_bytes = default_channel_parms[i].payload_bytes;
-        s->rx.chan[i].window_size = default_channel_parms[i].window_size;
-        s->rx.chan[i].ta02_timeout = default_channel_parms[i].timer_ta02;
-        s->rx.chan[i].tr03_timeout = default_channel_parms[i].timer_tr03;
+        s->rx.chan[i].max_payload_bytes = parms[i].payload_bytes;
+        s->rx.chan[i].window_size = parms[i].window_size;
+        s->rx.chan[i].ta02_timeout = parms[i].timer_ta02;
+        s->rx.chan[i].tr03_timeout = parms[i].timer_tr03;
 
-        s->tx.chan[i].max_payload_bytes = default_channel_parms[i].payload_bytes;
-        s->tx.chan[i].window_size = default_channel_parms[i].window_size;
-        s->tx.chan[i].ta02_timeout = default_channel_parms[i].timer_ta02;
-        s->tx.chan[i].tr03_timeout = default_channel_parms[i].timer_tr03;
+        s->tx.chan[i].max_payload_bytes = parms[i].payload_bytes;
+        s->tx.chan[i].window_size = parms[i].window_size;
+        s->tx.chan[i].ta02_timeout = parms[i].timer_ta02;
+        s->tx.chan[i].tr03_timeout = parms[i].timer_tr03;
 
         s->tx.chan[i].max_tries = SPRT_DEFAULT_MAX_TRIES;
 

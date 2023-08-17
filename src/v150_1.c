@@ -1645,6 +1645,9 @@ SPAN_DECLARE(int) v150_1_tx_info_stream(v150_1_state_t *s, const uint8_t buf[], 
     case V150_1_MSGID_I_CHAR_DYN_CS:
         res = v150_1_build_i_char_dyn_cs(s, pkt, max_len, buf, len);
         break;
+    default:
+        res = -1;
+        break;
     }
     /*endswitch*/
     if (res >= 0)
@@ -1892,7 +1895,7 @@ static int v150_1_process_jm_info(v150_1_state_t *s, const uint8_t buf[], int le
     {
         if (s->far.jm_category_id_seen[i])
         {
-            span_log(&s->logging, SPAN_LOG_WARNING, "    JM %d 0x%x\n", i, s->far.jm_category_info[id]);
+            span_log(&s->logging, SPAN_LOG_WARNING, "    JM %d 0x%x\n", i, s->far.jm_category_info[i]);
         }
         /*endif*/
     }
@@ -2264,6 +2267,7 @@ static int v150_1_process_prof_xchg(v150_1_state_t *s, const uint8_t buf[], int 
 
 static int v150_1_process_i_raw_octet(v150_1_state_t *s, const uint8_t buf[], int len)
 {
+    int i;
     int l;
     int n;
     int header;
@@ -2283,17 +2287,27 @@ static int v150_1_process_i_raw_octet(v150_1_state_t *s, const uint8_t buf[], in
     l = buf[1] & 0x7F;
     if ((buf[1] & 0x80) != 0)
     {
-        n = 0;
+        n = 1;
         header = 1;
     }
     else
     {
-        n = buf[1];
+        n = buf[1] + 2;
         header = 2;
     }
     /*endif*/
-    if (s->rx_octet_handler)
-        s->rx_octet_handler(s->rx_octet_handler_user_data, &buf[header], len - header, -1);
+    if (len != l + header)
+    {
+        span_log(&s->logging, SPAN_LOG_WARNING, "Invalid I_RAW-OCTET message length %d\n", len);
+        return -1;
+    }
+    /*endif*/
+    for (i = 0;  i < n;  i++)
+    {
+        if (s->rx_octet_handler)
+            s->rx_octet_handler(s->rx_octet_handler_user_data, &buf[header], len - header, -1);
+        /*endif*/
+    }
     /*endif*/
     return 0;
 }
@@ -2301,6 +2315,7 @@ static int v150_1_process_i_raw_octet(v150_1_state_t *s, const uint8_t buf[], in
 
 static int v150_1_process_i_raw_bit(v150_1_state_t *s, const uint8_t buf[], int len)
 {
+    int i;
     int l;
     int p;
     int n;
@@ -2331,20 +2346,30 @@ static int v150_1_process_i_raw_bit(v150_1_state_t *s, const uint8_t buf[], int 
             p = buf[1] & 0x07;
         }
         /*endif*/
-        n = 0;
+        n = 1;
         header = 1;
     }
     else
     {
         l = (buf[1] >> 3) & 0x0F;
         p = buf[1] & 0x07;
-        n = buf[2];
+        n = buf[2] + 2;
         header = 2;
     }
     /*endif*/
-    if (s->rx_octet_handler)
-        s->rx_octet_handler(s->rx_octet_handler_user_data, &buf[header], len - header, -1);
+    if (len != l + header)
+    {
+        span_log(&s->logging, SPAN_LOG_WARNING, "Invalid I_RAW-BIT message length %d\n", len);
+        return -1;
+    }
     /*endif*/
+    for (i = 0;  i < n;  i++)
+    {
+        if (s->rx_octet_handler)
+            s->rx_octet_handler(s->rx_octet_handler_user_data, &buf[header], len - header, -1);
+        /*endif*/
+    }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

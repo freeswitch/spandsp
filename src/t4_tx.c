@@ -1025,7 +1025,7 @@ static int read_tiff_t85_image(t4_tx_state_t *s)
     /*endif*/
 
     len = t85_decode_get_compressed_image_size(&t85);
-    span_log(&s->logging, SPAN_LOG_WARNING, "Compressed image is %d bytes, %d rows\n", len/8, s->tiff.image_length);
+    span_log(&s->logging, SPAN_LOG_WARNING, "Compressed image is %d bytes, %d rows (%d)\n", len/8, s->tiff.image_length, result);
     t85_decode_release(&t85);
     span_free(raw_data);
     return 0;
@@ -1114,6 +1114,9 @@ static int read_tiff_t43_image(t4_tx_state_t *s)
         result = t43_decode_put(&t43, NULL, 0);
     /*endif*/
 
+    if (result != T4_DECODE_OK)
+        span_log(&s->logging, SPAN_LOG_FLOW, "T.43 decode failed - %d\n", result);
+    /*endif*/
     t43_decode_release(&t43);
     span_free(raw_data);
     return s->tiff.image_size;
@@ -1778,7 +1781,7 @@ static int header_row_read_handler(void *user_data, uint8_t buf[], size_t len)
     case T4_IMAGE_TYPE_GRAY_8BIT:
         bytes_per_pixel = x_repeats;
         bytes_per_character = bytes_per_pixel*16;
-        for (  ;  *t  &&  pos <= len - bytes_per_pixel;  t++)
+        for (  ;  *t  &&  pos <= len - bytes_per_character;  t++)
         {
             pattern = header_font[(uint8_t) *t][row];
             for (i = 0;  i < 16;  i++)
@@ -2116,7 +2119,7 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
         /*endif*/
     }
     /*endfor*/
-    res = T4_IMAGE_FORMAT_NOSIZESUPPORT;
+    //res = T4_IMAGE_FORMAT_NOSIZESUPPORT;
     s->row_squashing_ratio = 1;
     if (s->metadata.width_code >= 0  &&  (supported_image_sizes & s->metadata.width_code))
     {

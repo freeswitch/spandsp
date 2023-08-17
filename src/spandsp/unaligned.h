@@ -33,19 +33,18 @@ extern "C"
 {
 #endif
 
-#ifdef __GNUC__
-#define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
-#endif
-
-#ifdef _MSC_VER
+#if defined(_MSC_VER)
 #define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop))
-#endif
 
 PACK(struct __dealign_uint16 { uint16_t datum; };)
 PACK(struct __dealign_uint32 { uint32_t datum; };)
 PACK(struct __dealign_uint64 { uint64_t datum; };)
+#endif
 
 #if defined(__GNUC__)
+struct __dealign_uint16 { uint16_t datum; } __attribute__((packed));
+struct __dealign_uint32 { uint32_t datum; } __attribute__((packed));
+struct __dealign_uint64 { uint64_t datum; } __attribute__((packed));
 
 /* If we just tell GCC what's going on, we can trust it to behave optimally */
 static __inline__ uint64_t get_unaligned_uint64(const void *p)

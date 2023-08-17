@@ -162,6 +162,7 @@ static int test_cadence(super_tone_rx_segment_t *pattern,
         /* Check only for the sustaining of a tone in progress. This means
            we only need to check each block if the latest step is compatible
            with the tone template. */
+        j = 0;
         if (steps < 0)
         {
             /* A -ve value for steps indicates we just changed step, and need to
@@ -285,9 +286,18 @@ static void super_tone_chunk(super_tone_rx_state_t *s)
     float res[SUPER_TONE_BINS/2];
 #endif
 
-    for (i = 0;  i < s->desc->monitored_frequencies;  i++)
-        res[i] = goertzel_result(&s->state[i]);
-    /*endfor*/
+    if (s->desc->monitored_frequencies >= 2)
+    {
+        for (i = 0;  i < s->desc->monitored_frequencies;  i++)
+            res[i] = goertzel_result(&s->state[i]);
+        /*endfor*/
+    }
+    else
+    {
+        res[0] =
+        res[1] = goertzel_result(&s->state[0]);
+    }
+    /*endif*/
     /* Find our two best monitored frequencies, which also have adequate energy. */
     if (s->energy < DETECTION_THRESHOLD)
     {

@@ -371,6 +371,7 @@ static void put_frame(fsk_rx_state_t *s, uint16_t frame)
         case ASYNC_PARITY_MARK:
             parity_bit_b = 1;
             break;
+        default:
         case ASYNC_PARITY_SPACE:
             parity_bit_b = 0;
             break;

@@ -159,6 +159,7 @@ SPAN_DECLARE(void) async_rx_put_bit(void *user_data, int bit)
                     case ASYNC_PARITY_MARK:
                         parity_bit_b = 1;
                         break;
+                    default:
                     case ASYNC_PARITY_SPACE:
                         parity_bit_b = 0;
                         break;

@@ -89,27 +89,3 @@ $(DSP): msvc/msvcproj.head msvc/msvcproj.foot Makefile.am
 	done; \
 	echo "# End Group" $(DSPOUT); \
 	cat $(srcdir)/msvc/msvcproj.foot $(DSPOUT) )
-
-$(VCPROJ8): msvc/vc8proj.head msvc/vc8proj.foot Makefile.am
-	echo "creating $(VCPROJ8)"
-	@(cp $(srcdir)/msvc/vc8proj.head $(VCPROJ8); \
-	for file in $(WIN32SOURCES); do \
-		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT8); \
-	done; \
-	echo "</Filter><Filter  Name=\"Header Files\">" $(VCPROJOUT8); \
-	for file in $(WIN32HEADERS); do \
-		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT8); \
-	done; \
-	cat $(srcdir)/msvc/vc8proj.foot $(VCPROJOUT8) )
-
-$(VCPROJ9): msvc/vc9proj.head msvc/vc9proj.foot Makefile.am
-	echo "creating $(VCPROJ9)"
-	@(cp $(srcdir)/msvc/vc9proj.head $(VCPROJ9); \
-	for file in $(WIN32SOURCES); do \
-		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT9); \
-	done; \
-	echo "</Filter><Filter  Name=\"Header Files\">" $(VCPROJOUT9); \
-	for file in $(WIN32HEADERS); do \
-		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT9); \
-	done; \
-	cat $(srcdir)/msvc/vc9proj.foot $(VCPROJOUT9) )

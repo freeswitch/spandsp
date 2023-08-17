@@ -16,4 +16,6 @@ apt-get install libfftw3-dev \
                 netpbm
 
 #               doxygen \
-#               xsltproc
+#               xsltproc\
+#               docbook \
+#               docbook-xsl

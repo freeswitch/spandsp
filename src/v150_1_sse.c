@@ -278,8 +278,6 @@ SPAN_DECLARE(const char *) v150_1_sse_cleardown_reason_to_str(int ric)
 static int update_timer(v150_1_sse_state_t *s)
 {
     span_timestamp_t shortest;
-    uint8_t first;
-    int i;
     int shortest_is;
 
     if (s->immediate_timer)
@@ -703,6 +701,7 @@ SPAN_DECLARE(int) v150_1_sse_rx_packet(v150_1_sse_state_t *s,
         return -1;
     /*endif*/
 
+    res = 0;
     if (s->previous_rx_timestamp != timestamp)
     {
         /* V.150.1 C.4.1 says act on the first received copy of an SSE message. Expect
@@ -782,7 +781,6 @@ static int v150_1_sse_tx_voice_band_data_packet(v150_1_sse_state_t *s)
 
 static int v150_1_sse_tx_modem_relay_packet(v150_1_sse_state_t *s, int x, int ric, int ricinfo)
 {
-    int res;
     uint8_t pkt[256];
     int len;
     uint8_t f;
@@ -827,7 +825,7 @@ static int v150_1_sse_tx_modem_relay_packet(v150_1_sse_state_t *s, int x, int ri
     }
     /*endif*/
     if (s->packet_handler)
-        res = s->packet_handler(s->packet_user_data, pkt, len);
+        s->packet_handler(s->packet_user_data, pkt, len);
     /*endif*/
     if (s->explicit_acknowledgements)
     {
@@ -854,17 +852,17 @@ static int v150_1_sse_tx_fax_relay_packet(v150_1_sse_state_t *s, int x, int ric,
     int len;
     uint8_t f;
 
+    f = 0;
     /* If we are using explicit acknowledgements, both the F and X bits need to be set */
     if (s->explicit_acknowledgements)
     {
+        f |= 0x01;
         if (s->force_response)
-            f = 0x03;
-        else
-            f = 0x01;
+            f |= 0x02;
         /*endif*/
     }
     /*endif*/
-    pkt[0] = f | (V150_1_SSE_MEDIA_STATE_FAX_RELAY << 2);
+    pkt[0] = (V150_1_SSE_MEDIA_STATE_FAX_RELAY << 2) | f;
     pkt[1] = ric;
     put_net_unaligned_uint16(&pkt[2], ricinfo);
     len = 4;
@@ -928,14 +926,12 @@ SPAN_DECLARE(int) v150_1_sse_tx_packet(v150_1_sse_state_t *s, int event, int ric
     }
     /*endswitch*/
     s->lcl_mode = event;
-    return 0;
+    return res;
 }
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) v150_1_sse_timer_expired(v150_1_sse_state_t *s, span_timestamp_t now)
 {
-    int i;
-
     span_log(&s->logging, SPAN_LOG_FLOW, "Timer expired at %lu\n", now);
 
     if (s->immediate_timer)
