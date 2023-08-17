@@ -286,65 +286,69 @@ static void super_tone_chunk(super_tone_rx_state_t *s)
     float res[SUPER_TONE_BINS/2];
 #endif
 
-    if (s->desc->monitored_frequencies >= 2)
-    {
-        for (i = 0;  i < s->desc->monitored_frequencies;  i++)
-            res[i] = goertzel_result(&s->state[i]);
-        /*endfor*/
-    }
-    else
-    {
-        res[0] =
-        res[1] = goertzel_result(&s->state[0]);
-    }
-    /*endif*/
-    /* Find our two best monitored frequencies, which also have adequate energy. */
     if (s->energy < DETECTION_THRESHOLD)
     {
         k1 = -1;
         k2 = -1;
+        for (i = 0;  i < s->desc->monitored_frequencies;  i++)
+            goertzel_reset(&s->state[i]);
+        /*endfor*/
     }
     else
     {
-        if (res[0] > res[1])
+        if (s->desc->monitored_frequencies < 2)
         {
-            k1 = 0;
-            k2 = 1;
+            k1 =
+            k2 = 0;
         }
         else
         {
-            k1 = 1;
-            k2 = 0;
-        }
-        /*endif*/
-        for (j = 2;  j < s->desc->monitored_frequencies;  j++)
-        {
-            if (res[j] >= res[k1])
+            /* Find our two best monitored frequencies, which also have adequate energy. */
+            for (i = 0;  i < s->desc->monitored_frequencies;  i++)
+                res[i] = goertzel_result(&s->state[i]);
+            /*endfor*/
+            if (res[0] > res[1])
             {
-                k2 = k1;
-                k1 = j;
+                k1 = 0;
+                k2 = 1;
             }
-            else if (res[j] >= res[k2])
+            else
             {
+                k1 = 1;
+                k2 = 0;
+            }
+            /*endif*/
+            for (j = 2;  j < s->desc->monitored_frequencies;  j++)
+            {
+                if (res[j] >= res[k1])
+                {
+                    k2 = k1;
+                    k1 = j;
+                }
+                else if (res[j] >= res[k2])
+                {
+                    k1 =
+                    k2 = j;
+                }
+                /*endif*/
+            }
+            /*endfor*/
+            if ((res[k1] + res[k2]) < TONE_TO_TOTAL_ENERGY*s->energy)
+            {
+                k1 = -1;
+                k2 = -1;
+            }
+            else if (res[k1] > TONE_TWIST*res[k2])
+            {
+                k2 = -1;
+            }
+            else if (k2 < k1)
+            {
+                j = k1;
+                k1 = k2;
                 k2 = j;
             }
             /*endif*/
-        }
-        /*endfor*/
-        if ((res[k1] + res[k2]) < TONE_TO_TOTAL_ENERGY*s->energy)
-        {
-            k1 = -1;
-            k2 = -1;
-        }
-        else if (res[k1] > TONE_TWIST*res[k2])
-        {
-            k2 = -1;
-        }
-        else if (k2 < k1)
-        {
-            j = k1;
-            k1 = k2;
-            k2 = j;
         }
         /*endif*/
     }
