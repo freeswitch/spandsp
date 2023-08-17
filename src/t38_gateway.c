@@ -657,6 +657,13 @@ static void monitor_control_messages(t38_gateway_state_t *s,
             restart_rx_modem(s);
         /*endif*/
         break;
+    case T30_FTT:
+        s->core.image_data_mode = false;
+        s->core.short_train = false;
+        if (!from_modem)
+            s->core.fast_rx_modem = FAX_MODEM_NONE;
+        /*endif*/
+        break;
     case T30_RTN:
     case T30_RTP:
         /* We are going back to the exchange of fresh TCF */
