@@ -93,6 +93,7 @@
 #include <spandsp/modem_connect_tones.h>
 #include <spandsp/silence_gen.h>
 #include <spandsp/v8.h>
+#include <spandsp/v80.h>
 #include <spandsp/v29rx.h>
 #include <spandsp/v29tx.h>
 #include <spandsp/v17rx.h>

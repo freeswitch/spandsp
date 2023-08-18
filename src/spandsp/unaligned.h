@@ -45,7 +45,9 @@ PACK(struct __dealign_uint64 { uint64_t datum; };)
 struct __dealign_uint16 { uint16_t datum; } __attribute__((packed));
 struct __dealign_uint32 { uint32_t datum; } __attribute__((packed));
 struct __dealign_uint64 { uint64_t datum; } __attribute__((packed));
+#endif
 
+#if defined(__GNUC__)  ||  defined(_MSC_VER)
 /* If we just tell GCC what's going on, we can trust it to behave optimally */
 static __inline__ uint64_t get_unaligned_uint64(const void *p)
 {

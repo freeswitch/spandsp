@@ -155,6 +155,7 @@ noinst_PROGRAMS =   ademco_contactid_tests \
                     v42_tests \
                     v42bis_tests \
                     v8_tests \
+                    v80_tests \
                     vector_float_tests \
                     vector_int_tests \
                     $(V32BIS_PROGS) \
@@ -433,6 +434,9 @@ v42bis_tests_LDADD = $(LIBDIR) -lspandsp
 
 v8_tests_SOURCES = v8_tests.c
 v8_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
+
+v80_tests_SOURCES = v80_tests.c
+v80_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 vector_float_tests_SOURCES = vector_float_tests.c
 vector_float_tests_LDADD = $(LIBDIR) -lspandsp

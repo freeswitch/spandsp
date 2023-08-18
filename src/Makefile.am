@@ -171,6 +171,7 @@ libspandsp_la_SOURCES = ademco_contactid.c \
                         v42.c \
                         v42bis.c \
                         v8.c \
+                        v80.c \
                         vector_float.c \
                         vector_int.c \
                         $(V32BIS_SOURCES) \
@@ -271,6 +272,7 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/v42.h \
                          spandsp/v42bis.h \
                          spandsp/v8.h \
+                         spandsp/v80.h \
                          spandsp/vector_float.h \
                          spandsp/vector_int.h \
                          spandsp/version.h \

@@ -4339,12 +4339,12 @@ static const char *at_cmd_plus_IBC(at_state_t *s, const char *t)
        2; In-band control service enabled, 7-bit codes allowed, and 8-bit codes available
 
        Circuits 105, 106, 107, 108, 109, 110, 125, 132, 133, 135, 142 in that order. For each one:
-       0: disabled
-       1: enabled
+            0: disabled
+            1: enabled
 
        DCE line connect status reports:
-       0: disabled
-       1: enabled */
+            0: disabled
+            1: enabled */
     for (i = 0;  i < 13;  i++)
         locations[i] = NULL;
     /*endfor*/

@@ -66,6 +66,7 @@
 #include <spandsp/private/fsk.h>
 #include <spandsp/private/modem_connect_tones.h>
 #include <spandsp/private/v8.h>
+#include <spandsp/private/v80.h>
 #include <spandsp/private/v17rx.h>
 #include <spandsp/private/v17tx.h>
 #include <spandsp/private/v22bis.h>

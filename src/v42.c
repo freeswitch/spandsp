@@ -390,7 +390,6 @@ static void transmit_xid(v42_state_t *ss, uint8_t addr)
     uint8_t *buf;
     int len;
     int group_len;
-    uint32_t param_val;
     v42_frame_t *f;
 
     s = &ss->lapm;

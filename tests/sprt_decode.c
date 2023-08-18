@@ -81,7 +81,7 @@ static int sprt_rx_packet_handler(void *user_data, int chan, int seq_no, const u
         printf("%02X ", msg[i]);
     /*endfor*/
     printf("\n");
-    v150_1_process_rx_msg(v150_1, msg, len, chan, seq_no);
+    v150_1_process_rx_msg(v150_1, chan, seq_no, msg, len);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -130,7 +130,7 @@ static int v150_1_packet_handler(void *user_data, const uint8_t msg[], int len, 
 }
 /*- End of function --------------------------------------------------------*/
 
-static int v150_1_tx_packet_handler(void *user_data, const uint8_t msg[], int len, int seq_no)
+static int v150_1_tx_packet_handler(void *user_data, int chan, const uint8_t msg[], int len)
 {
     return 0;
 }
