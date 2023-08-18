@@ -97,7 +97,7 @@ struct v17_rx_state_s
 
     /*! \brief A measure of how much mismatch there is between the real constellation,
         and the decoded symbol positions. */
-    int32_t training_error;
+    int64_t training_error;
 
     /*! \brief The proportional part of the carrier tracking filter. */
     int32_t carrier_track_p;
