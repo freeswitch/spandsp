@@ -2,12 +2,12 @@
 /*
  * SpanDSP - a series of DSP components for telephony
  *
- * udptl.c - An implementation of the UDPTL protocol defined in T.38,
- *           less the packet exchange part
+ * udptl.c - An implementation of the UDPTL protocol defined in
+ *           ITU T.38, less the packet exchange part.
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
- * Copyright (C) 2005, 2009, 2012 Steve Underwood
+ * Copyright (C) 2005, 2009, 2012, 2022 Steve Underwood
  *
  * All rights reserved.
  *
@@ -29,7 +29,6 @@
 #include "config.h"
 #endif
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <inttypes.h>
