@@ -346,6 +346,7 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/private/v42.h \
                          spandsp/private/v42bis.h \
                          spandsp/private/v8.h \
+                         spandsp/private/v80.h \
                          spandsp/expose.h
 
 nodist_include_HEADERS = spandsp.h
