@@ -106,22 +106,7 @@ static int v150_1_octet_stream_handler(void *user_data, const uint8_t msg[], int
 }
 /*- End of function --------------------------------------------------------*/
 
-static int v150_1_packet_handler(void *user_data, const uint8_t msg[], int len, int seq_no)
-{
-    int i;
-
-    //started = true;
-
-    printf("Seq %d >>> ", seq_no);
-    for (i = 0;  i < len;  i++)
-        printf("%02X ", msg[i]);
-    /*endfor*/
-    printf("\n");
-
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
+/* Get a packet from one side, and pass it to the other */
 static int v150_1_tx_packet_handler(void *user_data, int chan, const uint8_t msg[], int len)
 {
     int i;
@@ -149,19 +134,15 @@ int main(int argc, char *argv[])
     int max;
 
     v150_1[0] = v150_1_init(NULL,
-                           v150_1_tx_packet_handler,
-                           (void *) (intptr_t) 0,
-                           v150_1_packet_handler,
-                           (void *) (intptr_t) 0,
-                           v150_1_octet_stream_handler,
-                           (void *) (intptr_t) 0,
-                           v150_1_status_report_handler,
-                           (void *) (intptr_t) 0);
+                            v150_1_tx_packet_handler,
+                            (void *) (intptr_t) 0,
+                            v150_1_octet_stream_handler,
+                            (void *) (intptr_t) 0,
+                            v150_1_status_report_handler,
+                            (void *) (intptr_t) 0);
 
     v150_1[1] = v150_1_init(NULL,
                             v150_1_tx_packet_handler,
-                            (void *) (intptr_t) 1,
-                            v150_1_packet_handler,
                             (void *) (intptr_t) 1,
                             v150_1_octet_stream_handler,
                             (void *) (intptr_t) 1,

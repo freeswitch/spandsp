@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:t='http://www.w3.org/namespace/'>
+ <xs:element name='meteor'>
+  <xs:complexType>
+   <xs:choice minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:convexity'/>
+    <xs:element ref='t:limit'/>
+   </xs:choice>
+   <xs:attribute name='name' type='string' use='required'/>
+   <xs:attribute name='shortest' type='string' use='required'/>
+   <xs:attribute name='longest' type='string' use='required'/>
+   <xs:attribute name='symmetry' use='default' value='cosine'>
+    <xs:simpleType>
+     <xs:restriction base='string'>
+      <xs:enumeration value='sine'/>
+      <xs:enumeration value='cosine'/>
+     </xs:restriction>
+    </xs:simpleType>
+   </xs:attribute>
+   <xs:attribute name='sample_rate' type='string' use='required'/>
+   <xs:attribute name='grid_points' type='string' use='required'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='convexity'>
+  <xs:complexType>
+   <xs:choice minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:left2'/>
+    <xs:element ref='t:?'/>
+    <xs:element ref='t:right2'/>
+    <xs:element ref='t:?'/>
+   </xs:choice>
+   <xs:attribute name='name' type='string' use='required'/>
+   <xs:attribute name='type' use='default' value='convex'>
+    <xs:simpleType>
+     <xs:restriction base='string'>
+      <xs:enumeration value='concave'/>
+      <xs:enumeration value='convex'/>
+     </xs:restriction>
+    </xs:simpleType>
+   </xs:attribute>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='limit'>
+  <xs:complexType>
+   <xs:choice minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:left'/>
+    <xs:element ref='t:?'/>
+    <xs:element ref='t:right'/>
+    <xs:element ref='t:?'/>
+   </xs:choice>
+   <xs:attribute name='name' type='string' use='required'/>
+   <xs:attribute name='type' use='default' value='upper'>
+    <xs:simpleType>
+     <xs:restriction base='string'>
+      <xs:enumeration value='lower'/>
+      <xs:enumeration value='upper'/>
+      <xs:enumeration value='envelope'/>
+     </xs:restriction>
+    </xs:simpleType>
+   </xs:attribute>
+   <xs:attribute name='interpolation' use='default' value='arithmetic'>
+    <xs:simpleType>
+     <xs:restriction base='string'>
+      <xs:enumeration value='arithmetic'/>
+      <xs:enumeration value='geometric'/>
+     </xs:restriction>
+    </xs:simpleType>
+   </xs:attribute>
+   <xs:attribute name='hugged' use='default' value='no'>
+    <xs:simpleType>
+     <xs:restriction base='string'>
+      <xs:enumeration value='yes'/>
+      <xs:enumeration value='no'/>
+     </xs:restriction>
+    </xs:simpleType>
+   </xs:attribute>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='left'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:EMPTY'/>
+   </xs:sequence>
+   <xs:attribute name='freq' type='string' use='required'/>
+   <xs:attribute name='gain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='right'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:EMPTY'/>
+   </xs:sequence>
+   <xs:attribute name='freq' type='string' use='required'/>
+   <xs:attribute name='gain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='left2'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:EMPTY'/>
+   </xs:sequence>
+   <xs:attribute name='freq' type='string' use='required'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='right2'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:EMPTY'/>
+   </xs:sequence>
+   <xs:attribute name='freq' type='string' use='required'/>
+  </xs:complexType>
+ </xs:element>
+</xs:schema>

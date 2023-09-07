@@ -905,22 +905,142 @@ SPAN_DECLARE(const char *) v150_1_state_to_str(int state)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(const char *) v150_1_status_reason_to_str(int status)
+{
+    const char *res;
+
+    res = "unknown";
+    switch (status)
+    {
+    case V150_1_STATUS_REASON_NULL:
+        res = "NULL";
+        break;
+    case V150_1_STATUS_REASON_STATE_CHANGED:
+        res = "state changed";
+        break;
+    case V150_1_STATUS_REASON_DATA_FORMAT_CHANGED:
+        res = "format changed";
+        break;
+    case V150_1_STATUS_REASON_BREAK_RECEIVED:
+        res = "break received";
+        break;
+    case V150_1_STATUS_REASON_RATE_RETRAIN_RECEIVED:
+        res = "retrain request received";
+        break;
+    case V150_1_STATUS_REASON_RATE_RENEGOTIATION_RECEIVED:
+        res = "rate renegotiation received";
+        break;
+    case V150_1_STATUS_REASON_BUSY_CHANGED:
+        res = "busy changed";
+        break;
+    case V150_1_STATUS_REASON_PHYSUP:
+        res = "physically up";
+        break;
+    case V150_1_STATUS_REASON_CONNECTED:
+        res = "connected";
+        break;
+    }
+    /*endswitch*/
+    return res;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(const char *) v150_1_jm_category_to_str(int category)
+{
+    const char *res;
+
+    res = "unknown";
+    switch (category)
+    {
+    case V150_1_JM_CATEGORY_ID_PROTOCOLS:
+        res = "protocols";
+        break;
+    case V150_1_JM_CATEGORY_ID_CALL_FUNCTION_1:
+        res = "call function 1";
+        break;
+    case V150_1_JM_CATEGORY_ID_MODULATION_MODES:
+        res = "modulation modes";
+        break;
+    case V150_1_JM_CATEGORY_ID_PSTN_ACCESS:
+        res = "PSTN access";
+        break;
+    case V150_1_JM_CATEGORY_ID_PCM_MODEM_AVAILABILITY:
+        res = "PCM modem availability";
+        break;
+    case V150_1_JM_CATEGORY_ID_EXTENSION:
+        res = "extension";
+        break;
+    }
+    /*endswitch*/
+    return res;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(const char *) v150_1_jm_info_modulation_to_str(int modulation)
+{
+    const char *res;
+
+    res = "unknown";
+    switch (modulation)
+    {
+    case V150_1_JM_MODULATION_MODE_V34_AVAILABLE:
+        res = "V.34";
+        break;
+    case V150_1_JM_MODULATION_MODE_V34_HALF_DUPLEX_AVAILABLE:
+        res = "V.34 half-duplex";
+        break;
+    case V150_1_JM_MODULATION_MODE_V32_V32bis_AVAILABLE:
+        res = "V.32bis/V,32";
+        break;
+    case V150_1_JM_MODULATION_MODE_V22_V22bis_AVAILABLE:
+        res = "V.22bis/V.22";
+        break;
+    case V150_1_JM_MODULATION_MODE_V17_AVAILABLE:
+        res = "V.17";
+        break;
+    case V150_1_JM_MODULATION_MODE_V29_AVAILABLE:
+        res = "V.29";
+        break;
+    case V150_1_JM_MODULATION_MODE_V27ter_AVAILABLE:
+        res = "V.27ter";
+        break;
+    case V150_1_JM_MODULATION_MODE_V26ter_AVAILABLE:
+        res = "V.26ter";
+        break;
+    case V150_1_JM_MODULATION_MODE_V26bis_AVAILABLE:
+        res = "V.26bis";
+        break;
+    case V150_1_JM_MODULATION_MODE_V23_AVAILABLE:
+        res = "V.23";
+        break;
+    case V150_1_JM_MODULATION_MODE_V23_HALF_DUPLEX_AVAILABLE:
+        res = "V.23 half-duplex";
+        break;
+    case V150_1_JM_MODULATION_MODE_V21_AVAILABLE:
+        res = "V.21";
+        break;
+    }
+    /*endswitch*/
+    return res;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int) v150_1_set_bits_per_character(v150_1_state_t *s, int bits)
 {
     if (bits < 5  ||  bits > 8)
         return -1;
     /*endif*/
     bits -= 5;
-    s->near.data_format_code &= 0x9F; 
-    s->near.data_format_code |= ((bits << 5) & 0x60); 
+    s->near.parms.data_format_code &= 0x9F; 
+    s->near.parms.data_format_code |= ((bits << 5) & 0x60); 
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) v150_1_set_parity(v150_1_state_t *s, int mode)
 {
-    s->near.data_format_code &= 0xE3; 
-    s->near.data_format_code |= ((mode << 2) & 0x1C); 
+    s->near.parms.data_format_code &= 0xE3; 
+    s->near.parms.data_format_code |= ((mode << 2) & 0x1C); 
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -931,8 +1051,8 @@ SPAN_DECLARE(int) v150_1_set_stop_bits(v150_1_state_t *s, int bits)
         return -1;
     /*endif*/
     bits -= 1;
-    s->near.data_format_code &= 0xFC; 
-    s->near.data_format_code |= (bits & 0x03);
+    s->near.parms.data_format_code &= 0xFC; 
+    s->near.parms.data_format_code |= (bits & 0x03);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -945,13 +1065,13 @@ static int status_report(v150_1_state_t *s, int reason)
     switch (reason)
     {
     case V150_1_STATUS_REASON_STATE_CHANGED:
-        report.state_change.state = s->far.connection_state;
-        report.state_change.cleardown_reason = s->far.cleardown_reason;
+        report.state_change.state = s->far.parms.connection_state;
+        report.state_change.cleardown_reason = s->far.parms.cleardown_reason;
         break;
     case V150_1_STATUS_REASON_DATA_FORMAT_CHANGED:
-        report.data_format_change.bits = 5 + ((s->far.data_format_code >> 5) & 0x03);
-        report.data_format_change.parity_code = (s->far.data_format_code >> 2) & 0x07;
-        report.data_format_change.stop_bits = 1 + (s->far.data_format_code & 0x03);
+        report.data_format_change.bits = 5 + ((s->far.parms.data_format_code >> 5) & 0x03);
+        report.data_format_change.parity_code = (s->far.parms.data_format_code >> 2) & 0x07;
+        report.data_format_change.stop_bits = 1 + (s->far.parms.data_format_code & 0x03);
         break;
     case V150_1_STATUS_REASON_BREAK_RECEIVED:
         report.break_received.source = s->far.break_source;
@@ -963,49 +1083,49 @@ static int status_report(v150_1_state_t *s, int reason)
     case V150_1_STATUS_REASON_RATE_RENEGOTIATION_RECEIVED:
         break;
     case V150_1_STATUS_REASON_BUSY_CHANGED:
-        report.busy_change.local_busy = s->near.busy;
-        report.busy_change.far_busy = s->far.busy;
+        report.busy_change.local_busy = s->near.parms.busy;
+        report.busy_change.far_busy = s->far.parms.busy;
         break;
     case V150_1_STATUS_REASON_PHYSUP:
-        report.physup_parameters.selmod = s->far.selmod;
-        report.physup_parameters.tdsr = s->far.tdsr;
-        report.physup_parameters.rdsr = s->far.rdsr;
+        report.physup_parameters.selmod = s->far.parms.selmod;
+        report.physup_parameters.tdsr = s->far.parms.tdsr;
+        report.physup_parameters.rdsr = s->far.parms.rdsr;
 
-        report.physup_parameters.txsen = s->far.txsen;
-        report.physup_parameters.txsr = s->far.txsr;
-        report.physup_parameters.rxsen = s->far.rxsen;
-        report.physup_parameters.rxsr = s->far.rxsr;
+        report.physup_parameters.txsen = s->far.parms.txsen;
+        report.physup_parameters.txsr = s->far.parms.txsr;
+        report.physup_parameters.rxsen = s->far.parms.rxsen;
+        report.physup_parameters.rxsr = s->far.parms.rxsr;
         break;
     case V150_1_STATUS_REASON_CONNECTED:
-        report.connect_parameters.selmod = s->far.selmod;
-        report.connect_parameters.tdsr = s->far.tdsr;
-        report.connect_parameters.rdsr = s->far.rdsr;
+        report.connect_parameters.selmod = s->far.parms.selmod;
+        report.connect_parameters.tdsr = s->far.parms.tdsr;
+        report.connect_parameters.rdsr = s->far.parms.rdsr;
 
-        report.connect_parameters.selected_compression_direction = s->far.selected_compression_direction;
-        report.connect_parameters.selected_compression = s->far.selected_compression;
-        report.connect_parameters.selected_error_correction = s->far.selected_error_correction;
+        report.connect_parameters.selected_compression_direction = s->far.parms.selected_compression_direction;
+        report.connect_parameters.selected_compression = s->far.parms.selected_compression;
+        report.connect_parameters.selected_error_correction = s->far.parms.selected_error_correction;
 
-        report.connect_parameters.compression_tx_dictionary_size = s->far.compression_tx_dictionary_size;
-        report.connect_parameters.compression_rx_dictionary_size = s->far.compression_rx_dictionary_size;
-        report.connect_parameters.compression_tx_string_length = s->far.compression_tx_string_length;
-        report.connect_parameters.compression_rx_string_length = s->far.compression_rx_string_length;
-        report.connect_parameters.compression_tx_history_size = s->far.compression_tx_history_size;
-        report.connect_parameters.compression_rx_history_size = s->far.compression_rx_history_size;
+        report.connect_parameters.compression_tx_dictionary_size = s->far.parms.compression_tx_dictionary_size;
+        report.connect_parameters.compression_rx_dictionary_size = s->far.parms.compression_rx_dictionary_size;
+        report.connect_parameters.compression_tx_string_length = s->far.parms.compression_tx_string_length;
+        report.connect_parameters.compression_rx_string_length = s->far.parms.compression_rx_string_length;
+        report.connect_parameters.compression_tx_history_size = s->far.parms.compression_tx_history_size;
+        report.connect_parameters.compression_rx_history_size = s->far.parms.compression_rx_history_size;
 
         /* I_RAW-OCTET is always available. There is no selection flag for it. */
         report.connect_parameters.i_raw_octet_available = true;
-        report.connect_parameters.i_raw_bit_available = s->far.i_raw_bit_available;
-        report.connect_parameters.i_frame_available = s->far.i_frame_available;
+        report.connect_parameters.i_raw_bit_available = s->far.parms.i_raw_bit_available;
+        report.connect_parameters.i_frame_available = s->far.parms.i_frame_available;
         /* I_OCTET is an oddity, as you need to know in advance whether there will be a DLCI field
            present. So, functionally its really like 2 different types of message. */
-        report.connect_parameters.i_octet_with_dlci_available = s->far.i_octet_with_dlci_available;
-        report.connect_parameters.i_octet_without_dlci_available = s->far.i_octet_without_dlci_available;
-        report.connect_parameters.i_char_stat_available = s->far.i_char_stat_available;
-        report.connect_parameters.i_char_dyn_available = s->far.i_char_dyn_available;
+        report.connect_parameters.i_octet_with_dlci_available = s->far.parms.i_octet_with_dlci_available;
+        report.connect_parameters.i_octet_without_dlci_available = s->far.parms.i_octet_without_dlci_available;
+        report.connect_parameters.i_char_stat_available = s->far.parms.i_char_stat_available;
+        report.connect_parameters.i_char_dyn_available = s->far.parms.i_char_dyn_available;
         /* Unlike I_OCTET, I_OCTET-CS is only defined without a DLCI field. */
-        report.connect_parameters.i_octet_cs_available = s->far.i_octet_cs_available;
-        report.connect_parameters.i_char_stat_cs_available = s->far.i_char_stat_cs_available;
-        report.connect_parameters.i_char_dyn_cs_available = s->far.i_char_dyn_cs_available;
+        report.connect_parameters.i_octet_cs_available = s->far.parms.i_octet_cs_available;
+        report.connect_parameters.i_char_stat_cs_available = s->far.parms.i_char_stat_cs_available;
+        report.connect_parameters.i_char_dyn_cs_available = s->far.parms.i_char_dyn_cs_available;
         break;
     }
     /*endswitch*/
@@ -1013,6 +1133,24 @@ static int status_report(v150_1_state_t *s, int reason)
         s->rx_status_report_handler(s->rx_status_report_user_data, &report);
     /*endif*/
     return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static void log_init(v150_1_state_t *s, v150_1_near_far_t *parms)
+{
+    span_log(&s->logging, SPAN_LOG_FLOW, "    Preferred non-error controlled Rx channel: %s\n", (parms->necrxch_option)  ?  "RSC"  :  "USC");
+    span_log(&s->logging, SPAN_LOG_FLOW, "    Preferred error controlled Rx channel: %s\n", (parms->ecrxch_option)  ?  "USC"  :  "RSC");
+    span_log(&s->logging, SPAN_LOG_FLOW, "    XID profile exchange  %ssupported\n", (parms->xid_profile_exchange_supported)  ?  ""  :  "not ");
+    span_log(&s->logging, SPAN_LOG_FLOW, "    Asymmetric data types %ssupported\n", (parms->asymmetric_data_types_supported)  ?  ""  :  "not ");
+    span_log(&s->logging, SPAN_LOG_FLOW, "    I_RAW-CHAR            supported\n");
+    span_log(&s->logging, SPAN_LOG_FLOW, "    I_RAW-BIT             %ssupported\n", (parms->i_raw_bit_supported)  ?  ""  :  "not ");
+    span_log(&s->logging, SPAN_LOG_FLOW, "    I_FRAME               %ssupported\n", (parms->i_frame_supported)  ?  ""  :  "not ");
+    span_log(&s->logging, SPAN_LOG_FLOW, "    I_OCTET %s     supported\n", (parms->dlci_supported)  ?  "(DLCI)   "  :  "(no DLCI)");
+    span_log(&s->logging, SPAN_LOG_FLOW, "    I_CHAR-STAT           %ssupported\n", (parms->i_char_stat_supported)  ?  ""  :  "not ");
+    span_log(&s->logging, SPAN_LOG_FLOW, "    I_CHAR-DYN            %ssupported\n", (parms->i_char_dyn_supported)  ?  ""  :  "not ");
+    span_log(&s->logging, SPAN_LOG_FLOW, "    I_OCTET-CS            %ssupported\n", (parms->i_octet_cs_supported)  ?  ""  :  "not ");
+    span_log(&s->logging, SPAN_LOG_FLOW, "    I_CHAR-STAT-CS        %ssupported\n", (parms->i_char_stat_cs_supported)  ?  ""  :  "not ");
+    span_log(&s->logging, SPAN_LOG_FLOW, "    I_CHAR-DYN-CS         %ssupported\n", (parms->i_char_dyn_cs_supported)  ?  ""  :  "not ");
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1027,6 +1165,7 @@ SPAN_DECLARE(int) v150_1_tx_null(v150_1_state_t *s)
     if (s->tx_packet_handler)
         res = s->tx_packet_handler(s->tx_packet_user_data, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, 1);
     /*endif*/
+    span_log(&s->logging, SPAN_LOG_FLOW, "NULL sent\n");
     return res;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1041,49 +1180,51 @@ SPAN_DECLARE(int) v150_1_tx_init(v150_1_state_t *s)
     pkt[0] = V150_1_MSGID_INIT;
     /* At this stage we just tell the far end the things we support. */
     i = 0;
-    if (s->near.necrxch_option)
+    if (s->near.parms.necrxch_option)
         i |= 0x80;
     /*endif*/
-    if (s->near.ecrxch_option)
+    if (s->near.parms.ecrxch_option)
         i |= 0x40;
     /*endif*/
-    if (s->near.xid_profile_exchange_supported)
+    if (s->near.parms.xid_profile_exchange_supported)
         i |= 0x20;
     /*endif*/
-    if (s->near.asymmetric_data_types_supported)
+    if (s->near.parms.asymmetric_data_types_supported)
         i |= 0x10;
     /*endif*/
-    if (s->near.i_raw_bit_supported)
+    if (s->near.parms.i_raw_bit_supported)
         i |= 0x08;
     /*endif*/
-    if (s->near.i_frame_supported)
+    if (s->near.parms.i_frame_supported)
         i |= 0x04;
     /*endif*/
-    if (s->near.i_char_stat_supported)
+    if (s->near.parms.i_char_stat_supported)
         i |= 0x02;
     /*endif*/
-    if (s->near.i_char_dyn_supported)
+    if (s->near.parms.i_char_dyn_supported)
         i |= 0x01;
     /*endif*/
     pkt[1] = i;
     i = 0;
-    if (s->near.i_octet_cs_supported)
+    if (s->near.parms.i_octet_cs_supported)
         i |= 0x80;
     /*endif*/
-    if (s->near.i_char_stat_cs_supported)
+    if (s->near.parms.i_char_stat_cs_supported)
         i |= 0x40;
     /*endif*/
-    if (s->near.i_char_dyn_cs_supported)
+    if (s->near.parms.i_char_dyn_cs_supported)
         i |= 0x20;
     /*endif*/
     pkt[2] = i;
+    log_init(s, &s->near.parms);
     if (s->tx_packet_handler)
         res = s->tx_packet_handler(s->tx_packet_user_data, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, 3);
     /*endif*/
+    span_log(&s->logging, SPAN_LOG_FLOW, "Init sent\n");
     if (res >= 0)
     {
-        s->near.connection_state = V150_1_STATE_INITED;
-        if (s->far.connection_state >= V150_1_STATE_INITED)
+        s->near.parms.connection_state = V150_1_STATE_INITED;
+        if (s->far.parms.connection_state >= V150_1_STATE_INITED)
             s->joint_connection_state = V150_1_STATE_INITED;
         /*endif*/
     }
@@ -1099,43 +1240,43 @@ SPAN_DECLARE(int) v150_1_tx_xid_xchg(v150_1_state_t *s)
     uint8_t pkt[256];
 
     res = -1;
-    if (!s->far.xid_profile_exchange_supported)
+    if (!s->far.parms.xid_profile_exchange_supported)
         return -1;
     /*endif*/
     pkt[0] = V150_1_MSGID_XID_XCHG;
-    pkt[1] = s->near.ecp;
+    pkt[1] = s->near.parms.ecp;
     i = 0;
-    if (s->near.v42bis_supported)
+    if (s->near.parms.v42bis_supported)
         i |= 0x80;
     /*endif*/
-    if (s->near.v44_supported)
+    if (s->near.parms.v44_supported)
         i |= 0x40;
     /*endif*/
-    if (s->near.mnp5_supported)
+    if (s->near.parms.mnp5_supported)
         i |= 0x20;
     /*endif*/
     pkt[2] = i;
-    if (s->near.v42bis_supported)
+    if (s->near.parms.v42bis_supported)
     {
-        pkt[3] = s->near.v42bis_p0;
-        put_net_unaligned_uint16(&pkt[4], s->near.v42bis_p1);
-        pkt[6] = s->near.v42bis_p2;
+        pkt[3] = s->near.parms.v42bis_p0;
+        put_net_unaligned_uint16(&pkt[4], s->near.parms.v42bis_p1);
+        pkt[6] = s->near.parms.v42bis_p2;
     }
     else
     {
         memset(&pkt[3], 0, 4);
     }
     /*endif*/
-    if (s->near.v44_supported)
+    if (s->near.parms.v44_supported)
     {
-        pkt[7] = s->near.v44_c0;
-        pkt[8] = s->near.v44_p0;
-        put_net_unaligned_uint16(&pkt[9], s->near.v44_p1t);
-        put_net_unaligned_uint16(&pkt[11], s->near.v44_p1r);
-        pkt[13] = s->near.v44_p2t;
-        pkt[14] = s->near.v44_p2r;
-        put_net_unaligned_uint16(&pkt[15], s->near.v44_p3t);
-        put_net_unaligned_uint16(&pkt[17], s->near.v44_p3r);
+        pkt[7] = s->near.parms.v44_c0;
+        pkt[8] = s->near.parms.v44_p0;
+        put_net_unaligned_uint16(&pkt[9], s->near.parms.v44_p1t);
+        put_net_unaligned_uint16(&pkt[11], s->near.parms.v44_p1r);
+        pkt[13] = s->near.parms.v44_p2t;
+        pkt[14] = s->near.parms.v44_p2r;
+        put_net_unaligned_uint16(&pkt[15], s->near.parms.v44_p3t);
+        put_net_unaligned_uint16(&pkt[17], s->near.parms.v44_p3r);
     }
     else
     {
@@ -1145,6 +1286,7 @@ SPAN_DECLARE(int) v150_1_tx_xid_xchg(v150_1_state_t *s)
     if (s->tx_packet_handler)
         res = s->tx_packet_handler(s->tx_packet_user_data, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, 19);
     /*endif*/
+    span_log(&s->logging, SPAN_LOG_FLOW, "XID xchg sent\n");
     return res;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1154,16 +1296,44 @@ SPAN_DECLARE(int) v150_1_tx_jm_info(v150_1_state_t *s)
     int res;
     int i;
     int len;
+    int bit;
     uint8_t pkt[256];
 
+    for (i = 0;  i < 16;  i++)
+    {
+        if (s->near.parms.jm_category_id_seen[i])
+        {
+            span_log(&s->logging,
+                     SPAN_LOG_FLOW,
+                     "    JM %s 0x%x\n",
+                     v150_1_jm_category_to_str(i),
+                     s->near.parms.jm_category_info[i]);
+        }
+        /*endif*/
+    }
+    /*endfor*/
+    if (s->near.parms.jm_category_id_seen[V150_1_JM_CATEGORY_ID_MODULATION_MODES])
+    {
+        for (i = 0;  i < 16;  i++)
+        {
+            bit = s->near.parms.jm_category_info[V150_1_JM_CATEGORY_ID_MODULATION_MODES] & (0x8000 >> i);
+            if (bit)
+            {
+                span_log(&s->logging, SPAN_LOG_FLOW, "    JM     %s\n", v150_1_jm_info_modulation_to_str(bit));
+            }
+            /*endif*/
+        }
+        /*endfor*/
+    }
+    /*endif*/
     res = -1;
     pkt[0] = V150_1_MSGID_JM_INFO;
     len = 1;
     for (i = 0;  i < 16;  i++)
     {
-        if (s->near.jm_category_id_seen[i])
+        if (s->near.parms.jm_category_id_seen[i])
         {
-            put_net_unaligned_uint16(&pkt[len], (i << 12) | (s->near.jm_category_info[i] & 0x0FFF));
+            put_net_unaligned_uint16(&pkt[len], (i << 12) | (s->near.parms.jm_category_info[i] & 0x0FFF));
             len += 2;
         }
         /*endif*/
@@ -1171,6 +1341,7 @@ SPAN_DECLARE(int) v150_1_tx_jm_info(v150_1_state_t *s)
     if (s->tx_packet_handler)
         res = s->tx_packet_handler(s->tx_packet_user_data, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, len);
     /*endif*/
+    span_log(&s->logging, SPAN_LOG_FLOW, "JM info sent\n");
     return res;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1185,6 +1356,7 @@ SPAN_DECLARE(int) v150_1_tx_start_jm(v150_1_state_t *s)
     if (s->tx_packet_handler)
         res = s->tx_packet_handler(s->tx_packet_user_data, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, 1);
     /*endif*/
+    span_log(&s->logging, SPAN_LOG_FLOW, "Start JM sent\n");
     return res;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1198,56 +1370,56 @@ SPAN_DECLARE(int) v150_1_tx_connect(v150_1_state_t *s)
 
     res = -1;
     pkt[0] = V150_1_MSGID_CONNECT;
-    pkt[1] = (s->near.selmod << 2) | s->near.selected_compression_direction;
-    pkt[2] = (s->near.selected_compression << 4) | s->near.selected_error_correction;
-    put_net_unaligned_uint16(&pkt[3], s->near.tdsr);
-    put_net_unaligned_uint16(&pkt[5], s->near.rdsr);
+    pkt[1] = (s->near.parms.selmod << 2) | s->near.parms.selected_compression_direction;
+    pkt[2] = (s->near.parms.selected_compression << 4) | s->near.parms.selected_error_correction;
+    put_net_unaligned_uint16(&pkt[3], s->near.parms.tdsr);
+    put_net_unaligned_uint16(&pkt[5], s->near.parms.rdsr);
 
     available_data_types = 0;
-    if (s->near.i_octet_with_dlci_available)
+    if (s->near.parms.i_octet_with_dlci_available)
         available_data_types |= 0x8000;
     /*endif*/
-    if (s->near.i_octet_without_dlci_available)
+    if (s->near.parms.i_octet_without_dlci_available)
         available_data_types |= 0x4000;
     /*endif*/
-    if (s->near.i_raw_bit_available)
+    if (s->near.parms.i_raw_bit_available)
         available_data_types |= 0x2000;
     /*endif*/
-    if (s->near.i_frame_available)
+    if (s->near.parms.i_frame_available)
         available_data_types |= 0x1000;
     /*endif*/
-    if (s->near.i_char_stat_available)
+    if (s->near.parms.i_char_stat_available)
         available_data_types |= 0x0800;
     /*endif*/
-    if (s->near.i_char_dyn_available)
+    if (s->near.parms.i_char_dyn_available)
         available_data_types |= 0x0400;
     /*endif*/
-    if (s->near.i_octet_cs_available)
+    if (s->near.parms.i_octet_cs_available)
         available_data_types |= 0x0200;
     /*endif*/
-    if (s->near.i_char_stat_cs_available)
+    if (s->near.parms.i_char_stat_cs_available)
         available_data_types |= 0x0100;
     /*endif*/
-    if (s->near.i_char_dyn_cs_available)
+    if (s->near.parms.i_char_dyn_cs_available)
         available_data_types |= 0x0080;
     /*endif*/
     put_net_unaligned_uint16(&pkt[7], available_data_types);
     len = 9;
-    if (s->near.selected_compression == V150_1_COMPRESSION_V42BIS  ||  s->near.selected_compression == V150_1_COMPRESSION_V44)
+    if (s->near.parms.selected_compression == V150_1_COMPRESSION_V42BIS  ||  s->near.parms.selected_compression == V150_1_COMPRESSION_V44)
     {
         /* This is only included if V.42bis or V.44 is selected. For no compression, or MNP5 this is omitted */
-        put_net_unaligned_uint16(&pkt[9], s->near.compression_tx_dictionary_size);
-        put_net_unaligned_uint16(&pkt[11], s->near.compression_rx_dictionary_size);
-        pkt[13] = s->near.compression_tx_string_length;
-        pkt[14] = s->near.compression_rx_string_length;
+        put_net_unaligned_uint16(&pkt[9], s->near.parms.compression_tx_dictionary_size);
+        put_net_unaligned_uint16(&pkt[11], s->near.parms.compression_rx_dictionary_size);
+        pkt[13] = s->near.parms.compression_tx_string_length;
+        pkt[14] = s->near.parms.compression_rx_string_length;
         len += 6;
     }
     /*endif*/
-    if (s->near.selected_compression == V150_1_COMPRESSION_V44)
+    if (s->near.parms.selected_compression == V150_1_COMPRESSION_V44)
     {
         /* This is only included if V.44 is selected. For no compression, MNP5, or V.42bis this is omitted */
-        put_net_unaligned_uint16(&pkt[15], s->near.compression_tx_history_size);
-        put_net_unaligned_uint16(&pkt[15], s->near.compression_rx_history_size);
+        put_net_unaligned_uint16(&pkt[15], s->near.parms.compression_tx_history_size);
+        put_net_unaligned_uint16(&pkt[15], s->near.parms.compression_rx_history_size);
         len += 4;
     }
     /*endif*/
@@ -1256,12 +1428,13 @@ SPAN_DECLARE(int) v150_1_tx_connect(v150_1_state_t *s)
     /*endif*/
     if (res >= 0)
     {
-        s->near.connection_state = V150_1_STATE_CONNECTED;
-        if (s->near.connection_state >= V150_1_STATE_CONNECTED)
+        s->near.parms.connection_state = V150_1_STATE_CONNECTED;
+        if (s->near.parms.connection_state >= V150_1_STATE_CONNECTED)
             s->joint_connection_state = V150_1_STATE_CONNECTED;
         /*endif*/
     }
     /*endif*/
+    span_log(&s->logging, SPAN_LOG_FLOW, "Connect sent\n");
     return res;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1278,6 +1451,7 @@ SPAN_DECLARE(int) v150_1_tx_break(v150_1_state_t *s, int source, int type, int d
     if (s->tx_packet_handler)
         res = s->tx_packet_handler(s->tx_packet_user_data, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, 3);
     /*endif*/
+    span_log(&s->logging, SPAN_LOG_FLOW, "Break sent\n");
     return res;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1292,6 +1466,7 @@ SPAN_DECLARE(int) v150_1_tx_break_ack(v150_1_state_t *s)
     if (s->tx_packet_handler)
         res = s->tx_packet_handler(s->tx_packet_user_data, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, 1);
     /*endif*/
+    span_log(&s->logging, SPAN_LOG_FLOW, "Break ACK sent\n");
     return res;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1311,32 +1486,32 @@ SPAN_DECLARE(int) v150_1_tx_mr_event(v150_1_state_t *s, int event_id)
     case V150_1_MR_EVENT_ID_RETRAIN:
         pkt[2] = V150_1_MR_EVENT_REASON_NULL;
         len = 3;
-        s->near.connection_state = V150_1_STATE_RETRAIN;
+        s->near.parms.connection_state = V150_1_STATE_RETRAIN;
         s->joint_connection_state = V150_1_STATE_RETRAIN;
         break;
     case V150_1_MR_EVENT_ID_RATE_RENEGOTIATION:
         pkt[2] = V150_1_MR_EVENT_REASON_NULL;
         len = 3;
-        s->near.connection_state = V150_1_STATE_RATE_RENEGOTIATION;
+        s->near.parms.connection_state = V150_1_STATE_RATE_RENEGOTIATION;
         s->joint_connection_state = V150_1_STATE_RATE_RENEGOTIATION;
         break;
     case V150_1_MR_EVENT_ID_PHYSUP:
         pkt[2] = 0;
-        i = (s->near.selmod << 2);
-        if (s->near.txsen)
+        i = (s->near.parms.selmod << 2);
+        if (s->near.parms.txsen)
             i |= 0x02;
         /*endif*/
-        if (s->near.rxsen)
+        if (s->near.parms.rxsen)
             i |= 0x01;
         /*endif*/
         pkt[3] = i;
-        put_net_unaligned_uint16(&pkt[4], s->near.tdsr);
-        put_net_unaligned_uint16(&pkt[4], s->near.rdsr);
-        pkt[8] = (s->near.txsen)  ?  s->near.txsr  :  V150_1_SYMBOL_RATE_NULL;
-        pkt[9] = (s->near.rxsen)  ?  s->near.rxsr  :  V150_1_SYMBOL_RATE_NULL;
+        put_net_unaligned_uint16(&pkt[4], s->near.parms.tdsr);
+        put_net_unaligned_uint16(&pkt[4], s->near.parms.rdsr);
+        pkt[8] = (s->near.parms.txsen)  ?  s->near.parms.txsr  :  V150_1_SYMBOL_RATE_NULL;
+        pkt[9] = (s->near.parms.rxsen)  ?  s->near.parms.rxsr  :  V150_1_SYMBOL_RATE_NULL;
         len = 10;
-        s->near.connection_state = V150_1_STATE_PHYSUP;
-        if (s->far.connection_state >= V150_1_STATE_PHYSUP)
+        s->near.parms.connection_state = V150_1_STATE_PHYSUP;
+        if (s->far.parms.connection_state >= V150_1_STATE_PHYSUP)
             s->joint_connection_state = V150_1_STATE_PHYSUP;
         /*endif*/
         break;
@@ -1350,6 +1525,7 @@ SPAN_DECLARE(int) v150_1_tx_mr_event(v150_1_state_t *s, int event_id)
     if (s->tx_packet_handler)
         res = s->tx_packet_handler(s->tx_packet_user_data, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, len);
     /*endif*/
+    span_log(&s->logging, SPAN_LOG_FLOW, "MR-event sent\n");
     return res;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1369,8 +1545,9 @@ SPAN_DECLARE(int) v150_1_tx_cleardown(v150_1_state_t *s, int reason)
         res = s->tx_packet_handler(s->tx_packet_user_data, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, 4);
     /*endif*/
     if (res >= 0)
-        s->near.connection_state = V150_1_STATE_IDLE;
+        s->near.parms.connection_state = V150_1_STATE_IDLE;
     /*endif*/
+    span_log(&s->logging, SPAN_LOG_FLOW, "Cleardown sent\n");
     return res;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1384,45 +1561,45 @@ SPAN_DECLARE(int) v150_1_tx_prof_xchg(v150_1_state_t *s)
     res = -1;
     pkt[0] = V150_1_MSGID_PROF_XCHG;
     i = 0;
-    if (s->near.v42_lapm_supported)
+    if (s->near.parms.v42_lapm_supported)
         i |= 0x40;
     /*endif*/
-    if (s->near.v42_annex_a_supported)
+    if (s->near.parms.v42_annex_a_supported)
         i |= 0x10;
     /*endif*/
-    if (s->near.v44_supported)
+    if (s->near.parms.v44_supported)
         i |= 0x04;
     /*endif*/
-    if (s->near.v42bis_supported)
+    if (s->near.parms.v42bis_supported)
         i |= 0x01;
     /*endif*/
     pkt[1] = i;
     i = 0;
-    if (s->near.mnp5_supported)
+    if (s->near.parms.mnp5_supported)
         i |= 0x40;
     /*endif*/
     pkt[2] = i;
-    if (s->near.v42bis_supported)
+    if (s->near.parms.v42bis_supported)
     {
-        pkt[3] = s->near.v42bis_p0;
-        put_net_unaligned_uint16(&pkt[4], s->near.v42bis_p1);
-        pkt[6] = s->near.v42bis_p2;
+        pkt[3] = s->near.parms.v42bis_p0;
+        put_net_unaligned_uint16(&pkt[4], s->near.parms.v42bis_p1);
+        pkt[6] = s->near.parms.v42bis_p2;
     }
     else
     {
         memset(&pkt[3], 0, 4);
     }
     /*endif*/
-    if (s->near.v44_supported)
+    if (s->near.parms.v44_supported)
     {
-        pkt[7] = s->near.v44_c0;
-        pkt[8] = s->near.v44_p0;
-        put_net_unaligned_uint16(&pkt[9], s->near.v44_p1t);
-        put_net_unaligned_uint16(&pkt[11], s->near.v44_p1r);
-        pkt[13] = s->near.v44_p2t;
-        pkt[14] = s->near.v44_p2r;
-        put_net_unaligned_uint16(&pkt[15], s->near.v44_p3t);
-        put_net_unaligned_uint16(&pkt[17], s->near.v44_p3r);
+        pkt[7] = s->near.parms.v44_c0;
+        pkt[8] = s->near.parms.v44_p0;
+        put_net_unaligned_uint16(&pkt[9], s->near.parms.v44_p1t);
+        put_net_unaligned_uint16(&pkt[11], s->near.parms.v44_p1r);
+        pkt[13] = s->near.parms.v44_p2t;
+        pkt[14] = s->near.parms.v44_p2r;
+        put_net_unaligned_uint16(&pkt[15], s->near.parms.v44_p3t);
+        put_net_unaligned_uint16(&pkt[17], s->near.parms.v44_p3r);
     }
     else
     {
@@ -1432,6 +1609,7 @@ SPAN_DECLARE(int) v150_1_tx_prof_xchg(v150_1_state_t *s)
     if (s->tx_packet_handler)
         res = s->tx_packet_handler(s->tx_packet_user_data, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, 19);
     /*endif*/
+    span_log(&s->logging, SPAN_LOG_FLOW, "Prof xchg sent\n");
     return res;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1452,7 +1630,7 @@ static int v150_1_build_i_raw_octet(v150_1_state_t *s, uint8_t pkt[], int max_le
 
 static int v150_1_build_i_raw_bit(v150_1_state_t *s, uint8_t pkt[], int max_len, const uint8_t buf[], int len)
 {
-    if (!s->far.i_raw_bit_available)
+    if (!s->far.parms.i_raw_bit_available)
         return -1;
     /*endif*/
     if (len > max_len - 3)
@@ -1471,24 +1649,24 @@ static int v150_1_build_i_octet(v150_1_state_t *s, uint8_t pkt[], int max_len, c
 {
     int header;
 
-    if (!s->far.i_octet_without_dlci_available  &&  !s->far.i_octet_with_dlci_available)
+    if (!s->far.parms.i_octet_without_dlci_available  &&  !s->far.parms.i_octet_with_dlci_available)
         return -1;
     /*endif*/
     if (len > max_len - 3)
         return -1;
     /*endif*/
     pkt[0] = V150_1_MSGID_I_OCTET;
-    if (s->far.i_octet_with_dlci_available)
+    if (s->far.parms.i_octet_with_dlci_available)
     {
         /* The DLCI may be one or two octets long. */
-        if ((s->near.dlci & 0x01) == 0)
+        if ((s->near.parms.dlci & 0x01) == 0)
         {
-            pkt[1] = s->near.dlci & 0xFF;
+            pkt[1] = s->near.parms.dlci & 0xFF;
             header = 2;
         }
         else
         {
-            put_net_unaligned_uint16(&pkt[1], s->near.dlci);
+            put_net_unaligned_uint16(&pkt[1], s->near.parms.dlci);
             header = 3;
         }
         /*endif*/
@@ -1506,14 +1684,14 @@ static int v150_1_build_i_octet(v150_1_state_t *s, uint8_t pkt[], int max_len, c
 
 static int v150_1_build_i_char_stat(v150_1_state_t *s, uint8_t pkt[], int max_len, const uint8_t buf[], int len)
 {
-    if (!s->far.i_char_stat_available)
+    if (!s->far.parms.i_char_stat_available)
         return -1;
     /*endif*/
     if (len > max_len - 2)
         return -1;
     /*endif*/
     pkt[0] = V150_1_MSGID_I_CHAR_STAT;
-    pkt[1] = s->near.data_format_code;
+    pkt[1] = s->near.parms.data_format_code;
     memcpy(&pkt[2], buf, len);
     len += 2;
     return len;
@@ -1522,14 +1700,14 @@ static int v150_1_build_i_char_stat(v150_1_state_t *s, uint8_t pkt[], int max_le
 
 static int v150_1_build_i_char_dyn(v150_1_state_t *s, uint8_t pkt[], int max_len, const uint8_t buf[], int len)
 {
-    if (!s->far.i_char_dyn_available)
+    if (!s->far.parms.i_char_dyn_available)
         return -1;
     /*endif*/
     if (len > max_len - 2)
         return -1;
     /*endif*/
     pkt[0] = V150_1_MSGID_I_CHAR_DYN;
-    pkt[1] = s->near.data_format_code;
+    pkt[1] = s->near.parms.data_format_code;
     memcpy(&pkt[2], buf, len);
     len += 2;
     return len;
@@ -1542,7 +1720,7 @@ static int v150_1_build_i_frame(v150_1_state_t *s, uint8_t pkt[], int max_len, c
 
     data_frame_state = 0;
 
-    if (!s->far.i_frame_available)
+    if (!s->far.parms.i_frame_available)
         return -1;
     /*endif*/
     if (len > max_len - 2)
@@ -1558,16 +1736,16 @@ static int v150_1_build_i_frame(v150_1_state_t *s, uint8_t pkt[], int max_len, c
 
 static int v150_1_build_i_octet_cs(v150_1_state_t *s, uint8_t pkt[], int max_len, const uint8_t buf[], int len)
 {
-    if (!s->far.i_octet_cs_available)
+    if (!s->far.parms.i_octet_cs_available)
         return -1;
     /*endif*/
     if (len > max_len - 3)
         return -1;
     /*endif*/
     pkt[0] = V150_1_MSGID_I_OCTET_CS;
-    put_net_unaligned_uint16(&pkt[1], s->near.octet_cs_next_seq_no & 0xFFFF);
+    put_net_unaligned_uint16(&pkt[1], s->near.parms.octet_cs_next_seq_no & 0xFFFF);
     memcpy(&pkt[3], buf, len);
-    s->near.octet_cs_next_seq_no += len;
+    s->near.parms.octet_cs_next_seq_no += len;
     len += 3;
     return len;
 }
@@ -1575,35 +1753,35 @@ static int v150_1_build_i_octet_cs(v150_1_state_t *s, uint8_t pkt[], int max_len
 
 static int v150_1_build_i_char_stat_cs(v150_1_state_t *s, uint8_t pkt[], int max_len, const uint8_t buf[], int len)
 {
-    if (!s->far.i_char_stat_cs_available)
+    if (!s->far.parms.i_char_stat_cs_available)
         return -1;
     /*endif*/
     if (len > max_len - 4)
         return -1;
     /*endif*/
     pkt[0] = V150_1_MSGID_I_CHAR_STAT_CS;
-    pkt[1] = s->near.data_format_code;
-    put_net_unaligned_uint16(&pkt[2], s->near.octet_cs_next_seq_no & 0xFFFF);
+    pkt[1] = s->near.parms.data_format_code;
+    put_net_unaligned_uint16(&pkt[2], s->near.parms.octet_cs_next_seq_no & 0xFFFF);
     memcpy(&pkt[4], buf, len);
     len += 4;
-    s->near.octet_cs_next_seq_no += len;
+    s->near.parms.octet_cs_next_seq_no += len;
     return len;
 }
 /*- End of function --------------------------------------------------------*/
 
 static int v150_1_build_i_char_dyn_cs(v150_1_state_t *s, uint8_t pkt[], int max_len, const uint8_t buf[], int len)
 {
-    if (!s->far.i_char_dyn_cs_available)
+    if (!s->far.parms.i_char_dyn_cs_available)
         return -1;
     /*endif*/
     if (len > max_len - 4)
         return -1;
     /*endif*/
     pkt[0] = V150_1_MSGID_I_CHAR_DYN_CS;
-    pkt[1] = s->near.data_format_code;
-    put_net_unaligned_uint16(&pkt[2], s->near.octet_cs_next_seq_no & 0xFFFF);
+    pkt[1] = s->near.parms.data_format_code;
+    put_net_unaligned_uint16(&pkt[2], s->near.parms.octet_cs_next_seq_no & 0xFFFF);
     memcpy(&pkt[4], buf, len);
-    s->near.octet_cs_next_seq_no += len;
+    s->near.parms.octet_cs_next_seq_no += len;
     len += 4;
     return len;
 }
@@ -1679,7 +1857,7 @@ static int select_info_msg_type(v150_1_state_t *s)
             s->near.info_stream_msg_id = s->near.info_msg_preferences[i];
             return 0;
         case V150_1_MSGID_I_RAW_BIT:
-            if (s->near.i_raw_bit_available)
+            if (s->near.parms.i_raw_bit_available)
             {
                 s->near.info_stream_msg_id = s->near.info_msg_preferences[i];
                 return 0;
@@ -1691,7 +1869,7 @@ static int select_info_msg_type(v150_1_state_t *s)
             s->near.info_stream_msg_id = s->near.info_msg_preferences[i];
             return 0;
         case V150_1_MSGID_I_CHAR_STAT:
-            if (s->near.i_char_stat_available)
+            if (s->near.parms.i_char_stat_available)
             {
                 s->near.info_stream_msg_id = s->near.info_msg_preferences[i];
                 return 0;
@@ -1699,7 +1877,7 @@ static int select_info_msg_type(v150_1_state_t *s)
             /*endif*/
             break;
         case V150_1_MSGID_I_CHAR_DYN:
-            if (s->near.i_char_dyn_available)
+            if (s->near.parms.i_char_dyn_available)
             {
                 s->near.info_stream_msg_id = s->near.info_msg_preferences[i];
                 return 0;
@@ -1707,7 +1885,7 @@ static int select_info_msg_type(v150_1_state_t *s)
             /*endif*/
             break;
         case V150_1_MSGID_I_FRAME:
-            if (s->near.i_frame_available)
+            if (s->near.parms.i_frame_available)
             {
                 s->near.info_stream_msg_id = s->near.info_msg_preferences[i];
                 return 0;
@@ -1715,7 +1893,7 @@ static int select_info_msg_type(v150_1_state_t *s)
             /*endif*/
             break;
         case V150_1_MSGID_I_OCTET_CS:
-            if (s->near.i_octet_cs_available)
+            if (s->near.parms.i_octet_cs_available)
             {
                 s->near.info_stream_msg_id = s->near.info_msg_preferences[i];
                 return 0;
@@ -1723,7 +1901,7 @@ static int select_info_msg_type(v150_1_state_t *s)
             /*endif*/
             break;
         case V150_1_MSGID_I_CHAR_STAT_CS:
-            if (s->near.i_char_stat_cs_available)
+            if (s->near.parms.i_char_stat_cs_available)
             {
                 s->near.info_stream_msg_id = s->near.info_msg_preferences[i];
                 return 0;
@@ -1731,7 +1909,7 @@ static int select_info_msg_type(v150_1_state_t *s)
             /*endif*/
             break;
         case V150_1_MSGID_I_CHAR_DYN_CS:
-            if (s->near.i_char_dyn_cs_available)
+            if (s->near.parms.i_char_dyn_cs_available)
             {
                 s->near.info_stream_msg_id = s->near.info_msg_preferences[i];
                 return 0;
@@ -1767,46 +1945,34 @@ static int v150_1_process_init(v150_1_state_t *s, const uint8_t buf[], int len)
     }
     /*endif*/
     /* Just capture what the far end says about its capabilities */
-    s->far.necrxch_option = (buf[1] & 0x80) != 0;
-    s->far.ecrxch_option = (buf[1] & 0x40) != 0;
-    s->far.xid_profile_exchange_supported = (buf[1] & 0x20) != 0;
-    s->far.asymmetric_data_types_supported = (buf[1] & 0x10) != 0;
-    s->far.i_raw_bit_supported = (buf[1] & 0x08) != 0;
-    s->far.i_frame_supported = (buf[1] & 0x04) != 0;
-    s->far.i_char_stat_supported = (buf[1] & 0x02) != 0;
-    s->far.i_char_dyn_supported = (buf[1] & 0x01) != 0;
-    s->far.i_octet_cs_supported = (buf[2] & 0x80) != 0;
-    s->far.i_char_stat_cs_supported = (buf[2] & 0x40) != 0;
-    s->far.i_char_dyn_cs_supported = (buf[2] & 0x20) != 0;
+    s->far.parms.necrxch_option = (buf[1] & 0x80) != 0;
+    s->far.parms.ecrxch_option = (buf[1] & 0x40) != 0;
+    s->far.parms.xid_profile_exchange_supported = (buf[1] & 0x20) != 0;
+    s->far.parms.asymmetric_data_types_supported = (buf[1] & 0x10) != 0;
+    s->far.parms.i_raw_bit_supported = (buf[1] & 0x08) != 0;
+    s->far.parms.i_frame_supported = (buf[1] & 0x04) != 0;
+    s->far.parms.i_char_stat_supported = (buf[1] & 0x02) != 0;
+    s->far.parms.i_char_dyn_supported = (buf[1] & 0x01) != 0;
+    s->far.parms.i_octet_cs_supported = (buf[2] & 0x80) != 0;
+    s->far.parms.i_char_stat_cs_supported = (buf[2] & 0x40) != 0;
+    s->far.parms.i_char_dyn_cs_supported = (buf[2] & 0x20) != 0;
 
     /* Now sift out what will be available, because both ends support the features */
-    s->near.i_raw_bit_available  = s->near.i_raw_bit_supported  &&  s->far.i_raw_bit_supported;
-    s->near.i_frame_available = s->near.i_frame_supported  &&  s->far.i_frame_supported;
-    s->near.i_octet_with_dlci_available = s->near.dlci_supported;
-    s->near.i_octet_without_dlci_available = !s->near.dlci_supported;
-    s->near.i_char_stat_available = s->near.i_char_stat_supported  &&  s->far.i_char_stat_supported;
-    s->near.i_char_dyn_available = s->near.i_char_dyn_supported  &&  s->far.i_char_dyn_supported;
-    s->near.i_octet_cs_available = s->near.i_octet_cs_supported  &&  s->far.i_octet_cs_supported;
-    s->near.i_char_stat_cs_available = s->near.i_char_stat_cs_supported  &&  s->far.i_char_stat_cs_supported;
-    s->near.i_char_dyn_cs_available = s->near.i_char_dyn_cs_supported  &&  s->far.i_char_dyn_cs_supported;
+    s->near.parms.i_raw_bit_available  = s->near.parms.i_raw_bit_supported  &&  s->far.parms.i_raw_bit_supported;
+    s->near.parms.i_frame_available = s->near.parms.i_frame_supported  &&  s->far.parms.i_frame_supported;
+    s->near.parms.i_octet_with_dlci_available = s->near.parms.dlci_supported;
+    s->near.parms.i_octet_without_dlci_available = !s->near.parms.dlci_supported;
+    s->near.parms.i_char_stat_available = s->near.parms.i_char_stat_supported  &&  s->far.parms.i_char_stat_supported;
+    s->near.parms.i_char_dyn_available = s->near.parms.i_char_dyn_supported  &&  s->far.parms.i_char_dyn_supported;
+    s->near.parms.i_octet_cs_available = s->near.parms.i_octet_cs_supported  &&  s->far.parms.i_octet_cs_supported;
+    s->near.parms.i_char_stat_cs_available = s->near.parms.i_char_stat_cs_supported  &&  s->far.parms.i_char_stat_cs_supported;
+    s->near.parms.i_char_dyn_cs_available = s->near.parms.i_char_dyn_cs_supported  &&  s->far.parms.i_char_dyn_cs_supported;
 
-    span_log(&s->logging, SPAN_LOG_FLOW, "    Preferred non-error controlled Rx channel: %s\n", (s->far.necrxch_option)  ?  "RSC"  :  "USC");
-    span_log(&s->logging, SPAN_LOG_FLOW, "    Preferred error controlled Rx channel: %s\n", (s->far.necrxch_option)  ?  "USC"  :  "RSC");
-    span_log(&s->logging, SPAN_LOG_FLOW, "    XID profile exchange  %ssupported\n", (s->far.xid_profile_exchange_supported)  ?  ""  :  "not ");
-    span_log(&s->logging, SPAN_LOG_FLOW, "    Asymmetric data types %ssupported\n", (s->far.asymmetric_data_types_supported)  ?  ""  :  "not ");
-    span_log(&s->logging, SPAN_LOG_FLOW, "    I_RAW-CHAR            supported\n");
-    span_log(&s->logging, SPAN_LOG_FLOW, "    I_RAW-BIT             %ssupported\n", (s->far.i_raw_bit_supported)  ?  ""  :  "not ");
-    span_log(&s->logging, SPAN_LOG_FLOW, "    I_FRAME               %ssupported\n", (s->far.i_frame_supported)  ?  ""  :  "not ");
-    span_log(&s->logging, SPAN_LOG_FLOW, "    I_OCTET %s     supported\n", (s->near.dlci_supported)  ?  "(DLCI)   "  :  "(no DLCI)");
-    span_log(&s->logging, SPAN_LOG_FLOW, "    I_CHAR-STAT           %ssupported\n", (s->far.i_char_stat_supported)  ?  ""  :  "not ");
-    span_log(&s->logging, SPAN_LOG_FLOW, "    I_CHAR-DYN            %ssupported\n", (s->far.i_char_dyn_supported)  ?  ""  :  "not ");
-    span_log(&s->logging, SPAN_LOG_FLOW, "    I_OCTET-CS            %ssupported\n", (s->far.i_octet_cs_supported)  ?  ""  :  "not ");
-    span_log(&s->logging, SPAN_LOG_FLOW, "    I_CHAR-STAT-CS        %ssupported\n", (s->far.i_char_stat_cs_supported)  ?  ""  :  "not ");
-    span_log(&s->logging, SPAN_LOG_FLOW, "    I_CHAR-DYN-CS         %ssupported\n", (s->far.i_char_dyn_cs_supported)  ?  ""  :  "not ");
     select_info_msg_type(s);
+    log_init(s, &s->far.parms);
 
-    s->far.connection_state = V150_1_STATE_INITED;
-    if (s->near.connection_state >= V150_1_STATE_INITED)
+    s->far.parms.connection_state = V150_1_STATE_INITED;
+    if (s->near.parms.connection_state >= V150_1_STATE_INITED)
         s->joint_connection_state = V150_1_STATE_INITED;
     /*endif*/
     status_report(s, V150_1_STATUS_REASON_STATE_CHANGED);
@@ -1828,38 +1994,38 @@ static int v150_1_process_xid_xchg(v150_1_state_t *s, const uint8_t buf[], int l
         return -1;
     }
     /*endif*/
-    s->far.ecp = buf[1];
+    s->far.parms.ecp = buf[1];
 
-    s->far.v42bis_supported = (buf[2] & 0x80) != 0;
-    s->far.v44_supported = (buf[2] & 0x40) != 0;
-    s->far.mnp5_supported = (buf[2] & 0x20) != 0;
+    s->far.parms.v42bis_supported = (buf[2] & 0x80) != 0;
+    s->far.parms.v44_supported = (buf[2] & 0x40) != 0;
+    s->far.parms.mnp5_supported = (buf[2] & 0x20) != 0;
 
-    s->far.v42bis_p0 = buf[3];
-    s->far.v42bis_p1 = get_net_unaligned_uint16(&buf[4]);
-    s->far.v42bis_p2 = buf[6];
-    s->far.v44_c0 = buf[7];
-    s->far.v44_p0 = buf[8];
-    s->far.v44_p1t = get_net_unaligned_uint16(&buf[9]);
-    s->far.v44_p1r = get_net_unaligned_uint16(&buf[11]);
-    s->far.v44_p2t = buf[13];
-    s->far.v44_p2r = buf[14];
-    s->far.v44_p3t = get_net_unaligned_uint16(&buf[15]);
-    s->far.v44_p3r = get_net_unaligned_uint16(&buf[17]);
+    s->far.parms.v42bis_p0 = buf[3];
+    s->far.parms.v42bis_p1 = get_net_unaligned_uint16(&buf[4]);
+    s->far.parms.v42bis_p2 = buf[6];
+    s->far.parms.v44_c0 = buf[7];
+    s->far.parms.v44_p0 = buf[8];
+    s->far.parms.v44_p1t = get_net_unaligned_uint16(&buf[9]);
+    s->far.parms.v44_p1r = get_net_unaligned_uint16(&buf[11]);
+    s->far.parms.v44_p2t = buf[13];
+    s->far.parms.v44_p2r = buf[14];
+    s->far.parms.v44_p3t = get_net_unaligned_uint16(&buf[15]);
+    s->far.parms.v44_p3r = get_net_unaligned_uint16(&buf[17]);
 
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.42bis %ssupported\n", (s->far.v42bis_supported)  ?  ""  :  "not ");
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44    %ssupported\n", (s->far.v44_supported)  ?  ""  :  "not ");
-    span_log(&s->logging, SPAN_LOG_FLOW, "    MNP5    %ssupported\n", (s->far.mnp5_supported)  ?  ""  :  "not ");
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.42bis P0 %d\n", s->far.v42bis_p0);
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.42bis P1 %d\n", s->far.v42bis_p1);
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.42bis P2 %d\n", s->far.v42bis_p2);
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 C0 %d\n", s->far.v44_c0);
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P1 %d\n", s->far.v44_p0);
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P1T %d\n", s->far.v44_p1t);
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P1R %d\n", s->far.v44_p1r);
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P2T %d\n", s->far.v44_p2t);
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P2R %d\n", s->far.v44_p2r);
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P3T %d\n", s->far.v44_p3t);
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P3R %d\n", s->far.v44_p3r);
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.42bis %ssupported\n", (s->far.parms.v42bis_supported)  ?  ""  :  "not ");
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44    %ssupported\n", (s->far.parms.v44_supported)  ?  ""  :  "not ");
+    span_log(&s->logging, SPAN_LOG_FLOW, "    MNP5    %ssupported\n", (s->far.parms.mnp5_supported)  ?  ""  :  "not ");
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.42bis P0 %d\n", s->far.parms.v42bis_p0);
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.42bis P1 %d\n", s->far.parms.v42bis_p1);
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.42bis P2 %d\n", s->far.parms.v42bis_p2);
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 C0 %d\n", s->far.parms.v44_c0);
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P1 %d\n", s->far.parms.v44_p0);
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P1T %d\n", s->far.parms.v44_p1t);
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P1R %d\n", s->far.parms.v44_p1r);
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P2T %d\n", s->far.parms.v44_p2t);
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P2R %d\n", s->far.parms.v44_p2r);
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P3T %d\n", s->far.parms.v44_p3t);
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P3R %d\n", s->far.parms.v44_p3r);
 
     /* TODO: */
     return 0;
@@ -1870,6 +2036,7 @@ static int v150_1_process_jm_info(v150_1_state_t *s, const uint8_t buf[], int le
 {
     int i;
     int id;
+    int bit;
 
     if (s->joint_connection_state < V150_1_STATE_INITED)
     {
@@ -1887,19 +2054,37 @@ static int v150_1_process_jm_info(v150_1_state_t *s, const uint8_t buf[], int le
     for (i = 1;  i < len;  i += 2)
     {
         id = (buf[i] >> 4) & 0x0F;
-        s->far.jm_category_id_seen[id] = true;
-        s->far.jm_category_info[id] = get_net_unaligned_uint16(&buf[i]) & 0x0FFF;
+        s->far.parms.jm_category_id_seen[id] = true;
+        s->far.parms.jm_category_info[id] = get_net_unaligned_uint16(&buf[i]) & 0x0FFF;
     }
     /*endfor*/
-    for (i = 1;  i < 16;  i++)
+    for (i = 0;  i < 16;  i++)
     {
-        if (s->far.jm_category_id_seen[i])
+        if (s->far.parms.jm_category_id_seen[i])
         {
-            span_log(&s->logging, SPAN_LOG_WARNING, "    JM %d 0x%x\n", i, s->far.jm_category_info[i]);
+            span_log(&s->logging,
+                     SPAN_LOG_WARNING,
+                     "    JM %s 0x%x\n",
+                     v150_1_jm_category_to_str(i),
+                     s->far.parms.jm_category_info[i]);
         }
         /*endif*/
     }
     /*endfor*/
+    if (s->far.parms.jm_category_id_seen[V150_1_JM_CATEGORY_ID_MODULATION_MODES])
+    {
+        for (i = 0;  i < 16;  i++)
+        {
+            bit = s->far.parms.jm_category_info[V150_1_JM_CATEGORY_ID_MODULATION_MODES] & (0x8000 >> i);
+            if (bit)
+            {
+                span_log(&s->logging, SPAN_LOG_FLOW, "    JM     %s\n", v150_1_jm_info_modulation_to_str(bit));
+            }
+            /*endif*/
+        }
+        /*endfor*/
+    }
+    /*endif*/
 
     /* TODO: */
     return 0;
@@ -1942,40 +2127,40 @@ static int v150_1_process_connect(v150_1_state_t *s, const uint8_t buf[], int le
         return -1;
     }
     /*endif*/
-    s->far.selmod = (buf[1] >> 2) & 0x3F;
-    s->far.selected_compression_direction = buf[1] & 0x03;
-    s->far.selected_compression = (buf[2] >> 4) & 0x0F;
-    s->far.selected_error_correction = buf[2] & 0x0F;
-    s->far.tdsr = get_net_unaligned_uint16(&buf[3]);
-    s->far.rdsr = get_net_unaligned_uint16(&buf[5]);
+    s->far.parms.selmod = (buf[1] >> 2) & 0x3F;
+    s->far.parms.selected_compression_direction = buf[1] & 0x03;
+    s->far.parms.selected_compression = (buf[2] >> 4) & 0x0F;
+    s->far.parms.selected_error_correction = buf[2] & 0x0F;
+    s->far.parms.tdsr = get_net_unaligned_uint16(&buf[3]);
+    s->far.parms.rdsr = get_net_unaligned_uint16(&buf[5]);
 
     available_data_types = get_net_unaligned_uint16(&buf[7]);
-    s->far.i_octet_with_dlci_available = (available_data_types & 0x8000) != 0;
-    s->far.i_octet_without_dlci_available = (available_data_types & 0x4000) != 0;
-    s->far.i_raw_bit_available = (available_data_types & 0x2000) != 0;
-    s->far.i_frame_available = (available_data_types & 0x1000) != 0;
-    s->far.i_char_stat_available = (available_data_types & 0x0800) != 0;
-    s->far.i_char_dyn_available = (available_data_types & 0x0400) != 0;
-    s->far.i_octet_cs_available = (available_data_types & 0x0200) != 0;
-    s->far.i_char_stat_cs_available = (available_data_types & 0x0100) != 0;
-    s->far.i_char_dyn_cs_available = (available_data_types & 0x0080) != 0;
+    s->far.parms.i_octet_with_dlci_available = (available_data_types & 0x8000) != 0;
+    s->far.parms.i_octet_without_dlci_available = (available_data_types & 0x4000) != 0;
+    s->far.parms.i_raw_bit_available = (available_data_types & 0x2000) != 0;
+    s->far.parms.i_frame_available = (available_data_types & 0x1000) != 0;
+    s->far.parms.i_char_stat_available = (available_data_types & 0x0800) != 0;
+    s->far.parms.i_char_dyn_available = (available_data_types & 0x0400) != 0;
+    s->far.parms.i_octet_cs_available = (available_data_types & 0x0200) != 0;
+    s->far.parms.i_char_stat_cs_available = (available_data_types & 0x0100) != 0;
+    s->far.parms.i_char_dyn_cs_available = (available_data_types & 0x0080) != 0;
 
-    span_log(&s->logging, SPAN_LOG_FLOW, "    Modulation %s\n", v150_1_modulation_to_str(s->far.selmod));
-    span_log(&s->logging, SPAN_LOG_FLOW, "    Compression direction %s\n", v150_1_compression_direction_to_str(s->far.selected_compression_direction));
-    span_log(&s->logging, SPAN_LOG_FLOW, "    Compression %s\n", v150_1_compression_to_str(s->far.selected_compression));
-    span_log(&s->logging, SPAN_LOG_FLOW, "    Error correction %s\n", v150_1_error_correction_to_str(s->far.selected_error_correction));
-    span_log(&s->logging, SPAN_LOG_FLOW, "    Tx data rate %d\n", s->far.tdsr);
-    span_log(&s->logging, SPAN_LOG_FLOW, "    Rx data rate %d\n", s->far.rdsr);
+    span_log(&s->logging, SPAN_LOG_FLOW, "    Modulation %s\n", v150_1_modulation_to_str(s->far.parms.selmod));
+    span_log(&s->logging, SPAN_LOG_FLOW, "    Compression direction %s\n", v150_1_compression_direction_to_str(s->far.parms.selected_compression_direction));
+    span_log(&s->logging, SPAN_LOG_FLOW, "    Compression %s\n", v150_1_compression_to_str(s->far.parms.selected_compression));
+    span_log(&s->logging, SPAN_LOG_FLOW, "    Error correction %s\n", v150_1_error_correction_to_str(s->far.parms.selected_error_correction));
+    span_log(&s->logging, SPAN_LOG_FLOW, "    Tx data rate %d\n", s->far.parms.tdsr);
+    span_log(&s->logging, SPAN_LOG_FLOW, "    Rx data rate %d\n", s->far.parms.rdsr);
 
     span_log(&s->logging, SPAN_LOG_FLOW, "    I_RAW-CHAR            available\n");
-    span_log(&s->logging, SPAN_LOG_FLOW, "    I_RAW-BIT             %savailable\n", (s->far.i_raw_bit_available)  ?  ""  :  "not ");
-    span_log(&s->logging, SPAN_LOG_FLOW, "    I_FRAME               %savailable\n", (s->far.i_frame_available)  ?  ""  :  "not ");
-    if (s->far.i_octet_without_dlci_available  ||  s->far.i_octet_without_dlci_available)
+    span_log(&s->logging, SPAN_LOG_FLOW, "    I_RAW-BIT             %savailable\n", (s->far.parms.i_raw_bit_available)  ?  ""  :  "not ");
+    span_log(&s->logging, SPAN_LOG_FLOW, "    I_FRAME               %savailable\n", (s->far.parms.i_frame_available)  ?  ""  :  "not ");
+    if (s->far.parms.i_octet_without_dlci_available  ||  s->far.parms.i_octet_without_dlci_available)
     {
-        if (s->far.i_octet_without_dlci_available)
+        if (s->far.parms.i_octet_without_dlci_available)
             span_log(&s->logging, SPAN_LOG_FLOW, "    I_OCTET (no DLCI)     available\n");
         /*endif*/
-        if (s->far.i_octet_with_dlci_available)
+        if (s->far.parms.i_octet_with_dlci_available)
             span_log(&s->logging, SPAN_LOG_FLOW, "    I_OCTET (DLCI)        available\n");
         /*endif*/
     }
@@ -1984,56 +2169,56 @@ static int v150_1_process_connect(v150_1_state_t *s, const uint8_t buf[], int le
         span_log(&s->logging, SPAN_LOG_FLOW, "    I_OCTET               not available\n");
     }
     /*endif*/
-    span_log(&s->logging, SPAN_LOG_FLOW, "    I_CHAR-STAT           %savailable\n", (s->far.i_char_stat_available)  ?  ""  :  "not ");
-    span_log(&s->logging, SPAN_LOG_FLOW, "    I_CHAR-DYN            %savailable\n", (s->far.i_char_dyn_available)  ?  ""  :  "not ");
-    span_log(&s->logging, SPAN_LOG_FLOW, "    I_OCTET-CS            %savailable\n", (s->far.i_octet_cs_available)  ?  ""  :  "not ");
-    span_log(&s->logging, SPAN_LOG_FLOW, "    I_CHAR-STAT-CS        %savailable\n", (s->far.i_char_stat_cs_available)  ?  ""  :  "not ");
-    span_log(&s->logging, SPAN_LOG_FLOW, "    I_CHAR-DYN-CS         %savailable\n", (s->far.i_char_dyn_cs_available)  ?  ""  :  "not ");
+    span_log(&s->logging, SPAN_LOG_FLOW, "    I_CHAR-STAT           %savailable\n", (s->far.parms.i_char_stat_available)  ?  ""  :  "not ");
+    span_log(&s->logging, SPAN_LOG_FLOW, "    I_CHAR-DYN            %savailable\n", (s->far.parms.i_char_dyn_available)  ?  ""  :  "not ");
+    span_log(&s->logging, SPAN_LOG_FLOW, "    I_OCTET-CS            %savailable\n", (s->far.parms.i_octet_cs_available)  ?  ""  :  "not ");
+    span_log(&s->logging, SPAN_LOG_FLOW, "    I_CHAR-STAT-CS        %savailable\n", (s->far.parms.i_char_stat_cs_available)  ?  ""  :  "not ");
+    span_log(&s->logging, SPAN_LOG_FLOW, "    I_CHAR-DYN-CS         %savailable\n", (s->far.parms.i_char_dyn_cs_available)  ?  ""  :  "not ");
 
     if (len >= 15
         &&
-        (s->far.selected_compression == V150_1_COMPRESSION_V42BIS  ||  s->far.selected_compression == V150_1_COMPRESSION_V44))
+        (s->far.parms.selected_compression == V150_1_COMPRESSION_V42BIS  ||  s->far.parms.selected_compression == V150_1_COMPRESSION_V44))
     {
         /* Selected_compression should be V150_1_COMPRESSION_V42BIS or V150_1_COMPRESSION_V44 */
-        s->far.compression_tx_dictionary_size = get_net_unaligned_uint16(&buf[9]);
-        s->far.compression_rx_dictionary_size = get_net_unaligned_uint16(&buf[11]);
-        s->far.compression_tx_string_length = buf[13];
-        s->far.compression_rx_string_length = buf[14];
+        s->far.parms.compression_tx_dictionary_size = get_net_unaligned_uint16(&buf[9]);
+        s->far.parms.compression_rx_dictionary_size = get_net_unaligned_uint16(&buf[11]);
+        s->far.parms.compression_tx_string_length = buf[13];
+        s->far.parms.compression_rx_string_length = buf[14];
 
-        span_log(&s->logging, SPAN_LOG_FLOW, "    Tx dictionary size %d\n", s->far.compression_tx_dictionary_size);
-        span_log(&s->logging, SPAN_LOG_FLOW, "    Rx dictionary size %d\n", s->far.compression_rx_dictionary_size);
-        span_log(&s->logging, SPAN_LOG_FLOW, "    Tx string length %d\n", s->far.compression_tx_string_length);
-        span_log(&s->logging, SPAN_LOG_FLOW, "    Rx string length %d\n", s->far.compression_rx_string_length);
+        span_log(&s->logging, SPAN_LOG_FLOW, "    Tx dictionary size %d\n", s->far.parms.compression_tx_dictionary_size);
+        span_log(&s->logging, SPAN_LOG_FLOW, "    Rx dictionary size %d\n", s->far.parms.compression_rx_dictionary_size);
+        span_log(&s->logging, SPAN_LOG_FLOW, "    Tx string length %d\n", s->far.parms.compression_tx_string_length);
+        span_log(&s->logging, SPAN_LOG_FLOW, "    Rx string length %d\n", s->far.parms.compression_rx_string_length);
     }
     else
     {
-        s->far.compression_tx_dictionary_size = 0;
-        s->far.compression_rx_dictionary_size = 0;
-        s->far.compression_tx_string_length = 0;
-        s->far.compression_rx_string_length = 0;
+        s->far.parms.compression_tx_dictionary_size = 0;
+        s->far.parms.compression_rx_dictionary_size = 0;
+        s->far.parms.compression_tx_string_length = 0;
+        s->far.parms.compression_rx_string_length = 0;
     }
     /*endif*/
 
     if (len >= 19
         &&
-        s->far.selected_compression == V150_1_COMPRESSION_V44)
+        s->far.parms.selected_compression == V150_1_COMPRESSION_V44)
     {
         /* Selected_compression should be V150_1_COMPRESSION_V44 */
-        s->far.compression_tx_history_size = get_net_unaligned_uint16(&buf[15]);
-        s->far.compression_rx_history_size = get_net_unaligned_uint16(&buf[17]);
+        s->far.parms.compression_tx_history_size = get_net_unaligned_uint16(&buf[15]);
+        s->far.parms.compression_rx_history_size = get_net_unaligned_uint16(&buf[17]);
 
-        span_log(&s->logging, SPAN_LOG_FLOW, "   Tx history size %d\n", s->far.compression_tx_history_size);
-        span_log(&s->logging, SPAN_LOG_FLOW, "   Rx history size %d\n", s->far.compression_rx_history_size);
+        span_log(&s->logging, SPAN_LOG_FLOW, "   Tx history size %d\n", s->far.parms.compression_tx_history_size);
+        span_log(&s->logging, SPAN_LOG_FLOW, "   Rx history size %d\n", s->far.parms.compression_rx_history_size);
     }
     else
     {
-        s->far.compression_tx_history_size = 0;
-        s->far.compression_rx_history_size = 0;
+        s->far.parms.compression_tx_history_size = 0;
+        s->far.parms.compression_rx_history_size = 0;
     }
     /*endif*/
 
-    s->far.connection_state = V150_1_STATE_CONNECTED;
-    if (s->near.connection_state >= V150_1_STATE_CONNECTED)
+    s->far.parms.connection_state = V150_1_STATE_CONNECTED;
+    if (s->near.parms.connection_state >= V150_1_STATE_CONNECTED)
         s->joint_connection_state = V150_1_STATE_CONNECTED;
     /*endif*/
     status_report(s, V150_1_STATUS_REASON_STATE_CHANGED);
@@ -2128,13 +2313,13 @@ static int v150_1_process_mr_event(v150_1_state_t *s, const uint8_t buf[], int l
         span_log(&s->logging, SPAN_LOG_FLOW, "    Reason %d\n", reason);
         if (event == V150_1_MR_EVENT_ID_RETRAIN)
         {
-            s->far.connection_state = V150_1_STATE_RETRAIN;
+            s->far.parms.connection_state = V150_1_STATE_RETRAIN;
             s->joint_connection_state = V150_1_STATE_RETRAIN;
             status_report(s, V150_1_STATUS_REASON_RATE_RETRAIN_RECEIVED);
         }
         else
         {
-            s->far.connection_state = V150_1_STATE_RATE_RENEGOTIATION;
+            s->far.parms.connection_state = V150_1_STATE_RATE_RENEGOTIATION;
             s->joint_connection_state = V150_1_STATE_RATE_RENEGOTIATION;
             status_report(s, V150_1_STATUS_REASON_RATE_RENEGOTIATION_RECEIVED);
         }
@@ -2147,28 +2332,28 @@ static int v150_1_process_mr_event(v150_1_state_t *s, const uint8_t buf[], int l
             return -1;
         }
         /*endif*/
-        s->far.selmod = (buf[3] >> 2) & 0x3F;
-        s->far.txsen = (buf[3] & 0x02) != 0;
-        s->far.rxsen = (buf[3] & 0x01) != 0;
-        s->far.tdsr = get_net_unaligned_uint16(&buf[4]);
-        s->far.rdsr = get_net_unaligned_uint16(&buf[6]);
-        s->far.txsr = buf[8];
-        s->far.rxsr = buf[9];
+        s->far.parms.selmod = (buf[3] >> 2) & 0x3F;
+        s->far.parms.txsen = (buf[3] & 0x02) != 0;
+        s->far.parms.rxsen = (buf[3] & 0x01) != 0;
+        s->far.parms.tdsr = get_net_unaligned_uint16(&buf[4]);
+        s->far.parms.rdsr = get_net_unaligned_uint16(&buf[6]);
+        s->far.parms.txsr = buf[8];
+        s->far.parms.rxsr = buf[9];
 
-        span_log(&s->logging, SPAN_LOG_FLOW, "    Selected modulation %s\n", v150_1_modulation_to_str(s->far.selmod));
-        span_log(&s->logging, SPAN_LOG_FLOW, "    Tx data signalling rate %d\n", s->far.tdsr);
-        span_log(&s->logging, SPAN_LOG_FLOW, "    Rx data signalling rate %d\n", s->far.rdsr);
-        if (s->far.txsen)
-            span_log(&s->logging, SPAN_LOG_FLOW, "    Tx symbol rate %s\n", v150_1_symbol_rate_to_str(s->far.txsr));
+        span_log(&s->logging, SPAN_LOG_FLOW, "    Selected modulation %s\n", v150_1_modulation_to_str(s->far.parms.selmod));
+        span_log(&s->logging, SPAN_LOG_FLOW, "    Tx data signalling rate %d\n", s->far.parms.tdsr);
+        span_log(&s->logging, SPAN_LOG_FLOW, "    Rx data signalling rate %d\n", s->far.parms.rdsr);
+        if (s->far.parms.txsen)
+            span_log(&s->logging, SPAN_LOG_FLOW, "    Tx symbol rate %s\n", v150_1_symbol_rate_to_str(s->far.parms.txsr));
         /*endif*/
-        if (s->far.rxsen)
-            span_log(&s->logging, SPAN_LOG_FLOW, "    Rx symbol rate %s\n", v150_1_symbol_rate_to_str(s->far.rxsr));
+        if (s->far.parms.rxsen)
+            span_log(&s->logging, SPAN_LOG_FLOW, "    Rx symbol rate %s\n", v150_1_symbol_rate_to_str(s->far.parms.rxsr));
         /*endif*/
         
         /* TODO: report these parameters */
         
-        s->far.connection_state = V150_1_STATE_PHYSUP;
-        if (s->near.connection_state >= V150_1_STATE_PHYSUP)
+        s->far.parms.connection_state = V150_1_STATE_PHYSUP;
+        if (s->near.parms.connection_state >= V150_1_STATE_PHYSUP)
             s->joint_connection_state = V150_1_STATE_PHYSUP;
         /*endif*/
         status_report(s, V150_1_STATUS_REASON_STATE_CHANGED);
@@ -2197,12 +2382,15 @@ static int v150_1_process_cleardown(v150_1_state_t *s, const uint8_t buf[], int 
     }
     /*endif*/
 
-    s->far.cleardown_reason = buf[1];
-    span_log(&s->logging, SPAN_LOG_FLOW, "    Reason %s\n", v150_1_cleardown_reason_to_str(s->far.cleardown_reason));
+    s->far.parms.cleardown_reason = buf[1];
+    span_log(&s->logging,
+             SPAN_LOG_FLOW,
+             "    Reason %s\n",
+             v150_1_cleardown_reason_to_str(s->far.parms.cleardown_reason));
     // vendor = buf[2];
     // vendor_info = buf[3];
     /* A cleardown moves everything back to square one. */
-    s->far.connection_state = V150_1_STATE_IDLE;
+    s->far.parms.connection_state = V150_1_STATE_IDLE;
     status_report(s, V150_1_STATUS_REASON_STATE_CHANGED);
     return 0;
 }
@@ -2224,41 +2412,41 @@ static int v150_1_process_prof_xchg(v150_1_state_t *s, const uint8_t buf[], int 
     /*endif*/
 
     /* The following have 3 way options - no, yes and unknown */
-    s->far.v42_lapm_supported = (buf[1] & 0xC0) == 0x40;
-    s->far.v42_annex_a_supported = (buf[1] & 0x30) == 0x10;
-    s->far.v44_supported = (buf[1] & 0x0C) == 0x04;
-    s->far.v42bis_supported = (buf[1] & 0x03) == 0x01;
-    s->far.mnp5_supported = (buf[2] & 0xC0) == 0x40;
+    s->far.parms.v42_lapm_supported = (buf[1] & 0xC0) == 0x40;
+    s->far.parms.v42_annex_a_supported = (buf[1] & 0x30) == 0x10;
+    s->far.parms.v44_supported = (buf[1] & 0x0C) == 0x04;
+    s->far.parms.v42bis_supported = (buf[1] & 0x03) == 0x01;
+    s->far.parms.mnp5_supported = (buf[2] & 0xC0) == 0x40;
 
-    s->far.v42bis_p0 = buf[3];
-    s->far.v42bis_p1 = get_net_unaligned_uint16(&buf[4]);
-    s->far.v42bis_p2 = buf[6];
-    s->far.v44_c0 = buf[7];
-    s->far.v44_p0 = buf[8];
-    s->far.v44_p1t = get_net_unaligned_uint16(&buf[9]);
-    s->far.v44_p1r = get_net_unaligned_uint16(&buf[11]);
-    s->far.v44_p2t = buf[13];
-    s->far.v44_p2r = buf[14];
-    s->far.v44_p3t = get_net_unaligned_uint16(&buf[15]);
-    s->far.v44_p3r = get_net_unaligned_uint16(&buf[17]);
+    s->far.parms.v42bis_p0 = buf[3];
+    s->far.parms.v42bis_p1 = get_net_unaligned_uint16(&buf[4]);
+    s->far.parms.v42bis_p2 = buf[6];
+    s->far.parms.v44_c0 = buf[7];
+    s->far.parms.v44_p0 = buf[8];
+    s->far.parms.v44_p1t = get_net_unaligned_uint16(&buf[9]);
+    s->far.parms.v44_p1r = get_net_unaligned_uint16(&buf[11]);
+    s->far.parms.v44_p2t = buf[13];
+    s->far.parms.v44_p2r = buf[14];
+    s->far.parms.v44_p3t = get_net_unaligned_uint16(&buf[15]);
+    s->far.parms.v44_p3r = get_net_unaligned_uint16(&buf[17]);
 
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.42 LAPM    %ssupported\n", (s->far.v42_lapm_supported)  ?  ""  :  "not ");
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.42 Annex A %ssupported\n", (s->far.v42_annex_a_supported)  ?  ""  :  "not ");
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44         %ssupported\n", (s->far.v44_supported)  ?  ""  :  "not ");
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.42bis      %ssupported\n", (s->far.v42bis_supported)  ?  ""  :  "not ");
-    span_log(&s->logging, SPAN_LOG_FLOW, "    MNP5         %ssupported\n", (s->far.mnp5_supported)  ?  ""  :  "not ");
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.42 LAPM    %ssupported\n", (s->far.parms.v42_lapm_supported)  ?  ""  :  "not ");
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.42 Annex A %ssupported\n", (s->far.parms.v42_annex_a_supported)  ?  ""  :  "not ");
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44         %ssupported\n", (s->far.parms.v44_supported)  ?  ""  :  "not ");
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.42bis      %ssupported\n", (s->far.parms.v42bis_supported)  ?  ""  :  "not ");
+    span_log(&s->logging, SPAN_LOG_FLOW, "    MNP5         %ssupported\n", (s->far.parms.mnp5_supported)  ?  ""  :  "not ");
 
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.42bis P0 %d\n", s->far.v42bis_p0);
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.42bis P1 %d\n", s->far.v42bis_p1);
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.42bis P2 %d\n", s->far.v42bis_p2);
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 C0 %d\n", s->far.v44_c0);
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P1 %d\n", s->far.v44_p0);
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P1T %d\n", s->far.v44_p1t);
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P1R %d\n", s->far.v44_p1r);
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P2T %d\n", s->far.v44_p2t);
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P2R %d\n", s->far.v44_p2r);
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P3T %d\n", s->far.v44_p3t);
-    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P3R %d\n", s->far.v44_p3r);
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.42bis P0 %d\n", s->far.parms.v42bis_p0);
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.42bis P1 %d\n", s->far.parms.v42bis_p1);
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.42bis P2 %d\n", s->far.parms.v42bis_p2);
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 C0 %d\n", s->far.parms.v44_c0);
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P1 %d\n", s->far.parms.v44_p0);
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P1T %d\n", s->far.parms.v44_p1t);
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P1R %d\n", s->far.parms.v44_p1r);
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P2T %d\n", s->far.parms.v44_p2t);
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P2R %d\n", s->far.parms.v44_p2r);
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P3T %d\n", s->far.parms.v44_p3t);
+    span_log(&s->logging, SPAN_LOG_FLOW, "    V.44 P3R %d\n", s->far.parms.v44_p3r);
 
     /* TODO: */
     return 0;
@@ -2390,7 +2578,7 @@ static int v150_1_process_i_octet(v150_1_state_t *s, const uint8_t buf[], int le
         return -1;
     }
     /*endif*/
-    if (s->far.i_octet_with_dlci_available)
+    if (s->far.parms.i_octet_with_dlci_available)
     {
         /* DLCI is one or two bytes (usually just 1). The low bit of each byte is an extension
            bit, allowing for a variable number of bytes. */
@@ -2406,12 +2594,12 @@ static int v150_1_process_i_octet(v150_1_state_t *s, const uint8_t buf[], int le
                     span_log(&s->logging, SPAN_LOG_WARNING, "I_OCTET with DLCI has bad DLCI field\n"); 
                 /*endif*/
                 header = 3;
-                s->far.dlci = get_net_unaligned_uint16(&buf[1]);
+                s->far.parms.dlci = get_net_unaligned_uint16(&buf[1]);
             }
             else
             {
                 header = 2;
-                s->far.dlci = buf[1];
+                s->far.parms.dlci = buf[1];
             }
             /*endif*/
         }
@@ -2447,10 +2635,10 @@ static int v150_1_process_i_char_stat(v150_1_state_t *s, const uint8_t buf[], in
         return -1;
     }
     /*endif*/
-    if (s->far.data_format_code != buf[1])
+    if (s->far.parms.data_format_code != buf[1])
     {
         /* Every packet in a session should have the same data format code */
-        s->far.data_format_code = buf[1];
+        s->far.parms.data_format_code = buf[1];
         status_report(s, V150_1_STATUS_REASON_DATA_FORMAT_CHANGED);
     }
     /*endif*/
@@ -2479,9 +2667,9 @@ static int v150_1_process_i_char_dyn(v150_1_state_t *s, const uint8_t buf[], int
         return -1;
     }
     /*endif*/
-    if (s->far.data_format_code != buf[1])
+    if (s->far.parms.data_format_code != buf[1])
     {
-        s->far.data_format_code = buf[1];
+        s->far.parms.data_format_code = buf[1];
         status_report(s, V150_1_STATUS_REASON_DATA_FORMAT_CHANGED);
     }
     /*endif*/
@@ -2548,11 +2736,11 @@ static int v150_1_process_i_octet_cs(v150_1_state_t *s, const uint8_t buf[], int
     /*endif*/
     character_seq_no = get_net_unaligned_uint16(&buf[1]);
     /* Check for a gap in the data */
-    fill = (character_seq_no - s->far.octet_cs_next_seq_no) & 0xFFFF;
+    fill = (character_seq_no - s->far.parms.octet_cs_next_seq_no) & 0xFFFF;
     if (s->rx_octet_handler)
         s->rx_octet_handler(s->rx_octet_handler_user_data, &buf[3], len - 3, fill);
     /*endif*/
-    s->far.octet_cs_next_seq_no = (character_seq_no + len - 3) & 0xFFFF;
+    s->far.parms.octet_cs_next_seq_no = (character_seq_no + len - 3) & 0xFFFF;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2574,20 +2762,20 @@ static int v150_1_process_i_char_stat_cs(v150_1_state_t *s, const uint8_t buf[],
         return -1;
     }
     /*endif*/
-    if (s->far.data_format_code != buf[1])
+    if (s->far.parms.data_format_code != buf[1])
     {
         /* Every packet in a session should have the same data format code */
-        s->far.data_format_code = buf[1];
+        s->far.parms.data_format_code = buf[1];
         status_report(s, V150_1_STATUS_REASON_DATA_FORMAT_CHANGED);
     }
     /*endif*/
     character_seq_no = get_net_unaligned_uint16(&buf[2]);
     /* Check for a gap in the data */
-    fill = (character_seq_no - s->far.octet_cs_next_seq_no) & 0xFFFF;
+    fill = (character_seq_no - s->far.parms.octet_cs_next_seq_no) & 0xFFFF;
     if (s->rx_octet_handler)
         s->rx_octet_handler(s->rx_octet_handler_user_data, &buf[4], len - 4, fill);
     /*endif*/
-    s->far.octet_cs_next_seq_no = (character_seq_no + len - 4) & 0xFFFF;
+    s->far.parms.octet_cs_next_seq_no = (character_seq_no + len - 4) & 0xFFFF;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2609,19 +2797,19 @@ static int v150_1_process_i_char_dyn_cs(v150_1_state_t *s, const uint8_t buf[], 
         return -1;
     }
     /*endif*/
-    if (s->far.data_format_code != buf[1])
+    if (s->far.parms.data_format_code != buf[1])
     {
-        s->far.data_format_code = buf[1];
+        s->far.parms.data_format_code = buf[1];
         status_report(s, V150_1_STATUS_REASON_DATA_FORMAT_CHANGED);
     }
     /*endif*/
     character_seq_no = get_net_unaligned_uint16(&buf[2]);
     /* Check for a gap in the data */
-    fill = (character_seq_no - s->far.octet_cs_next_seq_no) & 0xFFFF;
+    fill = (character_seq_no - s->far.parms.octet_cs_next_seq_no) & 0xFFFF;
     if (s->rx_octet_handler)
         s->rx_octet_handler(s->rx_octet_handler_user_data, &buf[4], len - 4, fill);
     /*endif*/
-    s->far.octet_cs_next_seq_no = (character_seq_no + len - 4) & 0xFFFF;
+    s->far.parms.octet_cs_next_seq_no = (character_seq_no + len - 4) & 0xFFFF;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2630,7 +2818,7 @@ SPAN_DECLARE(int) v150_1_process_rx_msg(v150_1_state_t *s, int chan, int seq_no,
 {
     int res;
     int msg_id;
-    
+
     if (chan < SPRT_TCID_MIN  ||  chan > SPRT_TCID_MAX)
     {
         span_log(&s->logging, SPAN_LOG_ERROR, "Packet arrived on invalid channel %d\n", chan);
@@ -2642,8 +2830,9 @@ SPAN_DECLARE(int) v150_1_process_rx_msg(v150_1_state_t *s, int chan, int seq_no,
         span_log(&s->logging, SPAN_LOG_FLOW, "Don't know how to handle this\n");
         return -1;
     }
+    /*endif*/
     msg_id = buf[0] & 0x7F;
-    span_log(&s->logging, SPAN_LOG_FLOW, "Message %s received\n", v150_1_msg_id_to_str(msg_id));
+    span_log(&s->logging, SPAN_LOG_FLOW, "Message %s received on channel %d, seq no %d\n", v150_1_msg_id_to_str(msg_id), chan, seq_no);
 
     if (msg_id < sizeof(channel_check))
     {
@@ -2735,15 +2924,15 @@ SPAN_DECLARE(int) v150_1_set_local_busy(v150_1_state_t *s, bool busy)
 {
     bool previous_busy;
 
-    previous_busy = s->near.busy;
-    s->near.busy = busy;
+    previous_busy = s->near.parms.busy;
+    s->near.parms.busy = busy;
     return previous_busy;
 }
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(bool) v150_1_get_far_busy_status(v150_1_state_t *s)
 {
-    return s->far.busy;
+    return s->far.parms.busy;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -2839,21 +3028,21 @@ SPAN_DECLARE(int) v150_1_set_info_stream_msg_priorities(v150_1_state_t *s, int m
 
 SPAN_DECLARE(int) v150_1_set_modulation(v150_1_state_t *s, int modulation)
 {
-    s->near.selmod = modulation;
+    s->near.parms.selmod = modulation;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) v150_1_set_compression_direction(v150_1_state_t *s, int compression_direction)
 {
-    s->near.selected_compression_direction = compression_direction;
+    s->near.parms.selected_compression_direction = compression_direction;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) v150_1_set_compression(v150_1_state_t *s, int compression)
 {
-    s->near.selected_compression = compression;
+    s->near.parms.selected_compression = compression;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2866,50 +3055,50 @@ SPAN_DECLARE(int) v150_1_set_compression_parameters(v150_1_state_t *s,
                                                     int tx_history_size,
                                                     int rx_history_size)
 {
-    s->near.compression_tx_dictionary_size = tx_dictionary_size;
-    s->near.compression_rx_dictionary_size = rx_dictionary_size;
-    s->near.compression_tx_string_length = tx_string_length;
-    s->near.compression_rx_string_length = rx_string_length;
+    s->near.parms.compression_tx_dictionary_size = tx_dictionary_size;
+    s->near.parms.compression_rx_dictionary_size = rx_dictionary_size;
+    s->near.parms.compression_tx_string_length = tx_string_length;
+    s->near.parms.compression_rx_string_length = rx_string_length;
     /* These are only relevant for V.44 */
-    s->near.compression_tx_history_size = tx_history_size;
-    s->near.compression_rx_history_size = rx_history_size;
+    s->near.parms.compression_tx_history_size = tx_history_size;
+    s->near.parms.compression_rx_history_size = rx_history_size;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) v150_1_set_error_correction(v150_1_state_t *s, int error_correction)
 {
-    s->near.selected_error_correction = error_correction;
+    s->near.parms.selected_error_correction = error_correction;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) v150_1_set_tx_symbol_rate(v150_1_state_t *s, bool enable, int rate)
 {
-    s->near.txsen = enable;
-    s->near.txsr = (enable)  ?  rate  :  0;
+    s->near.parms.txsen = enable;
+    s->near.parms.txsr = (enable)  ?  rate  :  0;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) v150_1_set_rx_symbol_rate(v150_1_state_t *s, bool enable, int rate)
 {
-    s->near.rxsen = enable;
-    s->near.rxsr = (enable)  ?  rate  :  0;
+    s->near.parms.rxsen = enable;
+    s->near.parms.rxsr = (enable)  ?  rate  :  0;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) v150_1_set_tx_data_signalling_rate(v150_1_state_t *s, int rate)
 {
-    s->near.tdsr = rate;
+    s->near.parms.tdsr = rate;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) v150_1_set_rx_data_signalling_rate(v150_1_state_t *s, int rate)
 {
-    s->near.rdsr = rate;
+    s->near.parms.rdsr = rate;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2923,14 +3112,12 @@ SPAN_DECLARE(logging_state_t *) v150_1_get_logging_state(v150_1_state_t *s)
 SPAN_DECLARE(v150_1_state_t *) v150_1_init(v150_1_state_t *s,
                                            v150_1_tx_packet_handler_t tx_packet_handler,
                                            void *tx_packet_user_data,
-                                           v150_1_rx_packet_handler_t rx_packet_handler,
-                                           void *rx_packet_user_data,
                                            v150_1_rx_octet_handler_t rx_octet_handler,
                                            void *rx_octet_handler_user_data,
                                            v150_1_rx_status_report_handler_t rx_status_report_handler,
                                            void *rx_status_report_user_data)
 {
-    if (tx_packet_handler == NULL  ||  rx_packet_handler == NULL  ||  rx_octet_handler == NULL  ||  rx_status_report_handler == NULL)
+    if (tx_packet_handler == NULL  ||  rx_octet_handler == NULL  ||  rx_status_report_handler == NULL)
         return NULL;
     /*endif*/
     if (s == NULL)
@@ -2950,84 +3137,82 @@ SPAN_DECLARE(v150_1_state_t *) v150_1_init(v150_1_state_t *s,
     s->near.max_payload_bytes[SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED] = SPRT_DEFAULT_TC2_PAYLOAD_BYTES;
     s->near.max_payload_bytes[SPRT_TCID_UNRELIABLE_SEQUENCED] = SPRT_DEFAULT_TC3_PAYLOAD_BYTES;
 
-    s->near.v42bis_p0 = 3;
-    s->near.v42bis_p1 = 512;
-    s->near.v42bis_p2 = 6;
-    s->near.v44_c0 = 0;
-    s->near.v44_p0 = 0;
-    s->near.v44_p1t = 0;
-    s->near.v44_p1r = 0;
-    s->near.v44_p2t = 0;
-    s->near.v44_p2r = 0;
-    s->near.v44_p3t = 0;
-    s->near.v44_p3r = 0;
+    s->near.parms.v42bis_p0 = 3;
+    s->near.parms.v42bis_p1 = 512;
+    s->near.parms.v42bis_p2 = 6;
+    s->near.parms.v44_c0 = 0;
+    s->near.parms.v44_p0 = 0;
+    s->near.parms.v44_p1t = 0;
+    s->near.parms.v44_p1r = 0;
+    s->near.parms.v44_p2t = 0;
+    s->near.parms.v44_p2r = 0;
+    s->near.parms.v44_p3t = 0;
+    s->near.parms.v44_p3r = 0;
 
-    s->near.jm_category_id_seen[V150_1_JM_CATEGORY_ID_CALL_FUNCTION_1] = true;
-    s->near.jm_category_info[V150_1_JM_CATEGORY_ID_CALL_FUNCTION_1] = V150_1_JM_CALL_FUNCTION_V_SERIES;
-    s->near.jm_category_id_seen[V150_1_JM_CATEGORY_ID_MODULATION_MODES] = true;
-    s->near.jm_category_info[V150_1_JM_CATEGORY_ID_MODULATION_MODES] =
+    s->near.parms.jm_category_id_seen[V150_1_JM_CATEGORY_ID_CALL_FUNCTION_1] = true;
+    s->near.parms.jm_category_info[V150_1_JM_CATEGORY_ID_CALL_FUNCTION_1] = V150_1_JM_CALL_FUNCTION_V_SERIES;
+    s->near.parms.jm_category_id_seen[V150_1_JM_CATEGORY_ID_MODULATION_MODES] = true;
+    s->near.parms.jm_category_info[V150_1_JM_CATEGORY_ID_MODULATION_MODES] =
           V150_1_JM_MODULATION_MODE_V34_AVAILABLE
         | V150_1_JM_MODULATION_MODE_V32_V32bis_AVAILABLE
         | V150_1_JM_MODULATION_MODE_V22_V22bis_AVAILABLE
         | V150_1_JM_MODULATION_MODE_V21_AVAILABLE;
-    s->near.jm_category_id_seen[V150_1_JM_CATEGORY_ID_PROTOCOLS] = true;
-    s->near.jm_category_info[V150_1_JM_CATEGORY_ID_PROTOCOLS] = V150_1_JM_PROTOCOL_V42_LAPM;
-    s->near.jm_category_id_seen[V150_1_JM_CATEGORY_ID_PSTN_ACCESS] = true;
-    s->near.jm_category_info[V150_1_JM_CATEGORY_ID_PSTN_ACCESS] = 0;
-    s->near.jm_category_id_seen[V150_1_JM_CATEGORY_ID_PCM_MODEM_AVAILABILITY] = false;
-    s->near.jm_category_info[V150_1_JM_CATEGORY_ID_PCM_MODEM_AVAILABILITY] = 0;
-    s->near.jm_category_id_seen[V150_1_JM_CATEGORY_ID_EXTENSION] = false;
-    s->near.jm_category_info[V150_1_JM_CATEGORY_ID_EXTENSION] = 0;
+    s->near.parms.jm_category_id_seen[V150_1_JM_CATEGORY_ID_PROTOCOLS] = true;
+    s->near.parms.jm_category_info[V150_1_JM_CATEGORY_ID_PROTOCOLS] = V150_1_JM_PROTOCOL_V42_LAPM;
+    s->near.parms.jm_category_id_seen[V150_1_JM_CATEGORY_ID_PSTN_ACCESS] = true;
+    s->near.parms.jm_category_info[V150_1_JM_CATEGORY_ID_PSTN_ACCESS] = 0;
+    s->near.parms.jm_category_id_seen[V150_1_JM_CATEGORY_ID_PCM_MODEM_AVAILABILITY] = false;
+    s->near.parms.jm_category_info[V150_1_JM_CATEGORY_ID_PCM_MODEM_AVAILABILITY] = 0;
+    s->near.parms.jm_category_id_seen[V150_1_JM_CATEGORY_ID_EXTENSION] = false;
+    s->near.parms.jm_category_info[V150_1_JM_CATEGORY_ID_EXTENSION] = 0;
 
-    s->near.selmod = V150_1_SELMOD_NULL;
-    s->near.selected_compression_direction = V150_1_COMPRESS_NEITHER_WAY;
-    s->near.selected_compression = V150_1_COMPRESSION_NONE;
-    s->near.selected_error_correction = V150_1_ERROR_CORRECTION_NONE;
-    s->near.tdsr = 0;
-    s->near.rdsr = 0;
-    s->near.txsen = false;
-    s->near.txsr = V150_1_SYMBOL_RATE_NULL;
-    s->near.rxsen = false;
-    s->near.rxsr = V150_1_SYMBOL_RATE_NULL;
+    s->near.parms.selmod = V150_1_SELMOD_NULL;
+    s->near.parms.selected_compression_direction = V150_1_COMPRESS_NEITHER_WAY;
+    s->near.parms.selected_compression = V150_1_COMPRESSION_NONE;
+    s->near.parms.selected_error_correction = V150_1_ERROR_CORRECTION_NONE;
+    s->near.parms.tdsr = 0;
+    s->near.parms.rdsr = 0;
+    s->near.parms.txsen = false;
+    s->near.parms.txsr = V150_1_SYMBOL_RATE_NULL;
+    s->near.parms.rxsen = false;
+    s->near.parms.rxsr = V150_1_SYMBOL_RATE_NULL;
 
     /* Set default values that suit V.42bis */
-    s->near.compression_tx_dictionary_size = 512;
-    s->near.compression_rx_dictionary_size = 512;
-    s->near.compression_tx_string_length = 6;
-    s->near.compression_rx_string_length = 6;
-    s->near.compression_tx_history_size = 0;
-    s->near.compression_rx_history_size = 0;
+    s->near.parms.compression_tx_dictionary_size = 512;
+    s->near.parms.compression_rx_dictionary_size = 512;
+    s->near.parms.compression_tx_string_length = 6;
+    s->near.parms.compression_rx_string_length = 6;
+    s->near.parms.compression_tx_history_size = 0;
+    s->near.parms.compression_rx_history_size = 0;
 
-    s->near.ecp = V150_1_ERROR_CORRECTION_V42_LAPM;
-    s->near.v42_lapm_supported = true;
-    s->near.v42_annex_a_supported = false;  /* This will never be supported, as it was removed from the V.42 spec in 2002. */
-    s->near.v42bis_supported = true;
-    s->near.v44_supported = false;
-    s->near.mnp5_supported = false;
+    s->near.parms.ecp = V150_1_ERROR_CORRECTION_V42_LAPM;
+    s->near.parms.v42_lapm_supported = true;
+    s->near.parms.v42_annex_a_supported = false;  /* This will never be supported, as it was removed from the V.42 spec in 2002. */
+    s->near.parms.v42bis_supported = true;
+    s->near.parms.v44_supported = false;
+    s->near.parms.mnp5_supported = false;
 
-    s->near.necrxch_option = false;
-    s->near.ecrxch_option = true;
-    s->near.xid_profile_exchange_supported = false;
-    s->near.asymmetric_data_types_supported = false;
+    s->near.parms.necrxch_option = false;
+    s->near.parms.ecrxch_option = true;
+    s->near.parms.xid_profile_exchange_supported = false;
+    s->near.parms.asymmetric_data_types_supported = false;
 
-    s->near.i_raw_bit_supported = false;
-    s->near.i_frame_supported = false;
-    s->near.i_char_stat_supported = false;
-    s->near.i_char_dyn_supported = false;
-    s->near.i_octet_cs_supported = true;
-    s->near.i_char_stat_cs_supported = false;
-    s->near.i_char_dyn_cs_supported = false;
+    s->near.parms.i_raw_bit_supported = false;
+    s->near.parms.i_frame_supported = false;
+    s->near.parms.i_char_stat_supported = false;
+    s->near.parms.i_char_dyn_supported = false;
+    s->near.parms.i_octet_cs_supported = true;
+    s->near.parms.i_char_stat_cs_supported = false;
+    s->near.parms.i_char_dyn_cs_supported = false;
 
     /* Set a default character format. */
-    s->near.data_format_code = (V150_1_DATA_BITS_7 << 6)
-                             | (V150_1_PARITY_EVEN << 3)
-                             | V150_1_STOP_BITS_1;
-    s->far.data_format_code = -1;
+    s->near.parms.data_format_code = (V150_1_DATA_BITS_7 << 6)
+                                   | (V150_1_PARITY_EVEN << 3)
+                                   | V150_1_STOP_BITS_1;
+    s->far.parms.data_format_code = -1;
 
     s->tx_packet_handler = tx_packet_handler;
     s->tx_packet_user_data = tx_packet_user_data;
-    s->rx_packet_handler = rx_packet_handler;
-    s->rx_packet_user_data = rx_packet_user_data;
     s->rx_octet_handler = rx_octet_handler;
     s->rx_octet_handler_user_data = rx_octet_handler_user_data;
     s->rx_status_report_handler = rx_status_report_handler;

@@ -318,7 +318,7 @@ static int update_timer(v150_1_sse_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int v150_1_sse_rx_initial_audio_packet(v150_1_sse_state_t *s, const uint8_t pkt[], int len)
+static int rx_initial_audio_packet(v150_1_sse_state_t *s, const uint8_t pkt[], int len)
 {
     if (s->rmt_mode != V150_1_SSE_MEDIA_STATE_INITIAL_AUDIO)
     {
@@ -334,7 +334,7 @@ static int v150_1_sse_rx_initial_audio_packet(v150_1_sse_state_t *s, const uint8
 }
 /*- End of function --------------------------------------------------------*/
 
-static int v150_1_sse_rx_voice_band_data_packet(v150_1_sse_state_t *s, const uint8_t pkt[], int len)
+static int rx_voice_band_data_packet(v150_1_sse_state_t *s, const uint8_t pkt[], int len)
 {
     if (s->rmt_mode != V150_1_SSE_MEDIA_STATE_VOICE_BAND_DATA)
     {
@@ -351,7 +351,60 @@ static int v150_1_sse_rx_voice_band_data_packet(v150_1_sse_state_t *s, const uin
 }
 /*- End of function --------------------------------------------------------*/
 
-static int v150_1_sse_rx_modem_relay_packet(v150_1_sse_state_t *s, const uint8_t pkt[], int len)
+static void log_v8_ric_info(v150_1_sse_state_t *s, int ric_info)
+{
+    if ((ric_info & V150_1_SSE_RIC_INFO_V8_CM_PCM_MODE))
+        span_log(&s->logging, SPAN_LOG_FLOW, "    PCM mode\n");
+    /*endif*/
+    if ((ric_info & V150_1_SSE_RIC_INFO_V8_CM_V34_DUPLEX))
+        span_log(&s->logging, SPAN_LOG_FLOW, "    V.34 duplex\n");
+    /*endif*/
+    if ((ric_info & V150_1_SSE_RIC_INFO_V8_CM_V34_HALF_DUPLEX))
+        span_log(&s->logging, SPAN_LOG_FLOW, "    V.34 half duplex\n");
+    /*endif*/
+    if ((ric_info & V150_1_SSE_RIC_INFO_V8_CM_V32BIS))
+        span_log(&s->logging, SPAN_LOG_FLOW, "    V.32/V32.bis\n");
+    /*endif*/
+    if ((ric_info & V150_1_SSE_RIC_INFO_V8_CM_V22BIS))
+        span_log(&s->logging, SPAN_LOG_FLOW, "    V.22/V22.bis\n");
+    /*endif*/
+    if ((ric_info & V150_1_SSE_RIC_INFO_V8_CM_V17))
+        span_log(&s->logging, SPAN_LOG_FLOW, "    V.17\n");
+    /*endif*/
+    if ((ric_info & V150_1_SSE_RIC_INFO_V8_CM_V29))
+        span_log(&s->logging, SPAN_LOG_FLOW, "    V.29 half-duplex\n");
+    /*endif*/
+    if ((ric_info & V150_1_SSE_RIC_INFO_V8_CM_V27TER))
+        span_log(&s->logging, SPAN_LOG_FLOW, "    V.27ter\n");
+    /*endif*/
+    if ((ric_info & V150_1_SSE_RIC_INFO_V8_CM_V26TER))
+        span_log(&s->logging, SPAN_LOG_FLOW, "    V.26ter\n");
+    /*endif*/
+    if ((ric_info & V150_1_SSE_RIC_INFO_V8_CM_V26BIS))
+        span_log(&s->logging, SPAN_LOG_FLOW, "    V.26bis\n");
+    /*endif*/
+    if ((ric_info & V150_1_SSE_RIC_INFO_V8_CM_V23_DUPLEX))
+        span_log(&s->logging, SPAN_LOG_FLOW, "    V.23 duplex\n");
+    /*endif*/
+    if ((ric_info & V150_1_SSE_RIC_INFO_V8_CM_V23_HALF_DUPLEX))
+        span_log(&s->logging, SPAN_LOG_FLOW, "    V.23 half-duplex\n");
+    /*endif*/
+    if ((ric_info & V150_1_SSE_RIC_INFO_V8_CM_V21))
+        span_log(&s->logging, SPAN_LOG_FLOW, "    V.21\n");
+    /*endif*/
+    if ((ric_info & V150_1_SSE_RIC_INFO_V8_CM_V90_V92_ANALOGUE))
+        span_log(&s->logging, SPAN_LOG_FLOW, "    V.90/V.92 analogue\n");
+    /*endif*/
+    if ((ric_info & V150_1_SSE_RIC_INFO_V8_CM_V90_V92_DIGITAL))
+        span_log(&s->logging, SPAN_LOG_FLOW, "    V.90/V.92 digital\n");
+    /*endif*/
+    if ((ric_info & V150_1_SSE_RIC_INFO_V8_CM_V91))
+        span_log(&s->logging, SPAN_LOG_FLOW, "    V.91\n");
+    /*endif*/
+}
+/*- End of function --------------------------------------------------------*/
+
+static int rx_modem_relay_packet(v150_1_sse_state_t *s, const uint8_t pkt[], int len)
 {
     int res;
     int ric;
@@ -362,8 +415,8 @@ static int v150_1_sse_rx_modem_relay_packet(v150_1_sse_state_t *s, const uint8_t
     ric_info = get_net_unaligned_uint16(pkt + 2);
     span_log(&s->logging,
              SPAN_LOG_FLOW,
-             "SSE force response %d, reason %s - %d\n",
-             (pkt[0] >> 1) & 0x01,
+             "%sreason %s - 0x%x\n",
+             ((pkt[0] >> 1) & 0x01)  ?  "force response, "  :  "",
              v150_1_sse_ric_to_str(ric),
              ric_info);
     if (s->rmt_mode != V150_1_SSE_MEDIA_STATE_MODEM_RELAY)
@@ -381,24 +434,27 @@ static int v150_1_sse_rx_modem_relay_packet(v150_1_sse_state_t *s, const uint8_t
     switch (ric)
     {
     case V150_1_SSE_RIC_V8_CM:
-        span_log(&s->logging, SPAN_LOG_FLOW, "Switch on V.8 detection\n");
+        span_log(&s->logging, SPAN_LOG_FLOW, "Switch on V.8 (CM) detection\n");
+        log_v8_ric_info(s, ric_info);
         /* We need to respond with a P' */
-        span_log(&s->logging, SPAN_LOG_FLOW, "Sending an SSE %s\n", v150_1_sse_ric_to_str(ric));
         v150_1_sse_tx_modem_relay_packet(s, 0, V150_1_SSE_RIC_P_STATE_TRANSITION, 0);
         if (s->status_handler)
-            res = s->status_handler(s->status_user_data, 42);
+            res = s->status_handler(s->status_user_data, V150_1_SSE_STATUS_V8_CM_RECEIVED);
         /*endif*/
         break;
     case V150_1_SSE_RIC_V8_JM:
-        span_log(&s->logging, SPAN_LOG_FLOW, "Switch on V.8 detection\n");
+        span_log(&s->logging, SPAN_LOG_FLOW, "Switch on V.8 (JM) detection\n");
+        log_v8_ric_info(s, ric_info);
+        if (s->status_handler)
+            res = s->status_handler(s->status_user_data, V150_1_SSE_STATUS_V8_JM_RECEIVED);
+        /*endif*/
         break;
     case V150_1_SSE_RIC_V32BIS_AA:
         span_log(&s->logging, SPAN_LOG_FLOW, "Switch on V.32bis detection\n");
         /* We need to respond with a P' */
-        span_log(&s->logging, SPAN_LOG_FLOW, "Sending an SSE P'\n");
         v150_1_sse_tx_modem_relay_packet(s, 0, V150_1_SSE_RIC_P_STATE_TRANSITION, 0);
         if (s->status_handler)
-            res = s->status_handler(s->status_user_data, 42);
+            res = s->status_handler(s->status_user_data, V150_1_SSE_STATUS_AA_RECEIVED);
         /*endif*/
         break;
     case V150_1_SSE_RIC_V32BIS_AC:
@@ -442,7 +498,7 @@ static int v150_1_sse_rx_modem_relay_packet(v150_1_sse_state_t *s, const uint8_t
         span_log(&s->logging, SPAN_LOG_FLOW, "Switch on voice detection\n");
         break;
     case V150_1_SSE_RIC_TIMEOUT:
-        span_log(&s->logging, SPAN_LOG_FLOW, "Timeout %d - %s\n", (ric_info >> 8), v150_1_sse_timeout_reason_to_str(ric_info >> 8));
+        span_log(&s->logging, SPAN_LOG_FLOW, "Timeout %d - %s - 0x%x\n", (ric_info >> 8), v150_1_sse_timeout_reason_to_str(ric_info >> 8), ric_info & 0xFF);
         break;
     case V150_1_SSE_RIC_P_STATE_TRANSITION:
         span_log(&s->logging, SPAN_LOG_FLOW, "P' received\n");
@@ -502,7 +558,7 @@ static int v150_1_sse_rx_modem_relay_packet(v150_1_sse_state_t *s, const uint8_t
 }
 /*- End of function --------------------------------------------------------*/
 
-static int v150_1_sse_rx_fax_relay_packet(v150_1_sse_state_t *s, const uint8_t pkt[], int len)
+static int rx_fax_relay_packet(v150_1_sse_state_t *s, const uint8_t pkt[], int len)
 {
     int res;
     int ric;
@@ -513,7 +569,7 @@ static int v150_1_sse_rx_fax_relay_packet(v150_1_sse_state_t *s, const uint8_t p
     ric_info = get_net_unaligned_uint16(pkt + 2);
     span_log(&s->logging,
              SPAN_LOG_FLOW,
-             "SSE force %d, reason %s - %d\n",
+             "Force %d, reason %s - %d\n",
              (pkt[0] >> 1) & 0x01,
              v150_1_sse_ric_to_str(ric),
              ric_info);
@@ -536,7 +592,7 @@ static int v150_1_sse_rx_fax_relay_packet(v150_1_sse_state_t *s, const uint8_t p
         /* We need to respond with a P' */
         v150_1_sse_tx_fax_relay_packet(s, 0, V150_1_SSE_RIC_P_STATE_TRANSITION, 0);
         if (s->status_handler)
-            res = s->status_handler(s->status_user_data, 42);
+            res = s->status_handler(s->status_user_data, V150_1_SSE_STATUS_V8_CM_RECEIVED_FAX);
         /*endif*/
         break;
     case V150_1_SSE_RIC_V8_JM:
@@ -547,7 +603,7 @@ static int v150_1_sse_rx_fax_relay_packet(v150_1_sse_state_t *s, const uint8_t p
         /* We need to respond with a P' */
         v150_1_sse_tx_fax_relay_packet(s, 0, V150_1_SSE_RIC_P_STATE_TRANSITION, 0);
         if (s->status_handler)
-            res = s->status_handler(s->status_user_data, 42);
+            res = s->status_handler(s->status_user_data, V150_1_SSE_STATUS_AA_RECEIVED_FAX);
         /*endif*/
         break;
     case V150_1_SSE_RIC_V32BIS_AC:
@@ -651,7 +707,7 @@ static int v150_1_sse_rx_fax_relay_packet(v150_1_sse_state_t *s, const uint8_t p
 }
 /*- End of function --------------------------------------------------------*/
 
-static int v150_1_sse_rx_text_relay_packet(v150_1_sse_state_t *s, const uint8_t pkt[], int len)
+static int rx_text_relay_packet(v150_1_sse_state_t *s, const uint8_t pkt[], int len)
 {
     if (s->rmt_mode != V150_1_SSE_MEDIA_STATE_TEXT_RELAY)
     {
@@ -669,7 +725,7 @@ static int v150_1_sse_rx_text_relay_packet(v150_1_sse_state_t *s, const uint8_t 
 }
 /*- End of function --------------------------------------------------------*/
 
-static int v150_1_sse_rx_text_probe_packet(v150_1_sse_state_t *s, const uint8_t pkt[], int len)
+static int rx_text_probe_packet(v150_1_sse_state_t *s, const uint8_t pkt[], int len)
 {
     if (s->rmt_mode != V150_1_SSE_MEDIA_STATE_TEXT_RELAY)
     {
@@ -696,7 +752,7 @@ SPAN_DECLARE(int) v150_1_sse_rx_packet(v150_1_sse_state_t *s,
     int x;
     int ext_len;
 
-    span_log(&s->logging, SPAN_LOG_FLOW, "SSE rx message - %d bytes\n", len);
+    span_log(&s->logging, SPAN_LOG_FLOW, "Rx message - %d bytes\n", len);
     if (len < 4)
         return -1;
     /*endif*/
@@ -712,7 +768,7 @@ SPAN_DECLARE(int) v150_1_sse_rx_packet(v150_1_sse_state_t *s,
         event = (pkt[0] >> 2) & 0x3F;
         f = (pkt[0] >> 1) & 0x01;
         x = pkt[0] & 0x01;
-        span_log(&s->logging, SPAN_LOG_FLOW, "SSE event %s\n", v150_1_sse_media_state_to_str(event));
+        span_log(&s->logging, SPAN_LOG_FLOW, "Event %s\n", v150_1_sse_media_state_to_str(event));
         if (x)
         {
             if (len >= 6)
@@ -737,22 +793,22 @@ SPAN_DECLARE(int) v150_1_sse_rx_packet(v150_1_sse_state_t *s,
         switch (event)
         {
         case V150_1_SSE_MEDIA_STATE_INITIAL_AUDIO:
-            res = v150_1_sse_rx_initial_audio_packet(s, pkt, len);
+            res = rx_initial_audio_packet(s, pkt, len);
             break;
         case V150_1_SSE_MEDIA_STATE_VOICE_BAND_DATA:
-            res = v150_1_sse_rx_voice_band_data_packet(s, pkt, len);
+            res = rx_voice_band_data_packet(s, pkt, len);
             break;
         case V150_1_SSE_MEDIA_STATE_MODEM_RELAY:
-            res = v150_1_sse_rx_modem_relay_packet(s, pkt, len);
+            res = rx_modem_relay_packet(s, pkt, len);
             break;
         case V150_1_SSE_MEDIA_STATE_FAX_RELAY:
-            res = v150_1_sse_rx_fax_relay_packet(s, pkt, len);
+            res = rx_fax_relay_packet(s, pkt, len);
             break;
         case V150_1_SSE_MEDIA_STATE_TEXT_RELAY:
-            res = v150_1_sse_rx_text_relay_packet(s, pkt, len);
+            res = rx_text_relay_packet(s, pkt, len);
             break;
         case V150_1_SSE_MEDIA_STATE_TEXT_PROBE:
-            res = v150_1_sse_rx_text_probe_packet(s, pkt, len);
+            res = rx_text_probe_packet(s, pkt, len);
             break;
         default:
             span_log(&s->logging, SPAN_LOG_FLOW, "Unexpected SSE event %d\n", event);
@@ -898,7 +954,7 @@ SPAN_DECLARE(int) v150_1_sse_tx_packet(v150_1_sse_state_t *s, int event, int ric
     int x;
 
     x = 0;
-    span_log(&s->logging, SPAN_LOG_FLOW, "SSE event %s\n", v150_1_sse_media_state_to_str(event));
+    span_log(&s->logging, SPAN_LOG_FLOW, "Event %s\n", v150_1_sse_media_state_to_str(event));
     switch (event)
     {
     case V150_1_SSE_MEDIA_STATE_INITIAL_AUDIO:

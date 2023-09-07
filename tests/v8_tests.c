@@ -86,7 +86,9 @@ static void handler(void *user_data, v8_parms_t *result)
     side = (int) (intptr_t) user_data;
 
     printf("%s ", (side == V8_TESTS_CALLER)  ?  "Caller"  :  "Answerer");
+
     printf("V.8 status %s\n", v8_status_to_str(result->status));
+
     printf("  Modem connect tone '%s' (%d)\n", modem_connect_tone_to_str(result->modem_connect_tone), result->modem_connect_tone);
     printf("  Call function '%s' (%d)\n", v8_call_function_to_str(result->jm_cm.call_function), result->jm_cm.call_function);
     printf("  Supported modulations 0x%X\n", result->jm_cm.modulations);
@@ -102,6 +104,8 @@ static void handler(void *user_data, v8_parms_t *result)
 
     switch (result->status)
     {
+    case V8_STATUS_IN_PROGRESS:
+        break;
     case V8_STATUS_V8_OFFERED:
         /* Edit the result information appropriately */
         //result->call_function = V8_CALL_T30_TX;
@@ -131,12 +135,16 @@ static void handler(void *user_data, v8_parms_t *result)
         }
         /*endif*/
         break;
+    case V8_STATUS_NON_V8_CALL:
     case V8_STATUS_CALLING_TONE_RECEIVED:
     case V8_STATUS_FAX_CNG_TONE_RECEIVED:
-    case V8_STATUS_NON_V8_CALL:
         if (expected_status[side] == result->status)
             negotiations_ok++;
         /*endif*/
+        break;
+    case V8_STATUS_FAILED:
+        break;
+    case V8_STATUS_CALL_FUNCTION_RECEIVED:
         break;
     }
     /*endswitch*/

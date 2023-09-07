@@ -124,13 +124,13 @@ static int v150_1_octet_stream_handler(void *user_data, const uint8_t msg[], int
 }
 /*- End of function --------------------------------------------------------*/
 
-static int v150_1_packet_handler(void *user_data, const uint8_t msg[], int len, int seq_no)
+static int v150_1_rx_packet_handler(void *user_data, int seq_no, const uint8_t msg[], int len)
 {
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-static int v150_1_tx_packet_handler(void *user_data, int chan, const uint8_t msg[], int len)
+static int v150_1_tx_packet_handler(void *user_data, int seq_no, const uint8_t msg[], int len)
 {
     return 0;
 }
@@ -352,7 +352,7 @@ static int process_packet(void *user_data, const uint8_t *pkt, int len, bool for
     /*endif*/
     if (v150_1 == NULL)
     {
-        v150_1 = v150_1_init(NULL, v150_1_tx_packet_handler, NULL, v150_1_packet_handler, NULL, v150_1_octet_stream_handler, NULL, v150_1_status_report_handler, NULL);
+        v150_1 = v150_1_init(NULL, v150_1_tx_packet_handler, NULL, v150_1_octet_stream_handler, NULL, v150_1_status_report_handler, NULL);
     }
     /*endif*/
 

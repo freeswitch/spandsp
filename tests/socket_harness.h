@@ -50,11 +50,13 @@ typedef struct socket_harness_state_s
 
     unsigned int delay;
     unsigned int started;
-    unsigned pty_closed;
-    unsigned close_count;
+    unsigned int pty_closed;
+    unsigned int close_count;
     
     pseudo_terminal_state_t pty;
 } socket_harness_state_t;
+
+extern span_timestamp_t socket_harness_timer;
 
 span_timestamp_t now_us(void);
 

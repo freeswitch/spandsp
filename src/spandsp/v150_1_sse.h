@@ -209,6 +209,16 @@ enum v150_1_sse_reliability_option_e
     V150_1_SSE_RELIABILITY_BY_EXPLICIT_ACK                      = 3
 };
 
+enum v150_1_sse_status_e
+{
+    V150_1_SSE_STATUS_V8_CM_RECEIVED                            = 10,
+    V150_1_SSE_STATUS_V8_JM_RECEIVED                            = 11,
+    V150_1_SSE_STATUS_AA_RECEIVED                               = 12,
+    V150_1_SSE_STATUS_V8_CM_RECEIVED_FAX                        = 13,
+    V150_1_SSE_STATUS_V8_JM_RECEIVED_FAX                        = 14,
+    V150_1_SSE_STATUS_AA_RECEIVED_FAX                           = 15
+};
+
 typedef struct v150_1_sse_state_s v150_1_sse_state_t;
 
 #if defined(__cplusplus)

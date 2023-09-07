@@ -97,8 +97,6 @@ typedef struct
 
 typedef int (*v150_1_tx_packet_handler_t) (void *user_data, int channel, const uint8_t msg[], int len);
 
-typedef int (*v150_1_rx_packet_handler_t) (void *user_data, const uint8_t msg[], int len, int seq_no);
-
 typedef int (*v150_1_rx_octet_handler_t) (void *user_data, const uint8_t msg[], int len, int fill);
 
 typedef int (*v150_1_rx_status_report_handler_t) (void *user_data, v150_1_status_t *report);
@@ -381,6 +379,28 @@ enum v150_1_state_e
     V150_1_STATE_CONNECTED                                      = 5
 };
 
+/* Definitions for the mrmods field used in the SDP which controls V.150.1 */
+enum v150_1_mrmods_e
+{
+    V150_1_MRMODS_V34                                           = 1,
+    V150_1_MRMODS_V34_HALF_DUPLEX                               = 2,
+    V150_1_MRMODS_V32BIS                                        = 3,
+    V150_1_MRMODS_V22BIS                                        = 4,
+    V150_1_MRMODS_V17                                           = 5,
+    V150_1_MRMODS_V29_HALF_DUPLEX                               = 6,
+    V150_1_MRMODS_V27TER                                        = 7,
+    V150_1_MRMODS_V26TER                                        = 8,
+    V150_1_MRMODS_V26BIS                                        = 9,
+    V150_1_MRMODS_V23_DUPLEX                                    = 10,
+    V150_1_MRMODS_V23_HALF_DUPLEX                               = 11,
+    V150_1_MRMODS_V21                                           = 12,
+    V150_1_MRMODS_V90_ANALOGUE                                  = 13,
+    V150_1_MRMODS_V90_DIGITAL                                   = 14,
+    V150_1_MRMODS_V91                                           = 15,
+    V150_1_MRMODS_V92_ANALOGUE                                  = 16,
+    V150_1_MRMODS_V92_DIGITAL                                   = 17
+};
+
 enum v150_1_status_reason_e
 {
     V150_1_STATUS_REASON_NULL                                   = 0,
@@ -425,6 +445,12 @@ SPAN_DECLARE(const char *) v150_1_break_source_to_str(int source);
 SPAN_DECLARE(const char *) v150_1_break_type_to_str(int type);
 
 SPAN_DECLARE(const char *) v150_1_state_to_str(int state);
+
+SPAN_DECLARE(const char *) v150_1_status_reason_to_str(int status);
+
+SPAN_DECLARE(const char *) v150_1_jm_category_to_str(int category);
+
+SPAN_DECLARE(const char *) v150_1_jm_info_modulation_to_str(int modulation);
 
 SPAN_DECLARE(int) v150_1_set_parity(v150_1_state_t *s, int mode);
 
@@ -499,8 +525,6 @@ SPAN_DECLARE(logging_state_t *) v150_1_get_logging_state(v150_1_state_t *s);
 SPAN_DECLARE(v150_1_state_t *) v150_1_init(v150_1_state_t *s,
                                            v150_1_tx_packet_handler_t tx_packet_handler,
                                            void *tx_packet_user_data,
-                                           v150_1_rx_packet_handler_t rx_packet_handler,
-                                           void *rx_packet_user_data,
                                            v150_1_rx_octet_handler_t rx_octet_handler,
                                            void *rx_octet_handler_user_data,
                                            v150_1_rx_status_report_handler_t rx_status_report_handler,

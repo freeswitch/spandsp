@@ -46,6 +46,10 @@ EXTRA_DIST = floating_fudge.h \
              make_math_fixed_tables.c \
              make_modem_filter.c \
              make_t43_gray_code_tables.c \
+             make_v34_convolutional_coders.c \
+             make_v34_probe_signals.c \
+             make_v34_shell_map.c \
+             make_v34_tx_pre_emphasis_filters.c \
              msvc/config.h \
              msvc/getopt.c \
              msvc/gettimeofday.c \
@@ -269,6 +273,8 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/v27ter_tx.h \
                          spandsp/v29rx.h \
                          spandsp/v29tx.h \
+                         spandsp/v32bis.h \
+                         spandsp/v34.h \
                          spandsp/v42.h \
                          spandsp/v42bis.h \
                          spandsp/v8.h \
@@ -343,6 +349,8 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/private/v27ter_tx.h \
                          spandsp/private/v29rx.h \
                          spandsp/private/v29tx.h \
+                         spandsp/private/v32bis.h \
+                         spandsp/private/v34.h \
                          spandsp/private/v42.h \
                          spandsp/private/v42bis.h \
                          spandsp/private/v8.h \
@@ -361,7 +369,14 @@ noinst_HEADERS = cielab_luts.h \
                  t42_t43_local.h \
                  v17_v32bis_rx_constellation_maps.h \
                  v17_v32bis_tx_constellation_maps.h \
-                 v29tx_constellation_maps.h
+                 v29tx_constellation_maps.h \
+                 v34_local.h \
+                 v34_shell_map.h \
+                 v34_convolutional_coders.h \
+                 v34_probe_signals.h \
+                 v34_superconstellation_map.h \
+                 v34_tx_pre_emphasis_filters.h \
+                 v34_tables.h
 
 make_at_dictionary$(EXEEXT): $(top_srcdir)/src/make_at_dictionary.c
 	$(CC_FOR_BUILD) -o make_at_dictionary$(EXEEXT) $(top_srcdir)/src/make_at_dictionary.c -DHAVE_CONFIG_H -I$(top_builddir)/src
@@ -375,8 +390,32 @@ make_math_fixed_tables$(EXEEXT): $(top_srcdir)/src/make_math_fixed_tables.c
 make_modem_filter$(EXEEXT): $(top_srcdir)/src/make_modem_filter.c $(top_srcdir)/src/filter_tools.c
 	$(CC_FOR_BUILD) -o make_modem_filter$(EXEEXT) $(top_srcdir)/src/make_modem_filter.c $(top_srcdir)/src/filter_tools.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
 
+make_modem_godard_coefficients$(EXEEXT): $(top_srcdir)/src/make_modem_godard_coefficients.c $(top_srcdir)/src/filter_tools.c
+	$(CC_FOR_BUILD) -o make_modem_godard_coefficients$(EXEEXT) $(top_srcdir)/src/make_modem_godard_coefficients.c $(top_srcdir)/src/filter_tools.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
+
 make_t43_gray_code_tables$(EXEEXT): $(top_srcdir)/src/make_t43_gray_code_tables.c
 	$(CC_FOR_BUILD) -o make_t43_gray_code_tables$(EXEEXT) $(top_srcdir)/src/make_t43_gray_code_tables.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
+
+make_v17_v32_constellation_map$(EXEEXT): $(top_srcdir)/src/make_v17_v32_constellation_map.c $(top_srcdir)/src/g711.c $(top_srcdir)/src/alloc.c
+	$(CC_FOR_BUILD) -o make_v17_v32_constellation_map$(EXEEXT) $(top_srcdir)/src/make_v17_v32_constellation_map.c $(top_srcdir)/src/g711.c $(top_srcdir)/src/alloc.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
+
+make_v17_v32_convolutional_encoder$(EXEEXT): $(top_srcdir)/src/make_v17_v32_convolutional_encoder.c $(top_srcdir)/src/g711.c $(top_srcdir)/src/alloc.c
+	$(CC_FOR_BUILD) -o make_v17_v32_convolutional_encoder$(EXEEXT) $(top_srcdir)/src/make_v17_v32_convolutional_encoder.c $(top_srcdir)/src/g711.c $(top_srcdir)/src/alloc.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
+
+make_v29_constellation_map$(EXEEXT): $(top_srcdir)/src/make_v29_constellation_map.c $(top_srcdir)/src/g711.c $(top_srcdir)/src/alloc.c
+	$(CC_FOR_BUILD) -o make_v29_constellation_map$(EXEEXT) $(top_srcdir)/src/make_v29_constellation_map.c $(top_srcdir)/src/g711.c $(top_srcdir)/src/alloc.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
+
+make_v34_convolutional_coders$(EXEEXT): $(top_srcdir)/src/make_v34_convolutional_coders.c
+	$(CC_FOR_BUILD) -o make_v34_convolutional_coders$(EXEEXT) $(top_srcdir)/src/make_v34_convolutional_coders.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
+
+make_v34_probe_signals$(EXEEXT): $(top_srcdir)/src/make_v34_probe_signals.c $(top_srcdir)/src/g711.c $(top_srcdir)/src/alloc.c
+	$(CC_FOR_BUILD) -o make_v34_probe_signals$(EXEEXT) $(top_srcdir)/src/make_v34_probe_signals.c $(top_srcdir)/src/g711.c $(top_srcdir)/src/alloc.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
+
+make_v34_shell_map$(EXEEXT): $(top_srcdir)/src/make_v34_shell_map.c
+	$(CC_FOR_BUILD) -o make_v34_shell_map$(EXEEXT) $(top_srcdir)/src/make_v34_shell_map.c -DHAVE_CONFIG_H -I$(top_builddir)/src
+
+make_v34_tx_pre_emphasis_filters$(EXEEXT): $(top_srcdir)/src/make_v34_tx_pre_emphasis_filters.c $(top_srcdir)/tools/meteor-engine.c
+	$(CC_FOR_BUILD) -o make_v34_tx_pre_emphasis_filters$(EXEEXT) $(top_srcdir)/src/make_v34_tx_pre_emphasis_filters.c $(top_srcdir)/tools/meteor-engine.c -DHAVE_CONFIG_H -I$(top_builddir)/src -I$(top_builddir)/tools -lm
 
 # We need to run make_at_dictionary, so it generates the
 # at_interpreter_dictionary.h file
@@ -387,6 +426,9 @@ at_interpreter.lo: at_interpreter_dictionary.h
 
 at_interpreter_dictionary.h: make_at_dictionary$(EXEEXT)
 	./make_at_dictionary$(EXEEXT) >at_interpreter_dictionary.h
+
+# We need to run make_math_fixed_tables, so it generates the
+# math_fixed.h file
 
 math_fixed.$(OBJEXT): math_fixed_tables.h
 
@@ -399,6 +441,9 @@ t4_rx.$(OBJEXT): spandsp/version.h
 
 t4_rx.lo: spandsp/version.h
 
+# We need to run make_cielab_luts, so it generates the
+# cielab_luts.h file
+
 t42.$(OBJEXT): cielab_luts.h
 
 t42.lo: cielab_luts.h
@@ -406,10 +451,16 @@ t42.lo: cielab_luts.h
 cielab_luts.h: make_cielab_luts$(EXEEXT)
 	./make_cielab_luts$(EXEEXT) >cielab_luts.h
 
+# We need to run make_t43_gray_code_tables, so it generates the
+# t43_gray_code_tables.h file
+
 t43.lo: t43_gray_code_tables.h
 
 t43_gray_code_tables.h: make_t43_gray_code_tables$(EXEEXT)
 	./make_t43_gray_code_tables$(EXEEXT) >t43_gray_code_tables.h
+
+# We need to run make_modem_filter, so it generates the
+# filter coefficient files
 
 V17_V32BIS_RX_INCL = v17_v32bis_rx_rrc.h
 
@@ -494,6 +545,103 @@ v29tx.lo: ${V29_TX_INCL}
 
 v29tx_rrc.h: make_modem_filter$(EXEEXT)
 	./make_modem_filter$(EXEEXT) -m V.29 -t >v29tx_rrc.h
+
+V34_TX_INCL = v34_tx_2400_rrc.h \
+              v34_tx_2743_rrc.h \
+              v34_tx_2800_rrc.h \
+              v34_tx_3000_rrc.h \
+              v34_tx_3200_rrc.h \
+              v34_tx_3429_rrc.h \
+              v34_convolutional_coders.h \
+              v34_probe_signals.h \
+              v34_shell_map.h \
+              v34_tx_pre_emphasis_filters.h
+
+V34_RX_INCL = v34_rx_2400_low_carrier_rrc.h \
+              v34_rx_2400_high_carrier_rrc.h \
+              v34_rx_2743_low_carrier_rrc.h \
+              v34_rx_2743_high_carrier_rrc.h \
+              v34_rx_2800_low_carrier_rrc.h \
+              v34_rx_2800_high_carrier_rrc.h \
+              v34_rx_3000_low_carrier_rrc.h \
+              v34_rx_3000_high_carrier_rrc.h \
+              v34_rx_3200_low_carrier_rrc.h \
+              v34_rx_3200_high_carrier_rrc.h \
+              v34_rx_3429_rrc.h \
+              v34_convolutional_coders.h \
+              v34_probe_signals.h \
+              v34_shell_map.h
+
+v34tx.$(OBJEXT): ${V34_TX_INCL}
+
+v34tx.lo: ${V34_TX_INCL}
+
+v34rx.$(OBJEXT): ${V34_RX_INCL}
+
+v34rx.lo: ${V34_RX_INCL}
+
+v34_convolutional_coders.h: make_v34_convolutional_coders$(EXEEXT)
+	./make_v34_convolutional_coders$(EXEEXT) >v34_convolutional_coders.h
+
+v34_probe_signals.h: make_v34_probe_signals$(EXEEXT)
+	./make_v34_probe_signals$(EXEEXT) >v34_probe_signals.h
+
+v34_shell_map.h: make_v34_shell_map$(EXEEXT)
+	./make_v34_shell_map$(EXEEXT) >v34_shell_map.h
+
+v34_tx_pre_emphasis_filters.h: make_v34_tx_pre_emphasis_filters$(EXEEXT)
+	./make_v34_tx_pre_emphasis_filters$(EXEEXT) >/dev/null
+
+v34_rx_2400_low_carrier_rrc.h: make_modem_filter$(EXEEXT)
+	./make_modem_filter$(EXEEXT) -m V.34_2400 -r >v34_rx_2400_low_carrier_rrc.h
+
+v34_rx_2400_high_carrier_rrc.h: make_modem_filter$(EXEEXT)
+	./make_modem_filter$(EXEEXT) -m V.34_2400_high -r >v34_rx_2400_high_carrier_rrc.h
+
+v34_rx_2743_low_carrier_rrc.h: make_modem_filter$(EXEEXT)
+	./make_modem_filter$(EXEEXT) -m V.34_2743 -r >v34_rx_2743_low_carrier_rrc.h
+
+v34_rx_2743_high_carrier_rrc.h: make_modem_filter$(EXEEXT)
+	./make_modem_filter$(EXEEXT) -m V.34_2743_high -r >v34_rx_2743_high_carrier_rrc.h
+
+v34_rx_2800_low_carrier_rrc.h: make_modem_filter$(EXEEXT)
+	./make_modem_filter$(EXEEXT) -m V.34_2800 -r >v34_rx_2800_low_carrier_rrc.h
+
+v34_rx_2800_high_carrier_rrc.h: make_modem_filter$(EXEEXT)
+	./make_modem_filter$(EXEEXT) -m V.34_2800_high -r >v34_rx_2800_high_carrier_rrc.h
+
+v34_rx_3000_low_carrier_rrc.h: make_modem_filter$(EXEEXT)
+	./make_modem_filter$(EXEEXT) -m V.34_3000 -r >v34_rx_3000_low_carrier_rrc.h
+
+v34_rx_3000_high_carrier_rrc.h: make_modem_filter$(EXEEXT)
+	./make_modem_filter$(EXEEXT) -m V.34_3000_high -r >v34_rx_3000_high_carrier_rrc.h
+
+v34_rx_3200_low_carrier_rrc.h: make_modem_filter$(EXEEXT)
+	./make_modem_filter$(EXEEXT) -m V.34_3200 -r >v34_rx_3200_low_carrier_rrc.h
+
+v34_rx_3200_high_carrier_rrc.h: make_modem_filter$(EXEEXT)
+	./make_modem_filter$(EXEEXT) -m V.34_3200_high -r >v34_rx_3200_high_carrier_rrc.h
+
+v34_rx_3429_rrc.h: make_modem_filter$(EXEEXT)
+	./make_modem_filter$(EXEEXT) -m V.34_3429 -r >v34_rx_3429_rrc.h
+
+v34_tx_2400_rrc.h: make_modem_filter$(EXEEXT)
+	./make_modem_filter$(EXEEXT) -m V.34_2400 -t >v34_tx_2400_rrc.h
+
+v34_tx_2743_rrc.h: make_modem_filter$(EXEEXT)
+	./make_modem_filter$(EXEEXT) -m V.34_2743 -t >v34_tx_2743_rrc.h
+
+v34_tx_2800_rrc.h: make_modem_filter$(EXEEXT)
+	./make_modem_filter$(EXEEXT) -m V.34_2800 -t >v34_tx_2800_rrc.h
+
+v34_tx_3000_rrc.h: make_modem_filter$(EXEEXT)
+	./make_modem_filter$(EXEEXT) -m V.34_3000 -t >v34_tx_3000_rrc.h
+
+v34_tx_3200_rrc.h: make_modem_filter$(EXEEXT)
+	./make_modem_filter$(EXEEXT) -m V.34_3200 -t >v34_tx_3200_rrc.h
+
+v34_tx_3429_rrc.h: make_modem_filter$(EXEEXT)
+	./make_modem_filter$(EXEEXT) -m V.34_3429 -t >v34_tx_3429_rrc.h
 
 VCPROJ12 = libspandsp.2012.vcxproj
 

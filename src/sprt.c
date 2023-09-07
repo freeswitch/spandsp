@@ -213,8 +213,9 @@ static int update_timer(sprt_state_t *s)
     }
     /*endif*/
     span_log(&s->logging, SPAN_LOG_FLOW, "Update timer to %lu (%d)\n", shortest, shortest_is);
+    s->latest_timer = shortest;
     if (s->timer_handler)
-        s->timer_handler(s->timer_user_data, shortest);
+        s->timer_handler(s->timer_user_data, s->latest_timer);
     /*endif*/
     return 0;
 }
@@ -300,6 +301,7 @@ static int build_and_send_packet(sprt_state_t *s,
         /*endfor*/
         s->tx.ack_queue_ptr = 0;
         s->tx.ta01_timer = 0;
+        span_log(&s->logging, SPAN_LOG_FLOW, "TA01 cancelled\n");
     }
     /*endif*/
     /* The base sequence number only varies for the reliable channels. It is always zero
@@ -312,6 +314,7 @@ static int build_and_send_packet(sprt_state_t *s,
         len += payload_len;
     }
     /*endif*/
+    span_log_buf(&s->logging, SPAN_LOG_FLOW, "Tx", pkt, len);
     if (s->tx_packet_handler)
         s->tx_packet_handler(s->tx_user_data, pkt, len);
     /*endif*/
@@ -360,7 +363,7 @@ static int queue_acknowledgement(sprt_state_t *s, int channel, uint16_t sequence
             if (s->timer_handler)
                 s->tx.ta01_timer = s->timer_handler(s->timer_user_data, ~0) + s->tx.ta01_timeout;
             /*endif*/
-            span_log(&s->logging, SPAN_LOG_ERROR, "TA01 set to %lu\n", s->tx.ta01_timer);
+            span_log(&s->logging, SPAN_LOG_FLOW, "TA01 set to %lu\n", s->tx.ta01_timer);
             update_timer(s);
         }
         else if (s->tx.ack_queue_ptr >= 3)
@@ -407,7 +410,7 @@ static bool retransmit_the_unacknowledged(sprt_state_t *s, int channel, span_tim
             }
             else
             {
-                span_log(&s->logging, SPAN_LOG_ERROR, "ERROR: empty slot scheduled %d %d\n", first, chan->buff_len[first]);
+                span_log(&s->logging, SPAN_LOG_ERROR, "Empty slot scheduled %d %d\n", first, chan->buff_len[first]);
             }
             /*endif*/
             delete_timer_queue_entry(s, channel, first);
@@ -469,6 +472,10 @@ static void process_acknowledgements(sprt_state_t *s, int noa, int tcn[3], int s
                     /* This packet is no longer needed. We can clear the buffer slot. */
                     span_log(&s->logging, SPAN_LOG_FLOW, "Slot OK %d/%d contains %d [%d, %d]\n", channel, slot, sqn[i], chan->queuing_sequence_no, chan->buff_in_ptr);
                     chan->buff_len[slot] = SPRT_LEN_SLOT_FREE;
+                    /* TODO: We are deleting the resend timer here, without updating the next timeout. This
+                       should be harmless. However, the spurious timeouts it may result in seems messy. */
+                    chan->tr03_timer[slot] = 0;
+                    span_log(&s->logging, SPAN_LOG_FLOW, "TR03(%d)[%d] cancelled\n", channel, slot);
                     delete_timer_queue_entry(s, channel, slot);
                     ptr = chan->buff_acked_out_ptr;
                     if (slot == ptr)
@@ -524,7 +531,7 @@ static void process_acknowledgements(sprt_state_t *s, int noa, int tcn[3], int s
 }
 /*- End of function --------------------------------------------------------*/
 
-static void sprt_deliver(sprt_state_t *s)
+static int sprt_deliver(sprt_state_t *s)
 {
     int channel;
     int iptr;
@@ -556,6 +563,7 @@ static void sprt_deliver(sprt_state_t *s)
         chan->buff_in_ptr = iptr;
     }
     /*endfor*/
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -567,8 +575,19 @@ SPAN_DECLARE(int) sprt_timer_expired(sprt_state_t *s, span_timestamp_t now)
 
     span_log(&s->logging, SPAN_LOG_FLOW, "Timer expired at %lu\n", now);
 
+    if (now < s->latest_timer)
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "Timer returned %luus early\n", s->latest_timer - now);
+        /* Request the same timeout point again. */
+        if (s->timer_handler)
+            s->timer_handler(s->timer_user_data, s->latest_timer);
+        /*endif*/
+        return 0;
+    }
+    /*endif*/
+
     something_was_sent = false;
-    
+
     if (s->tx.immediate_timer)
     {
         s->tx.immediate_timer = false;
@@ -581,9 +600,9 @@ SPAN_DECLARE(int) sprt_timer_expired(sprt_state_t *s, span_timestamp_t now)
         something_was_sent_for_channel = retransmit_the_unacknowledged(s, i, now);
         /* There's a keepalive timer for each reliable channel. We only need to send a keepalive if we
            didn't just send a retransmit for this channel. */
-        if (s->tx.chan[i].ta02_timer != 0  &&  s->tx.chan[i].ta02_timer <= now)
+        if (s->tx.chan[i].ta02_timer != 0)
         {
-            if (!something_was_sent_for_channel)
+            if (s->tx.chan[i].ta02_timer <= now  &&  !something_was_sent_for_channel)
             {
                 /* Send a keepalive packet for this channel. */
                 span_log(&s->logging, SPAN_LOG_FLOW, "Keepalive only packet sent\n");
@@ -591,8 +610,12 @@ SPAN_DECLARE(int) sprt_timer_expired(sprt_state_t *s, span_timestamp_t now)
                 something_was_sent_for_channel = true;
             }
             /*endif*/
-            s->tx.chan[i].ta02_timer = now + s->tx.chan[i].ta02_timeout;
-            span_log(&s->logging, SPAN_LOG_FLOW, "TA02(%d) set to %lu\n", i, s->tx.chan[i].ta02_timer);
+            if (something_was_sent_for_channel)
+            {
+                s->tx.chan[i].ta02_timer = now + s->tx.chan[i].ta02_timeout;
+                span_log(&s->logging, SPAN_LOG_FLOW, "TA02(%d) set to %lu\n", i, s->tx.chan[i].ta02_timer);
+            }
+            /*endif*/
         }
         /*endif*/
         if (something_was_sent_for_channel)
@@ -600,6 +623,7 @@ SPAN_DECLARE(int) sprt_timer_expired(sprt_state_t *s, span_timestamp_t now)
         /*endif*/
     }
     /*endfor*/
+
     /* There's a single ACK holdoff timer, which applies to all channels. */
     /* We only need to push ACKs if we haven't yet pushed out a packet for any channel during this
        timer expired processing. */
@@ -611,15 +635,12 @@ SPAN_DECLARE(int) sprt_timer_expired(sprt_state_t *s, span_timestamp_t now)
             /* Push an ACK only packet */
             span_log(&s->logging, SPAN_LOG_FLOW, "ACK only packet sent\n");
             build_and_send_packet(s, SPRT_TCID_UNRELIABLE_UNSEQUENCED, 0, NULL, 0);
-            s->tx.ta01_timer = 0;
             something_was_sent = true;
         }
         /*endif*/
     }
     /*endif*/
-    if (something_was_sent)
-        update_timer(s);
-    /*endif*/
+    update_timer(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -649,6 +670,7 @@ SPAN_DECLARE(int) sprt_rx_packet(sprt_state_t *s, const uint8_t pkt[], int len)
     int diff;
     sprt_chan_t *chan;
 
+    span_log_buf(&s->logging, SPAN_LOG_FLOW, "Rx", pkt, len);
     /* An SPRT packet has 3 essential components: A base sequence number, some ACKs and a payload.
        - A packet with no ACKs or payload is a keepalive. Its there to report the continued existance
          of the far end, and to report the far end's base sequence number for a reliable channel.
@@ -746,7 +768,7 @@ SPAN_DECLARE(int) sprt_rx_packet(sprt_state_t *s, const uint8_t pkt[], int len)
         process_acknowledgements(s, noa, tcn, sqn);
     }
     /*endif*/
-    span_log(&s->logging, SPAN_LOG_FLOW, "Rx %d %d %d %d - noa %d\n", channel, sequence_no, len, header_len, noa);
+    span_log(&s->logging, SPAN_LOG_FLOW, "Rx ch %d seq %d len %d  header len %d - noa %d\n", channel, sequence_no, len, header_len, noa);
 
     /* Deal with the payload, if any, in the packet */
     payload_len = len - header_len;
@@ -771,12 +793,12 @@ SPAN_DECLARE(int) sprt_rx_packet(sprt_state_t *s, const uint8_t pkt[], int len)
                 if (sequence_no == chan->base_sequence_no)
                 {
                     iptr = chan->buff_in_ptr;
+                    queue_acknowledgement(s, channel, sequence_no);
                     if (chan->busy)
                     {
                         /* We can't deliver this right now, so we need to store it at the head of the buffer */
                         memcpy(&chan->buff[iptr*chan->max_payload_bytes], pkt + header_len, payload_len);
                         chan->buff_len[iptr] = payload_len;
-                        queue_acknowledgement(s, channel, sequence_no);
                     }
                     else
                     {
@@ -812,7 +834,6 @@ SPAN_DECLARE(int) sprt_rx_packet(sprt_state_t *s, const uint8_t pkt[], int len)
                         chan->buff_in_ptr = iptr;
                     }
                     /*endif*/
-                    queue_acknowledgement(s, channel, sequence_no);
                 }
                 else
                 {
@@ -825,13 +846,13 @@ SPAN_DECLARE(int) sprt_rx_packet(sprt_state_t *s, const uint8_t pkt[], int len)
                     diff = (sequence_no - chan->base_sequence_no) & SPRT_SEQ_NO_MASK;
                     if (diff < chan->window_size)
                     {
+                        queue_acknowledgement(s, channel, sequence_no);
                         iptr = chan->buff_in_ptr + diff;
                         if (iptr >= chan->window_size)
                             iptr -= chan->window_size;
                         /*endif*/
                         memcpy(&chan->buff[iptr*chan->max_payload_bytes], pkt + header_len, payload_len);
                         chan->buff_len[iptr] = payload_len;
-                        queue_acknowledgement(s, channel, sequence_no);
                     }
                     else if (diff > 2*SPRT_MAX_WINDOWS_SIZE)
                     {
@@ -860,6 +881,8 @@ SPAN_DECLARE(int) sprt_rx_packet(sprt_state_t *s, const uint8_t pkt[], int len)
                 /* Used for sequenced data that does not require reliable delivery */
                 /* We might have missed one or more packets, so this may or may not be the next packet in sequence. We have
                    no way to fix this, so just deliver the payload. */
+                /* TODO: This might be a repeat of the last packet, if the sender tries to achieve redundancy by multiple sends.
+                   should try to avoid delivering the same packet multiple times. */
                 /* Deliver the payload of the message */
                 if (s->rx_delivery_handler)
                     s->rx_delivery_handler(s->rx_user_data, channel, sequence_no, pkt + header_len, payload_len);
@@ -916,6 +939,7 @@ SPAN_DECLARE(int) sprt_tx(sprt_state_t *s, int channel, const uint8_t payload[],
         if (s->timer_handler)
             chan->tr03_timer[iptr] = s->timer_handler(s->timer_user_data, ~0) + chan->tr03_timeout;
         /*endif*/
+        span_log(&s->logging, SPAN_LOG_FLOW, "TR03(%d)[%d] set to %lu\n", channel, iptr, chan->tr03_timer[iptr]);
         chan->remaining_tries[iptr] = chan->max_tries;
         add_timer_queue_last_entry(s, channel, iptr);
         if (++iptr >= chan->window_size)
@@ -929,7 +953,6 @@ SPAN_DECLARE(int) sprt_tx(sprt_state_t *s, int channel, const uint8_t payload[],
             chan->ta02_timer = s->timer_handler(s->timer_user_data, ~0) + chan->ta02_timeout;
         /*endif*/
         span_log(&s->logging, SPAN_LOG_FLOW, "TA02(%d) set to %lu\n", channel, chan->ta02_timer);
-        /*endif*/
         /* Now send the first copy */
         build_and_send_packet(s, channel, seq_no, payload, len);
         break;
@@ -1254,18 +1277,18 @@ SPAN_DECLARE(sprt_state_t *) sprt_init(sprt_state_t *s,
     s->rx.payload_type = rx_payload_type;
     s->tx.payload_type = tx_payload_type;
 
-    s->tx.ta01_timeout = parms[SPRT_TCID_RELIABLE_SEQUENCED].timer_ta01;
+    s->tx.ta01_timeout = default_channel_parms[SPRT_TCID_RELIABLE_SEQUENCED].timer_ta01;
     for (i = SPRT_TCID_MIN;  i <= SPRT_TCID_MAX;  i++)
     {
-        s->rx.chan[i].max_payload_bytes = parms[i].payload_bytes;
-        s->rx.chan[i].window_size = parms[i].window_size;
-        s->rx.chan[i].ta02_timeout = parms[i].timer_ta02;
-        s->rx.chan[i].tr03_timeout = parms[i].timer_tr03;
+        s->rx.chan[i].max_payload_bytes = default_channel_parms[i].payload_bytes;
+        s->rx.chan[i].window_size = default_channel_parms[i].window_size;
+        s->rx.chan[i].ta02_timeout = default_channel_parms[i].timer_ta02;
+        s->rx.chan[i].tr03_timeout = default_channel_parms[i].timer_tr03;
 
-        s->tx.chan[i].max_payload_bytes = parms[i].payload_bytes;
-        s->tx.chan[i].window_size = parms[i].window_size;
-        s->tx.chan[i].ta02_timeout = parms[i].timer_ta02;
-        s->tx.chan[i].tr03_timeout = parms[i].timer_tr03;
+        s->tx.chan[i].max_payload_bytes = default_channel_parms[i].payload_bytes;
+        s->tx.chan[i].window_size = default_channel_parms[i].window_size;
+        s->tx.chan[i].ta02_timeout = default_channel_parms[i].timer_ta02;
+        s->tx.chan[i].tr03_timeout = default_channel_parms[i].timer_tr03;
 
         s->tx.chan[i].max_tries = SPRT_DEFAULT_MAX_TRIES;
 

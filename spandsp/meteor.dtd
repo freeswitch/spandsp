@@ -1,0 +1,46 @@
+<!-- Meteor filter specification -->
+<!ELEMENT meteor (convexity|limit)* >
+<!ATTLIST meteor
+  name          CDATA   #REQUIRED
+  shortest      CDATA   #REQUIRED
+  longest       CDATA   #REQUIRED
+  symmetry      (sine|cosine) "cosine"
+  sample_rate   CDATA   #REQUIRED
+  grid_points   CDATA   #REQUIRED
+  >
+
+<!ELEMENT convexity (left2?|right2?)* >
+<!ATTLIST convexity
+  name          CDATA   #REQUIRED
+  type          (concave|convex) "convex"
+  >
+
+<!ELEMENT limit (left?|right?)* >
+<!ATTLIST limit
+  name          CDATA   #REQUIRED
+  type          (lower|upper|envelope) "upper"
+  interpolation (arithmetic|geometric) "arithmetic"
+  hugged        (yes|no) "no"
+  >
+
+<!ELEMENT left (EMPTY)* >
+<!ATTLIST left
+  freq          CDATA   #REQUIRED
+  gain          CDATA   #IMPLIED
+  >
+
+<!ELEMENT right (EMPTY)* >
+<!ATTLIST right
+  freq          CDATA   #REQUIRED
+  gain          CDATA   #IMPLIED
+  >
+
+<!ELEMENT left2 (EMPTY)* >
+<!ATTLIST left2
+  freq          CDATA   #REQUIRED
+  >
+
+<!ELEMENT right2 (EMPTY)* >
+<!ATTLIST right2
+  freq          CDATA   #REQUIRED
+  >

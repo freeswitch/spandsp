@@ -103,6 +103,8 @@ struct sprt_state_s
     span_modem_status_func_t status_handler;
     void *status_user_data;
 
+    span_timestamp_t latest_timer;
+
     struct
     {
         int subsession_id;

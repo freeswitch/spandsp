@@ -62,7 +62,7 @@
 #define SPRT_DEFAULT_TIMER_TC1_TA02                 130000      /* us */
 #define SPRT_DEFAULT_TIMER_TC1_TR03                 500000      /* us */
 
-#define SPRT_DEFAULT_TIMER_TC2_TA01                 900000      /* us */
+#define SPRT_DEFAULT_TIMER_TC2_TA01                 90000       /* us */
 #define SPRT_DEFAULT_TIMER_TC2_TA02                 500000      /* us */
 #define SPRT_DEFAULT_TIMER_TC2_TR03                 500000      /* us */
 
@@ -180,7 +180,7 @@ SPAN_DECLARE(logging_state_t *) sprt_get_logging_state(sprt_state_t *s);
     \param rx_payload_type The payload type expected in received SPRT headers
     \param tx_payload_type The payload type sent in transmitted SPRT headers
     \param parms The parameter set for sizing the SPRT instance. NULL means use the defaults.
-    \param tx_packet_handler The callback function, used to report arriving packets.
+    \param tx_packet_handler The callback function, used to send assembled packets.
     \param tx_user_data An opaque pointer supplied to tx_packet_handler.
     \param rx_delivery_handler The callback function, used to report arriving packets.
     \param rx_user_data An opaque pointer supplied to rx_delivery_handler.

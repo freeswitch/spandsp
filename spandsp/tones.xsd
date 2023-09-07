@@ -1,0 +1,429 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:t='http://www.w3.org/namespace/'>
+ <xs:element name='global-tones'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:tone-set'/>
+   </xs:sequence>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='tone-set'>
+  <xs:complexType>
+   <xs:choice minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:dial-tone'/>
+    <xs:element ref='t:ringing-tone'/>
+    <xs:element ref='t:busy-tone'/>
+    <xs:element ref='t:congestion-tone'/>
+    <xs:element ref='t:number-unobtainable-tone'/>
+    <xs:element ref='t:special-information-tone'/>
+    <xs:element ref='t:call-waiting-tone'/>
+    <xs:element ref='t:waiting-tone'/>
+    <xs:element ref='t:pay-tone'/>
+    <xs:element ref='t:payphone-recognition-tone'/>
+    <xs:element ref='t:warning-tone'/>
+    <xs:element ref='t:test-number-tone'/>
+    <xs:element ref='t:end-of-three-party-service-tone'/>
+    <xs:element ref='t:service-activated-tone'/>
+    <xs:element ref='t:record-tone'/>
+    <xs:element ref='t:facilities-tone'/>
+    <xs:element ref='t:offering-tone'/>
+    <xs:element ref='t:route-tone'/>
+    <xs:element ref='t:confirmation-tone'/>
+    <xs:element ref='t:intrusion-tone'/>
+    <xs:element ref='t:intercept-tone'/>
+    <xs:element ref='t:reorder-tone'/>
+    <xs:element ref='t:holding-tone'/>
+    <xs:element ref='t:search-tone'/>
+    <xs:element ref='t:acceptance-tone'/>
+    <xs:element ref='t:executive-override-tone'/>
+    <xs:element ref='t:function-acknowledge-tone'/>
+    <xs:element ref='t:queue-tone'/>
+    <xs:element ref='t:valid-tone-radio-paging'/>
+    <xs:element ref='t:notify-tone'/>
+    <xs:element ref='t:preemption-tone'/>
+    <xs:element ref='t:comfort-tone'/>
+    <xs:element ref='t:connection-tone'/>
+    <xs:element ref='t:refusal-tone'/>
+    <xs:element ref='t:line-lockout-tone'/>
+    <xs:element ref='t:permanent-signal-tone'/>
+    <xs:element ref='t:identification-tone'/>
+    <xs:element ref='t:positive-indication-tone'/>
+    <xs:element ref='t:negative-indication-tone'/>
+   </xs:choice>
+   <xs:attribute name='country' type='string' use='required'/>
+   <xs:attribute name='uncode' type='string' use='required'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='dial-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+   <xs:attribute name='type' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='ringing-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+   <xs:attribute name='type' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='busy-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='congestion-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='number-unobtainable-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='special-information-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='call-waiting-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+   <xs:attribute name='type' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='pay-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='payphone-recognition-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='warning-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='type' type='string' use='optional'/>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='reorder-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='waiting-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='test-number-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='end-of-three-party-service-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='service-activated-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='record-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='facilities-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='offering-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='route-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='confirmation-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='intrusion-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='intercept-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='holding-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='search-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='acceptance-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='executive-override-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='function-acknowledge-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='queue-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='valid-tone-radio-paging'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='notify-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='preemption-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='comfort-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='connection-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='refusal-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='line-lockout-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='permanent-signal-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='identification-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='positive-indication-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='negative-indication-tone'>
+  <xs:complexType>
+   <xs:sequence minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+   </xs:sequence>
+   <xs:attribute name='domain' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+
+ <xs:element name='step'>
+  <xs:complexType>
+   <xs:choice minOccurs='0' maxOccurs='unbounded'>
+    <xs:element ref='t:step'/>
+    <xs:element ref='t:EMPTY'/>
+   </xs:choice>
+   <xs:attribute name='cycles' type='string' use='optional'/>
+   <xs:attribute name='freq' type='string' use='optional'/>
+   <xs:attribute name='level' type='string' use='optional'/>
+   <xs:attribute name='length' type='string' use='optional'/>
+   <xs:attribute name='recorded-announcement' type='string' use='optional'/>
+   <xs:attribute name='recognition-length' type='string' use='optional'/>
+  </xs:complexType>
+ </xs:element>
+</xs:schema>

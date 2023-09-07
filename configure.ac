@@ -619,6 +619,7 @@ AC_CONFIG_FILES([Makefile
                  doc/doxygen
                  src/Makefile
                  src/spandsp.h
+                 tools/Makefile
                  spandsp-sim/Makefile
                  test-data/Makefile
                  test-data/bellcore/Makefile

@@ -415,7 +415,7 @@ static int sprt_tests(bool calling_party)
                                 0,
                                 120,
                                 120,
-                                NULL,
+                                NULL /* Use default params */,
                                 tx_packet_handler,
                                 (void *) dgram_state,
                                 rx_delivery_handler,
@@ -437,7 +437,7 @@ static int sprt_tests(bool calling_party)
 
     logging = sprt_get_logging_state(sprt_state);
     span_log_set_level(logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_DATE);
-    //span_log_set_tag(logging, "A");
+    span_log_set_tag(logging, (calling_party)  ?  "C"  :  "A");
 
     socket_dgram_harness_timer = 
     pace_timer = now_us() + 20000;
