@@ -48,6 +48,23 @@
 #include "pseudo_terminals.h"
 #include "socket_dgram_harness.h"
 
+typedef struct
+{
+    uint8_t v;
+    uint8_t p;
+    uint8_t x;
+    uint8_t cc;
+    uint8_t m;
+    uint8_t pt;
+    uint16_t seq_no;
+    uint32_t time_stamp;
+    uint32_t ssrc;
+} rtp_t;
+
+rtp_t rtp;
+
+#define PACKET_TYPE     118
+
 socket_dgram_harness_state_t *dgram_state;
 v150_1_sse_state_t *v150_1_sse_state;
 
@@ -59,7 +76,40 @@ span_timestamp_t app_timer = 0;
 bool send_messages = false;
 
 int seq = 0;
-int timestamp = 0;
+int time_stamp = 0;
+
+/* Crude RTP routines */
+static int rtp_fill(rtp_t *rtp, uint8_t *buf, int max_len, int pt, const uint8_t *signal, int signal_len, uint32_t advance)
+{
+    buf[0] = ((rtp->v & 0x03) << 6) | ((rtp->p & 0x01) << 5) | ((rtp->x & 0x01) << 4) | (rtp->cc & 0x0F);
+    buf[1] = ((rtp->m & 0x01) << 7) | pt;
+    put_net_unaligned_uint16(&buf[2], rtp->seq_no);
+    put_net_unaligned_uint32(&buf[4], rtp->time_stamp);
+    put_net_unaligned_uint32(&buf[8], rtp->ssrc);
+    memcpy(&buf[12], signal, signal_len);
+    rtp->seq_no++;
+    rtp->time_stamp += advance;
+    return 12 + signal_len;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int rtp_extract(rtp_t *rtp, uint8_t *signal, int max_len, const uint8_t *buf, int len)
+{
+    rtp->v = (buf[0] >> 6) & 0x03;
+    rtp->p = (buf[0] >> 5) & 0x01;
+    rtp->x = (buf[0] >> 4) & 0x01;
+    rtp->cc = buf[0] & 0x0F;
+    rtp->m = (buf[1] >> 7) & 0x01;
+    rtp->pt = buf[1] & 0x7F;
+    rtp->seq_no = get_net_unaligned_uint16(&buf[2]);
+    rtp->time_stamp = get_net_unaligned_uint32(&buf[4]);
+    rtp->ssrc = get_net_unaligned_uint32(&buf[8]);
+    if (signal)
+        memcpy(signal, &buf[12], len - 12);
+    /*endif*/
+    return len - 12;
+}
+/*- End of function --------------------------------------------------------*/
 
 static void terminal_callback(void *user_data, const uint8_t msg[], int len)
 {
@@ -96,11 +146,28 @@ static int terminal_free_space_callback(void *user_data)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void rx_callback(void *user_data, const uint8_t buff[], int len)
+static void rx_callback(void *user_data, const uint8_t buf[], int len)
 {
-    v150_1_sse_rx_packet((v150_1_sse_state_t *) user_data, seq, timestamp, buff, len);
-    seq++;
-    timestamp += 160;
+    rtp_t rtp;
+    int signal_len;
+    uint8_t signal[160];
+
+    signal_len = rtp_extract(&rtp, signal, 160, buf, len);
+    if (rtp.pt == PACKET_TYPE)
+    {
+        if (rtp.seq_no != seq - 1)
+        {
+            v150_1_sse_rx_packet((v150_1_sse_state_t *) user_data, rtp.seq_no, rtp.time_stamp, signal, signal_len);
+        }
+        else
+        {
+            fprintf(stderr, "Repeat packet\n");
+        }
+        /*endif*/
+    }
+    /*endif*/
+    seq = rtp.seq_no + 1;
+    time_stamp = rtp.time_stamp + 160;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -113,26 +180,30 @@ static int tx_callback(void *user_data, uint8_t buff[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int tx_packet_handler(void *user_data, const uint8_t pkt[], int len)
+static int tx_packet_handler(void *user_data, bool repeat, const uint8_t pkt[], int len)
 {
     int i;
-    int n;
+    //int n;
     socket_dgram_harness_state_t *s;
     int sent_len;
+    uint8_t buf[256];
+    int len2;
     
-    n = (int) (intptr_t) user_data;    
-    printf("Message");
+    //n = (int) (intptr_t) user_data;
+    fprintf(stderr, "Tx message");
     for (i = 0;  i < len;  i++)
-        printf(" %02x", pkt[i]);
+        fprintf(stderr, " %02x", pkt[i]);
     /*endfor*/
-    printf("\n");
+    fprintf(stderr, "\n");
+
+    len2 = rtp_fill(&rtp, buf, 256, PACKET_TYPE, pkt, len, (repeat)  ?  0  :  160);
 
     s = (socket_dgram_harness_state_t *) user_data;
     /* We need a packet loss mechanism here */
     //if ((rand() % 20) != 0)
     {
-        fprintf(stderr, "Pass\n");
-        if ((sent_len = sendto(s->net_fd, pkt, len, 0, (struct sockaddr *) &s->far_addr, s->far_addr_len)) < 0)
+        //fprintf(stderr, "Pass\n");
+        if ((sent_len = sendto(s->net_fd, buf, len2, 0, (struct sockaddr *) &s->far_addr, s->far_addr_len)) < 0)
         {
             if (errno != EAGAIN)
             {
@@ -167,10 +238,9 @@ static void paced_operations(void)
 {
     //fprintf(stderr, "Pace at %lu\n", now_us());
 
-    if (send_messages  &&   (pace_no & 0x3F) == 0)
+    if (send_messages  &&  (pace_no & 0x3F) == 0)
     {
-        fprintf(stderr, "Sending message\n");
-        printf("Sending message\n");
+        fprintf(stderr, "Sending paced message\n");
         if (v150_1_sse_tx_packet(v150_1_sse_state, V150_1_SSE_MEDIA_STATE_MODEM_RELAY, V150_1_SSE_RIC_V32BIS_AA, 0) != 0)
             fprintf(stderr, "ERROR: Failed to send message\n");
         /*endif*/
@@ -199,7 +269,7 @@ static void timer_callback(void *user_data)
     /*endif*/
     if (app_timer  &&  now >= app_timer)
     {
-        fprintf(stderr, "V.150.1 SSE timer expired at %lu\n", now);
+        //fprintf(stderr, "V.150.1 SSE timer expired at %lu\n", now);
         app_timer = 0;
         v150_1_sse_timer_expired((v150_1_sse_state_t *) user_data, now);
     }
@@ -250,6 +320,8 @@ static int v150_1_sse_tests(bool calling_party)
 
     send_messages = true; //calling_party;
 
+    memset(&rtp, 0, sizeof(rtp));
+
     if ((dgram_state = socket_dgram_harness_init(NULL,
                                                  (calling_party)  ?  "/tmp/sse_socket_a"  :  "/tmp/sse_socket_b",
                                                  (calling_party)  ?  "/tmp/sse_socket_b"  :  "/tmp/sse_socket_a",
@@ -285,9 +357,14 @@ static int v150_1_sse_tests(bool calling_party)
 
     logging = v150_1_sse_get_logging_state(v150_1_sse_state);
     span_log_set_level(logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_DATE);
-    span_log_set_tag(logging, "0");
+    span_log_set_tag(logging, (calling_party)  ?  "C"  :  "A");
 
-    v150_1_sse_explicit_acknowledgements(v150_1_sse_state, true);
+    v150_1_sse_set_reliability_method(v150_1_sse_state, V150_1_SSE_RELIABILITY_BY_REPETITION, 3, 20000, 0);
+    //v150_1_sse_set_reliability_method(v150_1_sse_state,
+    //                                  V150_1_SSE_RELIABILITY_BY_EXPLICIT_ACK,
+    //                                  V150_1_SSE_DEFAULT_N0,
+    //                                  V150_1_SSE_DEFAULT_T0,
+    //                                  V150_1_SSE_DEFAULT_T1);
 
     socket_dgram_harness_timer = 
     pace_timer = now_us() + 20000;

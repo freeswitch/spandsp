@@ -23,10 +23,10 @@ AC_LINK_IFELSE(
 
     typedef struct {
     int k;
-    char buffer [] ;
-    } MY_STRUCT ;
+    char buffer[];
+    } MY_STRUCT;
 ]],
-  [[MY_STRUCT *p = calloc (1, sizeof (MY_STRUCT) + 42);]])],
+  [[MY_STRUCT *p = calloc(1, sizeof(MY_STRUCT) + 42);]])],
   [ac_cv_c99_flexible_array=yes],
   [ac_cv_c99_flexible_array=no])
 

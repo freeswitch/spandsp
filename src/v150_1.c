@@ -191,7 +191,7 @@ jmdelay=no      JM delay not supported
 
 versn=1.1   This is optional. The current version is 1.1
 
-txalgs=1 V.44
+txalgs=1 V.44       (V.42bis is always required, so is not listed in this tag)
       =2 MNP5
 
 v42bNumCodeWords=1024
@@ -232,34 +232,34 @@ TCXpreference=1
 
 Voice band data (VBD) mode:
 
-<---------------------------------- Data compression ---------------------------------->
-<---------------------------------- Error correction ---------------------------------->
-<------------------------------------- Modulation ------------------------------------->
-                               <-- Encapsulated G.711 -->
-
-<----------- PSTN ------------><-----Packet network ----><----------- PSTN ------------>
+    |<----------------------------------- Data compression ------------------------------------->|
+    |<----------------------------------- Error correction ------------------------------------->|
+    |<-------------------------------------- Modulation ---------------------------------------->|
+    |                             |<---- Encapsulated G.711 ---->|                               |
+    |                             |                              |                               |
+    |<---------- PSTN ----------->|<-------Packet network ------>|<----------- PSTN ------------>|
 
 
 The various modem relay error correction and compression scenarios:
 
 MR1
 
-<---------------------------------- Data compression ---------------------------------->
-<----- Error correction ------>                          <----- Error correction ------>
-<-------- Modulation --------->                          <-------- Modulation --------->
-                               <-- Reliable transport -->
-
-<----------- PSTN ------------><-----Packet network ----><----------- PSTN ------------>
+    |<----------------------------------- Data compression --- --------------------------------->|
+    |<---- Error correction ----->|                              |<----- Error correction ------>|
+    |<------- Modulation -------->|                              |<-------- Modulation --------->|
+    |                             |<---- Reliable transport ---->|                               |
+    |                             |                              |                               |
+    |<---------- PSTN ----------->|<-------Packet network ------>|<----------- PSTN ------------>|
 
 
 MR2
 
-<----- Data compression ------>                          <----- Data compression ------>
-<----- Error correction ------>                          <----- Error correction ------>
-<-------- Modulation --------->                          <-------- Modulation --------->
-                               <----- MR2a or MR2b ----->
-
-<----------- PSTN ------------><-----Packet network ----><----------- PSTN ------------>
+    |<---- Data compression ----->|                              |<----- Data compression ------>|
+    |<---- Error correction ----->|                              |<----- Error correction ------>|
+    |<------- Modulation -------->|                              |<-------- Modulation --------->|
+    |                             |<------- MR2a or MR2b ------->|                               |
+    |                             |                              |                               |
+    |<---------- PSTN ----------->|<-------Packet network ------>|<----------- PSTN ------------>|
 
 MR2a: Reliable transport without data compression
 MR2b: Reliable transport with data compression
@@ -268,25 +268,213 @@ MR2b: Reliable transport with data compression
 
 MR3
 
-<----- Data compression ------><------------------ Data compression ------------------->
-<------------------ Data compression -------------------><----- Data compression ------>
-<----- Error correction ------>                          <----- Error correction ------>
-<-------- Modulation --------->                          <-------- Modulation --------->
-                               <-- Reliable transport -->
-
-<----------- PSTN ------------><-----Packet network ----><----------- PSTN ------------>
+    |<---- Data compression ----->|<-------------------- Data compression ---------------------->|
+    |<------------------- Data compression --------------------->|<----- Data compression ------>|
+    |<---- Error correction -0--->|                              |<----- Error correction ------>|
+    |<------- Modulation -------->|                              |<-------- Modulation --------->|
+    |                             |<---- Reliable transport ---->|                               |
+    |                             |                              |                               |
+    |<--------- PSTN ------------>|<------ Packet network ------>|<----------- PSTN ------------>|
 
 
 
 MR4
 
-<------------------ Data compression -------------------><----- Data compression ------>
-<----- Error correction ------>                          <----- Error correction ------>
-<-------- Modulation --------->                          <-------- Modulation --------->
-                               <-- Reliable transport -->
+    |<------------------- Data compression --------------------->|<----- Data compression ------>|
+    |<---- Error correction ----->|                              |<----- Error correction ------>|
+    |<------- Modulation -------->|                              |<-------- Modulation --------->|
+    |                             |<---- Reliable transport ---->|                               |
+    |                             |                              |                               |
+    |<---------- PSTN ----------->|<-------Packet network ------>|<----------- PSTN ------------>|
 
-<----------- PSTN ------------><-----Packet network ----><----------- PSTN ------------>
+*/
 
+/* Example call flows
+
+Establishing Modem Relay with V.32 Modem
+
+    M1                            G1                             G2                              M2
+    |                             |                              |                               |
+    |                             |                              |<-------------ANS--------------|
+    |                             |<--------RFC4733 ANS----------|                               |
+    |<-----------ANS--------------|                              |                               |
+    |                             |                              |<------------/ANS--------------|
+    |                             |<--------RFC4733 /ANS---------|                               |
+    |<-----------/ANS-------------|                              |                               |
+    |                             |                              |                               |
+    |                             |                              |                               |
+    |<<---- V.32 signals ------->>|                              |                               |
+    |                             |-------SSE MR(m,a) AA-------->|                               |
+    |                             |                              |<<------ V.32 signals ------->>|
+    |                             |<------SSE MR(m,m) p'---------|                               |
+    |<<---- V.32 signals ------->>|                              |                               |
+    |                             |-----------SPRT:INIT--------->|<<------ V.32 signals ------->>|
+    |                             |                              |                               |
+    |                             |<----------SPRT:INIT----------|                               |
+    |<<---- V.32 signals ------->>|                              |<<------ V.32 signals ------->>|
+    |                             |<--SPRT:MR_EVENT(PHYSUPv32)---|                               |
+    |                             |                              |                               |
+    |                             |---SPRT:MR_EVENT(PHYSUPv32)-->|                               |
+    |                             |                              |                               |
+    |                             |<------SPRT:CONNECT(v32)------|                               |
+    |                             |                              |                               |
+    |                             |-------SPRT:CONNECT(v32)----->|                               |
+    |                             |                              |                               |
+    |<<------ V.32 data -------->>|<<-------- SPRT:data ------->>|<<-------- V.32 data -------->>|
+    |                             |                              |                               |
+    |                             |                              |                               |
+
+
+
+Establishing Modem Relay with V.34 Modem
+
+    M1                            G1                             G2                              M2
+    |                             |                              |                               |
+    |                             |                              |<-------------ANS--------------|
+    |                             |<--------RFC4733 ANS----------|                               |
+    |<-----------ANS--------------|                              |                               |
+    |                             |                              |<------------/ANS--------------|
+    |                             |<--------RFC4733 /ANS---------|                               |
+    |<----------/ANS--------------|                              |                               |
+    |                             |                              |                               |
+    |------------CM-------------->|                              |                               |
+    |                             |-----SSE MR(m,a) CM(v34)----->|                               |
+    |                             |                              |--------------CM-------------->|
+    |                             |<------SSE MR(m,m) p'---------|                               |
+    |                             |                              |                               |
+    |                             |-----------SPRT:INIT--------->|                               |
+    |                             |                              |                               |
+    |                             |<----------SPRT:INIT----------|                               |
+    |                             |                              |<-------------JM---------------|
+    |                             |<-----SPRT:JM_INFO(v34)-------|                               |
+    |<-----------JM---------------|                              |                               |
+    |                             |                              |                               |
+    |<<----- V.34 signals ------>>|                              |<<------ V.34 signals ------->>|
+    |                             |<--SPRT:MR_EVENT(PHYSUPv34)---|                               |
+    |                             |                              |                               |
+    |                             |---SPRT:MR_EVENT(PHYSUPv34)-->|                               |
+    |                             |                              |                               |
+    |                             |<------SPRT:CONNECT(v34)------|                               |
+    |                             |                              |                               |
+    |                             |-------SPRT:CONNECT(v34)----->|                               |
+    |                             |                              |                               |
+    |<<------ V.34 data -------->>|<<-------- SPRT:data ------->>|<<-------- V.34 data -------->>|
+    |                             |                              |                               |
+    |                             |                              |                               |
+
+
+
+Establishing Modem Relay with ITU V.34 Modem with no JM_INFO Message Sent from G2 Gateway
+
+    M1                            G1                             G2                              M2
+    |                             |                              |                               |
+    |                             |                              |<-------------ANS--------------|
+    |                             |<--------RFC4733 ANS----------|                               |
+    |<-----------ANS--------------|                              |                               |
+    |                             |                              |<------------/ANS--------------|
+    |                             |<--------RFC4733 /ANS---------|                               |
+    |<----------/ANS--------------|                              |                               |
+    |                             |                              |                               |
+    |------------CM-------------->|                              |                               |
+    |                             |-----SSE MR(m,a) CM(v34)----->|                               |
+    |<-----------JM---------------|                              |--------------CM-------------->|
+    |                             |<------SSE MR(m,m) p'---------|                               |
+    |                             |                              |                               |
+    |                             |-----------SPRT:INIT--------->|                               |
+    |                             |                              |                               |
+    |                             |<----------SPRT:INIT----------|                               |
+    |                             |                              |<-------------JM---------------|
+    |                             |                              |                               |
+    |<<----- V.34 signals ------>>|                              |<<------ V.34 signals ------->>|
+    |                             |<--SPRT:MR_EVENT(PHYSUPv34)---|                               |
+    |                             |                              |                               |
+    |                             |---SPRT:MR_EVENT(PHYSUPv34)-->|                               |
+    |                             |                              |                               |
+    |                             |<------SPRT:CONNECT(v34)------|                               |
+    |                             |                              |                               |
+    |                             |-------SPRT:CONNECT(v34)----->|                               |
+    |                             |                              |                               |
+    |<<------- V.34 data ------->>|<<-------- SPRT:data ------->>|<<-------- V.34 data -------->>|
+    |                             |                              |                               |
+    |                             |                              |                               |
+
+
+
+
+Establishing Modem Relay with ITU V.90 Modem
+
+    M1                            G1                             G2                              M2
+    |                             |                              |                               |
+    |                             |                              |<------------ANS---------------|
+    |                             |<--------RFC4733 ANS----------|                               |
+    |<-----------ANS--------------|                              |                               |
+    |                             |                              |<------------/ANS--------------|
+    |                             |<--------RFC4733 /ANS---------|                               |
+    |<-----------/ANS-------------|                              |                               |
+    |                             |                              |                               |
+    |------------CM-------------->|                              |                               |
+    |                             |--SSE MR(m,a) CM(v90 or v92)->|                               |
+    |   `                         |                              |-------------CM--------------->|
+    |                             |<------SSE MR(m,m) p'---------|                               |
+    |                             |                              |                               |
+    |                             |-----------SPRT:INIT--------->|                               |
+    |                             |                              |                               |
+    |                             |<----------SPRT:INIT----------|                               |
+    |                             |                              |<------------JM----------------|
+    |                             |<--SPRT:JM_INFO (v90 or v92)--|                               |
+    |<-----------JM---------------|                              |                               |
+    |                             |                              |                               |
+    |<<----- V.90 signals ------>>|                              |<<------ V.90 signals ------->>|
+    |                             |<--SPRT:MR_EVENT(PHYSUPv90)---|                               |
+    |                             |                              |                               |
+    |                             |<------SPRT:CONNECT(v90)------|                               |
+    |                             |                              |                               |
+    |                             |---SPRT:MR_EVENT(PHYSUPv90)-->|                               |
+    |                             |                              |                               |
+    |                             |-------SPRT:CONNECT(v90)----->|                               |
+    |                             |                              |                               |
+    |<<------- V.90 data ------->>|<<-------- SPRT:data ------->>|<<-------- V.90 data -------->>|
+    |                             |                              |                               |
+    |                             |                              |                               |
+
+
+
+
+Establishing Modem Relay with ITU V.92 Modem
+
+    M1                            G1                             G2                              M2
+    |                             |                              |                               |
+    |                             |                              |<-------------ANS--------------|
+    |                             |<--------RFC4733 ANS----------|                               |
+    |<-----------ANS--------------|                              |                               |
+    |                             |                              |<-------------/ANS-------------|
+    |                             |<--------RFC4733 /ANS---------|                               |
+    |<-----------/ANS-------------|                              |                               |
+    |                             |                              |                               |
+    |------------CM-------------->|                              |                               |
+    |                             |--SSE MR(m,a) CM(v90 or v92)->|                               |
+    |                             |                              |--------------CM-------------->|
+    |                             |<------SSE MR(m,m) p'---------|                               |
+    |                             |                              |                               |
+    |                             |-----------SPRT:INIT--------->|                               |
+    |                             |                              |                               |
+    |                             |<----------SPRT:INIT----------|                               |
+    |                             |                              |<-------------JM---------------|
+    |                             |<--SPRT:JM_INFO (v90 or v92)--|                               |
+    |<-----------JM---------------|                              |                               |
+    |                             |                              |                               |
+    |<<----- V.92 signals ------>>|                              |<<------- V.92 signals ------>>|
+    |                             |<--SPRT:MR_EVENT(PHYSUPv92)---|                               |
+    |                             |                              |                               |
+    |                             |<------SPRT:CONNECT(v92)------|                               |
+    |                             |                              |                               |
+    |                             |---SPRT:MR_EVENT(PHYSUPv92)-->|                               |
+    |                             |                              |                               |
+    |                             |-------SPRT:CONNECT(v90)----->|                               |
+    |                             |                              |                               |
+    |<<------- V.92 data ------->>|<<-------- SPRT:data ------->>|<<------- V.92 data --------->>|
+    |                             |                              |                               |
+    |                             |                              |                               |
 */
 
 #if 0
@@ -1216,11 +1404,11 @@ SPAN_DECLARE(int) v150_1_tx_init(v150_1_state_t *s)
         i |= 0x20;
     /*endif*/
     pkt[2] = i;
+    span_log(&s->logging, SPAN_LOG_FLOW, "Sending INIT\n");
     log_init(s, &s->near.parms);
     if (s->tx_packet_handler)
         res = s->tx_packet_handler(s->tx_packet_user_data, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, 3);
     /*endif*/
-    span_log(&s->logging, SPAN_LOG_FLOW, "Init sent\n");
     if (res >= 0)
     {
         s->near.parms.connection_state = V150_1_STATE_INITED;
@@ -1969,6 +2157,7 @@ static int v150_1_process_init(v150_1_state_t *s, const uint8_t buf[], int len)
     s->near.parms.i_char_dyn_cs_available = s->near.parms.i_char_dyn_cs_supported  &&  s->far.parms.i_char_dyn_cs_supported;
 
     select_info_msg_type(s);
+    span_log(&s->logging, SPAN_LOG_FLOW, "Received INIT\n");
     log_init(s, &s->far.parms);
 
     s->far.parms.connection_state = V150_1_STATE_INITED;

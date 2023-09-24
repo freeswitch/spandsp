@@ -65,6 +65,7 @@
 #include "spandsp/complex.h"
 #include "spandsp/tone_detect.h"
 #include "spandsp/tone_generate.h"
+#include "spandsp/ssl_fax.h"
 #include "spandsp/async.h"
 #include "spandsp/crc.h"
 #include "spandsp/hdlc.h"
@@ -102,6 +103,7 @@
 #include "spandsp/t38_gateway.h"
 
 #include "spandsp/private/logging.h"
+#include "spandsp/private/ssl_fax.h"
 #include "spandsp/private/silence_gen.h"
 #include "spandsp/private/power_meter.h"
 #include "spandsp/private/fsk.h"

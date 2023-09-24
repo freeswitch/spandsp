@@ -142,6 +142,7 @@ AC_ARG_ENABLE(neon,         [  --enable-neon        Enable NEON support])
 AC_ARG_ENABLE(fixed_point,  [  --enable-fixed-point Enable fixed point support])
 AC_ARG_ENABLE(v32bis,       [  --enable-v32bis      Enable V.32bis support])
 AC_ARG_ENABLE(v34,          [  --enable-v34         Enable V.34 support])
+AC_ARG_ENABLE(sslfax,       [  --enable-sslfax      Enable SSL Fax support])
 
 # The following is for MSVC, where we may be using a local copy of libtiff, built alongside spandsp
 AC_ARG_ENABLE(builtin_tiff,
@@ -559,6 +560,11 @@ AC_CHECK_LIB([tiff], [TIFFCreateCustomDirectory], [
 AC_CHECK_HEADERS([jpeglib.h])
 AC_CHECK_LIB([jpeg], [jpeg_start_compress], [JPEG_LIBS="-ljpeg"], AC_MSG_ERROR("Cannot build without libjpeg (does your system require a libjpeg-devel or libjpeg-turbo-devel package?)"))
 
+AC_CHECK_LIB([ssl], [TLS_client_method], [
+    AC_DEFINE([SPANDSP_SUPPORT_FLEXSSL], [1], [Support flexible OpenSSL methods])
+    SPANDSP_SUPPORT_FLEXSSL="#define SPANDSP_SUPPORT_FLEXSSL 1"
+], [SPANDSP_SUPPORT_TIFF_FX="#undef SPANDSP_SUPPORT_FLEXSSL"], -lm)
+
 LIBS="$LIBS $TIFF_LIBS $JPEG_LIBS"
 
 TESTLIBS="$SIMLIBS $TESTLIBS"
@@ -577,6 +583,13 @@ else
     SPANDSP_SUPPORT_V34="#undef SPANDSP_SUPPORT_V34"
 fi
 
+if test "$enable_sslfax" = "yes" ; then
+    AC_DEFINE([SPANDSP_SUPPORT_SSLFAX], [1], [Support SSL Fax])
+    SPANDSP_SUPPORT_SSLFAX="#define SPANDSP_SUPPORT_SSLFAX 1"
+else
+    SPANDSP_SUPPORT_SSLFAX="#undef SPANDSP_SUPPORT_SSLFAX"
+fi
+
 AM_CONDITIONAL([COND_DOC], [test "$enable_doc" = yes])
 AM_CONDITIONAL([COND_TESTS], [test "$enable_tests" = yes])
 AM_CONDITIONAL([COND_MMX], [test "$enable_mmx" = yes])
@@ -591,6 +604,7 @@ AM_CONDITIONAL([COND_AVX2], [test "$enable_avx2" = yes])
 AM_CONDITIONAL([COND_NEON], [test "$enable_neon" = yes])
 AM_CONDITIONAL([COND_V32BIS], [test "$enable_v32bis" = yes])
 AM_CONDITIONAL([COND_V34], [test "$enable_v34" = yes])
+AM_CONDITIONAL([COND_SSLFAX], [test "$enable_sslfax" = yes])
 
 AC_SUBST(SPANDSP_LT_CURRENT)
 AC_SUBST(SPANDSP_LT_REVISION)
@@ -604,10 +618,11 @@ AC_SUBST(TESTLIBS)
 AC_SUBST(SPANDSP_USE_FIXED_POINT)
 AC_SUBST(SPANDSP_MISALIGNED_ACCESS_FAILS)
 AC_SUBST(SPANDSP_USE_EXPORT_CAPABILITY)
+AC_SUBST(SPANDSP_SUPPORT_SSLFAX)
 AC_SUBST(SPANDSP_SUPPORT_T43)
+AC_SUBST(SPANDSP_SUPPORT_TIFF_FX)
 AC_SUBST(SPANDSP_SUPPORT_V32BIS)
 AC_SUBST(SPANDSP_SUPPORT_V34)
-AC_SUBST(SPANDSP_SUPPORT_TIFF_FX)
 AC_SUBST(INSERT_INTTYPES_HEADER)
 AC_SUBST(INSERT_STDINT_HEADER)
 AC_SUBST(INSERT_TGMATH_HEADER)

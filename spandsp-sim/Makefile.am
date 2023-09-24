@@ -19,7 +19,11 @@
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
 
+if COND_SSLFAX
+LIBS += -L$(top_builddir)/src -lspandsp -lssl $(SIMLIBS)
+else
 LIBS += -L$(top_builddir)/src -lspandsp $(SIMLIBS)
+endif
 
 MAINTAINERCLEANFILES = Makefile.in
 

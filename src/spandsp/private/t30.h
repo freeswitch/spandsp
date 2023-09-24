@@ -324,6 +324,11 @@ struct t30_state_s
         deciding whether to continue error correction when PPRs keep repeating. */
     int ecm_progress;
 
+#if defined(SPANDSP_SUPPORT_SSLFAX)
+    /*! \brief SSL Fax context. */
+    sslfax_state_t sslfax;
+#endif
+
     /*! \brief The number of RTP events */
     int rtp_events;
     /*! \brief The number of RTN events */

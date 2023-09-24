@@ -49,6 +49,390 @@
 #include "spandsp/private/logging.h"
 #include "spandsp/private/v150_1_sse.h"
 
+/*
+If the explicit acknowledgement procedure is being used for a call, the endpoints shall execute the
+following procedures.
+
+When an endpoint's MoIP application goes to a new mode, it:
+    sends an SSE message containing the current value of the variables lcl_mode and rmt_mode
+        to the other endpoint, with the must respond flag set to FALSE
+    sets counter n0 to the value n0count
+    sets timer t0 to t0interval (even if it was non-zero)
+    sets timer t1 to t1interval (even if it was non-zero)
+
+
+
+    if timer t0 decrements to 0
+       and
+       counter n0 is not equal to 0
+       and
+       the value of lcl_mode is not equal to the value of rmt_ack
+    then
+        The endpoint sends an SSE message to the other endpoint exactly as above except
+            o counter n0 is decremented rather than set to n0count
+            o timer t1 is not set
+            o the must respond flag is set to TRUE if the value of timer t1 is zero.
+
+NOTE - If timer t0 decrements to 0 and counter n0 is equal to zero, no action is taken until timer t1
+       decrements to 0.
+
+
+
+    if  timer t1 decrements to 0
+        and
+        counter n0 is equal to 0
+        and
+        the value of lcl_mode is not equal to the value of rmt_ack.
+    then
+        The endpoint sends an SSE message to the other endpoint exactly as first given above except
+            o counter n0 is not decremented, it is left equal to zero
+            o timer t0 is not set (It too is left equal to 0.)
+            o the must respond flag is set to TRUE
+
+
+
+Upon receipt of an SSE message from the other endpoint
+    if the message is a duplicate or out of sequence (determined using the RTP header sequence number)
+    then
+        the endpoint ignores the received message
+    else
+        set the values of rmt_mode and rmt_ack to the values in the message
+        if the message contained a new value for the remote endpoint's mode
+        then
+            or the message's must respond flag is set to TRUE
+        then
+            the endpoint sends an SSE message to the other endpoint exactly as first given above,
+            except counter n0 and timers t0 and t1 are not (re)set.
+*/
+
+/*
+               telephone network
+                      ^
+                      |
+                      |
+                      v
+    +-----------------------------------+
+    |                                   |
+    |     Signal processing entity      |
+    |                                   |
+    +-----------------------------------+
+                |           ^
+                |           |
+  Signal list 1 |           | Signal list 2
+                |           |
+                v           |
+    +-----------------------------------+   Signal list 5   +-----------------------------------+
+    |                                   | ----------------->|                                   |
+    |   SSE protocol state machine (P)  |                   |    Gateway state machine (s,s')   |
+    |                                   |<------------------|                                   |
+    +-----------------------------------+   Signal list 6   +-----------------------------------+
+                |           ^
+                |           |
+  Signal list 3 |           | Signal list 4
+                |           |
+                v           |
+    +-----------------------------------+
+    |                                   |
+    |       IP network processor        |
+    |                                   |
+    +-----------------------------------+
+                      ^
+                      |
+                      |
+                      v
+                 IP network
+*/
+
+#if 0
+
+int generic_macro(int local, int remote, int cause)
+{
+}
+
+    switch (s->lcl_mode)
+    {
+    case V150_1_SSE_SIGNAL_A_STATE:
+        switch (s->rmt_mode)
+        {
+        case V150_1_SSE_SIGNAL_A_STATE:
+            /* Figure 26/V.150.1 to 31/V.150.1 */
+            switch (signal)
+            {
+            case V150_1_SSE_SIGNAL_2100HZ:
+                if (s->vbd_available  &&  s->vbd_preferred)
+                {
+                    s->local_mode = V150_1_SSE_SIGNAL_V_STATE;
+                    generic_macro(s->local_mode, s->rmt_mode, signal);
+                    send ANS or ANSam
+                }
+                else
+                {
+                    block_tone();
+                }
+                /*endif*/
+                break;
+            case V150_1_SSE_SIGNAL_ANS:
+                if (s->vbd_available  &&  s->vbd_preferred)
+                {
+                    s->local_mode = V150_1_SSE_SIGNAL_V_STATE;
+                    generic_macro(s->local_mode, s->rmt_mode, signal);
+                    send ANS
+                }
+                else
+                {
+                    send RFC4733_ANS
+                    conceal_modem();
+                }
+                /*endif*/
+                break;
+            case V150_1_SSE_SIGNAL_ANSAM:
+                if (s->vbd_available  &&  s->vbd_preferred)
+                {
+                    s->local_mode = V150_1_SSE_SIGNAL_V_STATE;
+                    generic_macro(s->local_mode, s->rmt_mode, signal);
+                    send ANS
+                }
+                else
+                {
+                    send RFC4733_ANSAM
+                    conceal_modem();
+                }
+                /*endif*/
+                break;
+            case V150_1_SSE_SIGNAL_RFC4733_ANS:
+            case V150_1_SSE_SIGNAL_RFC4733_ANSAM:
+                send ANS or ANSAM
+                conceal_modem();
+                break;
+            case V150_1_SSE_SIGNAL_RFC4733_ANS_PR:
+            case V150_1_SSE_SIGNAL_RFC4733_ANSAM_PR:
+                send /ANS or /ANSAM
+                conceal_modem();
+                break;
+            case V150_1_SSE_SIGNAL_ANS:
+            case V150_1_SSE_SIGNAL_ANSAM:
+                break;
+            case V150_1_SSE_SIGNAL_ANS_PR:
+            case V150_1_SSE_SIGNAL_ANSAM_PR:
+                break;
+            case V150_1_SSE_SIGNAL_UNKNOWN:
+            case V150_1_SSE_SIGNAL_CALL_DISCRIMINATION_TIMEOUT:
+                if (s->vbd_preferred)
+                {
+                    s->local_mode = V150_1_SSE_SIGNAL_V_STATE;
+                    generic_macro(s->local_mode, s->rmt_mode, signal);
+                }
+                /*endif*/
+                break;
+            case V150_1_SSE_SIGNAL_V:
+                if (s->vbd_preferred)
+                {
+                    s->remote_mode = V150_1_SSE_SIGNAL_V_STATE;
+                    s->local_mode = V150_1_SSE_SIGNAL_V_STATE;
+                    generic_macro(s->local_mode, s->rmt_mode, signal);
+                }
+                else
+                {
+                    s->local_mode = V150_1_SSE_SIGNAL_V_STATE;
+                    generic_macro(s->local_mode, s->rmt_mode, signal);
+                }
+                /*endif*/
+                break;
+            case V150_1_SSE_SIGNAL_M:
+                break;
+            }
+            /*endswitch*/
+            break;
+        case V150_1_SSE_SIGNAL_F_STATE:
+            break;
+        case V150_1_SSE_SIGNAL_I_STATE:
+            break;
+        case V150_1_SSE_SIGNAL_M_STATE:
+            /* Figure 32/V.150.1 */
+            switch (signal)
+            {
+            case V150_1_SSE_SIGNAL_A:
+                break;
+            }
+            /*endswitch*/
+            break;
+        case V150_1_SSE_SIGNAL_T_STATE:
+            break;
+        case V150_1_SSE_SIGNAL_V_STATE:
+            /* Figure 33/V.150.1 */
+            switch (signal)
+            {
+            case V150_1_SSE_SIGNAL_A:
+                break;
+            }
+            /*endswitch*/
+            break;
+        }
+        /*endswitch*/
+        break;
+    case V150_1_SSE_SIGNAL_F_STATE:
+        switch (s->rmt_mode)
+        {
+        case V150_1_SSE_SIGNAL_A_STATE:
+            break;
+        case V150_1_SSE_SIGNAL_F_STATE:
+            break;
+        case V150_1_SSE_SIGNAL_I_STATE:
+            break;
+        case V150_1_SSE_SIGNAL_M_STATE:
+            break;
+        case V150_1_SSE_SIGNAL_T_STATE:
+            break;
+        case V150_1_SSE_SIGNAL_V_STATE:
+            break;
+        }
+        /*endswitch*/
+        break;
+    case V150_1_SSE_SIGNAL_I_STATE:
+        switch (s->rmt_mode)
+        {
+        case V150_1_SSE_SIGNAL_A_STATE:
+            break;
+        case V150_1_SSE_SIGNAL_F_STATE:
+            break;
+        case V150_1_SSE_SIGNAL_I_STATE:
+            break;
+        case V150_1_SSE_SIGNAL_M_STATE:
+            break;
+        case V150_1_SSE_SIGNAL_T_STATE:
+            break;
+        case V150_1_SSE_SIGNAL_V_STATE:
+            break;
+        }
+        /*endswitch*/
+        break;
+    case V150_1_SSE_SIGNAL_M_STATE:
+        switch (s->rmt_mode)
+        {
+        case V150_1_SSE_SIGNAL_A_STATE:
+            /* Figure 34/V.150.1 */
+            switch (signal)
+            {
+            case V150_1_SSE_SIGNAL_A:
+                break;
+            case V150_1_SSE_SIGNAL_M:
+                break;
+            case V150_1_SSE_SIGNAL_V:
+                break;
+            }
+            /*endswitch*/
+            break;
+        case V150_1_SSE_SIGNAL_F_STATE:
+            break;
+        case V150_1_SSE_SIGNAL_I_STATE:
+            break;
+        case V150_1_SSE_SIGNAL_M_STATE:
+            /* Figure 35/V.150.1 */
+            switch (signal)
+            {
+            case V150_1_SSE_SIGNAL_JM:
+                break;
+            case V150_1_SSE_SIGNAL_V:
+                break;
+            }
+            /*endswitch*/
+            break;
+        case V150_1_SSE_SIGNAL_T_STATE:
+            break;
+        case V150_1_SSE_SIGNAL_V_STATE:
+            /* Figure 36/V.150.1 */
+            switch (signal)
+            {
+            case V150_1_SSE_SIGNAL_A:
+                break;
+            case V150_1_SSE_SIGNAL_M:
+                break;
+            case V150_1_SSE_SIGNAL_V:
+                break;
+            }
+            /*endswitch*/
+            break;
+        }
+        /*endswitch*/
+        break;
+    case V150_1_SSE_SIGNAL_T_STATE:
+        switch (s->rmt_mode)
+        {
+        case V150_1_SSE_SIGNAL_A_STATE:
+            break;
+        case V150_1_SSE_SIGNAL_F_STATE:
+            break;
+        case V150_1_SSE_SIGNAL_I_STATE:
+            break;
+        case V150_1_SSE_SIGNAL_M_STATE:
+            break;
+        case V150_1_SSE_SIGNAL_T_STATE:
+            break;
+        case V150_1_SSE_SIGNAL_V_STATE:
+            break;
+        }
+        /*endswitch*/
+        break;
+    case V150_1_SSE_SIGNAL_V_STATE:
+        switch (s->rmt_mode)
+        {
+        case V150_1_SSE_SIGNAL_A_STATE:
+            /* Figure 37/V.150.1 */
+            switch (signal)
+            {
+            case V150_1_SSE_SIGNAL_A:
+                break;
+            case V150_1_SSE_SIGNAL_M:
+                break;
+            case V150_1_SSE_SIGNAL_V:
+                break;
+            }
+            /*endswitch*/
+            break;
+        case V150_1_SSE_SIGNAL_F_STATE:
+            break;
+        case V150_1_SSE_SIGNAL_I_STATE:
+            break;
+        case V150_1_SSE_SIGNAL_M_STATE:
+            /* Figure 38/V.150.1 */
+            switch (signal)
+            {
+            case V150_1_SSE_SIGNAL_A:
+                break;
+            case V150_1_SSE_SIGNAL_V:
+                break;
+            }
+            /*endswitch*/
+            break;
+        case V150_1_SSE_SIGNAL_T_STATE:
+            break;
+        case V150_1_SSE_SIGNAL_V_STATE:
+            /* Figure 39/V.150.1 */
+            switch (signal)
+            {
+            case V150_1_SSE_SIGNAL_M:
+                break;
+            case V150_1_SSE_SIGNAL_CM:
+                break;
+            case V150_1_SSE_SIGNAL_RFC4733_ANS_PR:
+            case V150_1_SSE_SIGNAL_RFC4733_ANSAM_PR:
+                break;
+            case V150_1_SSE_SIGNAL_ANS_PR:
+            case V150_1_SSE_SIGNAL_ANSAM_PR:
+                break;
+            case V150_1_SSE_SIGNAL_RFC4733_ANS:
+            case V150_1_SSE_SIGNAL_RFC4733_ANSAM:
+                break;
+            }
+            /*endswitch*/
+            break;
+        }
+        /*endswitch*/
+        break;
+    }
+    /*endswitch*/
+#endif
+
 static int v150_1_sse_tx_modem_relay_packet(v150_1_sse_state_t *s, int x, int ric, int ricinfo);
 static int v150_1_sse_tx_fax_relay_packet(v150_1_sse_state_t *s, int x, int ric, int ricinfo);
 
@@ -291,16 +675,34 @@ static int update_timer(v150_1_sse_state_t *s)
         shortest = ~0;
         shortest_is = 0;
 
-        if (s->timer_t0 < shortest)
+        if (s->ack_timer_t0  &&  s->ack_timer_t0 < shortest)
         {
-            shortest = s->timer_t0;
+            shortest = s->ack_timer_t0;
             shortest_is = 0;
         }
         /*endif*/
-        if (s->timer_t0 < shortest)
+        if (s->ack_timer_t1  &&  s->ack_timer_t1 < shortest)
         {
-            shortest = s->timer_t1;
+            shortest = s->ack_timer_t1;
             shortest_is = 1;
+        }
+        /*endif*/
+        if (s->repetition_timer  &&  s->repetition_timer < shortest)
+        {
+            shortest = s->repetition_timer;
+            shortest_is = 2;
+        }
+        /*endif*/
+        if (s->recovery_timer_t1  &&  s->recovery_timer_t1 < shortest)
+        {
+            shortest = s->recovery_timer_t1;
+            shortest_is = 3;
+        }
+        /*endif*/
+        if (s->recovery_timer_t2  &&  s->recovery_timer_t2 < shortest)
+        {
+            shortest = s->recovery_timer_t2;
+            shortest_is = 4;
         }
         /*endif*/
         /* If we haven't shrunk shortest from maximum, we have no timer to set, so we stop the timer,
@@ -311,41 +713,9 @@ static int update_timer(v150_1_sse_state_t *s)
     }
     /*endif*/
     span_log(&s->logging, SPAN_LOG_FLOW, "Update timer to %lu (%d)\n", shortest, shortest_is);
+    s->latest_timer = shortest;
     if (s->timer_handler)
-        s->timer_handler(s->timer_user_data, shortest);
-    /*endif*/
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-static int rx_initial_audio_packet(v150_1_sse_state_t *s, const uint8_t pkt[], int len)
-{
-    if (s->rmt_mode != V150_1_SSE_MEDIA_STATE_INITIAL_AUDIO)
-    {
-        /* Even if we don't support audio, C.5.3.2 says we need to make this our local state */
-        s->lcl_mode = V150_1_SSE_MEDIA_STATE_INITIAL_AUDIO;
-        s->rmt_mode = V150_1_SSE_MEDIA_STATE_INITIAL_AUDIO;
-    }
-    else
-    {
-    }
-    /*endif*/
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-static int rx_voice_band_data_packet(v150_1_sse_state_t *s, const uint8_t pkt[], int len)
-{
-    if (s->rmt_mode != V150_1_SSE_MEDIA_STATE_VOICE_BAND_DATA)
-    {
-        /* Whether we change to VBD or plain audio is our choice. C.5.3.2. */
-        //s->lcl_mode = V150_1_SSE_MEDIA_STATE_INITIAL_AUDIO;
-        s->lcl_mode = V150_1_SSE_MEDIA_STATE_VOICE_BAND_DATA;
-        s->rmt_mode = V150_1_SSE_MEDIA_STATE_VOICE_BAND_DATA;
-    }
-    else
-    {
-    }
+        s->timer_handler(s->timer_user_data, s->latest_timer);
     /*endif*/
     return 0;
 }
@@ -404,6 +774,39 @@ static void log_v8_ric_info(v150_1_sse_state_t *s, int ric_info)
 }
 /*- End of function --------------------------------------------------------*/
 
+static int rx_initial_audio_packet(v150_1_sse_state_t *s, const uint8_t pkt[], int len)
+{
+    if (s->rmt_mode != V150_1_SSE_MEDIA_STATE_INITIAL_AUDIO)
+    {
+        /* Even if we don't support audio, C.5.3.2 says we need to make this our local state */
+        s->lcl_mode = V150_1_SSE_MEDIA_STATE_INITIAL_AUDIO;
+        s->rmt_mode = V150_1_SSE_MEDIA_STATE_INITIAL_AUDIO;
+    }
+    else
+    {
+    }
+    /*endif*/
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int rx_voice_band_data_packet(v150_1_sse_state_t *s, const uint8_t pkt[], int len)
+{
+    if (s->rmt_mode != V150_1_SSE_MEDIA_STATE_VOICE_BAND_DATA)
+    {
+        /* Whether we change to VBD or plain audio is our choice. C.5.3.2. */
+        //s->lcl_mode = V150_1_SSE_MEDIA_STATE_INITIAL_AUDIO;
+        s->lcl_mode = V150_1_SSE_MEDIA_STATE_VOICE_BAND_DATA;
+        s->rmt_mode = V150_1_SSE_MEDIA_STATE_VOICE_BAND_DATA;
+    }
+    else
+    {
+    }
+    /*endif*/
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 static int rx_modem_relay_packet(v150_1_sse_state_t *s, const uint8_t pkt[], int len)
 {
     int res;
@@ -415,8 +818,8 @@ static int rx_modem_relay_packet(v150_1_sse_state_t *s, const uint8_t pkt[], int
     ric_info = get_net_unaligned_uint16(pkt + 2);
     span_log(&s->logging,
              SPAN_LOG_FLOW,
-             "%sreason %s - 0x%x\n",
-             ((pkt[0] >> 1) & 0x01)  ?  "force response, "  :  "",
+             "%sReason %s - 0x%x\n",
+             ((pkt[0] >> 1) & 0x01)  ?  "Force response. "  :  "",
              v150_1_sse_ric_to_str(ric),
              ric_info);
     if (s->rmt_mode != V150_1_SSE_MEDIA_STATE_MODEM_RELAY)
@@ -498,13 +901,25 @@ static int rx_modem_relay_packet(v150_1_sse_state_t *s, const uint8_t pkt[], int
         span_log(&s->logging, SPAN_LOG_FLOW, "Switch on voice detection\n");
         break;
     case V150_1_SSE_RIC_TIMEOUT:
-        span_log(&s->logging, SPAN_LOG_FLOW, "Timeout %d - %s - 0x%x\n", (ric_info >> 8), v150_1_sse_timeout_reason_to_str(ric_info >> 8), ric_info & 0xFF);
+        span_log(&s->logging,
+                 SPAN_LOG_FLOW,
+                 "Timeout %d - %s - 0x%x\n",
+                 (ric_info >> 8),
+                 v150_1_sse_timeout_reason_to_str(ric_info >> 8),
+                 ric_info & 0xFF);
         break;
     case V150_1_SSE_RIC_P_STATE_TRANSITION:
         span_log(&s->logging, SPAN_LOG_FLOW, "P' received\n");
         break;
     case V150_1_SSE_RIC_CLEARDOWN:
-        span_log(&s->logging, SPAN_LOG_FLOW, "Cleardown %d - %s\n", (ric_info >> 8), v150_1_sse_cleardown_reason_to_str(ric_info >> 8));
+        span_log(&s->logging,
+                 SPAN_LOG_FLOW,
+                 "Cleardown %d - %s\n",
+                 (ric_info >> 8),
+                 v150_1_sse_cleardown_reason_to_str(ric_info >> 8));
+        if (s->status_handler)
+            res = s->status_handler(s->status_user_data, V150_1_SSE_STATUS_CLEARDOWN);
+        /*endif*/
         break;
     case V150_1_SSE_RIC_ANS_CED:
         span_log(&s->logging, SPAN_LOG_FLOW, "Switch on ANS/CED detection\n");
@@ -569,8 +984,8 @@ static int rx_fax_relay_packet(v150_1_sse_state_t *s, const uint8_t pkt[], int l
     ric_info = get_net_unaligned_uint16(pkt + 2);
     span_log(&s->logging,
              SPAN_LOG_FLOW,
-             "Force %d, reason %s - %d\n",
-             (pkt[0] >> 1) & 0x01,
+             "%sReason %s - 0x%x\n",
+             ((pkt[0] >> 1) & 0x01)  ?  "Force response. "  :  "",
              v150_1_sse_ric_to_str(ric),
              ric_info);
     if (s->rmt_mode != V150_1_SSE_MEDIA_STATE_FAX_RELAY)
@@ -647,13 +1062,25 @@ static int rx_fax_relay_packet(v150_1_sse_state_t *s, const uint8_t pkt[], int l
         span_log(&s->logging, SPAN_LOG_FLOW, "Switch on voice detection\n");
         break;
     case V150_1_SSE_RIC_TIMEOUT:
-        span_log(&s->logging, SPAN_LOG_FLOW, "Timeout %d - %s\n", (ric_info >> 8), v150_1_sse_timeout_reason_to_str(ric_info >> 8));
+        span_log(&s->logging,
+                 SPAN_LOG_FLOW,
+                 "Timeout %d - %s - 0x%x\n",
+                 (ric_info >> 8),
+                 v150_1_sse_timeout_reason_to_str(ric_info >> 8),
+                 ric_info & 0xFF);
         break;
     case V150_1_SSE_RIC_P_STATE_TRANSITION:
         span_log(&s->logging, SPAN_LOG_FLOW, "P' received\n");
         break;
     case V150_1_SSE_RIC_CLEARDOWN:
-        span_log(&s->logging, SPAN_LOG_FLOW, "Cleardown %d - %s\n", (ric_info >> 8), v150_1_sse_cleardown_reason_to_str(ric_info >> 8));
+        span_log(&s->logging,
+                 SPAN_LOG_FLOW,
+                 "Cleardown %d - %s\n",
+                 (ric_info >> 8),
+                 v150_1_sse_cleardown_reason_to_str(ric_info >> 8));
+        if (s->status_handler)
+            res = s->status_handler(s->status_user_data, V150_1_SSE_STATUS_CLEARDOWN);
+        /*endif*/
         break;
     case V150_1_SSE_RIC_ANS_CED:
         span_log(&s->logging, SPAN_LOG_FLOW, "Switch on ANS/CED detection\n");
@@ -757,6 +1184,22 @@ SPAN_DECLARE(int) v150_1_sse_rx_packet(v150_1_sse_state_t *s,
         return -1;
     /*endif*/
 
+    /*
+        Upon receipt of an SSE message from the other endpoint
+        
+        if the message is a duplicate or out of sequence (determined using the RTP header sequence number)
+        then
+            the endpoint ignores the received message
+        else
+            set the values of rmt_mode and rmt_ack to the values in the message
+            if the message contained a new value for the remote endpoint's mode
+               or
+               the message's must respond flag is set to TRUE
+            then
+                The endpoint sends an SSE message to the other endpoint exactly as first given above except
+                counter n0 and timers t0 and t1 are not (re)set.
+    */
+
     res = 0;
     if (s->previous_rx_timestamp != timestamp)
     {
@@ -768,7 +1211,7 @@ SPAN_DECLARE(int) v150_1_sse_rx_packet(v150_1_sse_state_t *s,
         event = (pkt[0] >> 2) & 0x3F;
         f = (pkt[0] >> 1) & 0x01;
         x = pkt[0] & 0x01;
-        span_log(&s->logging, SPAN_LOG_FLOW, "Event %s\n", v150_1_sse_media_state_to_str(event));
+        span_log(&s->logging, SPAN_LOG_FLOW, "Rx event %s\n", v150_1_sse_media_state_to_str(event));
         if (x)
         {
             if (len >= 6)
@@ -823,6 +1266,50 @@ SPAN_DECLARE(int) v150_1_sse_rx_packet(v150_1_sse_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
+static int send_packet(v150_1_sse_state_t *s, uint8_t *pkt, int len)
+{
+    span_timestamp_t now;
+
+    if (s->tx_packet_handler)
+        s->tx_packet_handler(s->tx_packet_user_data, false, pkt, len);
+    /*endif*/
+    switch (s->reliability_method)
+    {
+    case V150_1_SSE_RELIABILITY_BY_REPETITION:
+        if (s->timer_handler)
+        {
+            memcpy(s->last_tx_pkt, pkt, len);
+            s->last_tx_len = len;
+            now = s->timer_handler(s->timer_user_data, ~0);
+            s->repetition_timer = now + s->repetition_interval;
+            s->repetition_counter = s->repetition_count;
+            update_timer(s);
+        }
+        /*endif*/
+        break;
+    case V150_1_SSE_RELIABILITY_BY_EXPLICIT_ACK:
+        if (s->timer_handler)
+        {
+            /* V.150.1/C.4.3.2 */
+            /* Save a copy of the message for retransmission */
+            /* TODO: add lcl_mode and rmt_mode to the message */
+            memcpy(s->last_tx_pkt, pkt, len);
+            s->last_tx_len = len;
+            now = s->timer_handler(s->timer_user_data, ~0);
+            s->ack_counter_n0 = s->ack_n0count;
+            s->ack_timer_t0 = now + s->ack_t0interval;
+            s->ack_timer_t1 = now + s->ack_t1interval;
+            s->force_response = false;
+            update_timer(s);
+        }
+        /*endif*/
+        break;
+    }
+    /*endswitch*/
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 static int v150_1_sse_tx_initial_audio_packet(v150_1_sse_state_t *s)
 {
     return 0;
@@ -840,23 +1327,18 @@ static int v150_1_sse_tx_modem_relay_packet(v150_1_sse_state_t *s, int x, int ri
     uint8_t pkt[256];
     int len;
     uint8_t f;
-    span_timestamp_t now;
 
+    f = 0;
     /* If we are using explicit acknowledgements, both the F and X bits need to be set */
-    if (s->explicit_acknowledgements)
+    if (s->reliability_method == V150_1_SSE_RELIABILITY_BY_EXPLICIT_ACK)
     {
+        f |= 0x01;
         if (s->force_response)
-            f = 0x03;
-        else
-            f = 0x01;
+            f |= 0x02;
         /*endif*/
     }
-    else
-    {
-        f = 0x00;
-    }
     /*endif*/
-    span_log(&s->logging, SPAN_LOG_FLOW, "Sending an SSE %s\n", v150_1_sse_ric_to_str(ric));
+    span_log(&s->logging, SPAN_LOG_FLOW, "Sending %s\n", v150_1_sse_ric_to_str(ric));
     pkt[0] = f | (V150_1_SSE_MEDIA_STATE_MODEM_RELAY << 2);
     pkt[1] = ric;
     put_net_unaligned_uint16(&pkt[2], ricinfo);
@@ -871,7 +1353,7 @@ static int v150_1_sse_tx_modem_relay_packet(v150_1_sse_state_t *s, int x, int ri
         break;
     }
     /*endswitch*/
-    if (s->explicit_acknowledgements)
+    if (s->reliability_method == V150_1_SSE_RELIABILITY_BY_EXPLICIT_ACK)
     {
         /* The length of the extension field */
         put_net_unaligned_uint16(&pkt[len], 1);
@@ -880,23 +1362,7 @@ static int v150_1_sse_tx_modem_relay_packet(v150_1_sse_state_t *s, int x, int ri
         pkt[len++] = s->rmt_mode;
     }
     /*endif*/
-    if (s->packet_handler)
-        s->packet_handler(s->packet_user_data, pkt, len);
-    /*endif*/
-    if (s->explicit_acknowledgements)
-    {
-        if (s->timer_handler)
-        {
-            now = s->timer_handler(s->timer_user_data, ~0);
-            s->timer_t0 = now + s->t0interval;
-            s->timer_t1 = now + s->t1interval;
-            s->counter_n0 = s->n0count;
-            s->force_response = false;
-            update_timer(s);
-        }
-        /*endif*/
-    }
-    /*endif*/
+    send_packet(s, pkt, len);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -910,7 +1376,7 @@ static int v150_1_sse_tx_fax_relay_packet(v150_1_sse_state_t *s, int x, int ric,
 
     f = 0;
     /* If we are using explicit acknowledgements, both the F and X bits need to be set */
-    if (s->explicit_acknowledgements)
+    if (s->reliability_method == V150_1_SSE_RELIABILITY_BY_EXPLICIT_ACK)
     {
         f |= 0x01;
         if (s->force_response)
@@ -922,16 +1388,14 @@ static int v150_1_sse_tx_fax_relay_packet(v150_1_sse_state_t *s, int x, int ric,
     pkt[1] = ric;
     put_net_unaligned_uint16(&pkt[2], ricinfo);
     len = 4;
-    if (s->explicit_acknowledgements)
+    if (s->reliability_method == V150_1_SSE_RELIABILITY_BY_EXPLICIT_ACK)
     {
         put_net_unaligned_uint16(&pkt[len], 1);
         len += 2;
         pkt[len++] = s->rmt_mode;
     }
     /*endif*/
-    if (s->packet_handler)
-        res = s->packet_handler(s->packet_user_data, pkt, len);
-    /*endif*/
+    send_packet(s, pkt, len);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -954,7 +1418,7 @@ SPAN_DECLARE(int) v150_1_sse_tx_packet(v150_1_sse_state_t *s, int event, int ric
     int x;
 
     x = 0;
-    span_log(&s->logging, SPAN_LOG_FLOW, "Event %s\n", v150_1_sse_media_state_to_str(event));
+    span_log(&s->logging, SPAN_LOG_FLOW, "Tx event %s\n", v150_1_sse_media_state_to_str(event));
     switch (event)
     {
     case V150_1_SSE_MEDIA_STATE_INITIAL_AUDIO:
@@ -990,41 +1454,139 @@ SPAN_DECLARE(int) v150_1_sse_timer_expired(v150_1_sse_state_t *s, span_timestamp
 {
     span_log(&s->logging, SPAN_LOG_FLOW, "Timer expired at %lu\n", now);
 
+    if (now < s->latest_timer)
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "Timer returned %luus early\n", s->latest_timer - now);
+        /* Request the same timeout point again. */
+        if (s->timer_handler)
+            s->timer_handler(s->timer_user_data, s->latest_timer);
+        /*endif*/
+        return 0;
+    }
+    /*endif*/
+
     if (s->immediate_timer)
     {
         s->immediate_timer = false;
         /* TODO: */
     }
     /*endif*/
-    if (s->timer_t0 != 0  &&  s->timer_t0 <= now)
+    if (s->ack_timer_t0 != 0  &&  s->ack_timer_t0 <= now)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "T0 expired\n");
-        if (--s->counter_n0 > 0)
+
+        /* V.150.1/C.4.3.2 */
+        if (s->ack_counter_n0 > 0  &&  s->lcl_mode != s->rmt_ack)
         {
-            span_log(&s->logging, SPAN_LOG_FLOW, "Resend (%d)\n", s->counter_n0);
-            s->timer_t0 = now + s->t0interval;
+            span_log(&s->logging, SPAN_LOG_FLOW, "Resend (%d)\n", s->ack_counter_n0);
+            /* TODO: The must respond flag is set to TRUE if the value of timer t1 is zero. */
+            if (s->tx_packet_handler)
+                s->tx_packet_handler(s->tx_packet_user_data, true, s->last_tx_pkt, s->last_tx_len);
+            /*endif*/
+            s->ack_counter_n0--;
+            s->ack_timer_t0 = now + s->ack_t0interval;
+            /* T1 is not touched at this time */
             update_timer(s);
-        }
-        else
-        {
-            span_log(&s->logging, SPAN_LOG_FLOW, "Count exceeded\n");
         }
         /*endif*/
     }
     /*endif*/
-    if (s->timer_t1 != 0  &&  s->timer_t1 <= now)
+    if (s->ack_timer_t1 != 0  &&  s->ack_timer_t1 <= now)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "T1 expired\n");
+
+        /* V.150.1/C.4.3.2 */
+        if (s->ack_counter_n0 == 0  &&  s->lcl_mode != s->rmt_ack)
+        {
+            span_log(&s->logging, SPAN_LOG_FLOW, "Resend (%d)\n", s->ack_counter_n0);
+            /* TODO: The must respond flag is set to TRUE */
+            if (s->tx_packet_handler)
+                s->tx_packet_handler(s->tx_packet_user_data, true, s->last_tx_pkt, s->last_tx_len);
+            /*endif*/
+            /* counter N0 is not touched at this time */
+            /* T0 is not touched at this time */
+            s->ack_timer_t1 = now + s->ack_t1interval;
+            update_timer(s);
+        }
+        /*endif*/
+    }
+    /*endif*/
+    if (s->repetition_timer != 0  &&  s->repetition_timer <= now)
+    {
+        /* Handle reliability by simple repetition timer */
+        span_log(&s->logging, SPAN_LOG_FLOW, "Repetition timer expired\n");
+        if (s->repetition_counter > 1)
+        {
+            s->repetition_timer += s->repetition_interval;
+            update_timer(s);
+        }
+        else
+        {
+            s->repetition_timer  = 0;
+        }
+        /*endif*/
+        --s->repetition_counter;
+        if (s->tx_packet_handler)
+            s->tx_packet_handler(s->tx_packet_user_data, true, s->last_tx_pkt, s->last_tx_len);
+        /*endif*/
+    }
+    /*endif*/
+    if (s->recovery_timer_t1 != 0  &&  s->recovery_timer_t1 <= now)
+    {
+    }
+    /*endif*/
+    if (s->recovery_timer_t2 != 0  &&  s->recovery_timer_t2 <= now)
+    {
     }
     /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) v150_1_sse_explicit_acknowledgements(v150_1_sse_state_t *s,
-                                                       bool explicit_acknowledgements)
+SPAN_DECLARE(int) v150_1_sse_set_reliability_method(v150_1_sse_state_t *s,
+                                                    enum v150_1_sse_reliability_option_e method,
+                                                    int parm1,
+                                                    int parm2,
+                                                    int parm3)
 {
-    s->explicit_acknowledgements = explicit_acknowledgements;
+    /* Select one of the reliability methods from V.150.1 C.4 */
+    switch (method)
+    {
+    case V150_1_SSE_RELIABILITY_NONE:
+        break;
+    case V150_1_SSE_RELIABILITY_BY_REPETITION:
+        if (parm1 < 2  || parm1 > 10)
+            return -1;
+        /*endif*/
+        if (parm2 < 10000  ||  parm2 > 1000000)
+            return -1;
+        /*endif*/
+        /* The actual number of repeats is one less than the total number of
+           transmissions */
+        s->repetition_count = parm1 - 1;
+        s->repetition_interval = parm2;
+        break;
+    case V150_1_SSE_RELIABILITY_BY_RFC2198:
+        break;
+    case V150_1_SSE_RELIABILITY_BY_EXPLICIT_ACK:
+        if (parm1 < 2  || parm1 > 10)
+            return -1;
+        /*endif*/
+        if (parm2 < 10000  ||  parm2 > 1000000)
+            return -1;
+        /*endif*/
+        if (parm3 < 10000  ||  parm3 > 1000000)
+            return -1;
+        /*endif*/
+        s->ack_n0count = parm1;
+        s->ack_t0interval = parm2;
+        s->ack_t1interval = parm3;
+        break;
+    default:
+        return -1;
+    }
+    /*endswitch*/
+    s->reliability_method = method;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1059,15 +1621,22 @@ SPAN_DECLARE(v150_1_sse_state_t *) v150_1_sse_init(v150_1_sse_state_t *s,
     span_log_set_protocol(&s->logging, "V.150.1 SSE");
 
     s->reliability_method = V150_1_SSE_RELIABILITY_NONE;
-    s->explicit_acknowledgements = false;
-    s->repetitions = 3;
-    s->repetition_interval = 20000;
+    /* Set default values for the reliability by redundancy parameters */
+    /* V.150.1 C.4.1 */
+    /* The actual number of repeats is one less than the total number of
+       transmissions */
+    s->repetition_count = V150_1_SSE_DEFAULT_REPETITIONS - 1;
+    s->repetition_interval = V150_1_SSE_DEFAULT_REPETITION_INTERVAL;
 
     /* Set default values for the explicit acknowledgement parameters */
     /* V.150.1 C.4.3.1 */
-    s->n0count = 3;
-    s->t0interval = 10000;
-    s->t1interval = 300000;
+    s->ack_n0count = V150_1_SSE_DEFAULT_ACK_N0;
+    s->ack_t0interval = V150_1_SSE_DEFAULT_ACK_T0;
+    s->ack_t1interval = V150_1_SSE_DEFAULT_ACK_T1;
+
+    s->recovery_n = V150_1_SSE_DEFAULT_RECOVERY_N;
+    s->recovery_t1 = V150_1_SSE_DEFAULT_RECOVERY_T1;
+    s->recovery_t2 = V150_1_SSE_DEFAULT_RECOVERY_T2;
 
     /* V.150.1 C.4.3.1 */
     /* Let   p be the probability that a packet sent by one MoIP node through the packet
@@ -1082,14 +1651,16 @@ SPAN_DECLARE(v150_1_sse_state_t *) v150_1_sse_init(v150_1_sse_state_t *s,
     //s->t0interval = max(0, ((rtd/2) - t)/(n0count - 1));
     //s->t1interval = 1.5*rtd;
 
+    s->explicit_ack_enabled = false;
+
     /* V.150.1 C.5.3 */
     s->lcl_mode = V150_1_SSE_MEDIA_STATE_INITIAL_AUDIO;
     s->rmt_mode = V150_1_SSE_MEDIA_STATE_INITIAL_AUDIO;
 
     s->previous_rx_timestamp = 0xFFFFFFFF;
 
-    s->packet_handler = packet_handler;
-    s->packet_user_data = packet_user_data;
+    s->tx_packet_handler = packet_handler;
+    s->tx_packet_user_data = packet_user_data;
     s->status_handler = status_handler;
     s->status_user_data = status_user_data;
     s->timer_handler = timer_handler;

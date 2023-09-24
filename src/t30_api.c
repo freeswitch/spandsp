@@ -57,6 +57,7 @@
 #include "spandsp/power_meter.h"
 #include "spandsp/complex.h"
 #include "spandsp/tone_generate.h"
+#include "spandsp/ssl_fax.h"
 #include "spandsp/async.h"
 #include "spandsp/hdlc.h"
 #include "spandsp/fsk.h"
@@ -82,6 +83,7 @@
 
 #include "spandsp/private/logging.h"
 #include "spandsp/private/timezone.h"
+#include "spandsp/private/ssl_fax.h"
 #include "spandsp/private/t81_t82_arith_coding.h"
 #include "spandsp/private/t85.h"
 #include "spandsp/private/t42.h"

@@ -44,7 +44,7 @@ nobase_data_DATA = ${ETSI_TEST_PAGES}
 noinst_PROGRAMS = generate_etsi_300_242_pages
 
 generate_etsi_300_242_pages_SOURCES = generate_etsi_300_242_pages.c
-generate_etsi_300_242_pages_LDADD = $(LIBDIR) -lspandsp -ltiff
+generate_etsi_300_242_pages_LDADD = -ltiff
 
 clean:
 	rm -f *.tif *.g3

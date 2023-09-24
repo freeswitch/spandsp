@@ -27,11 +27,25 @@
 #if !defined(_SPANDSP_V150_1_SSE_H_)
 #define _SPANDSP_V150_1_SSE_H_
 
-typedef int (*v150_1_sse_packet_handler_t) (void *user_data, const uint8_t pkt[], int len);
+typedef int (*v150_1_sse_packet_handler_t) (void *user_data, bool repeat, const uint8_t pkt[], int len);
 
 typedef int (*v150_1_sse_status_handler_t) (void *user_data, int status);
 
 typedef span_timestamp_t (*v150_1_sse_timer_handler_t) (void *user_data, span_timestamp_t timeout);
+
+/* V.150.1 C.4.1 */
+#define V150_1_SSE_DEFAULT_REPETITIONS              3
+#define V150_1_SSE_DEFAULT_REPETITION_INTERVAL      20000
+
+/* V.150.1 C.4.3.1 */
+#define V150_1_SSE_DEFAULT_ACK_N0                   3
+#define V150_1_SSE_DEFAULT_ACK_T0                   10000
+#define V150_1_SSE_DEFAULT_ACK_T1                   300000
+
+/* V.150.1 C.5.4.1 */
+#define V150_1_SSE_DEFAULT_RECOVERY_N               5
+#define V150_1_SSE_DEFAULT_RECOVERY_T1              1000000
+#define V150_1_SSE_DEFAULT_RECOVERY_T2              1000000
 
 /* V.150.1 C.5.3 */
 enum v150_1_states_e
@@ -188,6 +202,7 @@ enum v150_1_sse_ric_info_v8_cleardown_reason_code_e
     V150_1_SSE_RIC_INFO_CLEARDOWN_ADMINISTRATIVE                = 7
 };
 
+/* V.150.1 C.4 */
 enum v150_1_sse_reliability_option_e
 {
     /* There are no reliability measures in use. */
@@ -216,7 +231,8 @@ enum v150_1_sse_status_e
     V150_1_SSE_STATUS_AA_RECEIVED                               = 12,
     V150_1_SSE_STATUS_V8_CM_RECEIVED_FAX                        = 13,
     V150_1_SSE_STATUS_V8_JM_RECEIVED_FAX                        = 14,
-    V150_1_SSE_STATUS_AA_RECEIVED_FAX                           = 15
+    V150_1_SSE_STATUS_AA_RECEIVED_FAX                           = 15,
+    V150_1_SSE_STATUS_CLEARDOWN                                 = 16
 };
 
 typedef struct v150_1_sse_state_s v150_1_sse_state_t;
@@ -243,8 +259,19 @@ SPAN_DECLARE(int) v150_1_sse_tx_packet(v150_1_sse_state_t *s, int event, int ric
 
 SPAN_DECLARE(int) v150_1_sse_timer_expired(v150_1_sse_state_t *s, span_timestamp_t now);
 
-SPAN_DECLARE(int) v150_1_sse_explicit_acknowledgements(v150_1_sse_state_t *s,
-                                                       bool explicit_acknowledgements);
+/*! Select one of the reliability schemes from V.150.1/C.4.
+    \brief Select one of the reliability schemes from V.150.1/C.4.
+    \param s V.160.1 SSE context.
+    \param method The chosen method.
+    \param parm1 maximum transmissions.
+    \param parm2 delay between transmissions, or T0, in microseconds.
+    \param parm3 T1, in microseconds.
+    \return 0 for Ok, else negative. */
+SPAN_DECLARE(int) v150_1_sse_set_reliability_method(v150_1_sse_state_t *s,
+                                                    enum v150_1_sse_reliability_option_e method,
+                                                    int parm1,
+                                                    int parm2,
+                                                    int parm3);
 
 SPAN_DECLARE(logging_state_t *) v150_1_sse_get_logging_state(v150_1_sse_state_t *s);
 

@@ -57,6 +57,7 @@
 #include "spandsp/power_meter.h"
 #include "spandsp/complex.h"
 #include "spandsp/tone_generate.h"
+#include "spandsp/ssl_fax.h"
 #include "spandsp/async.h"
 #include "spandsp/hdlc.h"
 #include "spandsp/fsk.h"
@@ -79,9 +80,11 @@
 #include "spandsp/t30.h"
 #include "spandsp/t30_api.h"
 #include "spandsp/t30_logging.h"
+#include "spandsp/crc.h"
 
 #include "spandsp/private/logging.h"
 #include "spandsp/private/timezone.h"
+#include "spandsp/private/ssl_fax.h"
 #include "spandsp/private/t81_t82_arith_coding.h"
 #include "spandsp/private/t85.h"
 #include "spandsp/private/t42.h"
@@ -449,6 +452,11 @@ static void timer_t4_start(t30_state_t *s);
 static void timer_t4_flagged_start(t30_state_t *s);
 static void timer_t4_dropped_start(t30_state_t *s);
 static void timer_t2_t4_stop(t30_state_t *s);
+#if defined(SPANDSP_SUPPORT_SSLFAX)
+static void t30_non_ecm_rx_status(void *user_data, int status);
+static void t30_hdlc_rx_status(void *user_data, int status);
+static int send_next_ecm_frame(t30_state_t *s);
+#endif
 
 /*! Test a specified bit within a DIS, DTC or DCS frame */
 #define test_ctrl_bit(s,bit) ((s)[3 + ((bit - 1)/8)] & (1 << ((bit - 1)%8)))
@@ -458,6 +466,120 @@ static void timer_t2_t4_stop(t30_state_t *s);
 #define set_ctrl_bits(s,val,bit) (s)[3 + ((bit - 1)/8)] |= ((val) << ((bit - 1)%8))
 /*! Clear a specified bit within a DIS, DTC or DCS frame */
 #define clr_ctrl_bit(s,bit) (s)[3 + ((bit - 1)/8)] &= ~(1 << ((bit - 1)%8))
+
+#if defined(SPANDSP_SUPPORT_SSLFAX)
+static bool sslfax_enabled(t30_state_t *s)
+{
+    return ((s->iaf & T30_IAF_MODE_T37)  &&  (s->iaf & T30_IAF_MODE_T38));
+}
+/*- End of function --------------------------------------------------------*/
+
+static void sslfax_bitstuffing(t30_state_t *s, uint8_t byte, bool stuff)
+{
+    uint8_t buf[1];
+    unsigned int j;
+    uint16_t bit;
+
+    for (j = 0;  j < 8;  j++)
+    {
+        bit = ((byte & (1 << j)) != 0)  ?  1  :  0;
+        s->sslfax.ecm_byte |= (bit << s->sslfax.ecm_bitpos);
+        s->sslfax.ecm_bitpos++;
+        if (s->sslfax.ecm_bitpos == 8)
+        {
+            buf[0] = s->sslfax.ecm_byte;
+            sslfax_write(&s->sslfax, buf, 1, 0, 60000, true, false);
+            s->sslfax.ecm_bitpos = 0;
+            s->sslfax.ecm_byte = 0;
+        }
+        /*endif*/
+        /* Add transparent zero bits if needed */
+        if (bit == 1  &&  stuff)
+            s->sslfax.ecm_ones++;
+        else
+            s->sslfax.ecm_ones = 0;
+        /*endif*/
+        if (s->sslfax.ecm_ones == 5)
+        {
+            s->sslfax.ecm_bitpos++;
+            if (s->sslfax.ecm_bitpos == 8)
+            {
+                buf[0] = s->sslfax.ecm_byte;
+                sslfax_write(&s->sslfax, buf, 1, 0, 60000, true, false);
+                s->sslfax.ecm_bitpos = 0;
+                s->sslfax.ecm_byte = 0;
+            }
+            /*endif*/
+            s->sslfax.ecm_ones = 0;
+        }
+        /*endif*/
+    }
+    /*endfor*/
+}
+/*- End of function --------------------------------------------------------*/
+
+static void t30_sslfax_real_time_frame_handler(void *user_data, bool incoming, const uint8_t *msg, int len)
+{
+    int i;
+    t30_state_t *s;
+    uint8_t buf[len + 2];
+
+    s = (t30_state_t *) user_data;
+    if (s->sslfax.server)
+    {
+        if (! incoming)
+        {
+            memcpy(buf, msg, len);
+            len = crc_itu16_append(buf, len);
+
+            if (len > 2  &&  msg[0] == ADDRESS_FIELD  &&  msg[1] == CONTROL_FIELD_NON_FINAL_FRAME  &&  (msg[2] == T4_FCD  ||  msg[2] == T4_RCP))
+            {
+                /* Phase C data is a bitstream, and as such ECM data needs to be bitstuffed to separate the frames from
+                   each other with 0x7E deliniation bytes.  Thus, we need to process Phase C ECM data frames bit-by-bit.
+                   Perhaps it would be better to utilize the existing HDLC functions for this here, but the overhead to
+                   getting at those functions seems undue.  So, we just handle the bitstuffing here, separately. */
+                sslfax_bitstuffing(s, 0x7E, false);
+                for (i = 0;  i < len;  i++)
+                {
+                    sslfax_bitstuffing(s, buf[i], true);
+                }
+                /*endfor*/
+                if (msg[2] == T4_RCP)
+                {
+                    s->sslfax.rcp_count++;
+                    if (s->sslfax.rcp_count == 3)
+                    {
+                        s->sslfax.rcp_count = 0;
+                        sslfax_bitstuffing(s, 0x7E, false);
+                        buf[0] = 0x10;  /* DLE */
+                        buf[1] = 0x03;  /* ETX */
+                        sslfax_write(&s->sslfax, buf, 2, 0, 60000, false, false);
+                        s->sslfax.signal = 2;
+                        return;
+                    }
+                    /*endif*/
+                }
+                /*endif*/
+                s->sslfax.do_underflow = true;
+            }
+            else
+            {
+                sslfax_write(&s->sslfax, buf, len, 0, 60000, true, false);
+                buf[0] = 0x10;  /* DLE */
+                buf[1] = 0x03;  /* ETX */
+                sslfax_write(&s->sslfax, buf, 2, 0, 60000, false, false);
+                /* We need to trigger T30_FRONT_END_SEND_STEP_COMPLETE twice. We do that thusly... */
+                s->sslfax.signal = 2;
+            }
+            /*endif*/
+        }
+        /*endif*/
+    }
+    /*endif*/
+    return;
+}
+/*- End of function --------------------------------------------------------*/
+#endif
 
 static int find_fallback_entry(int dcs_code)
 {
@@ -779,6 +901,13 @@ static void release_resources(t30_state_t *s)
         s->rx_info.csa = NULL;
     }
     /*endif*/
+#if defined(SPANDSP_SUPPORT_SSLFAX)
+    if (s->sslfax.server)
+    {
+        sslfax_cleanup(&s->sslfax, false);
+    }
+    /*endif*/
+#endif
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1609,7 +1738,15 @@ static int build_dcs(t30_state_t *s)
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T38);
     /*endif*/
 #endif
-
+#if defined(SPANDSP_SUPPORT_SSLFAX)
+    /* Check for SSL Fax. */
+    if (sslfax_enabled(s)  &&  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T37)  &&  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T38))
+    {
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T37);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T38);
+    }
+    /*endif*/
+#endif
     /* Set to required modem rate */
     s->dcs_frame[4] |= fallback_sequence[s->current_fallback].dcs_code;
 
@@ -2512,9 +2649,25 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
 
 static void send_dcn(t30_state_t *s)
 {
-    queue_phase(s, T30_PHASE_D_TX);
-    set_state(s, T30_STATE_C);
+    if (s->state == T30_STATE_R)
+    {
+        /* We need to wait until after TCF. */
+        queue_phase(s, T30_PHASE_IDLE);
+    }
+    else
+    {
+        queue_phase(s, T30_PHASE_D_TX);
+        set_state(s, T30_STATE_C);
+    }
+    /*endif*/
     send_simple_frame(s, T30_DCN);
+#if defined(SPANDSP_SUPPORT_SSLFAX)
+    if (s->sslfax.server)
+    {
+        sslfax_cleanup(&s->sslfax, false);
+    }
+    /*endif*/
+#endif
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -6296,10 +6449,24 @@ static void decode_url_msg(t30_state_t *s, char *msg, const uint8_t *pkt, int le
        Third octet is the length of the internet address
             Bit 7 = 1 for more follows, 0 for last packet in the sequence.
             Bits 6-0 = length
+
+       Example SSL Fax URL (CSA):
+            FLOW T.30 Rx:  ff 03 24 00 02 25 73 73 6c 3a 2f 2f 73 38 56 36 71 37 61 74 31 42 40 5b 31 39 32 2e 31 36 38 2e 30 2e 33 31 5d 3a 31 30 30 30 30
+            FLOW T.30 Remote fax gave CSA as: 0, 2, "ssl://s8V6q7at1B@[192.168.0.31]:10000"
      */
     memcpy(msg, &pkt[4], len - 4);
     msg[len - 4] = '\0';
-    span_log(&s->logging, SPAN_LOG_FLOW, "Remote fax gave %s as: %d, %d, \"%s\"\n", t30_frametype(pkt[0]), pkt[0], pkt[1], msg);
+    span_log(&s->logging, SPAN_LOG_FLOW, "Remote fax gave %s as: %d, %d, \"%s\"\n", t30_frametype(pkt[0]), pkt[1], pkt[2], msg);
+
+#if defined(SPANDSP_SUPPORT_SSLFAX)
+    if (sslfax_enabled(s)  &&  pkt[2] == 0x02  &&  len > 10  &&  strncmp(msg, "ssl://", 6) == 0)
+    {
+        /* Looks like the remote offers SSL Fax service. */
+        s->sslfax.url = span_alloc(len - 9);
+        memcpy(s->sslfax.url, msg + 6, len - 9);
+    }
+    /*endif*/
+#endif
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -6350,6 +6517,23 @@ static void t30_non_ecm_rx_status(void *user_data, int status)
         switch (s->state)
         {
         case T30_STATE_F_TCF:
+#if defined(SPANDSP_SUPPORT_SSLFAX)
+            if (sslfax_enabled(s)  &&  s->sslfax.url  &&  !s->sslfax.server)
+            {
+                /* SSL Fax can completely ignore TCF results. */
+                sslfax_start_client(&s->sslfax);
+                if (s->sslfax.server)
+                {
+                    /* SSL Fax uses the real-time frame handler */
+                    s->real_time_frame_handler = t30_sslfax_real_time_frame_handler;
+                    s->real_time_frame_user_data = s;
+                    s->current_status = T30_ERR_OK;
+                    was_trained = true;
+                }
+                /*endif*/
+            }
+            /*endif*/
+#endif
             /* Only respond if we managed to actually sync up with the source. We don't
                want to respond just because we saw a click. These often occur just
                before the real signal, with many modems. Presumably this is due to switching
@@ -6357,7 +6541,17 @@ static void t30_non_ecm_rx_status(void *user_data, int status)
                to the tail end of any slow modem signal. If there was a genuine data signal
                which we failed to train on it should not matter. If things are that bad, we
                do not stand much chance of good quality communications. */
+#if defined(SPANDSP_SUPPORT_SSLFAX)
+            if (s->current_status != T30_ERR_OK)
+            {
+                /* We encountered some terminal problem in Phase B and will be sending DCN. */
+                queue_phase(s, T30_PHASE_D_TX);
+                set_state(s, T30_STATE_C);
+            }
+            else if (was_trained)
+#else
             if (was_trained)
+#endif
             {
                 /* Although T.30 says the training test should be 1.5s of all 0's, some FAX
                    machines send a burst of all 1's before the all 0's. Tolerate this. */
@@ -6365,7 +6559,11 @@ static void t30_non_ecm_rx_status(void *user_data, int status)
                     s->tcf_most_zeros = s->tcf_current_zeros;
                 /*endif*/
                 span_log(&s->logging, SPAN_LOG_FLOW, "Trainability (TCF) test result - %d total bits. longest run of zeros was %d\n", s->tcf_test_bits, s->tcf_most_zeros);
+#if defined(SPANDSP_SUPPORT_SSLFAX)
+                if (!s->sslfax.server  &&  (s->tcf_most_zeros < fallback_sequence[s->current_fallback].bit_rate))
+#else
                 if (s->tcf_most_zeros < fallback_sequence[s->current_fallback].bit_rate)
+#endif
                 {
                     span_log(&s->logging, SPAN_LOG_FLOW, "Trainability (TCF) test failed - longest run of zeros was %d\n", s->tcf_most_zeros);
                     set_phase(s, T30_PHASE_B_TX);
@@ -6432,13 +6630,13 @@ SPAN_DECLARE(void) t30_non_ecm_put_bit(void *user_data, int bit)
     t30_state_t *s;
     int res;
 
+    s = (t30_state_t *) user_data;
     if (bit < 0)
     {
-        t30_non_ecm_rx_status(user_data, bit);
+        t30_non_ecm_rx_status(s, bit);
         return;
     }
     /*endif*/
-    s = (t30_state_t *) user_data;
     switch (s->state)
     {
     case T30_STATE_F_TCF:
@@ -6483,6 +6681,12 @@ SPAN_DECLARE(void) t30_non_ecm_put(void *user_data, const uint8_t buf[], int len
     int res;
 
     s = (t30_state_t *) user_data;
+    if (len < 0)
+    {
+        t30_non_ecm_rx_status(s, len);
+        return;
+    }
+    /*endif*/
     switch (s->state)
     {
     case T30_STATE_F_TCF:
@@ -6591,8 +6795,13 @@ SPAN_DECLARE(int) t30_non_ecm_get(void *user_data, uint8_t buf[], int max_len)
         len = 0;
         break;
     default:
+#if defined(SPANDSP_SUPPORT_SSLFAX)
+        /* There was nothing to get at whatever point in the protocol we're at. This shouldn't be surprising. */
+        len = 0;
+#else
         span_log(&s->logging, SPAN_LOG_WARNING, "t30_non_ecm_get in bad state %s\n", state_names[s->state]);
         len = -1;
+#endif
         break;
     }
     /*endswitch*/
@@ -6638,6 +6847,29 @@ static void t30_hdlc_rx_status(void *user_data, int status)
         was_trained = s->rx_trained;
         s->rx_signal_present = false;
         s->rx_trained = false;
+#if defined(SPANDSP_SUPPORT_SSLFAX)
+        if (sslfax_enabled(s)  &&  s->sslfax.url  &&  !s->sslfax.server  &&  (s->state == T30_STATE_I  ||  s->state == T30_STATE_IV))
+        {
+            sslfax_start_client(&s->sslfax);
+            if (s->sslfax.server)
+            {
+                /* SSL Fax uses the real-time frame handler */
+                s->real_time_frame_handler = t30_sslfax_real_time_frame_handler;
+                s->real_time_frame_user_data = s;
+                /* Reset the current ECM frame as the modem was preloaded with it */
+                s->ecm_current_tx_frame = 0;
+                s->ecm_frames_this_tx_burst = 0;
+                if (s->state == T30_STATE_IV)
+                {
+                    s->step = 0;
+                    s->sslfax.do_underflow = true;
+                }
+                /*endif*/
+            }
+            /*endif*/
+        }
+        /*endif*/
+#endif
         /* If a phase change has been queued to occur after the receive signal drops,
            its time to change. */
         if (s->state == T30_STATE_F_DOC_ECM)
@@ -7400,6 +7632,13 @@ SPAN_DECLARE(t30_state_t *) t30_init(t30_state_t *s,
     s->local_min_scan_time_code = T30_MIN_SCAN_0MS;
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "T.30");
+
+#if defined(SPANDSP_SUPPORT_SSLFAX)
+    /* Enable SSL Fax by default. */
+    s->iaf = T30_IAF_MODE_T37 | T30_IAF_MODE_T38;
+    sslfax_init(&s->sslfax);
+#endif
+
     t30_restart(s, calling_party);
     return s;
 }

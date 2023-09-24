@@ -64,6 +64,7 @@
 #include "spandsp/complex.h"
 #include "spandsp/tone_detect.h"
 #include "spandsp/tone_generate.h"
+#include "spandsp/ssl_fax.h"
 #include "spandsp/async.h"
 #include "spandsp/hdlc.h"
 #include "spandsp/silence_gen.h"
@@ -102,6 +103,7 @@
 #include "spandsp/fax.h"
 
 #include "spandsp/private/logging.h"
+#include "spandsp/private/ssl_fax.h"
 #include "spandsp/private/silence_gen.h"
 #include "spandsp/private/power_meter.h"
 #include "spandsp/private/fsk.h"
@@ -250,6 +252,16 @@ SPAN_DECLARE(int) fax_tx(fax_state_t *s, int16_t *amp, int max_len)
 }
 /*- End of function --------------------------------------------------------*/
 
+#if defined(SPANDSP_SUPPORT_SSLFAX)
+static int fax_get_phase(void *user_data)
+{
+    t30_state_t *s = user_data;
+
+    return s->phase;
+}
+/*- End of function --------------------------------------------------------*/
+#endif
+
 static void fax_set_rx_type(void *user_data, int type, int bit_rate, int short_train, int use_hdlc)
 {
     fax_state_t *s;
@@ -257,6 +269,24 @@ static void fax_set_rx_type(void *user_data, int type, int bit_rate, int short_t
 
     s = (fax_state_t *) user_data;
     t = &s->modems;
+#if defined(SPANDSP_SUPPORT_SSLFAX)
+    if (s->t30.sslfax.server  &&  type != T30_MODEM_DONE)
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "Set fallback rx type %d%s\n", type, use_hdlc ? " (HDLC)" : "");
+        fax_modems_set_rx_handler(t, (span_rx_handler_t) &sslfax_rx, &s->t30.sslfax, (span_rx_fillin_handler_t) NULL, &s->t30.sslfax);
+        sslfax_setup(&s->t30.sslfax, &s->t30, t30_non_ecm_put, t30_non_ecm_get, t30_hdlc_accept, hdlc_underflow_handler, s->t30.sslfax.tx_use_hdlc, use_hdlc, fax_get_phase);
+        t->rx_bit_rate = bit_rate;
+        t->current_rx_type = type;
+        if (use_hdlc)
+        {
+            t30_hdlc_accept(&s->t30, NULL, SIG_STATUS_CARRIER_UP, true);
+            t30_hdlc_accept(&s->t30, NULL, SIG_STATUS_FRAMING_OK, true);
+        }
+        /*endif*/
+        return;
+    }
+    /*endif*/
+#endif
     span_log(&s->logging, SPAN_LOG_FLOW, "Set rx type %s (%d)\n", t30_modem_to_str(type), type);
     if (t->current_rx_type == type)
         return;
@@ -298,6 +328,20 @@ static void fax_set_tx_type(void *user_data, int type, int bit_rate, int short_t
 
     s = (fax_state_t *) user_data;
     t = &s->modems;
+#if defined(SPANDSP_SUPPORT_SSLFAX)
+    if (s->t30.sslfax.server  &&  type != T30_MODEM_DONE)
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "Set fallback tx type %d%s\n", type, use_hdlc  ?  " (HDLC)"  :  "");
+        fax_modems_set_tx_handler(t, (span_tx_handler_t) &sslfax_tx, &s->t30.sslfax);
+        fax_modems_set_next_tx_handler(t, (span_tx_handler_t) &sslfax_tx, &s->t30.sslfax);
+        sslfax_setup(&s->t30.sslfax, &s->t30, t30_non_ecm_put, t30_non_ecm_get, t30_hdlc_accept, hdlc_underflow_handler, use_hdlc, s->t30.sslfax.rx_use_hdlc, fax_get_phase);
+        t->transmit = true;
+        t->tx_bit_rate = bit_rate;
+        t->current_tx_type = type;
+        return;
+    }
+    /*endif*/
+#endif
     span_log(&s->logging, SPAN_LOG_FLOW, "Set tx type %s (%d)\n", t30_modem_to_str(type), type);
     if (t->current_tx_type == type)
         return;

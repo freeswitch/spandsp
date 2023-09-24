@@ -39,8 +39,8 @@ MOSTLYCLEANFILES = ${DISTCLEANFILES}
 MAINTAINERCLEANFILES = ${DISTCLEANFILES}
 
 EXTRA_DIST = floating_fudge.h \
-             libspandsp.2012.vcxproj \
              filter_tools.c \
+             libspandsp.2012.vcxproj \
              make_at_dictionary.c \
              make_cielab_luts.c \
              make_math_fixed_tables.c \
@@ -79,6 +79,10 @@ if COND_V34
 V34_SOURCES = v34rx.c \
               v34tx.c \
               v34_logging.c
+endif
+
+if COND_SSLFAX
+SSLFAX_SOURCES = ssl_fax.c
 endif
 
 libspandsp_la_SOURCES = ademco_contactid.c \
@@ -179,7 +183,8 @@ libspandsp_la_SOURCES = ademco_contactid.c \
                         vector_float.c \
                         vector_int.c \
                         $(V32BIS_SOURCES) \
-                        $(V34_SOURCES)
+                        $(V34_SOURCES) \
+                        $(SSLFAX_SOURCES)
 
 libspandsp_la_LDFLAGS = -version-info @SPANDSP_LT_CURRENT@:@SPANDSP_LT_REVISION@:@SPANDSP_LT_AGE@ $(COMP_VENDOR_LDFLAGS)
 
@@ -234,6 +239,7 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/stdbool.h \
                          spandsp/sig_tone.h \
                          spandsp/silence_gen.h \
+                         spandsp/ssl_fax.h \
                          spandsp/sprt.h \
                          spandsp/super_tone_rx.h \
                          spandsp/super_tone_tx.h \
@@ -316,6 +322,7 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/private/schedule.h \
                          spandsp/private/sig_tone.h \
                          spandsp/private/silence_gen.h \
+                         spandsp/private/ssl_fax.h \
                          spandsp/private/sprt.h \
                          spandsp/private/super_tone_rx.h \
                          spandsp/private/super_tone_tx.h \
