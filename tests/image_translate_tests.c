@@ -68,6 +68,7 @@ static void display_row(int row, int width, uint8_t buf[])
         test_pixel = (buf[i >> 3] >> (7 - (i & 7))) & 0x01;
         printf("%c", (test_pixel)  ?  ' '  :  '@');
     }
+    /*endfor*/
     printf("\n");
 }
 /*- End of function --------------------------------------------------------*/
@@ -95,7 +96,9 @@ static void create_undithered_50_by_50(image_descriptor_t *im, uint8_t buf[], in
         {
             for (j = 0;  j < im->width;  j++)
                 image8[im->width*i + j] = ((i + j)*655) >> 8;
+            /*endfor*/
         }
+        /*endfor*/
         break;
     case 2:
         samples_per_pixel = 1;
@@ -104,7 +107,9 @@ static void create_undithered_50_by_50(image_descriptor_t *im, uint8_t buf[], in
         {
             for (j = 0;  j < im->width;  j++)
                 image16[im->width*i + j] = (i + j)*655;
+            /*endfor*/
         }
+        /*endfor*/
         break;
     case 3:
         samples_per_pixel = 3;
@@ -123,7 +128,9 @@ static void create_undithered_50_by_50(image_descriptor_t *im, uint8_t buf[], in
                 image8[samples_per_pixel*(im->width*i + j) + 2] = saturateu8((((i + j)*655U)*47900U) >> 22);
 #endif
             }
+            /*endfor*/
         }
+        /*endfor*/
         break;
     case 4:
         samples_per_pixel = 4;
@@ -144,7 +151,9 @@ static void create_undithered_50_by_50(image_descriptor_t *im, uint8_t buf[], in
                 image8[samples_per_pixel*(im->width*i + j) + 3] = 0;
 #endif
             }
+            /*endfor*/
         }
+        /*endfor*/
         break;
     case 6:
         samples_per_pixel = 3;
@@ -163,7 +172,9 @@ static void create_undithered_50_by_50(image_descriptor_t *im, uint8_t buf[], in
                 image16[samples_per_pixel*(im->width*i + j) + 2] = saturateu16((((i + j)*655U)*47900U) >> 14);
 #endif
             }
+            /*endfor*/
         }
+        /*endfor*/
         break;
     case 8:
         samples_per_pixel = 4;
@@ -184,9 +195,12 @@ static void create_undithered_50_by_50(image_descriptor_t *im, uint8_t buf[], in
                 image16[samples_per_pixel*(im->width*i + j) + 3] = 0;
 #endif
             }
+            /*endfor*/
         }
+        /*endfor*/
         break;
     }
+    /*endswitch*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -257,7 +271,9 @@ static int test_dithered_50_by_50(int row, int width, uint8_t buf[])
         test_pixel = (buf[i >> 3] >> (7 - (i & 7))) & 0x01;
         if (ref_pixel != test_pixel)
             match = -1;
+        /*endif*/
     }
+    /*endfor*/
     return match;
 }
 /*- End of function --------------------------------------------------------*/
@@ -269,6 +285,7 @@ static int row_read(void *user_data, uint8_t buf[], size_t len)
     im = (image_descriptor_t *) user_data;
     if (im->current_row >= im->length)
         return 0;
+    /*endif*/
     memcpy(buf, &im->image[im->current_row*im->width*im->bytes_per_pixel], len);
     im->current_row++;
     return len;
@@ -288,6 +305,7 @@ static void get_bilevel_image(image_translate_state_t *s, int compare)
             printf("Image finished early - %d %d\n", len, (s->output_width + 7)/8);
             exit(2);
         }
+        /*endif*/
         display_row(i, s->output_width, row_buf);
         if (compare)
         {
@@ -296,13 +314,17 @@ static void get_bilevel_image(image_translate_state_t *s, int compare)
                 printf("Dithered image mismatch at row %d\n", i);
                 //exit(2);
             }
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endfor*/
     if ((len = image_translate_row(s, row_buf, (s->output_width + 7)/8)) != 0)
     {
         printf("Image finished late - %d %d\n", len, (s->output_width + 7)/8);
         exit(2);
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -320,6 +342,7 @@ static void get_gray8_image(image_translate_state_t *s, int compare)
             printf("Image finished early - %d %d\n", len, s->output_width);
             exit(2);
         }
+        /*endif*/
         if (compare)
         {
             for (j = 0;  j < 50;  j++)
@@ -329,14 +352,19 @@ static void get_gray8_image(image_translate_state_t *s, int compare)
                     printf("Image mismatch - %dx%d - %d %d\n", j, i, ((i + j)*655) >> 8, row_buf[j]);
                     //exit(2);
                 }
+                /*endif*/
             }
+            /*endfor*/
         }
+        /*endif*/
     }
+    /*endfor*/
     if ((len = image_translate_row(s, row_buf, s->output_width)) != 0)
     {
         printf("Image finished late - %d %d\n", len, s->output_width);
         exit(2);
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -354,6 +382,7 @@ static void get_gray16_image(image_translate_state_t *s, int compare)
             printf("Image finished early - %d %d\n", len, 2*s->output_width);
             exit(2);
         }
+        /*endif*/
         if (compare)
         {
             for (j = 0;  j < s->output_width;  j++)
@@ -363,14 +392,19 @@ static void get_gray16_image(image_translate_state_t *s, int compare)
                     printf("Image mismatch - %dx%d - %d %d\n", j, i, (i + j)*655, row_buf[j]);
                     //exit(2);
                 }
+                /*endif*/
             }
+            /*endfor*/
         }
+        /*endif*/
     }
+    /*endfor*/
     if ((len = image_translate_row(s, (uint8_t *) row_buf, 2*s->output_width)) != 0)
     {
         printf("Image finished late - %d %d\n", len, 2*s->output_width);
         exit(2);
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -393,6 +427,7 @@ static void get_colour8_image(image_translate_state_t *s, int compare)
             printf("Image finished early - %d %d\n", len, samples_per_pixel*s->output_width);
             exit(2);
         }
+        /*endif*/
         if (compare)
         {
             for (j = 0;  j < s->output_width;  j++)
@@ -418,14 +453,19 @@ static void get_colour8_image(image_translate_state_t *s, int compare)
                            row_buf[samples_per_pixel*j + 0], row_buf[samples_per_pixel*j + 1], row_buf[samples_per_pixel*j + 2]);
                     //exit(2);
                 }
+                /*endif*/
             }
+            /*endfor*/
         }
+        /*endif*/
     }
+    /*endfor*/
     if ((len = image_translate_row(s, row_buf, samples_per_pixel*s->output_width)) != 0)
     {
         printf("Image finished late - %d %d\n", len, samples_per_pixel*s->output_width);
         exit(2);
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -448,6 +488,7 @@ static void get_colour16_image(image_translate_state_t *s, int compare)
             printf("Image finished early - %d %d\n", len, 2*samples_per_pixel*s->output_width);
             exit(2);
         }
+        /*endif*/
         if (compare)
         {
             for (j = 0;  j < s->output_width;  j++)
@@ -473,14 +514,19 @@ static void get_colour16_image(image_translate_state_t *s, int compare)
                            row_buf[samples_per_pixel*j + 0], row_buf[samples_per_pixel*j + 1], row_buf[samples_per_pixel*j + 2]);
                     //exit(2);
                 }
+                /*endif*/
             }
+            /*endfor*/
         }
+        /*endif*/
     }
+    /*endfor*/
     if ((len = image_translate_row(s, (uint8_t *) row_buf, 2*samples_per_pixel*s->output_width)) != 0)
     {
         printf("Image finished late - %d %d\n", len, 2*samples_per_pixel*s->output_width);
         exit(2);
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -675,16 +721,20 @@ static void lenna_tests(int output_width, int output_length_scaling, const char 
         printf("Dithering Lenna from colour to bi-level test\n");
     else
         printf("Processing Lenna test\n");
+    /*endif*/
     if ((in_file = TIFFOpen(INPUT_TIFF_FILE_NAME, "r")) == NULL)
         return;
+    /*endif*/
     image_width = 0;
     TIFFGetField(in_file, TIFFTAG_IMAGEWIDTH, &image_width);
     if (image_width <= 0)
         return;
+    /*endif*/
     image_length = 0;
     TIFFGetField(in_file, TIFFTAG_IMAGELENGTH, &image_length);
     if (image_length <= 0)
         return;
+    /*endif*/
     x_resolution = 200.0;
     TIFFGetField(in_file, TIFFTAG_XRESOLUTION, &x_resolution);
     y_resolution = 200.0;
@@ -698,18 +748,22 @@ static void lenna_tests(int output_width, int output_length_scaling, const char 
     printf("Original image is %d x %d, %.2f x %.2f resolution, %d bits per sample, %d samples per pixel\n", image_width, image_length, x_resolution, y_resolution, bits_per_sample, samples_per_pixel);
     if ((image = malloc(image_width*image_length*samples_per_pixel)) == NULL)
         return;
+    /*endif*/
     for (total = 0, i = 0;  i < 1000;  i++)
     {
         len = TIFFReadEncodedStrip(in_file, i, &image[total], image_width*image_length*samples_per_pixel - total);
         if (len <= 0)
             break;
+        /*endif*/
         total += len;
         if (total == image_width*image_length*samples_per_pixel)
         {
             printf("Done\n");
             break;
         }
+        /*endif*/
     }
+    /*endfor*/
     printf("Input image size %d %d\n", total, image_width*image_length*samples_per_pixel);
     TIFFClose(in_file);
 
@@ -717,6 +771,7 @@ static void lenna_tests(int output_width, int output_length_scaling, const char 
         output_length = (double) image_length*output_length_scaling*output_width/image_width;
     else
         output_length = -1;
+    /*endif*/
 
     im.image = image;
     im.width = image_width;
@@ -746,9 +801,11 @@ static void lenna_tests(int output_width, int output_length_scaling, const char 
         output_length = image_translate_get_output_length(s);
         break;
     }
+    /*endswitch*/
 
     if ((out_file = TIFFOpen(file, "w")) == NULL)
         return;
+    /*endif*/
     TIFFSetField(out_file, TIFFTAG_IMAGEWIDTH, output_width);
     TIFFSetField(out_file, TIFFTAG_IMAGELENGTH, output_length);
     TIFFSetField(out_file, TIFFTAG_RESOLUTIONUNIT, res_unit);
@@ -767,8 +824,10 @@ static void lenna_tests(int output_width, int output_length_scaling, const char 
         TIFFSetField(out_file, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISWHITE);
         break;
     }
+    /*endswitch*/
     if (output_length_scaling > 0)
         y_resolution *= output_length_scaling;
+    /*endif*/
     TIFFSetField(out_file, TIFFTAG_XRESOLUTION, x_resolution);
     TIFFSetField(out_file, TIFFTAG_YRESOLUTION, y_resolution);
     TIFFSetField(out_file, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
@@ -783,31 +842,38 @@ static void lenna_tests(int output_width, int output_length_scaling, const char 
     case -2:
         if ((image2 = malloc(output_width*output_length*3)) == NULL)
             return;
+        /*endif*/
         memset(image2, 0, output_width*output_length*3);
         n = 0;
         for (i = 0;  i < output_length;  i++)
             n += image_translate_row(s2, &image2[n], output_width*3);
+        /*endfor*/
         TIFFWriteEncodedStrip(out_file, 0, image2, n);
         break;
     case -1:
         if ((image2 = malloc(output_width*output_length*3)) == NULL)
             return;
+        /*endif*/
         memset(image2, 0, output_width*output_length*3);
         n = 0;
         for (i = 0;  i < output_length;  i++)
             n += image_translate_row(s, &image2[n], output_width*3);
+        /*endfor*/
         TIFFWriteEncodedStrip(out_file, 0, image2, n);
         break;
     default:
         if ((image2 = malloc(output_width*output_length/8)) == NULL)
             return;
+        /*endif*/
         memset(image2, 0, output_width*output_length/8);
         n = 0;
         for (i = 0;  i < output_length;  i++)
             n += image_translate_row(s, &image2[n], output_width/8);
+        /*endfor*/
         TIFFWriteEncodedStrip(out_file, 0, image2, n);
         break;
     }
+    /*endswitch*/
     TIFFWriteDirectory(out_file);
     TIFFClose(out_file);
     image_translate_free(s);

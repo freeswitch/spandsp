@@ -103,7 +103,9 @@ int main(int argc, char *argv[])
             tone = atoi(optarg);
             break;
         }
+        /*endswitch*/
     }
+    /*endwhile*/
     phase_rate = 0;
     inhandle = NULL;
     if (tone < 0)
@@ -113,16 +115,19 @@ int main(int argc, char *argv[])
             fprintf(stderr, "    Failed to open audio file '%s'\n", INPUT_FILE_NAME);
             exit(2);
         }
+        /*endif*/
     }
     else
     {
         phase_rate = dds_phase_ratef((float) tone);
     }
+    /*endif*/
     if ((outhandle = sf_open_telephony_write(OUTPUT_FILE_NAME, 1)) == NULL)
     {
         fprintf(stderr, "    Failed to open audio file '%s'\n", OUTPUT_FILE_NAME);
         exit(2);
     }
+    /*endif*/
     plc_init(&plc);
     lost_blocks = 0;
     for (block_no = 0;  ;  block_no++)
@@ -132,21 +137,26 @@ int main(int argc, char *argv[])
             inframes = sf_readf_short(inhandle, amp, block_len);
             if (inframes != block_len)
                 break;
+            /*endif*/
         }
         else
         {
             if (block_no > 10000)
                 break;
+            /*endif*/
             for (i = 0;  i < block_len;  i++)
                 amp[i] = (int16_t) dds_modf(&phase_acc, phase_rate, 10000.0, 0);
+            /*endfor*/
             inframes = block_len;
         }
+        /*endif*/
         dropit = rand()/(RAND_MAX/100);
         if (dropit > loss_rate)
         {
             plc_rx(&plc, amp, inframes);
             if (block_real)
                 memset(amp, 0, sizeof(int16_t)*inframes);
+            /*endif*/
         }
         else
         {
@@ -154,14 +164,18 @@ int main(int argc, char *argv[])
             plc_fillin(&plc, amp, inframes);
             if (block_synthetic)
                 memset(amp, 0, sizeof(int16_t)*inframes);
+            /*endif*/
         }
+        /*endif*/
         outframes = sf_writef_short(outhandle, amp, inframes);
         if (outframes != inframes)
         {
             fprintf(stderr, "    Error writing out sound\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     printf("Dropped %d of %d blocks\n", lost_blocks, block_no);
     if (tone < 0)
     {
@@ -170,12 +184,15 @@ int main(int argc, char *argv[])
             fprintf(stderr, "    Cannot close audio file '%s'\n", INPUT_FILE_NAME);
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
     if (sf_close_telephony(outhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
         exit(2);
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

@@ -84,7 +84,9 @@ static void compliance_tests(int log_audio)
             fprintf(stderr, "    Cannot create audio file '%s'\n", OUT_FILE_NAME);
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
 
     printf("Conversion accuracy tests.\n");
     alaw_failures = 0;
@@ -105,8 +107,10 @@ static void compliance_tests(int log_audio)
                     printf("A-law: Excessive error at %d (%d)\n", pre, post);
                     alaw_failures++;
                 }
+                /*endif*/
                 if (tmp > worst_alaw)
                     worst_alaw = tmp;
+                /*endif*/
             }
             else
             {
@@ -116,9 +120,12 @@ static void compliance_tests(int log_audio)
                     printf("A-law: Excessive error at %d (%d)\n", pre, post);
                     alaw_failures++;
                 }
+                /*endif*/
             }
+            /*endif*/
             amp[i] = post;
         }
+        /*endfor*/
         if (log_audio)
         {
             outframes = sf_writef_short(outhandle, amp, 65536);
@@ -127,6 +134,7 @@ static void compliance_tests(int log_audio)
                 fprintf(stderr, "    Error writing audio file\n");
                 exit(2);
             }
+            /*endif*/
         }
         for (i = 0;  i < 65536;  i++)
         {
@@ -140,8 +148,10 @@ static void compliance_tests(int log_audio)
                     printf("u-law: Excessive error at %d (%d)\n", pre, post);
                     ulaw_failures++;
                 }
+                /*endif*/
                 if (tmp > worst_ulaw)
                     worst_ulaw = tmp;
+                /*endif*/
             }
             else
             {
@@ -151,9 +161,12 @@ static void compliance_tests(int log_audio)
                     printf("u-law: Excessive error at %d (%d)\n", pre, post);
                     ulaw_failures++;
                 }
+                /*endif*/
             }
+            /*endif*/
             amp[i] = post;
         }
+        /*endfor*/
         if (log_audio)
         {
             outframes = sf_writef_short(outhandle, amp, 65536);
@@ -162,8 +175,11 @@ static void compliance_tests(int log_audio)
                 fprintf(stderr, "    Error writing audio file\n");
                 exit(2);
             }
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endfor*/
     printf("Worst A-law error (ignoring small values) %f%%\n", worst_alaw*100.0);
     printf("Worst u-law error (ignoring small values) %f%%\n", worst_ulaw*100.0);
     if (alaw_failures  ||  ulaw_failures)
@@ -173,6 +189,7 @@ static void compliance_tests(int log_audio)
         printf("Tests failed\n");
         exit(2);
     }
+    /*endif*/
 
     printf("Cyclic conversion repeatability tests.\n");
     /* Find what happens to every possible linear value after a round trip. */
@@ -189,6 +206,7 @@ static void compliance_tests(int log_audio)
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
         /* Make a round trip */
         post = ulaw_to_linear(linear_to_ulaw(pre));
         /* A second round trip should cause no further change */
@@ -199,7 +217,9 @@ static void compliance_tests(int log_audio)
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
 
     printf("Reference power level tests.\n");
     power_meter_init(&power_meter, 7);
@@ -209,6 +229,7 @@ static void compliance_tests(int log_audio)
         amp[i] = ulaw_to_linear(ulaw_1khz_sine[i & 7]);
         power_meter_update(&power_meter, amp[i]);
     }
+    /*endfor*/
     printf("Reference u-law 1kHz tone is %fdBm0\n", power_meter_current_dbm0(&power_meter));
     if (log_audio)
     {
@@ -218,18 +239,22 @@ static void compliance_tests(int log_audio)
             fprintf(stderr, "    Error writing audio file\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
     if (0.1f < fabs(power_meter_current_dbm0(&power_meter)))
     {
         printf("Test failed.\n");
         exit(2);
     }
+    /*endif*/
 
     for (i = 0;  i < 8000;  i++)
     {
         amp[i] = alaw_to_linear(alaw_1khz_sine[i & 7]);
         power_meter_update(&power_meter, amp[i]);
     }
+    /*endfor*/
     printf("Reference A-law 1kHz tone is %fdBm0\n", power_meter_current_dbm0(&power_meter));
     if (log_audio)
     {
@@ -239,12 +264,15 @@ static void compliance_tests(int log_audio)
             fprintf(stderr, "    Error writing audio file\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
     if (0.1f < fabs(power_meter_current_dbm0(&power_meter)))
     {
         printf("Test failed.\n");
         exit(2);
     }
+    /*endif*/
 
     /* Check the transcoding functions. */
     printf("Testing transcoding A-law -> u-law -> A-law\n");
@@ -258,8 +286,11 @@ static void compliance_tests(int log_audio)
                 printf("Test failed\n");
                 exit(2);
             }
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endfor*/
 
     printf("Testing transcoding u-law -> A-law -> u-law\n");
     for (i = 0;  i < 256;  i++)
@@ -272,8 +303,11 @@ static void compliance_tests(int log_audio)
                 printf("Test failed\n");
                 exit(2);
             }
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endfor*/
 
     enc_state = g711_init(NULL, G711_ALAW);
     transcode = g711_init(NULL, G711_ALAW);
@@ -282,6 +316,7 @@ static void compliance_tests(int log_audio)
     len = 65536;
     for (i = 0;  i < len;  i++)
         amp[i] = i - 32768;
+    /*endfor*/
     len = g711_encode(enc_state, alaw_data, amp, len);
     len = g711_transcode(transcode, ulaw_data, alaw_data, len);
     len = g711_decode(dec_state, amp, ulaw_data, len);
@@ -291,6 +326,7 @@ static void compliance_tests(int log_audio)
         printf("Test failed\n");
         exit(2);
     }
+    /*endif*/
     for (i = 0;  i < len;  i++)
     {
         pre = i - 32768;
@@ -303,6 +339,7 @@ static void compliance_tests(int log_audio)
                 printf("Block: Excessive error at %d (%d)\n", pre, post);
                 exit(2);
             }
+            /*endif*/
         }
         else
         {
@@ -312,8 +349,11 @@ static void compliance_tests(int log_audio)
                 printf("Block: Excessive error at %d (%d)\n", pre, post);
                 exit(2);
             }
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endfor*/
     g711_free(enc_state);
     g711_free(transcode);
     g711_free(dec_state);
@@ -325,7 +365,9 @@ static void compliance_tests(int log_audio)
             fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
 
     printf("Tests passed.\n");
 }
@@ -388,7 +430,9 @@ int main(int argc, char *argv[])
             //usage();
             exit(2);
         }
+        /*endswitch*/
     }
+    /*endwhile*/
 
     if (basic_tests)
     {
@@ -401,14 +445,17 @@ int main(int argc, char *argv[])
             decode =
             encode = true;
         }
+        /*endif*/
         if (in_file == NULL)
         {
             in_file = (encode)  ?  IN_FILE_NAME  :  ENCODED_FILE_NAME;
         }
+        /*endif*/
         if (out_file == NULL)
         {
             out_file = (decode)  ?  OUT_FILE_NAME  :  ENCODED_FILE_NAME;
         }
+        /*endif*/
         inhandle = NULL;
         outhandle = NULL;
         file = -1;
@@ -421,6 +468,7 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "    Cannot open audio file '%s'\n", in_file);
                 exit(2);
             }
+            /*endif*/
             enc_state = g711_init(NULL, law);
         }
         else
@@ -430,6 +478,7 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "    Failed to open '%s'\n", in_file);
                 exit(2);
             }
+            /*endif*/
         }
         if (decode)
         {
@@ -438,6 +487,7 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "    Cannot create audio file '%s'\n", out_file);
                 exit(2);
             }
+            /*endif*/
             dec_state = g711_init(NULL, law);
         }
         else
@@ -447,7 +497,9 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "    Failed to open '%s'\n", out_file);
                 exit(2);
             }
+            /*endif*/
         }
+        /*endif*/
         for (;;)
         {
             if (encode)
@@ -455,6 +507,7 @@ int main(int argc, char *argv[])
                 samples = sf_readf_short(inhandle, indata, BLOCK_LEN);
                 if (samples <= 0)
                     break;
+                /*endif*/
                 len2 = g711_encode(enc_state, g711data, indata, samples);
             }
             else
@@ -462,7 +515,9 @@ int main(int argc, char *argv[])
                 len2 = read(file, g711data, BLOCK_LEN);
                 if (len2 <= 0)
                     break;
+                /*endif*/
             }
+            /*endif*/
             if (decode)
             {
                 len3 = g711_decode(dec_state, outdata, g711data, len2);
@@ -472,14 +527,18 @@ int main(int argc, char *argv[])
                     fprintf(stderr, "    Error writing audio file\n");
                     exit(2);
                 }
+                /*endif*/
             }
             else
             {
                 len3 = write(file, g711data, len2);
                 if (len3 <= 0)
                     break;
+                /*endif*/
             }
+            /*endif*/
         }
+        /*endfor*/
         if (encode)
         {
             if (sf_close_telephony(inhandle))
@@ -487,11 +546,13 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "    Cannot close audio file '%s'\n", IN_FILE_NAME);
                 exit(2);
             }
+            /*endif*/
         }
         else
         {
             close(file);
         }
+        /*endif*/
         if (decode)
         {
             if (sf_close_telephony(outhandle))
@@ -499,13 +560,16 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
                 exit(2);
             }
+            /*endif*/
         }
         else
         {
             close(file);
         }
+        /*endif*/
         printf("'%s' translated to '%s' using %s.\n", in_file, out_file, (law == G711_ALAW)  ?  "A-law"  :  "u-law");
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

@@ -1004,13 +1004,17 @@ static int hex_get(char *s)
         x = *s++ - 0x30;
         if (x > 9)
             x -= 0x07;
+        /*endif*/
         if (x > 15)
             x -= 0x20;
+        /*endif*/
         if (x < 0  ||  x > 15)
             return -1;
+        /*endif*/
         value <<= 4;
         value |= x;
     }
+    /*endfor*/
     return value;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1031,8 +1035,10 @@ static int get_vector(FILE *file, uint8_t vec[])
             vec[i++] = value;
             s += 2;
         }
+        /*endwhile*/
         return i;
     }
+    /*endwhile*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1049,9 +1055,11 @@ static int get_test_vector(const char *file, uint8_t buf[], int max_len)
         fprintf(stderr, "    Failed to open '%s'\n", file);
         exit(2);
     }
+    /*endif*/
     octets = 0;
     while ((i = get_vector(infile, buf + octets)) > 0)
         octets += i;
+    /*endwhile*/
     fclose(infile);
     /* The last octet is a sumcheck, so the real data octets are one less than
        the total we have */
@@ -1059,11 +1067,13 @@ static int get_test_vector(const char *file, uint8_t buf[], int max_len)
     /* Test the checksum */
     for (sum = i = 0;  i < octets;  i++)
         sum += buf[i];
+    /*endfor*/
     if (sum%255 != (int) buf[i])
     {
         fprintf(stderr, "    Sumcheck failed in '%s' - %x %x\n", file, sum%255, buf[i]);
         exit(2);
     }
+    /*endif*/
     return octets;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1111,11 +1121,13 @@ static void itu_compliance_tests(void)
             {
                 conditioning_samples = 0;
             }
+            /*endif*/
             samples = get_test_vector(itu_test_sets[test].pcm_file, xlaw + conditioning_samples, MAX_TEST_VECTOR_LEN);
             memcpy(itudata, xlaw, samples + conditioning_samples);
             printf("Test %d: Compressing %d samples at %dbps\n", test, samples, itu_test_sets[test].rate);
             len2 = g726_encode(&enc_state, adpcmdata, itudata, conditioning_samples + samples);
         }
+        /*endif*/
         /* Test the decode side */
         g726_init(&dec_state, itu_test_sets[test].rate, itu_test_sets[test].decompression_law, G726_PACKING_NONE);
         if (itu_test_sets[test].conditioning_adpcm_file[0])
@@ -1127,6 +1139,7 @@ static void itu_compliance_tests(void)
         {
             conditioning_adpcm = 0;
         }
+        /*endif*/
         adpcm = get_test_vector(itu_test_sets[test].adpcm_file, unpacked + conditioning_adpcm, MAX_TEST_VECTOR_LEN);
         if (itu_test_sets[test].compression_law != G726_ENCODING_NONE)
         {
@@ -1141,12 +1154,15 @@ static void itu_compliance_tests(void)
                         bad_samples++;
                         printf("Test %d: Compressed mismatch %d %x %x\n", test, i, adpcmdata[i], unpacked[i]);
                     }
+                    /*endif*/
                 }
+                /*endfor*/
                 if (bad_samples > 0)
                 {
                     printf("Test failed\n");
                     exit(2);
                 }
+                /*endif*/
                 printf("Test passed\n");
             }
             else
@@ -1154,7 +1170,9 @@ static void itu_compliance_tests(void)
                 printf("Test %d: Length mismatch - ref = %d, processed = %d\n", test, conditioning_adpcm + adpcm, len2);
                 exit(2);
             }
+            /*endif*/
         }
+        /*endif*/
 
         len3 = g726_decode(&dec_state, outdata, unpacked, conditioning_adpcm + adpcm);
 
@@ -1172,12 +1190,15 @@ static void itu_compliance_tests(void)
                     bad_samples++;
                     printf("Test %d: Decompressed mismatch %d %x %x\n", test, i, itu_ref[i], ((uint8_t *) outdata)[i + conditioning_adpcm]);
                 }
+                /*endif*/
             }
+            /*endfor*/
             if (bad_samples > 0)
             {
                 printf("Test failed\n");
                 exit(2);
             }
+            /*endif*/
             printf("Test passed\n");
         }
         else
@@ -1185,7 +1206,9 @@ static void itu_compliance_tests(void)
             printf("Test %d: Length mismatch - ref = %d, processed = %d\n", test, samples, len3 - conditioning_adpcm);
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
 
     printf("Tests passed.\n");
 }
@@ -1219,6 +1242,7 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "Invalid bit rate selected. Only 16000, 24000, 32000 and 40000 are valid.\n");
                 exit(2);
             }
+            /*endif*/
             itutests = false;
             break;
         case 'L':
@@ -1231,7 +1255,9 @@ int main(int argc, char *argv[])
             //usage();
             exit(2);
         }
+        /*endswitch*/
     }
+    /*endwhile*/
 
     if (itutests)
     {
@@ -1244,11 +1270,13 @@ int main(int argc, char *argv[])
             fprintf(stderr, "    Cannot open audio file '%s'\n", IN_FILE_NAME);
             exit(2);
         }
+        /*endif*/
         if ((outhandle = sf_open_telephony_write(OUT_FILE_NAME, 1)) == NULL)
         {
             fprintf(stderr, "    Cannot create audio file '%s'\n", OUT_FILE_NAME);
             exit(2);
         }
+        /*endif*/
 
         printf("ADPCM packing is %d\n", packing);
         enc_state = g726_init(NULL, bit_rate, G726_ENCODING_LINEAR, packing);
@@ -1260,20 +1288,24 @@ int main(int argc, char *argv[])
             frames = g726_decode(dec_state, amp, adpcmdata, adpcm);
             sf_writef_short(outhandle, amp, frames);
         }
+        /*endwhile*/
         if (sf_close_telephony(inhandle))
         {
             printf("    Cannot close audio file '%s'\n", IN_FILE_NAME);
             exit(2);
         }
+        /*endif*/
         if (sf_close_telephony(outhandle))
         {
             printf("    Cannot close audio file '%s'\n", OUT_FILE_NAME);
             exit(2);
         }
+        /*endif*/
         printf("'%s' transcoded to '%s' at %dbps.\n", IN_FILE_NAME, OUT_FILE_NAME, bit_rate);
         g726_free(enc_state);
         g726_free(dec_state);
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

@@ -149,6 +149,7 @@ static void my_mf_gen_init(float low_fudge,
                                  0,
                                  false);
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -166,8 +167,10 @@ static int my_mf_generate(int16_t amp[], const char *digits)
             tone_gen_init(&tone, &my_mf_digit_tones[cp - bell_mf_tone_codes]);
             len += tone_gen(&tone, amp + len, 9999);
         }
+        /*endif*/
         digits++;
     }
+    /*endwhile*/
     return len;
 }
 /*- End of function --------------------------------------------------------*/
@@ -186,6 +189,7 @@ static void digit_delivery(void *data, const char *digits, int len)
         callback_ok = false;
         return;
     }
+    /*endif*/
     callback_ok = true;
     t = s + callback_roll;
     seg = 15 - callback_roll;
@@ -193,15 +197,18 @@ static void digit_delivery(void *data, const char *digits, int len)
     {
         if (i + seg > len)
             seg = len - i;
+        /*endif*/
         if (memcmp(digits + i, t, seg))
         {
             callback_ok = false;
             printf("Fail at %d %d\n", i, seg);
             break;
         }
+        /*endif*/
         t = s;
         callback_roll = (callback_roll + seg)%15;
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -255,8 +262,11 @@ static int test_tone_set(void)
                 printf("    Failed\n");
                 exit(2);
             }
+            /*endif*/
         }
+        /*endfor*/
     }
+    /*endwhile*/
     printf("    Passed\n");
 
     /* Test 3: Recognition bandwidth and channel centre frequency check.
@@ -302,6 +312,7 @@ static int test_tone_set(void)
             bell_mf_rx(mf_state, amp, len);
             nplus += bell_mf_rx_get(mf_state, buf, 128);
         }
+        /*endfor*/
         for (nminus = 0, i = -1;  i >= -60;  i--)
         {
             my_mf_gen_init((float) i/1000.0, -17, 0.0, -17, 68, 68);
@@ -310,6 +321,7 @@ static int test_tone_set(void)
             bell_mf_rx(mf_state, amp, len);
             nminus += bell_mf_rx_get(mf_state, buf, 128);
         }
+        /*endfor*/
         rrb = (float) (nplus + nminus)/10.0;
         rcfo = (float) (nplus - nminus)/10.0;
         printf("    %c (low)  rrb = %5.2f%%, rcfo = %5.2f%%, max -ve = %5.2f, max +ve = %5.2f\n",
@@ -324,6 +336,7 @@ static int test_tone_set(void)
             printf("    Failed\n");
             exit(2);
         }
+        /*endif*/
 
         for (nplus = 0, i = 1;  i <= 60;  i++)
         {
@@ -333,6 +346,7 @@ static int test_tone_set(void)
             bell_mf_rx(mf_state, amp, len);
             nplus += bell_mf_rx_get(mf_state, buf, 128);
         }
+        /*endfor*/
         for (nminus = 0, i = -1;  i >= -60;  i--)
         {
             my_mf_gen_init(0.0, -17, (float) i/1000.0, -17, 68, 68);
@@ -341,6 +355,7 @@ static int test_tone_set(void)
             bell_mf_rx(mf_state, amp, len);
             nminus += bell_mf_rx_get(mf_state, buf, 128);
         }
+        /*endfor*/
         rrb = (float) (nplus + nminus)/10.0;
         rcfo = (float) (nplus - nminus)/10.0;
         printf("    %c (high) rrb = %5.2f%%, rcfo = %5.2f%%, max -ve = %5.2f, max +ve = %5.2f\n",
@@ -354,8 +369,10 @@ static int test_tone_set(void)
             printf("    Failed\n");
             exit(2);
         }
+        /*endif*/
         j++;
     }
+    /*endwhile*/
     printf("    Passed\n");
 
     /* Test 4: Acceptable amplitude ratio (twist).
@@ -378,12 +395,14 @@ static int test_tone_set(void)
             bell_mf_rx(mf_state, amp, len);
             nplus += bell_mf_rx_get(mf_state, buf, 128);
         }
+        /*endfor*/
         printf("    %c normal twist  = %.2fdB\n", digit[0], (float) nplus/10.0);
         if (nplus < 60)
         {
             printf("    Failed\n");
             exit(2);
         }
+        /*endif*/
         for (nminus = 0, i = -50;  i >= -250;  i--)
         {
             my_mf_gen_init(0.0, i/10, 0.0, -5, 68, 68);
@@ -393,13 +412,16 @@ static int test_tone_set(void)
             bell_mf_rx(mf_state, amp, len);
             nminus += bell_mf_rx_get(mf_state, buf, 128);
         }
+        /*endfor*/
         printf("    %c reverse twist = %.2fdB\n", digit[0], (float) nminus/10.0);
         if (nminus < 60)
         {
             printf("    Failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endwhile*/
     printf("    Passed\n");
 
     /* Test 5: Dynamic range
@@ -419,26 +441,34 @@ static int test_tone_set(void)
             bell_mf_rx(mf_state, amp, len);
             if (bell_mf_rx_get(mf_state, buf, 128) != 15)
                 break;
+            /*endif*/
             if (strcmp(buf, ALL_POSSIBLE_DIGITS) != 0)
                 break;
+            /*endif*/
         }
+        /*endfor*/
         if (j == 100)
         {
             if (nplus == -1000)
                 nplus = i;
+            /*endif*/
         }
         else
         {
             if (nplus != -1000  &&  nminus == -1000)
                 nminus = i;
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endfor*/
     printf("    Dynamic range = %ddB to %ddB\n", nplus, nminus - 1);
     if (nplus > -22  ||  nminus <= -3)
     {
         printf("    Failed\n");
         exit(2);
     }
+    /*endif*/
     printf("    Passed\n");
 
     /* Test 6: Guard time
@@ -460,18 +490,24 @@ static int test_tone_set(void)
             bell_mf_rx(mf_state, amp, len);
             if (bell_mf_rx_get(mf_state, buf, 128) != 15)
                 break;
+            /*endif*/
             if (strcmp(buf, ALL_POSSIBLE_DIGITS) != 0)
                 break;
+            /*endif*/
         }
+        /*endfor*/
         if (j == 500)
             break;
+        /*endif*/
     }
+    /*endfor*/
     printf("    Guard time = %dms\n", i);
     if (i > 61)
     {
         printf("    Failed\n");
         exit(2);
     }
+    /*endif*/
     printf("    Passed\n");
 
     /* Test 7: Acceptable signal to noise ratio
@@ -492,18 +528,24 @@ static int test_tone_set(void)
             bell_mf_rx(mf_state, amp, len);
             if (bell_mf_rx_get(mf_state, buf, 128) != 15)
                 break;
+            /*endif*/
             if (strcmp(buf, ALL_POSSIBLE_DIGITS) != 0)
                 break;
+            /*endif*/
         }
+        /*endfor*/
         if (j == 500)
             break;
+        /*endif*/
     }
+    /*endfor*/
     printf("    Acceptable S/N ratio is %ddB\n", -3 - i);
     if (-3 - i > 26)
     {
         printf("    Failed\n");
         exit(2);
     }
+    /*endif*/
     bell_mf_rx_free(mf_state);
     printf("    Passed\n");
 
@@ -524,15 +566,19 @@ static int test_tone_set(void)
         len = 0;
         for (j = 0;  j < i;  j++)
             len += my_mf_generate(amp + len, ALL_POSSIBLE_DIGITS);
+        /*endfor*/
         bell_mf_rx(mf_state, amp, len);
         if (!callback_ok)
             break;
+        /*endif*/
     }
+    /*endfor*/
     if (!callback_ok)
     {
         printf("    Failed\n");
         exit(2);
     }
+    /*endif*/
     bell_mf_rx_free(mf_state);
     printf("    Passed\n");
     return 0;
@@ -547,10 +593,12 @@ static void digit_delivery_decode(void *data, const char *digits, int len)
     {
         return;
     }
+    /*endif*/
     for (i = 0;  i < len;  i++)
     {
         printf("Digit '%c'\n", digits[i]);
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -569,12 +617,14 @@ static void decode_test(const char *test_file)
         fprintf(stderr, "    Cannot open audio file '%s'\n", decode_test_file);
         exit(2);
     }
+    /*endif*/
 
     while ((samples = sf_readf_short(inhandle, amp, SAMPLES_PER_CHUNK)) > 0)
     {
         codec_munge(munge, amp, samples);
         bell_mf_rx(mf_state, amp, samples);
     }
+    /*endwhile*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -597,7 +647,9 @@ int main(int argc, char *argv[])
             exit(2);
             break;
         }
+        /*endswitch*/
     }
+    /*endwhile*/
     munge = codec_munge_init(MUNGE_CODEC_ULAW, 0);
     if (decode_test_file)
     {
@@ -610,6 +662,7 @@ int main(int argc, char *argv[])
         duration = time (NULL) - now;
         printf("Tests passed in %lds\n", duration);
     }
+    /*endif*/
     codec_munge_free(munge);
     return 0;
 }

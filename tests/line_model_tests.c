@@ -79,6 +79,7 @@ static void complexify_tests(void)
         fprintf(stderr, "    Cannot create audio file '%s'\n", OUT_FILE_COMPLEXIFY);
         exit(2);
     }
+    /*endif*/
     awgn_init_dbm0(&noise1, 1234567, -10.0f);
     s = complexify_init();
     for (i = 0;  i < 20000;  i++)
@@ -88,6 +89,7 @@ static void complexify_tests(void)
         out[2*i] = cc.re;
         out[2*i + 1] = cc.im;
     }
+    /*endfor*/
     awgn_release(&noise1);
     complexify_free(s);
     outframes = sf_writef_short(outhandle, out, 20000);
@@ -96,11 +98,13 @@ static void complexify_tests(void)
         fprintf(stderr, "    Error writing audio file\n");
         exit(2);
     }
+    /*endif*/
     if (sf_close_telephony(outhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_COMPLEXIFY);
         exit(2);
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -123,6 +127,7 @@ static void test_one_way_model(int line_model_no, int speech_test)
         fprintf(stderr, "    Failed to create line model\n");
         exit(2);
     }
+    /*endif*/
 
     awgn_init_dbm0(&noise1, 1234567, -10.0f);
 
@@ -133,16 +138,19 @@ static void test_one_way_model(int line_model_no, int speech_test)
             fprintf(stderr, "    Cannot open audio file '%s'\n", IN_FILE_NAME1);
             exit(2);
         }
+        /*endif*/
     }
     else
     {
         inhandle1 = NULL;
     }
+    /*endif*/
     if ((outhandle = sf_open_telephony_write(OUT_FILE_NAME1, 1)) == NULL)
     {
         fprintf(stderr, "    Cannot create audio file '%s'\n", OUT_FILE_NAME1);
         exit(2);
     }
+    /*endif*/
     for (i = 0;  i < 10000;  i++)
     {
         if (speech_test)
@@ -155,8 +163,10 @@ static void test_one_way_model(int line_model_no, int speech_test)
         {
             for (j = 0;  j < BLOCK_LEN;  j++)
                 input1[j] = awgn(&noise1);
+            /*endfor*/
             samples = BLOCK_LEN;
         }
+        /*endif*/
         for (j = 0;  j < samples;  j++)
         {
             one_way_line_model(model,
@@ -165,13 +175,16 @@ static void test_one_way_model(int line_model_no, int speech_test)
                                1);
             amp[j] = output1[j];
         }
+        /*endfor*/
         outframes = sf_writef_short(outhandle, amp, samples);
         if (outframes != samples)
         {
             fprintf(stderr, "    Error writing audio file\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     if (speech_test)
     {
         if (sf_close_telephony(inhandle1))
@@ -179,6 +192,7 @@ static void test_one_way_model(int line_model_no, int speech_test)
             fprintf(stderr, "    Cannot close audio file '%s'\n", IN_FILE_NAME1);
             exit(2);
         }
+        /*endif*/
     }
     if (sf_close_telephony(outhandle))
     {
@@ -221,6 +235,7 @@ static void test_both_ways_model(int line_model_no, int speech_test)
         fprintf(stderr, "    Failed to create line model\n");
         exit(2);
     }
+    /*endif*/
 
     awgn_init_dbm0(&noise1, 1234567, -10.0f);
     awgn_init_dbm0(&noise2, 1234567, -10.0f);
@@ -232,22 +247,26 @@ static void test_both_ways_model(int line_model_no, int speech_test)
             fprintf(stderr, "    Cannot open audio file '%s'\n", IN_FILE_NAME1);
             exit(2);
         }
+        /*endif*/
         if ((inhandle2 = sf_open_telephony_read(IN_FILE_NAME2, 1)) == NULL)
         {
             fprintf(stderr, "    Cannot open audio file '%s'\n", IN_FILE_NAME2);
             exit(2);
         }
+        /*endif*/
     }
     else
     {
         inhandle1 =
         inhandle2 = NULL;
     }
+    /*endif*/
     if ((outhandle = sf_open_telephony_write(OUT_FILE_NAME2, 2)) == NULL)
     {
         fprintf(stderr, "    Cannot create audio file '%s'\n", OUT_FILE_NAME2);
         exit(2);
     }
+    /*endif*/
     for (i = 0;  i < 10000;  i++)
     {
         if (speech_test)
@@ -255,9 +274,11 @@ static void test_both_ways_model(int line_model_no, int speech_test)
             samples = sf_readf_short(inhandle1, input1, BLOCK_LEN);
             if (samples == 0)
                 break;
+            /*endif*/
             samples = sf_readf_short(inhandle2, input2, samples);
             if (samples == 0)
                 break;
+            /*endif*/
         }
         else
         {
@@ -266,8 +287,10 @@ static void test_both_ways_model(int line_model_no, int speech_test)
                 input1[j] = awgn(&noise1);
                 input2[j] = awgn(&noise2);
             }
+            /*endfor*/
             samples = BLOCK_LEN;
         }
+        /*endif*/
         for (j = 0;  j < samples;  j++)
         {
             both_ways_line_model(model,
@@ -279,13 +302,16 @@ static void test_both_ways_model(int line_model_no, int speech_test)
             amp[2*j] = output1[j];
             amp[2*j + 1] = output2[j];
         }
+        /*endfor*/
         outframes = sf_writef_short(outhandle, amp, samples);
         if (outframes != samples)
         {
             fprintf(stderr, "    Error writing audio file\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     if (speech_test)
     {
         if (sf_close_telephony(inhandle1))
@@ -293,17 +319,21 @@ static void test_both_ways_model(int line_model_no, int speech_test)
             fprintf(stderr, "    Cannot close audio file '%s'\n", IN_FILE_NAME1);
             exit(2);
         }
+        /*endif*/
         if (sf_close_telephony(inhandle2))
         {
             fprintf(stderr, "    Cannot close audio file '%s'\n", IN_FILE_NAME2);
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
     if (sf_close_telephony(outhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME2);
         exit(2);
     }
+    /*endif*/
     both_ways_line_model_free(model);
 }
 /*- End of function --------------------------------------------------------*/
@@ -326,11 +356,13 @@ static void test_line_filter(int line_model_no)
     s = swept_tone_init(NULL, 200.0f, 3900.0f, -10.0f, 120*SAMPLE_RATE, 0);
     for (j = 0;  j < 129;  j++)
         filter[j] = 0.0f;
+    /*endfor*/
     ptr = 0;
     for (;;)
     {
         if ((len = swept_tone(s, buf, BLOCK_LEN)) <= 0)
             break;
+        /*endif*/
         sumin = 0.0;
         sumout = 0.0;
         for (i = 0;  i < len;  i++)
@@ -340,6 +372,7 @@ static void test_line_filter(int line_model_no)
             filter[p] = buf[i];
             if (++p == 129)
                 p = 0;
+            /*endif*/
             ptr = p;
 
             /* Apply the filter */
@@ -349,7 +382,9 @@ static void test_line_filter(int line_model_no)
                 out += line_models[line_model_no][128 - j]*filter[p];
                 if (++p >= 129)
                     p = 0;
+                /*endif*/
             }
+            /*endfor*/
             sumin += buf[i]*buf[i];
             sumout += out*out;
         }
@@ -392,7 +427,9 @@ int main(int argc, char *argv[])
             //usage();
             exit(2);
         }
+        /*endswitch*/
     }
+    /*endwhile*/
     complexify_tests();
     test_one_way_model(line_model_no, speech_test);
     test_both_ways_model(line_model_no, speech_test);

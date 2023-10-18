@@ -63,6 +63,7 @@ static void v42_status(void *user_data, int status)
         printf("%p: Status is '%s' (%d)\n", s, signal_status_to_str(status), status);
     else
         printf("%p: Status is '%s' (%d)\n", s, lapm_status_to_str(status), status);
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -79,6 +80,7 @@ static int v42_get_frames(void *user_data, uint8_t msg[], int len)
         v42_status(user_data, len);
         return 0;
     }
+    /*endif*/
     s = (v42_state_t *) user_data;
     x = (s == caller)  ?  1  :  2;
     if (variable_length)
@@ -92,8 +94,10 @@ static int v42_get_frames(void *user_data, uint8_t msg[], int len)
     {
         k = len;
     }
+    /*endif*/
     for (i = 0;  i < k;  i++)
         msg[i] = tx_next[x]++;
+    /*endfor*/
     return k;
 }
 /*- End of function --------------------------------------------------------*/
@@ -111,6 +115,7 @@ static void v42_put_frames(void *user_data, const uint8_t msg[], int len)
         v42_status(user_data, len);
         return;
     }
+    /*endif*/
     s = (v42_state_t *) user_data;
     x = (s == caller)  ?  1  :  2;
     for (i = 0;  i < len;  i++)
@@ -120,8 +125,10 @@ static void v42_put_frames(void *user_data, const uint8_t msg[], int len)
             printf("%p: Mismatch 0x%02X 0x%02X\n", user_data, msg[i], rx_next[x] & 0xFF);
             exit(2);
         }
+        /*endif*/
         rx_next[x]++;
     }
+    /*endfor*/
     printf("%p: Got frame len %d\n", user_data, len);
     printf("%p: %d Far end busy status %d\n", user_data, count, v42_get_far_busy_status(s));
     if (s == caller)
@@ -131,12 +138,15 @@ static void v42_put_frames(void *user_data, const uint8_t msg[], int len)
             v42_set_local_busy_status(s, true);
             xxx = 1;
         }
+        /*endif*/
     }
     else
     {
         if (xxx  &&  ++count == 45)
             v42_set_local_busy_status(caller, false);
+        /*endif*/
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -167,7 +177,9 @@ int main(int argc, char *argv[])
             exit(2);
             break;
         }
+        /*endswitch*/
     }
+    /*endwhile*/
 
     caller = v42_init(&callerx, true, true, v42_get_frames, v42_put_frames, (void *) &callerx);
     answerer = v42_init(&answererx, false, true, v42_get_frames, v42_put_frames, (void *) &answererx);
@@ -186,12 +198,15 @@ int main(int argc, char *argv[])
         bit = v42_tx_bit(caller);
         if (insert_caller_bit_errors  &&  i%insert_caller_bit_errors == 0)
             bit ^= 1;
+        /*endif*/
         v42_rx_bit(answerer, bit);
         bit = v42_tx_bit(answerer);
         if (insert_answerer_bit_errors  &&  i%insert_answerer_bit_errors == 0)
             bit ^= 1;
+        /*endif*/
         v42_rx_bit(caller, bit);
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

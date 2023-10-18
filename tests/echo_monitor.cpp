@@ -106,6 +106,7 @@ int echo_can_monitor_can_update(const int16_t *coeffs, int len)
 
     if (s->can_re)
         delete s->can_re;
+    /*endif*/
 
     s->canvas_can->current(s->canvas_can);
     i = 0;
@@ -117,9 +118,12 @@ int echo_can_monitor_can_update(const int16_t *coeffs, int len)
         s->can_re_plot[2*i + 1] = coeffs[i];
         if (min > coeffs[i])
             min = coeffs[i];
+        /*endif*/
         if (max < coeffs[i])
             max = coeffs[i];
+        /*endif*/
     }
+    /*endfor*/
     s->can_y->maximum((max == min)  ?  max + 0.2  :  max);
     s->can_y->minimum(min);
     s->can_re = new Ca_Line(len, s->can_re_plot, 0, 0, FL_BLUE, CA_NO_POINT);
@@ -128,6 +132,7 @@ int echo_can_monitor_can_update(const int16_t *coeffs, int len)
         skip = 0;
         Fl::check();
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -140,6 +145,7 @@ int echo_can_monitor_line_model_update(const int32_t *coeffs, int len)
 
     if (s->line_model_re)
         delete s->line_model_re;
+    /*endif*/
 
     s->canvas_line_model->current(s->canvas_line_model);
     i = 0;
@@ -151,9 +157,12 @@ int echo_can_monitor_line_model_update(const int32_t *coeffs, int len)
         s->line_model_re_plot[2*i + 1] = coeffs[i];
         if (min > coeffs[i])
             min = coeffs[i];
+        /*endif*/
         if (max < coeffs[i])
             max = coeffs[i];
+        /*endif*/
     }
+    /*endfor*/
     s->line_model_y->maximum((max == min)  ?  max + 0.2  :  max);
     s->line_model_y->minimum(min);
     s->line_model_re = new Ca_Line(len, s->line_model_re_plot, 0, 0, FL_BLUE, CA_NO_POINT);
@@ -162,6 +171,7 @@ int echo_can_monitor_line_model_update(const int32_t *coeffs, int len)
         skip = 0;
         Fl::check();
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -173,47 +183,61 @@ int echo_can_monitor_line_spectrum_update(const int16_t amp[], int len)
 
     for (i = 0;  i < len;  i++)
         s->audio_meter->sample(amp[i]/32768.0);
+    /*endfor*/
 
     if (s->in_ptr + len < 512)
     {
         /* Just add this fragment to the buffer. */
         for (i = 0;  i < len;  i++)
+        {
 #if defined(HAVE_FFTW3_H)
             s->in[s->in_ptr + i][0] = amp[i];
 #else
             s->in[s->in_ptr + i].re = amp[i];
 #endif
+        }
+        /*endfor*/
         s->in_ptr += len;
         return 0;
     }
+    /*endif*/
     if (len >= 512)
     {
         /* We have enough for a whole block. Use the last 512 samples
            we have. */
         x = len - 512;
         for (i = 0;  i < 512;  i++)
+        {
 #if defined(HAVE_FFTW3_H)
             s->in[i][0] = amp[x + i];
 #else
             s->in[i].re = amp[x + i];
 #endif
+        }
+        /*endfor*/
     }
     else
     {
         /* We want the last 512 samples. */
         x = 512 - len;
         for (i = 0;  i < x;  i++)
+        {
 #if defined(HAVE_FFTW3_H)
             s->in[i][0] = s->in[s->in_ptr - x + i][0];
 #else
             s->in[i].re = s->in[s->in_ptr - x + i].re;
 #endif
+        }
+        /*endfor*/
         for (i = x;  i < 512;  i++)
+        {
 #if defined(HAVE_FFTW3_H)
             s->in[i][0] = amp[i - x];
 #else
             s->in[i].re = amp[i - x];
 #endif
+        }
+        /*endfor*/
     }
     s->in_ptr = 0;
 #if defined(HAVE_FFTW3_H)
@@ -223,6 +247,7 @@ int echo_can_monitor_line_spectrum_update(const int16_t amp[], int len)
 #endif
     if (s->spec_re)
         delete s->spec_re;
+    /*endif*/
     s->canvas_spec->current(s->canvas_spec);
     for (i = 0;  i < 512;  i++)
     {
@@ -233,6 +258,7 @@ int echo_can_monitor_line_spectrum_update(const int16_t amp[], int len)
         s->spec_re_plot[2*i + 1] = 10.0*log10((s->out[i].re*s->out[i].re + s->out[i].im*s->out[i].im)/(256.0*32768*256.0*32768) + 1.0e-10) + 3.14;
 #endif
     }
+    /*endif*/
     s->spec_re = new Ca_Line(512, s->spec_re_plot, 0, 0, FL_BLUE, CA_NO_POINT);
     Fl::check();
     return 0;
@@ -401,6 +427,7 @@ int start_echo_can_monitor(int len)
         s->in[i][0] = 0.0;
         s->in[i][1] = 0.0;
     }
+    /*endfor*/
 #else
     s->p = fftw_create_plan(1024, FFTW_BACKWARD, FFTW_ESTIMATE);
     for (i = 0;  i < 1024;  i++)
@@ -408,6 +435,7 @@ int start_echo_can_monitor(int len)
         s->in[i].re = 0.0;
         s->in[i].im = 0.0;
     }
+    /*endfor*/
 #endif
     s->in_ptr = 0;
 

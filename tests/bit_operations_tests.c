@@ -52,11 +52,14 @@ static __inline__ int top_bit_dumb(unsigned int data)
 
     if (data == 0)
         return -1;
+    /*endif*/
     for (i = 31;  i >= 0;  i--)
     {
         if ((data & (1U << i)))
             return i;
+        /*endif*/
     }
+    /*endfor*/
     return -1;
 }
 /*- End of function --------------------------------------------------------*/
@@ -67,11 +70,14 @@ static __inline__ int bottom_bit_dumb(unsigned int data)
 
     if (data == 0)
         return -1;
+    /*endif*/
     for (i = 0;  i < 32;  i++)
     {
         if ((data & (1U << i)))
             return i;
+        /*endif*/
     }
+    /*endfor*/
     return -1;
 }
 /*- End of function --------------------------------------------------------*/
@@ -87,6 +93,7 @@ static __inline__ uint8_t bit_reverse8_dumb(uint8_t data)
         result = (result << 1) | (data & 1);
         data >>= 1;
     }
+    /*endfor*/
     return result;
 }
 /*- End of function --------------------------------------------------------*/
@@ -102,6 +109,7 @@ static __inline__ uint32_t bit_reverse_4bytes_dumb(uint32_t data)
         result = (result << 1) | (data & 0x01010101);
         data >>= 1;
     }
+    /*endfor*/
     return result;
 }
 /*- End of function --------------------------------------------------------*/
@@ -117,6 +125,7 @@ static __inline__ uint16_t bit_reverse16_dumb(uint16_t data)
         result = (result << 1) | (data & 1);
         data >>= 1;
     }
+    /*endfor*/
     return result;
 }
 /*- End of function --------------------------------------------------------*/
@@ -132,6 +141,7 @@ static __inline__ uint32_t bit_reverse32_dumb(uint32_t data)
         result = (result << 1) | (data & 1);
         data >>= 1;
     }
+    /*endfor*/
     return result;
 }
 /*- End of function --------------------------------------------------------*/
@@ -146,6 +156,7 @@ static __inline__ int parity8_dumb(uint8_t x)
         y ^= (x & 1);
         x >>= 1;
     }
+    /*endfor*/
     return y;
 }
 /*- End of function --------------------------------------------------------*/
@@ -160,8 +171,10 @@ static __inline__ int one_bits32_dumb(uint32_t x)
     {
         if (x & 1)
             bits++;
+        /*endif*/
         x >>= 1;
     }
+    /*endfor*/
     return bits;
 }
 /*- End of function --------------------------------------------------------*/
@@ -186,6 +199,7 @@ int main(int argc, char *argv[])
             printf("Test failed: top bit mismatch 0x%" PRIx32 " -> %u %u\n", x, ax, bx);
             exit(2);
         }
+        /*endif*/
         ax = bottom_bit_dumb(x);
         bx = bottom_bit(x);
         if (ax != bx)
@@ -193,8 +207,10 @@ int main(int argc, char *argv[])
             printf("Test failed: bottom bit mismatch 0x%" PRIx32 " -> %u %u\n", x, ax, bx);
             exit(2);
         }
+        /*endif*/
         x = rand();
     }
+    /*endfor*/
     for (i = 0;  i < 256;  i++)
     {
         ax = bit_reverse8_dumb(i);
@@ -204,9 +220,12 @@ int main(int argc, char *argv[])
             printf("Test failed: bit reverse 8 - %02x %02x %02x\n", i, ax, bx);
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     for (i = 0;  i < 1000000;  i++)
         from[i] = rand();
+    /*endfor*/
     bit_reverse(to, from, 1000000);
     for (i = 0;  i < 1000000;  i++)
     {
@@ -215,7 +234,9 @@ int main(int argc, char *argv[])
             printf("Test failed: bit reverse - at %d, %02x %02x %02x\n", i, from[i], bit_reverse8(from[i]), to[i]);
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     for (i = 0;  i < 256;  i++)
     {
         x = i | (((i + 1) & 0xFF) << 8) | (((i + 2) & 0xFF) << 16) | (((i + 3) & 0xFF) << 24);
@@ -226,7 +247,9 @@ int main(int argc, char *argv[])
             printf("Test failed: bit reverse 4 bytes - %" PRIx32 " %" PRIx32 " %" PRIx32 "\n", x, ax32, bx32);
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     for (i = 0;  i < 65536;  i++)
     {
         ax16 = bit_reverse16_dumb(i);
@@ -236,7 +259,9 @@ int main(int argc, char *argv[])
             printf("Test failed: bit reverse 16 - %x %x %x\n", i, ax16, bx16);
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     for (i = 0;  i < 0x7FFFFF00;  i += 127)
     {
         ax32 = bit_reverse32_dumb(i);
@@ -246,7 +271,9 @@ int main(int argc, char *argv[])
             printf("Test failed: bit reverse 32 - %d %" PRIx32 " %" PRIx32 "\n", i, ax32, bx32);
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
 
     for (i = 0;  i < 256;  i++)
     {
@@ -257,7 +284,9 @@ int main(int argc, char *argv[])
             printf("Test failed: parity 8 - %x %x %x\n", i, ax, bx);
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
 
     for (i = -1;  i < 32;  i++)
     {
@@ -267,13 +296,16 @@ int main(int argc, char *argv[])
             printf("Test failed: most significant one 32 - %x %" PRIx32 " %x\n", i, ax32, (1 << i));
             exit(2);
         }
+        /*endif*/
         ax32 = least_significant_one32(1U << i);
         if (ax32 != (1U << i))
         {
             printf("Test failed: least significant one 32 - %x %" PRIx32 " %x\n", i, ax32, (1 << i));
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
 
     for (i = 0x80000000;  i < 0x800FFFFF;  i++)
     {
@@ -284,7 +316,9 @@ int main(int argc, char *argv[])
             printf("Test failed: one bits - %d, %x %x\n", i, ax, bx);
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
 
     printf("Tests passed.\n");
     return 0;

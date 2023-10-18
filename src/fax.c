@@ -274,7 +274,7 @@ static void fax_set_rx_type(void *user_data, int type, int bit_rate, int short_t
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Set fallback rx type %d%s\n", type, use_hdlc ? " (HDLC)" : "");
         fax_modems_set_rx_handler(t, (span_rx_handler_t) &sslfax_rx, &s->t30.sslfax, (span_rx_fillin_handler_t) NULL, &s->t30.sslfax);
-        sslfax_setup(&s->t30.sslfax, &s->t30, t30_non_ecm_put, t30_non_ecm_get, t30_hdlc_accept, hdlc_underflow_handler, s->t30.sslfax.tx_use_hdlc, use_hdlc, fax_get_phase);
+        sslfax_setup(&s->t30.sslfax, t30_non_ecm_put, t30_non_ecm_get, t30_hdlc_accept, hdlc_underflow_handler, s->t30.sslfax.tx_use_hdlc, use_hdlc, fax_get_phase, &s->t30);
         t->rx_bit_rate = bit_rate;
         t->current_rx_type = type;
         if (use_hdlc)
@@ -334,7 +334,7 @@ static void fax_set_tx_type(void *user_data, int type, int bit_rate, int short_t
         span_log(&s->logging, SPAN_LOG_FLOW, "Set fallback tx type %d%s\n", type, use_hdlc  ?  " (HDLC)"  :  "");
         fax_modems_set_tx_handler(t, (span_tx_handler_t) &sslfax_tx, &s->t30.sslfax);
         fax_modems_set_next_tx_handler(t, (span_tx_handler_t) &sslfax_tx, &s->t30.sslfax);
-        sslfax_setup(&s->t30.sslfax, &s->t30, t30_non_ecm_put, t30_non_ecm_get, t30_hdlc_accept, hdlc_underflow_handler, use_hdlc, s->t30.sslfax.rx_use_hdlc, fax_get_phase);
+        sslfax_setup(&s->t30.sslfax, t30_non_ecm_put, t30_non_ecm_get, t30_hdlc_accept, hdlc_underflow_handler, use_hdlc, s->t30.sslfax.rx_use_hdlc, fax_get_phase, &s->t30);
         t->transmit = true;
         t->tx_bit_rate = bit_rate;
         t->current_tx_type = type;

@@ -45,6 +45,7 @@ static complexi32_t cvec_dot_prodi16_dumb(const complexi16_t x[], const complexi
         z.re += ((int32_t) x[i].re*(int32_t) y[i].re - (int32_t) x[i].im*(int32_t) y[i].im);
         z.im += ((int32_t) x[i].re*(int32_t) y[i].im + (int32_t) x[i].im*(int32_t) y[i].re);
     }
+    /*endfor*/
     return z;
 }
 /*- End of function --------------------------------------------------------*/
@@ -64,6 +65,7 @@ static int test_cvec_dot_prodi16(void)
         y[i].re = rand();
         y[i].im = rand();
     }
+    /*endfor*/
 
     for (i = 1;  i < 99;  i++)
     {
@@ -74,7 +76,9 @@ static int test_cvec_dot_prodi16(void)
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -99,6 +103,7 @@ static int test_cvec_circular_dot_prodi16(void)
         y[i].re = rand();
         y[i].im = rand();
     }
+    /*endfor*/
 
     len = 95;
     for (pos = 0;  pos < len;  pos++)
@@ -111,13 +116,16 @@ static int test_cvec_circular_dot_prodi16(void)
             zb.re += ((int32_t) x[j].re*(int32_t) y[i].re - (int32_t) x[j].im*(int32_t) y[i].im);
             zb.im += ((int32_t) x[j].re*(int32_t) y[i].im + (int32_t) x[j].im*(int32_t) y[i].re);
         }
+        /*endfor*/
 
         if (za.re != zb.re  ||  za.im != zb.im)
         {
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

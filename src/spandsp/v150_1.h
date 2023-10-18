@@ -1,7 +1,7 @@
 /*
  * SpanDSP - a series of DSP components for telephony
  *
- * v150_1.h
+ * v150_1.h - An implementation of V.150.1.
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
@@ -34,15 +34,20 @@ typedef struct
     {
         struct
         {
-            int bits;
-            int parity_code;
-            int stop_bits;
-        } data_format_change;
+            int local_state;
+            int remote_state;
+        } media_state_change;
         struct
         {
             int state;
             int cleardown_reason;
-        } state_change;
+        } connection_state_change;
+        struct
+        {
+            int bits;
+            int parity_code;
+            int stop_bits;
+        } data_format_change;
         struct
         {
             int source;
@@ -97,9 +102,15 @@ typedef struct
 
 typedef int (*v150_1_tx_packet_handler_t) (void *user_data, int channel, const uint8_t msg[], int len);
 
-typedef int (*v150_1_rx_octet_handler_t) (void *user_data, const uint8_t msg[], int len, int fill);
+typedef int (*v150_1_rx_data_handler_t) (void *user_data, const uint8_t msg[], int len, int fill);
 
 typedef int (*v150_1_rx_status_report_handler_t) (void *user_data, v150_1_status_t *report);
+
+typedef int (*v150_1_sse_tx_packet_handler_t) (void *user_data, bool repeat, const uint8_t pkt[], int len);
+
+typedef int (*v150_1_sse_status_handler_t) (void *user_data, int status);
+
+typedef span_timestamp_t (*v150_1_timer_handler_t) (void *user_data, span_timestamp_t timeout);
 
 typedef struct v150_1_state_s v150_1_state_t;
 
@@ -137,6 +148,19 @@ typedef struct v150_1_state_s v150_1_state_t;
     data passes through the V.150.1 link. This assumes that the original frames are never bigger than the current
     maximum allowed for a V.150.1 packet.
  */
+
+#define V150_1_CALL_DISCRIMINATION_DEFAULT_TIMEOUT              60000000
+
+/* Indeterminate is the initial state before the correct value has been determined. The other values are from
+   Table 32/V.150.1 */
+typedef enum v150_1_cdscselect_e
+{
+    V150_1_CDSCSELECT_INDETERMINATE                             = 0,
+    V150_1_CDSCSELECT_AUDIO                                     = 1,
+    V150_1_CDSCSELECT_AUDIO_RFC4733                             = 2,
+    V150_1_CDSCSELECT_VBD_SELECT                                = 3,
+    V150_1_CDSCSELECT_MIXED                                     = 4
+} v150_1_cdscselect_t;
 
 enum v150_1_msgid_e
 {
@@ -379,6 +403,23 @@ enum v150_1_state_e
     V150_1_STATE_CONNECTED                                      = 5
 };
 
+/* Table C.1/V.150.1 plus amendments */
+enum v150_1_media_states_e
+{
+    V150_1_MEDIA_STATE_ITU_RESERVED_0                           = 0,        /* Reserved for future use by ITU-T */
+    V150_1_MEDIA_STATE_INITIAL_AUDIO                            = 1,        /* Initial Audio */
+    V150_1_MEDIA_STATE_VOICE_BAND_DATA                          = 2,        /* Voice Band Data (VBD) */
+    V150_1_MEDIA_STATE_MODEM_RELAY                              = 3,        /* Modem Relay */
+    V150_1_MEDIA_STATE_FAX_RELAY                                = 4,        /* Fax Relay */
+    V150_1_MEDIA_STATE_TEXT_RELAY                               = 5,        /* Text Relay */
+    V150_1_MEDIA_STATE_TEXT_PROBE                               = 6,        /* Text Probe (Amendment 2) */
+    V150_1_MEDIA_STATE_ITU_RESERVED_MIN                         = 7,        /* Start of ITU reserved range */
+    V150_1_MEDIA_STATE_ITU_RESERVED_MAX                         = 31,       /* End of ITU reserved range */
+    V150_1_MEDIA_STATE_RESERVED_MIN                             = 32,       /* Start of vendor defined reserved range */
+    V150_1_MEDIA_STATE_RESERVED_MAX                             = 63,       /* End of vendor defined reserved range */
+    V150_1_MEDIA_STATE_INDETERMINATE                            = 64        /* Indeterminate */
+};
+
 /* Definitions for the mrmods field used in the SDP which controls V.150.1 */
 enum v150_1_mrmods_e
 {
@@ -404,19 +445,22 @@ enum v150_1_mrmods_e
 enum v150_1_status_reason_e
 {
     V150_1_STATUS_REASON_NULL                                   = 0,
-    V150_1_STATUS_REASON_STATE_CHANGED                          = 1,
-    V150_1_STATUS_REASON_DATA_FORMAT_CHANGED                    = 2,
-    V150_1_STATUS_REASON_BREAK_RECEIVED                         = 3,
-    V150_1_STATUS_REASON_RATE_RETRAIN_RECEIVED                  = 4,
-    V150_1_STATUS_REASON_RATE_RENEGOTIATION_RECEIVED            = 5,
-    V150_1_STATUS_REASON_BUSY_CHANGED                           = 6,
-    V150_1_STATUS_REASON_PHYSUP                                 = 7,
-    V150_1_STATUS_REASON_CONNECTED                              = 8
+    V150_1_STATUS_REASON_MEDIA_STATE_CHANGED                    = 1,
+    V150_1_STATUS_REASON_CONNECTION_STATE_CHANGED               = 2,
+    V150_1_STATUS_REASON_DATA_FORMAT_CHANGED                    = 3,
+    V150_1_STATUS_REASON_BREAK_RECEIVED                         = 4,
+    V150_1_STATUS_REASON_RATE_RETRAIN_RECEIVED                  = 5,
+    V150_1_STATUS_REASON_RATE_RENEGOTIATION_RECEIVED            = 6,
+    V150_1_STATUS_REASON_BUSY_CHANGED                           = 7,
+    V150_1_STATUS_REASON_CONNECTION_STATE_PHYSUP                = 8,
+    V150_1_STATUS_REASON_CONNECTION_STATE_CONNECTED             = 9
 };
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
+
+SPAN_DECLARE(int) v150_1_state_machine(v150_1_state_t *s, int signal, const uint8_t *msg, int len);
 
 SPAN_DECLARE(const char *) v150_1_msg_id_to_str(int msg_id);
 
@@ -451,6 +495,10 @@ SPAN_DECLARE(const char *) v150_1_status_reason_to_str(int status);
 SPAN_DECLARE(const char *) v150_1_jm_category_to_str(int category);
 
 SPAN_DECLARE(const char *) v150_1_jm_info_modulation_to_str(int modulation);
+
+SPAN_DECLARE(const char *) v150_1_signal_to_str(int modulation);
+
+SPAN_DECLARE(const char *) v150_1_media_state_to_str(int modulation);
 
 SPAN_DECLARE(int) v150_1_set_parity(v150_1_state_t *s, int mode);
 
@@ -520,13 +568,46 @@ SPAN_DECLARE(int) v150_1_set_tx_data_signalling_rate(v150_1_state_t *s, int rate
 
 SPAN_DECLARE(int) v150_1_set_rx_data_signalling_rate(v150_1_state_t *s, int rate);
 
+SPAN_DECLARE(void) v150_1_set_near_cdscselect(v150_1_state_t *s, v150_1_cdscselect_t select);
+
+SPAN_DECLARE(void) v150_1_set_far_cdscselect(v150_1_state_t *s, v150_1_cdscselect_t select);
+
+SPAN_DECLARE(void) v150_1_set_call_discrimination_timeout(v150_1_state_t *s, int timeout);
+
+SPAN_DECLARE(int) v150_1_timer_expired(v150_1_state_t *s, span_timestamp_t now);
+
 SPAN_DECLARE(logging_state_t *) v150_1_get_logging_state(v150_1_state_t *s);
 
+SPAN_DECLARE(int) v150_1_test_rx_sprt_msg(v150_1_state_t *s, int chan, int seq_no, const uint8_t buf[], int len);
+
+/*! Initialise a V.150.1 context. This must be called before the first use of the context, to
+    initialise its contents.
+    \brief Initialise a V.150.1 context.
+    \param s The V.150.1 context.
+    \param sprt_tx_packet_handler Callback routine to handle the transmission of SPRT packets.
+    \param sprt_tx_packet_handler_user_data An opaque pointer, passed in calls to the SPRT packet tx handler
+    \param sprt_tx_payload_type The payload type for transmitted SPRT packets.
+    \param sprt_rx_payload_type The payload type expected in received SPRT packets.
+    \param sse_tx_packet_handler Callback routine to handle the transmission of SSE packets.
+    \param sse_tx_packet_user_data An opaque pointer, passed in calls to the SSE tx packet handler
+    \param v150_1_timer_handler Callback routine to control SPRT, SSE and overall V.150.1 timers.
+    \param v150_1_timer_user_data An opaque pointer, passed in calls to the timer handler
+    \param rx_data_handler Callback routine to handle the octet stream from an SPRT interaction
+    \param rx_data_handler_user_data An opaque pointer, passed in calls to the rx octet handler.
+    \param rx_status_report_handler Callback routine for V.150.1 protocol status reports
+    \param rx_status_report_user_data An opaque pointer, passed in calls to the rx status report handler
+    \return A pointer to the V.150.1 context, or NULL if there was a problem. */
 SPAN_DECLARE(v150_1_state_t *) v150_1_init(v150_1_state_t *s,
-                                           v150_1_tx_packet_handler_t tx_packet_handler,
-                                           void *tx_packet_user_data,
-                                           v150_1_rx_octet_handler_t rx_octet_handler,
-                                           void *rx_octet_handler_user_data,
+                                           sprt_tx_packet_handler_t sprt_tx_packet_handler,
+                                           void *sprt_tx_packet_handler_user_data,
+                                           uint8_t sprt_tx_payload_type,
+                                           uint8_t sprt_rx_payload_type,
+                                           v150_1_sse_tx_packet_handler_t sse_tx_packet_handler,
+                                           void *sse_tx_packet_user_data,
+                                           v150_1_timer_handler_t v150_1_timer_handler,
+                                           void *v150_1_timer_user_data,
+                                           v150_1_rx_data_handler_t rx_data_handler,
+                                           void *rx_data_handler_user_data,
                                            v150_1_rx_status_report_handler_t rx_status_report_handler,
                                            void *rx_status_report_user_data);
 

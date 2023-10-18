@@ -465,10 +465,22 @@ SPAN_DECLARE(void) t30_set_iaf_mode(t30_state_t *s, int iaf);
 SPAN_DECLARE(int) t30_set_ecm_capability(t30_state_t *s, bool enabled);
 
 /*! Specify if page retransmission is allowed by a T.30 context.
-    \brief Select page regtransmission capable.
+    \brief Select page retransmission capable.
     \param s The T.30 context.
     \param enabled True for retransmit capable, or false for not retransmit capable. */
 SPAN_DECLARE(void) t30_set_retransmit_capable(t30_state_t *s, bool enabled);
+
+/*! Specify the maximum number of times a command will be tried by a T.30 context before giving up.
+    \brief Select maximum command tries.
+    \param s The T.30 context.
+    \param tries The mmaximum number of tries. Default is 3 */
+SPAN_DECLARE(void) t30_set_max_command_tries(t30_state_t *s, int tries);
+
+/*! Specify the maximum number of times a response will be tried by a T.30 context before giving up.
+    \brief Select maximum response tries.
+    \param s The T.30 context.
+    \param tries The mmaximum number of tries. Default is 6 */
+SPAN_DECLARE(void) t30_set_max_response_tries(t30_state_t *s, int tries);
 
 /*! Specify the output encoding for TIFF files created during FAX reception.
     \brief Specify the output encoding for TIFF files created during FAX reception.

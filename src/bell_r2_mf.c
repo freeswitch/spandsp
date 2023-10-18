@@ -201,26 +201,26 @@ static const mf_digit_tones_t socotel_tones[] =
 static char socotel_mf_tone_codes[] = "1234567890ABCDEFG";
 #endif
 
+#define BELL_MF_SAMPLES_PER_BLOCK   120
+
+#define R2_MF_SAMPLES_PER_BLOCK     133
+
 #if defined(SPANDSP_USE_FIXED_POINT)
-#define BELL_MF_THRESHOLD           204089              /* -30.5dBm0 */
-#define BELL_MF_TWIST               3.981f              /* 6dB */
-#define BELL_MF_RELATIVE_PEAK       12.589f             /* 11dB */
-#define BELL_MF_SAMPLES_PER_BLOCK   120
+static const int bell_mf_threshold              = goertzel_threshold_dbm0(BELL_MF_SAMPLES_PER_BLOCK, -30.5f);
+static const float bell_mf_twist                = db_to_power_ratio(6.0f);
+static const float bell_mf_relative_peak        = db_to_power_ratio(11.0f);
 
-#define R2_MF_THRESHOLD             62974               /* -36.5dBm0 */
-#define R2_MF_TWIST                 5.012f              /* 7dB */
-#define R2_MF_RELATIVE_PEAK         12.589f             /* 11dB */
-#define R2_MF_SAMPLES_PER_BLOCK     133
+static const int r2_mf_threshold                = goertzel_threshold_dbm0(R2_MF_SAMPLES_PER_BLOCK, -36.5f);
+static const float r2_mf_twist                  = db_to_power_ratio(7.0f);
+static const float r2_mf_relative_peak          = db_to_power_ratio(11.0f);
 #else
-#define BELL_MF_THRESHOLD           3343803100.0f       /* -30.5dBm0 [((120.0*32768.0/1.4142)*10^((-30.5 - DBM0_MAX_SINE_POWER)/20.0))^2 => 3343803100.0] */
-#define BELL_MF_TWIST               3.981f              /* 6dB [10^(6/10) => 3.981] */
-#define BELL_MF_RELATIVE_PEAK       12.589f             /* 11dB */
-#define BELL_MF_SAMPLES_PER_BLOCK   120
+static const float bell_mf_threshold            = goertzel_threshold_dbm0(BELL_MF_SAMPLES_PER_BLOCK, -30.5f);
+static const float bell_mf_twist                = db_to_power_ratio(6.0f);
+static const float bell_mf_relative_peak        = db_to_power_ratio(11.0f);
 
-#define R2_MF_THRESHOLD             1031766650.0f       /* -36.5dBm0 [((133.0*32768.0/1.4142)*10^((-36.5 - DBM0_MAX_SINE_POWER)/20.0))^2 => 1031766650.0] */
-#define R2_MF_TWIST                 5.012f              /* 7dB */
-#define R2_MF_RELATIVE_PEAK         12.589f             /* 11dB */
-#define R2_MF_SAMPLES_PER_BLOCK     133
+static const float r2_mf_threshold              = goertzel_threshold_dbm0(R2_MF_SAMPLES_PER_BLOCK, -36.5f);
+static const float r2_mf_twist                  = db_to_power_ratio(7.0f);
+static const float r2_mf_relative_peak          = db_to_power_ratio(11.0f);
 #endif
 
 static goertzel_descriptor_t bell_mf_detect_desc[6];
@@ -561,13 +561,13 @@ SPAN_DECLARE(int) bell_mf_rx(bell_mf_rx_state_t *s, const int16_t amp[], int sam
         /*endfor*/
         /* Basic signal level and twist tests */
         hit = 0;
-        if (energy[best] >= BELL_MF_THRESHOLD
+        if (energy[best] >= bell_mf_threshold
             &&
-            energy[second_best] >= BELL_MF_THRESHOLD
+            energy[second_best] >= bell_mf_threshold
             &&
-            energy[best] < energy[second_best]*BELL_MF_TWIST
+            energy[best] < energy[second_best]*bell_mf_twist
             &&
-            energy[best]*BELL_MF_TWIST > energy[second_best])
+            energy[best]*bell_mf_twist > energy[second_best])
         {
             /* Relative peak test */
             hit = 'X';
@@ -575,7 +575,7 @@ SPAN_DECLARE(int) bell_mf_rx(bell_mf_rx_state_t *s, const int16_t amp[], int sam
             {
                 if (i != best  &&  i != second_best)
                 {
-                    if (energy[i]*BELL_MF_RELATIVE_PEAK >= energy[second_best])
+                    if (energy[i]*bell_mf_relative_peak >= energy[second_best])
                     {
                         /* The best two are not clearly the best */
                         hit = 0;
@@ -801,13 +801,13 @@ SPAN_DECLARE(int) r2_mf_rx(r2_mf_rx_state_t *s, const int16_t amp[], int samples
         /*endfor*/
         /* Basic signal level and twist tests */
         hit = false;
-        if (energy[best] >= R2_MF_THRESHOLD
+        if (energy[best] >= r2_mf_threshold
             &&
-            energy[second_best] >= R2_MF_THRESHOLD
+            energy[second_best] >= r2_mf_threshold
             &&
-            energy[best] < energy[second_best]*R2_MF_TWIST
+            energy[best] < energy[second_best]*r2_mf_twist
             &&
-            energy[best]*R2_MF_TWIST > energy[second_best])
+            energy[best]*r2_mf_twist > energy[second_best])
         {
             /* Relative peak test */
             hit = true;
@@ -815,7 +815,7 @@ SPAN_DECLARE(int) r2_mf_rx(r2_mf_rx_state_t *s, const int16_t amp[], int samples
             {
                 if (i != best  &&  i != second_best)
                 {
-                    if (energy[i]*R2_MF_RELATIVE_PEAK >= energy[second_best])
+                    if (energy[i]*r2_mf_relative_peak >= energy[second_best])
                     {
                         /* The best two are not clearly the best */
                         hit = false;

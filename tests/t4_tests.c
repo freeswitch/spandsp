@@ -414,6 +414,12 @@ int main(int argc, char *argv[])
         t4_rx_start_page(receive_state);
         last_pkt_no = 0;
         file = fopen(decode_file_name, "r");
+        if (file == NULL)
+        {
+            printf("file %s not found\n", decode_file_name);
+            exit(2);
+        }
+        /*endif*/
         while (fgets(buf, 1024, file))
         {
             if (sscanf(buf, "HDLC:  FCD: 06 %x", &pkt_no) == 1)

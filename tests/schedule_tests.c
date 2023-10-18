@@ -57,6 +57,7 @@ static void callback1(span_sched_state_t *s, void *user_data)
         printf("Callback occured at the wrong time.\n");
         exit(2);
     }
+    /*endif*/
     id = span_schedule_event(s, 500000, callback1, NULL);
     when1 = when + 500000;
     when = span_schedule_next(s);
@@ -76,6 +77,7 @@ static void callback2(span_sched_state_t *s, void *user_data)
         printf("Callback occured at the wrong time.\n");
         exit(2);
     }
+    /*endif*/
     when2 = when + 550000;
     when = span_schedule_next(s);
     printf("2: Event %d, earliest is %" PRId64 "\n", id, when);
@@ -97,12 +99,14 @@ int main(int argc, char *argv[])
 
     for (i = 0;  i < 100000000;  i += 20000)
         span_schedule_update(&sched, 20000);
+    /*endfor*/
     when = span_schedule_time(&sched);
     if ((when1 - when) < 0  ||  (when1 - when) > 500000  ||  (when2 - when) < 0  ||  (when2 - when) > 550000)
     {
         printf("Callback failed to occur.\n");
         exit(2);
     }
+    /*endif*/
     span_schedule_release(&sched);
 
     printf("Tests passed.\n");

@@ -62,10 +62,12 @@ static int test_cvec_mulf(void)
         y[i].re = rand();
         y[i].im = rand();
     }
+    /*endfor*/
     cvec_mulf(za, x, y, 99);
     cvec_mulf_dumb(zb, x, y, 99);
     for (i = 0;  i < 99;  i++)
         printf("(%f,%f) (%f,%f) (%f,%f)\n", za[i].re, za[i].im, x[i].re, x[i].im, y[i].re, y[i].im);
+    /*endfor*/
     for (i = 0;  i < 99;  i++)
     {
         ratio.re = za[i].re/zb[i].re;
@@ -78,7 +80,9 @@ static int test_cvec_mulf(void)
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -95,6 +99,7 @@ static complexf_t cvec_dot_prodf_dumb(const complexf_t x[], const complexf_t y[]
         z1 = complex_mulf(&x[i], &y[i]);
         z = complex_addf(&z, &z1);
     }
+    /*endfor*/
     return z;
 }
 /*- End of function --------------------------------------------------------*/
@@ -115,6 +120,7 @@ static int test_cvec_dot_prodf(void)
         y[i].re = rand();
         y[i].im = rand();
     }
+    /*endfor*/
     for (i = 1;  i < 99;  i++)
     {
         zsa = cvec_dot_prodf(x, y, i);
@@ -129,7 +135,9 @@ static int test_cvec_dot_prodf(void)
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

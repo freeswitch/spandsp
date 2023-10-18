@@ -162,11 +162,13 @@ static int get_test_vector(int full, int disk, const char *name)
             fprintf(stderr, "Cannot open %s\n", buf);
             exit(2);
         }
+        /*endif*/
         len = read(in, in_vector, 1000000);
         close(in);
         len /= sizeof(int16_t);
         vector_len = len;
     }
+    /*endif*/
 
     sprintf(buf, "%s%c/%s.out", TESTDATA_DIR, 'L', name);
     if ((in = open(buf, O_RDONLY)) < 0)
@@ -174,6 +176,7 @@ static int get_test_vector(int full, int disk, const char *name)
         fprintf(stderr, "Cannot open %s\n", buf);
         exit(2);
     }
+    /*endif*/
     len = read(in, ref_out_vector, 1000000);
     close(in);
     len /= sizeof(int16_t);
@@ -184,11 +187,13 @@ static int get_test_vector(int full, int disk, const char *name)
             fprintf(stderr, "Input and reference vector lengths do not match - %d %d\n", vector_len, len);
             exit(2);
         }
+        /*endif*/
     }
     else
     {
         vector_len = len;
     }
+    /*endif*/
 
     sprintf(buf, "%s%c/%s.cod", TESTDATA_DIR, 'L', name);
     if ((in = open(buf, O_RDONLY)) < 0)
@@ -196,6 +201,7 @@ static int get_test_vector(int full, int disk, const char *name)
         fprintf(stderr, "Cannot open %s\n", buf);
         exit(2);
     }
+    /*endif*/
     len = read(in, code_vector_buf, 1000000);
     close(in);
     len /= sizeof(int16_t);
@@ -204,11 +210,13 @@ static int get_test_vector(int full, int disk, const char *name)
         ref_code_vector[i] = code_vector_buf[i];
         decoder_code_vector[i] = code_vector_buf[i];
     }
+    /*endfor*/
     if (len*BLOCK_LEN != vector_len*76)
     {
         fprintf(stderr, "Input and code vector lengths do not match - %d %d\n", vector_len, len);
         exit(2);
     }
+    /*endif*/
 
     return len;
 }
@@ -232,6 +240,7 @@ static int get_law_test_vector(int full, int law, const char *name)
             fprintf(stderr, "Cannot open %s\n", buf);
             exit(2);
         }
+        /*endif*/
         len = read(in, law_in_vector, 1000000);
         close(in);
         vector_len = len;
@@ -247,12 +256,15 @@ static int get_law_test_vector(int full, int law, const char *name)
         len /= sizeof(int16_t);
         for (i = 0;  i < len;  i++)
             ref_code_vector[i] = code_vector_buf[i];
+        /*endfor*/
         if (len*BLOCK_LEN != vector_len*76)
         {
             fprintf(stderr, "Input and code vector lengths do not match - %d %d\n", vector_len, len);
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
 
     sprintf(buf, "%s%c/%s-%c.out", TESTDATA_DIR, law_uc, name, law_uc);
     if ((in = open(buf, O_RDONLY)) < 0)
@@ -260,6 +272,7 @@ static int get_law_test_vector(int full, int law, const char *name)
         fprintf(stderr, "Cannot open %s\n", buf);
         exit(2);
     }
+    /*endif*/
     len = read(in, ref_law_out_vector, 1000000);
     close(in);
     if (full)
@@ -269,11 +282,13 @@ static int get_law_test_vector(int full, int law, const char *name)
             fprintf(stderr, "Input and reference vector lengths do not match - %d %d\n", vector_len, len);
             exit(2);
         }
+        /*endif*/
     }
     else
     {
         vector_len = len;
     }
+    /*endif*/
 
     sprintf(buf, "%s%c/%s.cod", TESTDATA_DIR, 'L', name);
     if ((in = open(buf, O_RDONLY)) < 0)
@@ -281,11 +296,13 @@ static int get_law_test_vector(int full, int law, const char *name)
         fprintf(stderr, "Cannot open %s\n", buf);
         exit(2);
     }
+    /*endif*/
     len = read(in, code_vector_buf, 1000000);
     close(in);
     len /= sizeof(int16_t);
     for (i = 0;  i < len;  i++)
         decoder_code_vector[i] = code_vector_buf[i];
+    /*endfor*/
 
     return len;
 }
@@ -310,6 +327,7 @@ static int perform_linear_test(int full, int disk, const char *name)
             fprintf(stderr, "    Cannot create encoder\n");
             exit(2);
         }
+        /*endif*/
         xxx = gsm0610_encode(gsm0610_enc_state, code_vector, in_vector, vector_len);
 
         printf("Check code vector of length %d\n", xxx);
@@ -320,21 +338,26 @@ static int perform_linear_test(int full, int disk, const char *name)
                 printf("%8d/%3d: %6d %6d\n", i/76, i%76, code_vector[i], ref_code_vector[i]);
                 mismatches++;
             }
+            /*endif*/
         }
+        /*endfor*/
         gsm0610_free(gsm0610_enc_state);
         if (mismatches)
         {
             printf("Test failed: %d of %d samples mismatch\n", mismatches, xxx);
             exit(2);
         }
+        /*endif*/
         printf("Test passed\n");
     }
+    /*endif*/
 
     if ((gsm0610_dec_state = gsm0610_init(NULL, GSM0610_PACKING_NONE)) == NULL)
     {
         fprintf(stderr, "    Cannot create decoder\n");
         exit(2);
     }
+    /*endif*/
     xxx = gsm0610_decode(gsm0610_dec_state, out_vector, decoder_code_vector, vector_len);
     printf("Check output vector of length %d\n", vector_len);
     for (i = 0, mismatches = 0;  i < vector_len;  i++)
@@ -344,12 +367,15 @@ static int perform_linear_test(int full, int disk, const char *name)
             printf("%8d: %6d %6d\n", i, out_vector[i], ref_out_vector[i]);
             mismatches++;
         }
+        /*endif*/
     }
+    /*endfor*/
     if (mismatches)
     {
         printf("Test failed: %d of %d samples mismatch\n", mismatches, vector_len);
         exit(2);
     }
+    /*endif*/
     gsm0610_free(gsm0610_dec_state);
     printf("Test passed\n");
     return 0;
@@ -368,6 +394,7 @@ static int perform_law_test(int full, int law, const char *name)
         printf("Performing A-law test '%s'\n", name);
     else
         printf("Performing u-law test '%s'\n", name);
+    /*endif*/
 
     get_law_test_vector(full, law, name);
 
@@ -378,16 +405,20 @@ static int perform_law_test(int full, int law, const char *name)
             fprintf(stderr, "    Cannot create encoder\n");
             exit(2);
         }
+        /*endif*/
         if (law == 'a')
         {
             for (i = 0;  i < vector_len;  i++)
                 in_vector[i] = alaw_to_linear(law_in_vector[i]);
+            /*endfor*/
         }
         else
         {
             for (i = 0;  i < vector_len;  i++)
                 in_vector[i] = ulaw_to_linear(law_in_vector[i]);
+            /*endfor*/
         }
+        /*endif*/
         xxx = gsm0610_encode(gsm0610_enc_state, code_vector, in_vector, vector_len);
 
         printf("Check code vector of length %d\n", xxx);
@@ -398,12 +429,15 @@ static int perform_law_test(int full, int law, const char *name)
                 printf("%8d/%3d: %6d %6d %6d\n", i/76, i%76, code_vector[i], ref_code_vector[i], decoder_code_vector[i]);
                 mismatches++;
             }
+            /*endif*/
         }
+        /*endfor*/
         if (mismatches)
         {
             printf("Test failed: %d of %d samples mismatch\n", mismatches, xxx);
             exit(2);
         }
+        /*endif*/
         printf("Test passed\n");
         gsm0610_free(gsm0610_enc_state);
     }
@@ -413,17 +447,21 @@ static int perform_law_test(int full, int law, const char *name)
         fprintf(stderr, "    Cannot create decoder\n");
         exit(2);
     }
+    /*endif*/
     xxx = gsm0610_decode(gsm0610_dec_state, out_vector, decoder_code_vector, vector_len);
     if (law == 'a')
     {
         for (i = 0;  i < vector_len;  i++)
             law_out_vector[i] = linear_to_alaw(out_vector[i]);
+        /*endfor*/
     }
     else
     {
         for (i = 0;  i < vector_len;  i++)
             law_out_vector[i] = linear_to_ulaw(out_vector[i]);
+        /*endfor*/
     }
+    /*endif*/
     printf("Check output vector of length %d\n", vector_len);
     for (i = 0, mismatches = 0;  i < vector_len;  i++)
     {
@@ -432,12 +470,15 @@ static int perform_law_test(int full, int law, const char *name)
             printf("%8d: %6d %6d\n", i, law_out_vector[i], ref_law_out_vector[i]);
             mismatches++;
         }
+        /*endif*/
     }
+    /*endfor*/
     if (mismatches)
     {
         printf("Test failed: %d of %d samples mismatch\n", mismatches, vector_len);
         exit(2);
     }
+    /*endif*/
     gsm0610_free(gsm0610_dec_state);
     printf("Test passed\n");
     return 0;
@@ -482,6 +523,7 @@ static int perform_pack_unpack_test(void)
     {
         for (i = 0;  i < 65;  i++)
             a[i] = rand();
+        /*endfor*/
         repack_gsm0610_wav49_to_voip(b, a);
         repack_gsm0610_voip_to_wav49(c, b);
         if (memcmp(a, c, 65))
@@ -489,9 +531,11 @@ static int perform_pack_unpack_test(void)
             printf("Test failed: data mismatch\n");
             exit(2);
         }
+        /*endif*/
 
         for (i = 0;  i < 66;  i++)
             a[i] = rand();
+        /*endfor*/
         /* Insert the magic code */
         a[0] = (a[0] & 0xF) | 0xD0;
         a[33] = (a[33] & 0xF) | 0xD0;
@@ -504,7 +548,9 @@ static int perform_pack_unpack_test(void)
             printf("Test failed: data mismatch\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     printf("Test passed\n");
     return 0;
 }
@@ -565,7 +611,9 @@ int main(int argc, char *argv[])
             //usage();
             exit(2);
         }
+        /*endswitch*/
     }
+    /*endwhile*/
 
     if (etsitests)
     {
@@ -578,23 +626,27 @@ int main(int argc, char *argv[])
             fprintf(stderr, "    Cannot open audio file '%s'\n", IN_FILE_NAME);
             exit(2);
         }
+        /*endif*/
         if ((outhandle = sf_open_telephony_write(OUT_FILE_NAME, 1)) == NULL)
         {
             fprintf(stderr, "    Cannot create audio file '%s'\n", OUT_FILE_NAME);
             exit(2);
         }
+        /*endif*/
 
         if ((gsm0610_enc_state = gsm0610_init(NULL, packing)) == NULL)
         {
             fprintf(stderr, "    Cannot create encoder\n");
             exit(2);
         }
+        /*endif*/
 
         if ((gsm0610_dec_state = gsm0610_init(NULL, packing)) == NULL)
         {
             fprintf(stderr, "    Cannot create decoder\n");
             exit(2);
         }
+        /*endif*/
 
         while ((frames = sf_readf_short(inhandle, pre_amp, 2*BLOCK_LEN)))
         {
@@ -602,20 +654,24 @@ int main(int argc, char *argv[])
             gsm0610_decode(gsm0610_dec_state, post_amp, gsm0610_data, bytes);
             sf_writef_short(outhandle, post_amp, frames);
         }
+        /*endwhile*/
 
         if (sf_close_telephony(inhandle))
         {
             fprintf(stderr, "    Cannot close audio file '%s'\n", IN_FILE_NAME);
             exit(2);
         }
+        /*endif*/
         if (sf_close_telephony(outhandle))
         {
             fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
             exit(2);
         }
+        /*endif*/
         gsm0610_free(gsm0610_enc_state);
         gsm0610_free(gsm0610_dec_state);
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

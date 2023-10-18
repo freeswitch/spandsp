@@ -164,6 +164,7 @@ static void my_mf_gen_init(float low_fudge,
             tone = &r2_mf_fwd_tones[i];
         else
             tone = &r2_mf_back_tones[i];
+        /*endif*/
         tone_gen_descriptor_init(&my_mf_digit_tones[i],
                                  tone->f1*(1.0 + low_fudge),
                                  low_level,
@@ -175,6 +176,7 @@ static void my_mf_gen_init(float low_fudge,
                                  0,
                                  false);
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -191,6 +193,7 @@ static int my_mf_generate(int16_t amp[], char digit)
         len += tone_gen(tone, amp + len, 9999);
         tone_gen_free(tone);
     }
+    /*endif*/
     return len;
 }
 /*- End of function --------------------------------------------------------*/
@@ -204,18 +207,22 @@ static void digit_delivery(void *data, int digit, int level, int delay)
         callback_ok = false;
         return;
     }
+    /*endif*/
     if ((callback_roll & 1))
         ch = 0;
     else
         ch = r2_mf_tone_codes[callback_roll >> 1];
+    /*endif*/
     if (ch == digit)
         callback_ok = true;
     else
         callback_ok = false;
+    /*endif*/
     if (r2_mf_tone_codes[callback_roll >> 1])
         callback_roll++;
     else
         callback_ok = false;
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -268,8 +275,11 @@ static int test_a_tone_set(int fwd)
                 printf("    Failed\n");
                 exit(2);
             }
+            /*endif*/
         }
+        /*endfor*/
     }
+    /*endwhile*/
     printf("    Passed\n");
 
     /* Test 3: Recognition bandwidth and channel centre frequency check.
@@ -314,7 +324,9 @@ static int test_a_tone_set(int fwd)
             r2_mf_rx(mf_state, amp, len);
             if (r2_mf_rx_get(mf_state) == digit)
                 nplus++;
+            /*endif*/
         }
+        /*endfor*/
         for (nminus = 0, i = -1;  i >= -60;  i--)
         {
             my_mf_gen_init((float) i/1000.0, -17, 0.0, -17, 68, fwd);
@@ -323,7 +335,9 @@ static int test_a_tone_set(int fwd)
             r2_mf_rx(mf_state, amp, len);
             if (r2_mf_rx_get(mf_state) == digit)
                 nminus++;
+            /*endif*/
         }
+        /*endfor*/
         rrb = (float) (nplus + nminus)/10.0;
         rcfo = (float) (nplus - nminus)/10.0;
         printf("    %c (low)  rrb = %5.2f%%, rcfo = %5.2f%%, max -ve = %5.2f, max +ve = %5.2f\n",
@@ -338,6 +352,7 @@ static int test_a_tone_set(int fwd)
             printf("    Failed\n");
             exit(2);
         }
+        /*endif*/
 
         for (nplus = 0, i = 1;  i <= 60;  i++)
         {
@@ -347,7 +362,9 @@ static int test_a_tone_set(int fwd)
             r2_mf_rx(mf_state, amp, len);
             if (r2_mf_rx_get(mf_state) == digit)
                 nplus++;
+            /*endif*/
         }
+        /*endfor*/
         for (nminus = 0, i = -1;  i >= -60;  i--)
         {
             my_mf_gen_init(0.0, -17, (float) i/1000.0, -17, 68, fwd);
@@ -356,7 +373,9 @@ static int test_a_tone_set(int fwd)
             r2_mf_rx(mf_state, amp, len);
             if (r2_mf_rx_get(mf_state) == digit)
                 nminus++;
+            /*endif*/
         }
+        /*endfor*/
         rrb = (float) (nplus + nminus)/10.0;
         rcfo = (float) (nplus - nminus)/10.0;
         printf("    %c (high) rrb = %5.2f%%, rcfo = %5.2f%%, max -ve = %5.2f, max +ve = %5.2f\n",
@@ -370,8 +389,10 @@ static int test_a_tone_set(int fwd)
             printf("    Failed\n");
             exit(2);
         }
+        /*endif*/
         j++;
     }
+    /*endwhile*/
     printf("    Passed\n");
 
     /* Test 4: Acceptable amplitude ratio (twist).
@@ -393,13 +414,16 @@ static int test_a_tone_set(int fwd)
             r2_mf_rx(mf_state, amp, len);
             if (r2_mf_rx_get(mf_state) == digit)
                 nplus++;
+            /*endif*/
         }
+        /*endfor*/
         printf("    %c normal twist  = %.2fdB\n", digit, (float) nplus/10.0);
         if (nplus < 70)
         {
             printf("    Failed\n");
             exit(2);
         }
+        /*endif*/
         for (nminus = 0, i = -50;  i >= -250;  i--)
         {
             my_mf_gen_init(0.0, i/10, 0.0, -5, 68, fwd);
@@ -409,14 +433,18 @@ static int test_a_tone_set(int fwd)
             r2_mf_rx(mf_state, amp, len);
             if (r2_mf_rx_get(mf_state) == digit)
                 nminus++;
+            /*endif*/
         }
+        /*endfor*/
         printf("    %c reverse twist = %.2fdB\n", digit, (float) nminus/10.0);
         if (nminus < 70)
         {
             printf("    Failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endwhile*/
     printf("    Passed\n");
 
     /* Test 5: Dynamic range
@@ -439,27 +467,36 @@ static int test_a_tone_set(int fwd)
                 r2_mf_rx(mf_state, amp, len);
                 if (r2_mf_rx_get(mf_state) != digit)
                     break;
+                /*endif*/
             }
+            /*endfor*/
             if (j < 100)
                 break;
+            /*endif*/
         }
+        /*endwhile*/
         if (j == 100)
         {
             if (nplus == -1000)
                 nplus = i;
+            /*endif*/
         }
         else
         {
             if (nplus != -1000  &&  nminus == -1000)
                 nminus = i;
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endfor*/
     printf("    Dynamic range = %ddB to %ddB\n", nplus, nminus - 1);
     if (nplus > -35  ||  nminus <= -5)
     {
         printf("    Failed\n");
         exit(2);
     }
+    /*endif*/
     printf("    Passed\n");
 
     /* Test 6: Guard time
@@ -482,19 +519,26 @@ static int test_a_tone_set(int fwd)
                 r2_mf_rx(mf_state, amp, len);
                 if (r2_mf_rx_get(mf_state) != digit)
                     break;
+                /*endif*/
             }
+            /*endfor*/
             if (j < 500)
                 break;
+            /*endif*/
         }
+        /*endwhile*/
         if (j == 500)
             break;
+        /*endif*/
     }
+    /*endfor*/
     printf("    Guard time = %dms\n", i);
     if (i > 61)
     {
         printf("    Failed\n");
         exit(2);
     }
+    /*endif*/
     printf("    Passed\n");
 
     /* Test 7: Acceptable signal to noise ratio
@@ -515,24 +559,32 @@ static int test_a_tone_set(int fwd)
                 len = my_mf_generate(amp, digit);
                 for (sample = 0;  sample < len;  sample++)
                     amp[sample] = sat_add16(amp[sample], awgn(noise_source));
+                /*endfor*/
                 codec_munge(munge, amp, len);
                 r2_mf_rx(mf_state, amp, len);
                 if (r2_mf_rx_get(mf_state) != digit)
                     break;
+                /*endif*/
             }
+            /*endfor*/
             awgn_free(noise_source);
             if (j < 500)
                 break;
+            /*endif*/
         }
+        /*endwhile*/
         if (j == 500)
             break;
+        /*endif*/
     }
+    /*endfor*/
     printf("    Acceptable S/N ratio is %ddB\n", -3 - i);
     if (-3 - i > 26)
     {
         printf("    Failed\n");
         exit(2);
     }
+    /*endif*/
     printf("    Passed\n");
 
     printf("Test 8: Callback digit delivery mode.\n");
@@ -554,15 +606,18 @@ static int test_a_tone_set(int fwd)
         memset(amp, '\0', len*sizeof(int16_t));
         for (sample = 0;  sample < len;  sample++)
             amp[sample] = sat_add16(amp[sample], awgn(noise_source));
+        /*endfor*/
         codec_munge(munge, amp, len);
         r2_mf_rx(mf_state, amp, len);
     }
+    /*endwhile*/
     awgn_free(noise_source);
     if (!callback_ok)
     {
         printf("    Failed\n");
         exit(2);
     }
+    /*endif*/
     printf("    Passed\n");
 
     r2_mf_rx_free(mf_state);
@@ -583,6 +638,7 @@ static void digit_delivery_fwd(void *data, int digit, int level, int delay)
         callback_ok = false;
         return;
     }
+    /*endif*/
     printf("FWD '%c' %d %d\n", (digit == 0)  ?  '-'  :  digit, level, delay);
 }
 /*- End of function --------------------------------------------------------*/
@@ -594,6 +650,7 @@ static void digit_delivery_bwd(void *data, int digit, int level, int delay)
         callback_ok = false;
         return;
     }
+    /*endif*/
     printf("BWD '%c' %d %d\n", (digit == 0)  ?  '-'  :  digit, level, delay);
 }
 /*- End of function --------------------------------------------------------*/
@@ -615,6 +672,7 @@ static void decode_test(const char *test_file)
         fprintf(stderr, "    Cannot open audio file '%s'\n", decode_test_file);
         exit(2);
     }
+    /*endif*/
 
     while ((samples = sf_readf_short(inhandle, amp, SAMPLES_PER_CHUNK)) > 0)
     {
@@ -622,6 +680,7 @@ static void decode_test(const char *test_file)
         r2_mf_rx(mf_fwd_state, amp, samples);
         r2_mf_rx(mf_bwd_state, amp, samples);
     }
+    /*endwhile*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -644,7 +703,9 @@ int main(int argc, char *argv[])
             exit(2);
             break;
         }
+        /*endswitch*/
     }
+    /*endwhile*/
     munge = codec_munge_init(MUNGE_CODEC_ALAW, 0);
     if (decode_test_file)
     {
@@ -660,6 +721,7 @@ int main(int argc, char *argv[])
         duration = time(NULL) - now;
         printf("Tests passed in %lds\n", duration);
     }
+    /*endif*/
     codec_munge_free(munge);
     return 0;
 }

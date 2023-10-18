@@ -73,6 +73,7 @@ int main (int argc, char *argv[])
         fprintf(stderr, "    Cannot create audio file '%s'\n", OUT_FILE_NAME);
         exit(2);
     }
+    /*endif*/
 
     for (quality = 7;  quality <= 20;  quality += (20 - 7))
     {
@@ -97,8 +98,10 @@ int main (int argc, char *argv[])
                     clip_high++;
                 else if (value == -32768)
                     clip_low++;
+                /*endif*/
                 total += ((double) value)*((double) value);
             }
+            /*endfor*/
             printf ("RMS = %.3f (expected %d) %.2f%% error [clipped samples %d+%d]\n",
                     10.0*log10((total/total_samples)/(32768.0*32768.0) + 1.0e-10),
                     level,
@@ -110,8 +113,11 @@ int main (int argc, char *argv[])
                 printf("Test failed\n");
                 exit(2);
             }
+            /*endif*/
         }
+        /*endfor*/
     }
+    /*endfor*/
 
     /* Now look at the statistical spread of the results, by collecting data in
        bins from a large number of samples. Use a fairly high noise level, but
@@ -132,8 +138,10 @@ int main (int argc, char *argv[])
             clip_high++;
         else if (value == -32768)
             clip_low++;
+        /*endif*/
         bins[value + 32768]++;
     }
+    /*endfor*/
     /* Find the RMS power level to expect */
     o = pow(10.0, level/20.0)*(32768.0*0.70711);
     for (i = 0;  i < 65536 - 10;  i++)
@@ -146,25 +154,31 @@ int main (int argc, char *argv[])
         x = 0;
         for (j = 0;  j < 10;  j++)
             x += bins[i + j];
+        /*endfor*/
         x /= 10.0;
         x /= total_samples;
         /* Now send it out for graphing. */
         if (p > 0.0000001)
             printf("%6d %.7f %.7f\n", i - 32768, x, p);
+        /*endif*/
     }
+    /*endfor*/
 
     printf("Generating AWGN at -15dBOv to file\n");
     for (j = 0;  j < 50;  j++)
     {
         for (i = 0;  i < 1024;  i++)
             amp[i] = noise(&noise_source);
+        /*endfor*/
         outframes = sf_writef_short(outhandle, amp, 1024);
         if (outframes != 1024)
         {
             fprintf(stderr, "    Error writing audio file\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
 
     /* Generate Hoth noise at several RMS levels between -50dBm and 0dBm. Noise
        is generated for a large number of samples (1,000,000), and the RMS value
@@ -188,8 +202,10 @@ int main (int argc, char *argv[])
                 clip_high++;
             else if (value == -32768)
                 clip_low++;
+            /*endif*/
             total += ((double) value)*((double) value);
         }
+        /*endfor*/
         printf ("RMS = %.3f (expected %d) %.2f%% error [clipped samples %d+%d]\n",
                 10.0*log10((total/total_samples)/(32768.0*32768.0) + 1.0e-10),
                 level,
@@ -201,7 +217,9 @@ int main (int argc, char *argv[])
             printf("Test failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
 
     quality = 7;
     printf("Generating Hoth noise at -15dBOv to file\n");
@@ -211,19 +229,23 @@ int main (int argc, char *argv[])
     {
         for (i = 0;  i < 1024;  i++)
             amp[i] = noise(&noise_source);
+        /*endfor*/
         outframes = sf_writef_short(outhandle, amp, 1024);
         if (outframes != 1024)
         {
             fprintf(stderr, "    Error writing audio file\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
 
     if (sf_close_telephony(outhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
         exit(2);
     }
+    /*endif*/
 
     printf("Tests passed.\n");
     return 0;

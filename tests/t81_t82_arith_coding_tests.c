@@ -60,6 +60,7 @@ static void write_byte(void *user_data, int byte)
 {
     if (msg_len < MSG_SIZE)
         msg[msg_len++] = byte;
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -103,6 +104,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Failed to allocate arithmetic encoder!\n");
         exit(2);
     }
+    /*endif*/
     msg_len = 0;
     for (i = 0;  i < 16;  i++)
     {
@@ -112,21 +114,26 @@ int main(int argc, char *argv[])
                                  (cx_7_1[i] >> (15 - j)) & 1,
                                  (pix_7_1[i] >> (15 - j)) & 1);
         }
+        /*endfor*/
     }
+    /*endfor*/
     t81_t82_arith_encode_flush(se);
     if (msg_len != SDE_7_1_LEN  ||  memcmp(msg, sde_7_1, SDE_7_1_LEN))
     {
         printf("Encoded data:  ");
         for (i = 0;  i < msg_len;  i++)
             printf("%02X", msg[i]);
+        /*endfor*/
         printf("\n");
         printf("Expected data: ");
         for (i = 0;  i < SDE_7_1_LEN;  i++)
             printf("%02X", sde_7_1[i]);
+        /*endfor*/
         printf("\n");
         printf("Test failed\n");
         exit(2);
     }
+    /*endif*/
     printf("Test passed\n");
 
     printf("Arithmetic decoder tests from ITU-T T.82/7.1\n");
@@ -137,6 +144,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Failed to allocate arithmetic decoder!\n");
         exit(2);
     }
+    /*endif*/
     pp = sde_7_1;
     sd->pscd_ptr = pp;
     sd->pscd_end = pp + 1;
@@ -149,11 +157,13 @@ int main(int argc, char *argv[])
                 pix = t81_t82_arith_decode(sd, (cx_7_1[i] >> (15 - j)) & 1);
                 if ((pix >= 0  ||  sd->pscd_end >= sde_7_1 + SDE_7_1_FULL_LEN))
                     break;
+                /*endif*/
                 pp++;
                 if (sd->pscd_ptr != pp - 1)
                     sd->pscd_ptr = pp;
                 sd->pscd_end = pp + 1;
             }
+            /*endfor*/
             if (pix < 0)
             {
                 printf("Bad pixel %d, byte %" PRIdPTR ".\n\n",
@@ -162,6 +172,7 @@ int main(int argc, char *argv[])
                 test_failed = true;
                 break;
             }
+            /*endif*/
             if (pix != ((pix_7_1[i] >> (15 - j)) & 1))
             {
                 printf("Bad PIX (%d) at pixel %d.\n\n",
@@ -170,19 +181,24 @@ int main(int argc, char *argv[])
                 test_failed = true;
                 break;
             }
+            /*endif*/
         }
+        /*endfor*/
     }
+    /*endfor*/
     if (sd->pscd_ptr != sd->pscd_end - 2)
     {
         printf("%" PRIdPTR " bytes left after decoder finished.\n\n",
                sd->pscd_end - sd->pscd_ptr - 2);
         test_failed = true;
     }
+    /*endif*/
     if (test_failed)
     {
         printf("Test failed\n");
         exit(2);
     }
+    /*endif*/
     printf("Test passed\n");
 
     printf("Decoding chunk by chunk...\n");
@@ -203,6 +219,7 @@ int main(int argc, char *argv[])
                 test_failed = true;
                 break;
             }
+            /*endif*/
             if (pix != ((pix_7_1[i] >> (15 - j)) & 1))
             {
                 printf("Bad PIX (%d) at pixel %d.\n\n",
@@ -211,19 +228,24 @@ int main(int argc, char *argv[])
                 test_failed = true;
                 break;
             }
+            /*endif*/
         }
+        /*endfor*/
     }
+    /*endfor*/
     if (sd->pscd_ptr != sd->pscd_end - 2)
     {
         printf("%" PRIdPTR " bytes left after decoder finished.\n\n",
                sd->pscd_end - sd->pscd_ptr - 2);
         test_failed = true;
     }
+    /*endif*/
     if (test_failed)
     {
         printf("Test failed\n");
         exit(2);
     }
+    /*endif*/
     printf("Test passed\n");
     t81_t82_arith_encode_free(se);
     t81_t82_arith_decode_free(sd);

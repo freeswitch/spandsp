@@ -56,11 +56,19 @@ SPAN_DECLARE(int) sslfax_tx(sslfax_state_t *s, int16_t amp[], int len);
 
 SPAN_DECLARE(int) sslfax_rx(sslfax_state_t *s, const int16_t amp[], int len);
 
-SPAN_DECLARE(void) sslfax_setup(sslfax_state_t *s, void *msg_user_data, put_msg_func_t put_msg, get_msg_func_t get_msg, hdlc_frame_handler_t hdlc_accept, hdlc_underflow_handler_t hdlc_tx_underflow, bool tx_use_hdlc, bool rx_use_hdlc, get_byte_func_t get_phase);
+SPAN_DECLARE(void) sslfax_setup(sslfax_state_t *s,
+                                span_put_msg_func_t put_msg,
+                                span_get_msg_func_t get_msg,
+                                hdlc_frame_handler_t hdlc_accept,
+                                hdlc_underflow_handler_t hdlc_tx_underflow,
+                                bool tx_use_hdlc,
+                                bool rx_use_hdlc,
+                                span_get_byte_func_t get_phase,
+                                void *user_data);
 
-SPAN_DECLARE(int) sslfax_write(sslfax_state_t *s, const uint8_t *buf, unsigned int count, int modemFd, long ms, bool filter, bool sustain);
+SPAN_DECLARE(int) sslfax_write(sslfax_state_t *s, const uint8_t *buf, unsigned int count, int modem_fd, long int ms, bool filter, bool sustain);
 
-SPAN_DECLARE(int) sslfax_read(sslfax_state_t *s, void *buf, size_t count, int modemFd, long ms, bool sustain, bool carryon);
+SPAN_DECLARE(int) sslfax_read(sslfax_state_t *s, void *buf, size_t count, int modem_fd, long ms, bool sustain, bool carryon);
 
 #if defined(__cplusplus)
 }

@@ -236,11 +236,11 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/queue.h \
                          spandsp/saturated.h \
                          spandsp/schedule.h \
-                         spandsp/stdbool.h \
                          spandsp/sig_tone.h \
                          spandsp/silence_gen.h \
-                         spandsp/ssl_fax.h \
                          spandsp/sprt.h \
+                         spandsp/ssl_fax.h \
+                         spandsp/stdbool.h \
                          spandsp/super_tone_rx.h \
                          spandsp/super_tone_tx.h \
                          spandsp/swept_tone.h \
@@ -322,8 +322,8 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/private/schedule.h \
                          spandsp/private/sig_tone.h \
                          spandsp/private/silence_gen.h \
-                         spandsp/private/ssl_fax.h \
                          spandsp/private/sprt.h \
+                         spandsp/private/ssl_fax.h \
                          spandsp/private/super_tone_rx.h \
                          spandsp/private/super_tone_tx.h \
                          spandsp/private/swept_tone.h \

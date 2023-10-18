@@ -555,7 +555,11 @@ SPAN_DECLARE(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *s,
                 if (s->tone_present != MODEM_CONNECT_TONES_FAX_CNG)
                 {
                     if (++s->tone_cycle_duration >= milliseconds_to_samples(415))
-                        report_tone_state(s, MODEM_CONNECT_TONES_FAX_CNG, lfastrintf(((s->channel_level == 0)  ?  (-96.329f + DBM0_MAX_POWER)  :  log10f(s->channel_level/32768.0f)*20.0f) + DBM0_MAX_POWER + 0.8f));
+                    {
+                        report_tone_state(s,
+                                          MODEM_CONNECT_TONES_FAX_CNG,
+                                          lfastrintf(((s->channel_level == 0)  ?  (-96.329f + DBM0_MAX_POWER)  :  amplitude_ratio_to_db(s->channel_level/32768.0f)) + DBM0_MAX_POWER + 0.8f));
+                    }
                     /*endif*/
                 }
                 /*endif*/
@@ -641,7 +645,7 @@ SPAN_DECLARE(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *s,
                         {
                             report_tone_state(s,
                                               (s->am_level*15/256 > s->channel_level)  ?  MODEM_CONNECT_TONES_ANSAM_PR  :  MODEM_CONNECT_TONES_ANS_PR,
-                                              lfastrintf(((s->channel_level == 0)  ?  (-96.329f + DBM0_MAX_POWER)  :  log10f(s->channel_level/32768.0f)*20.0f) + DBM0_MAX_POWER + 0.8f));
+                                              lfastrintf(((s->channel_level == 0)  ?  (-96.329f + DBM0_MAX_POWER)  :  amplitude_ratio_to_db(s->channel_level/32768.0f)) + DBM0_MAX_POWER + 0.8f));
                         }
                         /*endif*/
                     }
@@ -661,7 +665,7 @@ SPAN_DECLARE(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *s,
                         {
                             report_tone_state(s,
                                               (s->am_level*15/256 > s->channel_level)  ?  MODEM_CONNECT_TONES_ANSAM  :  MODEM_CONNECT_TONES_ANS,
-                                              lfastrintf(((s->channel_level == 0)  ?  (-96.329f + DBM0_MAX_POWER)  :  log10f(s->channel_level/32768.0f)*20.0f) + DBM0_MAX_POWER + 0.8f));
+                                              lfastrintf(((s->channel_level == 0)  ?  (-96.329f + DBM0_MAX_POWER)  :  amplitude_ratio_to_db(s->channel_level/32768.0f)) + DBM0_MAX_POWER + 0.8f));
                         }
                         /*endif*/
                         s->good_cycles = 0;
@@ -723,7 +727,11 @@ SPAN_DECLARE(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *s,
                 if (s->tone_present != MODEM_CONNECT_TONES_BELL_ANS)
                 {
                     if (++s->tone_cycle_duration >= milliseconds_to_samples(415))
-                        report_tone_state(s, MODEM_CONNECT_TONES_BELL_ANS, lfastrintf(((s->channel_level == 0)  ?  (-96.329f + DBM0_MAX_POWER)  :  log10f(s->channel_level/32768.0f)*20.0f) + DBM0_MAX_POWER + 0.8f));
+                    {
+                        report_tone_state(s,
+                                          MODEM_CONNECT_TONES_BELL_ANS,
+                                          lfastrintf(((s->channel_level == 0)  ?  (-96.329f + DBM0_MAX_POWER)  :  amplitude_ratio_to_db(s->channel_level/32768.0f)) + DBM0_MAX_POWER + 0.8f));
+                    }
                     /*endif*/
                 }
                 /*endif*/
@@ -766,7 +774,11 @@ SPAN_DECLARE(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *s,
                 if (s->tone_present != MODEM_CONNECT_TONES_CALLING_TONE)
                 {
                     if (++s->tone_cycle_duration >= milliseconds_to_samples(415))
-                        report_tone_state(s, MODEM_CONNECT_TONES_CALLING_TONE, lfastrintf(((s->channel_level == 0)  ?  (-96.329f + DBM0_MAX_POWER)  :  log10f(s->channel_level/32768.0f)*20.0f) + DBM0_MAX_POWER + 0.8f));
+                    {
+                        report_tone_state(s,
+                                          MODEM_CONNECT_TONES_CALLING_TONE,
+                                          lfastrintf(((s->channel_level == 0)  ?  (-96.329f + DBM0_MAX_POWER)  :  amplitude_ratio_to_db(s->channel_level/32768.0f)) + DBM0_MAX_POWER + 0.8f));
+                    }
                     /*endif*/
                 }
                 /*endif*/

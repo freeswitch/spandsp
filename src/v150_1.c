@@ -1,12 +1,11 @@
 /*
  * SpanDSP - a series of DSP components for telephony
  *
- * v150_1.c - An implementation of the main part of V.150.1. SPRT is not included in
- *            this code.
+ * v150_1.c - An implementation of V.150.1.
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
- * Copyright (C) 2022 Steve Underwood
+ * Copyright (C) 2022, 2023 Steve Underwood
  *
  * All rights reserved.
  *
@@ -39,6 +38,8 @@
 #include <spandsp/stdbool.h>
 #endif
 
+#define SPANDSP_FULLY_DEFINE_SPRT_STATE_T
+
 #include "spandsp/telephony.h"
 #include "spandsp/alloc.h"
 #include "spandsp/unaligned.h"
@@ -46,9 +47,14 @@
 #include "spandsp/async.h"
 #include "spandsp/sprt.h"
 #include "spandsp/v150_1.h"
+#include "spandsp/v150_1_sse.h"
 
 #include "spandsp/private/logging.h"
+#include "spandsp/private/sprt.h"
+#include "spandsp/private/v150_1_sse.h"
 #include "spandsp/private/v150_1.h"
+
+#include "v150_1_local.h"
 
 /* Terminology
 
@@ -297,21 +303,21 @@ Establishing Modem Relay with V.32 Modem
     |                             |                              |                               |
     |                             |                              |<-------------ANS--------------|
     |                             |<--------RFC4733 ANS----------|                               |
-    |<-----------ANS--------------|                              |                               |
+    |<------------ANS-------------|                              |                               |
     |                             |                              |<------------/ANS--------------|
     |                             |<--------RFC4733 /ANS---------|                               |
     |<-----------/ANS-------------|                              |                               |
     |                             |                              |                               |
     |                             |                              |                               |
-    |<<---- V.32 signals ------->>|                              |                               |
+    |<<----- V.32 signals ------>>|                              |                               |
     |                             |-------SSE MR(m,a) AA-------->|                               |
     |                             |                              |<<------ V.32 signals ------->>|
     |                             |<------SSE MR(m,m) p'---------|                               |
-    |<<---- V.32 signals ------->>|                              |                               |
+    |<<----- V.32 signals ------>>|                              |                               |
     |                             |-----------SPRT:INIT--------->|<<------ V.32 signals ------->>|
     |                             |                              |                               |
     |                             |<----------SPRT:INIT----------|                               |
-    |<<---- V.32 signals ------->>|                              |<<------ V.32 signals ------->>|
+    |<<----- V.32 signals ------>>|                              |<<------ V.32 signals ------->>|
     |                             |<--SPRT:MR_EVENT(PHYSUPv32)---|                               |
     |                             |                              |                               |
     |                             |---SPRT:MR_EVENT(PHYSUPv32)-->|                               |
@@ -405,24 +411,24 @@ Establishing Modem Relay with ITU V.90 Modem
 
     M1                            G1                             G2                              M2
     |                             |                              |                               |
-    |                             |                              |<------------ANS---------------|
+    |                             |                              |<-------------ANS--------------|
     |                             |<--------RFC4733 ANS----------|                               |
-    |<-----------ANS--------------|                              |                               |
+    |<------------ANS-------------|                              |                               |
     |                             |                              |<------------/ANS--------------|
     |                             |<--------RFC4733 /ANS---------|                               |
     |<-----------/ANS-------------|                              |                               |
     |                             |                              |                               |
-    |------------CM-------------->|                              |                               |
+    |-------------CM------------->|                              |                               |
     |                             |--SSE MR(m,a) CM(v90 or v92)->|                               |
-    |   `                         |                              |-------------CM--------------->|
+    |   `                         |                              |--------------CM-------------->|
     |                             |<------SSE MR(m,m) p'---------|                               |
     |                             |                              |                               |
     |                             |-----------SPRT:INIT--------->|                               |
     |                             |                              |                               |
     |                             |<----------SPRT:INIT----------|                               |
-    |                             |                              |<------------JM----------------|
+    |                             |                              |<-------------JM---------------|
     |                             |<--SPRT:JM_INFO (v90 or v92)--|                               |
-    |<-----------JM---------------|                              |                               |
+    |<------------JM--------------|                              |                               |
     |                             |                              |                               |
     |<<----- V.90 signals ------>>|                              |<<------ V.90 signals ------->>|
     |                             |<--SPRT:MR_EVENT(PHYSUPv90)---|                               |
@@ -444,24 +450,24 @@ Establishing Modem Relay with ITU V.92 Modem
 
     M1                            G1                             G2                              M2
     |                             |                              |                               |
-    |                             |                              |<-------------ANS--------------|
+    |                             |                              |<--------------ANS-------------|
     |                             |<--------RFC4733 ANS----------|                               |
-    |<-----------ANS--------------|                              |                               |
+    |<------------ANS-------------|                              |                               |
     |                             |                              |<-------------/ANS-------------|
     |                             |<--------RFC4733 /ANS---------|                               |
     |<-----------/ANS-------------|                              |                               |
     |                             |                              |                               |
-    |------------CM-------------->|                              |                               |
+    |-------------CM------------->|                              |                               |
     |                             |--SSE MR(m,a) CM(v90 or v92)->|                               |
-    |                             |                              |--------------CM-------------->|
+    |                             |                              |---------------CM------------->|
     |                             |<------SSE MR(m,m) p'---------|                               |
     |                             |                              |                               |
     |                             |-----------SPRT:INIT--------->|                               |
     |                             |                              |                               |
     |                             |<----------SPRT:INIT----------|                               |
-    |                             |                              |<-------------JM---------------|
+    |                             |                              |<--------------JM--------------|
     |                             |<--SPRT:JM_INFO (v90 or v92)--|                               |
-    |<-----------JM---------------|                              |                               |
+    |<------------JM--------------|                              |                               |
     |                             |                              |                               |
     |<<----- V.92 signals ------>>|                              |<<------- V.92 signals ------>>|
     |                             |<--SPRT:MR_EVENT(PHYSUPv92)---|                               |
@@ -472,109 +478,63 @@ Establishing Modem Relay with ITU V.92 Modem
     |                             |                              |                               |
     |                             |-------SPRT:CONNECT(v90)----->|                               |
     |                             |                              |                               |
-    |<<------- V.92 data ------->>|<<-------- SPRT:data ------->>|<<------- V.92 data --------->>|
+    |<<------- V.92 data ------->>|<<-------- SPRT:data ------->>|<<-------- V.92 data -------->>|
     |                             |                              |                               |
     |                             |                              |                               |
 */
 
-#if 0
+/*
+               telephone network
+                      ^
+                      |
+                      |
+                      v
+    +-----------------------------------+
+    |                                   |
+    |   Signal processing entity (SPE)  |
+    |                                   |
+    +-----------------------------------+
+                |           ^
+                |           |
+  Signal list 1 |           | Signal list 2
+                |           |
+                v           |
+    +-----------------------------------+   Signal list 5   +-----------------------------------+
+    |                                   | ----------------->|                                   |
+    |   SSE protocol state machine (P)  |                   |    Gateway state machine (s,s')   |
+    |                                   |<------------------|                                   |
+    +-----------------------------------+   Signal list 6   +-----------------------------------+
+                |           ^
+                |           |
+  Signal list 3 |           | Signal list 4
+                |           |
+                v           |
+    +-----------------------------------+
+    |                                   |
+    |       IP network processor        |
+    |                                   |
+    +-----------------------------------+
+                      ^
+                      |
+                      |
+                      v
+                 IP network
+*/
 
-ASN.1 definition, from V.150.1
+/*
+    Table 31/V.150.1 - MoIP initial modes.
+    
+    <<<<<<<< Additional modes supported >>>>>>>>                    Starting mode
+    FoIP (T.38) and/or ToIP (V.151)         VoIP
+    -----------------------------------------------------------------------------
+    No                                      No                          MoIP
+    No                                      Yes                         VoIP
+    Yes                                     No                          MoIP
+    Yes                                     Yes                         VoIP
+ */
 
-V150MOIP-CAPABILITY DEFINITIONS AUTOMATIC TAGS ::= BEGIN
-IMPORTS
-    NonStandardParameter FROM MULTIMEDIA-SYSTEM-CONTROL;
-V150MoIPCapability ::= SEQUENCE
-{
-    nonStandard SEQUENCE OF NonStandardParameter OPTIONAL,
-    modemRelayType CHOICE
-    {
-        v-mr NULL,
-        u-mr NULL,
-        ...
-    },
-    gatewayType CHOICE
-    {
-        ntcx NULL,  -- No Transcompression
-        stcx NULL,  -- Single Transcompression
-        dtcx CHOICE -- Double Transcompression
-        {
-            single NULL, -- Preferred mode between two gateways
-            double NULL, -- with double transcompression ability
-            ...
-        },
-        ...
-    },
-    callDiscriminationMode CHOICE
-    {
-        audio NULL,
-        g2-choice NULL,
-        combination NULL,
-        ...
-    },
-    sprtParameters SEQUENCE
-    {
-        maxPayloadSizeChannel0  INTEGER(140..256) OPTIONAL,     -- Default 140
-        maxPayloadSizeChannel1  INTEGER(132..256) OPTIONAL,     -- Default 132
-        maxWindowSizeChannel1   INTEGER(32..96) OPTIONAL,       -- Default 32
-        maxPayloadSizeChannel2  INTEGER(132..256) OPTIONAL,     -- Default 132
-        maxWindowSizeChannel2   INTEGER(8..32) OPTIONAL,        -- Default 8
-        maxPayloadSizeChannel3  INTEGER(140..256) OPTIONAL,     -- Default 140
-        ...
-    } OPTIONAL,
-    modulationSupport SEQUENCE
-    {
-        v34FullDuplex   NULL OPTIONAL,
-        v34HalfDuplex   NULL OPTIONAL,
-        v32bis-v32      NULL OPTIONAL,
-        v22bis-v22      NULL OPTIONAL,
-        v17             NULL OPTIONAL,
-        v29HalfDuplex   NULL OPTIONAL,
-        v27ter          NULL OPTIONAL,
-        v26ter          NULL OPTIONAL,
-        v26bis          NULL OPTIONAL,
-        v23FullDuplex   NULL OPTIONAL,
-        v23HalfDuplex   NULL OPTIONAL,
-        v21             NULL OPTIONAL,
-        v90Analog       NULL OPTIONAL,
-        v90Digital      NULL OPTIONAL,
-        v92Analog       NULL OPTIONAL,
-        v92Digital      NULL OPTIONAL,
-        v91             NULL OPTIONAL,
-        ...
-    },
-    compressionMode SEQUENCE
-    {
-        -- Including a SEQUENCE for a particular compression mode, but not
-        -- including any of the optional parameters within the SEQUENCE,
-        -- indicates support for the specific compression mode, but assumes that
-        -- all parameter values are set to their default values
-        mnp5                    NULL OPTIONAL,
-        v44 SEQUENCE
-        {
-            numTxCodewords      INTEGER(256..65535),
-            numRxCodewords      INTEGER(256..65535),
-            maxTxStringLength   INTEGER(32..255),
-            maxRxStringLength   INTEGER(32..255),
-            lenTxHistory        INTEGER(512..65535),
-            lenRxHistory        INTEGER(512..65535),
-            ...
-        } OPTIONAL,
-        v42bis SEQUENCE
-        {
-            numCodewords        INTEGER(512..65535) OPTIONAL,
-            maxStringLength     INTEGER(6..250) OPTIONAL,
-            ...
-        } OPTIONAL,
-        ...
-    } OPTIONAL,
-    delayedJMEnabled        BOOLEAN,
-    ...
-}
-#endif
-
-/* Used to verify the message type is compatible with the transmission
-   control channel it arrived on */
+/* Used to verify if a message type is compatible with the transmission
+   control channel it arrives on */
 static uint8_t channel_check[25] = 
 {
     0x0F,       /* V150_1_MSGID_NULL */
@@ -627,6 +587,8 @@ static struct
         SPRT_MAX_TC3_PAYLOAD_BYTES
     }
 };
+
+static span_timestamp_t update_call_discrimination_timer(v150_1_state_t *s, span_timestamp_t timeout);
 
 SPAN_DECLARE(const char *) v150_1_msg_id_to_str(int msg_id)
 {
@@ -1103,8 +1065,11 @@ SPAN_DECLARE(const char *) v150_1_status_reason_to_str(int status)
     case V150_1_STATUS_REASON_NULL:
         res = "NULL";
         break;
-    case V150_1_STATUS_REASON_STATE_CHANGED:
-        res = "state changed";
+    case V150_1_STATUS_REASON_MEDIA_STATE_CHANGED:
+        res = "media state changed";
+        break;
+    case V150_1_STATUS_REASON_CONNECTION_STATE_CHANGED:
+        res = "connection state changed";
         break;
     case V150_1_STATUS_REASON_DATA_FORMAT_CHANGED:
         res = "format changed";
@@ -1121,10 +1086,10 @@ SPAN_DECLARE(const char *) v150_1_status_reason_to_str(int status)
     case V150_1_STATUS_REASON_BUSY_CHANGED:
         res = "busy changed";
         break;
-    case V150_1_STATUS_REASON_PHYSUP:
+    case V150_1_STATUS_REASON_CONNECTION_STATE_PHYSUP:
         res = "physically up";
         break;
-    case V150_1_STATUS_REASON_CONNECTED:
+    case V150_1_STATUS_REASON_CONNECTION_STATE_CONNECTED:
         res = "connected";
         break;
     }
@@ -1213,6 +1178,904 @@ SPAN_DECLARE(const char *) v150_1_jm_info_modulation_to_str(int modulation)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(const char *) v150_1_signal_to_str(int modulation)
+{
+    const char *res;
+
+    res = "unknown";
+    switch (modulation)
+    {
+    case V150_1_SIGNAL_TONE_2100HZ:
+        res = "2100Hz detected";
+        break;
+    case V150_1_SIGNAL_TONE_2225HZ:
+        res = "2225Hz detected";
+        break;
+    case V150_1_SIGNAL_ANS:
+        res = "V.25 ANS detected";
+        break;
+    case V150_1_SIGNAL_ANS_PR:
+        res = "V.25 ANS reversal detected";
+        break;
+    case V150_1_SIGNAL_ANSAM:
+        res = "V.8 ANSam detected";
+        break;
+    case V150_1_SIGNAL_ANSAM_PR:
+        res = "V.8 ANSam reversal detected";
+        break;
+    case V150_1_SIGNAL_CI:
+        res = "V.8 CI detected";
+        break;
+    case V150_1_SIGNAL_CM:
+        res = "V.8 CM detected";
+        break;
+    case V150_1_SIGNAL_JM:
+        res = "V.8 JM detected";
+        break;
+    case V150_1_SIGNAL_V21_LOW:
+        res = "V.21 low channel detected";
+        break;
+    case V150_1_SIGNAL_V21_HIGH:
+        res = "V.21 high channel detected";
+        break;
+    case V150_1_SIGNAL_V23_LOW:
+        res = "V.23 low channel detected";
+        break;
+    case V150_1_SIGNAL_V23_HIGH:
+        res = "V.23 high channel detected";
+        break;
+    case V150_1_SIGNAL_SB1:
+        res = "V.22bis scrambled ones detected";
+        break;
+    case V150_1_SIGNAL_USB1:
+        res = "V.22bis unscrambled ones detected";
+        break;
+    case V150_1_SIGNAL_S1:
+        res = "V.22bis S1 detected";
+        break;
+    case V150_1_SIGNAL_AA:
+        res = "V.32/V.32bis AA detected";
+        break;
+    case V150_1_SIGNAL_AC:
+        res = "V.32/V.32bis AC detected";
+        break;
+    case V150_1_SIGNAL_CALL_DISCRIMINATION_TIMEOUT:
+        res = "Call discrimination time-out";
+        break;
+    case V150_1_SIGNAL_UNKNOWN:
+        res = "unrecognised signal detected";
+        break;
+    case V150_1_SIGNAL_SILENCE:
+        res = "silence detected";
+        break;
+    case V150_1_SIGNAL_ABORT:
+        res = "SPE has initiated an abort request";
+        break;
+
+    case V150_1_SIGNAL_ANS_GEN:
+        res = "Generate V.25 ANS";
+        break;
+    case V150_1_SIGNAL_ANS_PR_GEN:
+        res = "Generate V.25 ANS reversal";
+        break;
+    case V150_1_SIGNAL_ANSAM_GEN:
+        res = "Generate V.8 ANSam";
+        break;
+    case V150_1_SIGNAL_ANSAM_PR_GEN:
+        res = "Generate V.8 ANSam reversal";
+        break;
+    case V150_1_SIGNAL_2225HZ_GEN:
+        res = "Generate 2225Hz";
+        break;
+    case V150_1_SIGNAL_CONCEAL_MODEM:
+        res = "Block modem signal";
+        break;
+    case V150_1_SIGNAL_BLOCK_2100HZ_TONE:
+        res = "Block 2100Hz";
+        break;
+    case V150_1_SIGNAL_AUTOMODE_ENABLE:
+        res = "Enable automode";
+        break;
+
+    case V150_1_SIGNAL_AUDIO_GEN:
+        res = "Send audio state";
+        break;
+    case V150_1_SIGNAL_FAX_RELAY_GEN:
+        res = "Send fax relay state";
+        break;
+    case V150_1_SIGNAL_INDETERMINATE_GEN:
+        res = "Send indeterminate state";
+        break;
+    case V150_1_SIGNAL_MODEM_RELAY_GEN:
+        res = "Send modem relay state";
+        break;
+    case V150_1_SIGNAL_TEXT_RELAY_GEN:
+        res = "Send text relay state";
+        break;
+    case V150_1_SIGNAL_VBD_GEN:
+        res = "Send VBD state";
+        break;
+    case V150_1_SIGNAL_RFC4733_ANS_GEN:
+        res = "Send RFC4733 ANS";
+        break;
+    case V150_1_SIGNAL_RFC4733_ANS_PR_GEN:
+        res = "Send RFC4733 ANS reversal";
+        break;
+    case V150_1_SIGNAL_RFC4733_ANSAM_GEN:
+        res = "Send RFC4733 ANSam";
+        break;
+    case V150_1_SIGNAL_RFC4733_ANSAM_PR_GEN:
+        res = "Send RFC4733 ANSam reversal";
+        break;
+    case V150_1_SIGNAL_RFC4733_TONE_GEN:
+        res = "Send RFC4733 tone";
+        break;
+
+    case V150_1_SIGNAL_AUDIO:
+        res = "Audio state detected";
+        break;
+    case V150_1_SIGNAL_FAX_RELAY:
+        res = "Facsimile relay state detected";
+        break;
+    case V150_1_SIGNAL_INDETERMINATE:
+        res = "Indeterminate state detected";
+        break;
+    case V150_1_SIGNAL_MODEM_RELAY:
+        res = "Modem relay state detected";
+        break;
+    case V150_1_SIGNAL_TEXT_RELAY:
+        res = "Text relay state detected";
+        break;
+    case V150_1_SIGNAL_VBD:
+        res = "VBD state detected";
+        break;
+    case V150_1_SIGNAL_RFC4733_ANS:
+        res = "RFC4733 ANS event detected";
+        break;
+    case V150_1_SIGNAL_RFC4733_ANS_PR:
+        res = "RFC4733 ANS reversal detected";
+        break;
+    case V150_1_SIGNAL_RFC4733_ANSAM:
+        res = "RFC4733 ANSam detected";
+        break;
+    case V150_1_SIGNAL_RFC4733_ANSAM_PR:
+        res = "RFC4733 ANSam reversal detected";
+        break;
+    case V150_1_SIGNAL_RFC4733_TONE:
+        res = "RFC4733 tone detected";
+        break;
+
+    case V150_1_SIGNAL_AUDIO_STATE:
+        res = "Audio";
+        break;
+    case V150_1_SIGNAL_FAX_RELAY_STATE:
+        res = "Fax relay";
+        break;
+    case V150_1_SIGNAL_INDETERMINATE_STATE:
+        res = "Indeterminate";
+        break;
+    case V150_1_SIGNAL_MODEM_RELAY_STATE:
+        res = "Modem relay";
+        break;
+    case V150_1_SIGNAL_TEXT_RELAY_STATE:
+        res = "Text relay";
+        break;
+    case V150_1_SIGNAL_VBD_STATE:
+        res = "VBD";
+        break;
+
+    case V150_1_SIGNAL_CALL_DISCRIMINATION_TIMER_EXPIRED:
+        res = "Call discrimination timer exposed";
+        break;
+    }
+    /*endswitch*/
+    return res;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(const char *) v150_1_media_state_to_str(int state)
+{
+    const char *res;
+
+    res = "unknown";
+    switch (state)
+    {
+    case V150_1_MEDIA_STATE_INITIAL_AUDIO:
+        res = "Initial Audio";
+        break;
+    case V150_1_MEDIA_STATE_VOICE_BAND_DATA:
+        res = "Voice Band Data (VBD)";
+        break;
+    case V150_1_MEDIA_STATE_MODEM_RELAY:
+        res = "Modem Relay";
+        break;
+    case V150_1_MEDIA_STATE_FAX_RELAY:
+        res = "Fax Relay";
+        break;
+    case V150_1_MEDIA_STATE_TEXT_RELAY:
+        res = "Text Relay";
+        break;
+    case V150_1_MEDIA_STATE_TEXT_PROBE:
+        res = "Text Probe";
+        break;
+    case V150_1_MEDIA_STATE_INDETERMINATE:
+        res = "Indeterminate";
+        break;
+    }
+    /*endswitch*/
+    return res;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int status_report(v150_1_state_t *s, int reason)
+{
+    v150_1_status_t report;
+
+    report.reason = reason;
+    switch (reason)
+    {
+    case V150_1_STATUS_REASON_MEDIA_STATE_CHANGED:
+        report.media_state_change.local_state = s->local_media_state;
+        report.media_state_change.remote_state = s->remote_media_state;
+        break;
+    case V150_1_STATUS_REASON_CONNECTION_STATE_CHANGED:
+        report.connection_state_change.state = s->far.parms.connection_state;
+        report.connection_state_change.cleardown_reason = s->far.parms.cleardown_reason;
+        break;
+    case V150_1_STATUS_REASON_CONNECTION_STATE_PHYSUP:
+        report.physup_parameters.selmod = s->far.parms.selmod;
+        report.physup_parameters.tdsr = s->far.parms.tdsr;
+        report.physup_parameters.rdsr = s->far.parms.rdsr;
+
+        report.physup_parameters.txsen = s->far.parms.txsen;
+        report.physup_parameters.txsr = s->far.parms.txsr;
+        report.physup_parameters.rxsen = s->far.parms.rxsen;
+        report.physup_parameters.rxsr = s->far.parms.rxsr;
+        break;
+    case V150_1_STATUS_REASON_CONNECTION_STATE_CONNECTED:
+        report.connect_parameters.selmod = s->far.parms.selmod;
+        report.connect_parameters.tdsr = s->far.parms.tdsr;
+        report.connect_parameters.rdsr = s->far.parms.rdsr;
+
+        report.connect_parameters.selected_compression_direction = s->far.parms.selected_compression_direction;
+        report.connect_parameters.selected_compression = s->far.parms.selected_compression;
+        report.connect_parameters.selected_error_correction = s->far.parms.selected_error_correction;
+
+        report.connect_parameters.compression_tx_dictionary_size = s->far.parms.compression_tx_dictionary_size;
+        report.connect_parameters.compression_rx_dictionary_size = s->far.parms.compression_rx_dictionary_size;
+        report.connect_parameters.compression_tx_string_length = s->far.parms.compression_tx_string_length;
+        report.connect_parameters.compression_rx_string_length = s->far.parms.compression_rx_string_length;
+        report.connect_parameters.compression_tx_history_size = s->far.parms.compression_tx_history_size;
+        report.connect_parameters.compression_rx_history_size = s->far.parms.compression_rx_history_size;
+
+        /* I_RAW-OCTET is always available. There is no selection flag for it. */
+        report.connect_parameters.i_raw_octet_available = true;
+        report.connect_parameters.i_raw_bit_available = s->far.parms.i_raw_bit_available;
+        report.connect_parameters.i_frame_available = s->far.parms.i_frame_available;
+        /* I_OCTET is an oddity, as you need to know in advance whether there will be a DLCI field
+           present. So, functionally its really like 2 different types of message. */
+        report.connect_parameters.i_octet_with_dlci_available = s->far.parms.i_octet_with_dlci_available;
+        report.connect_parameters.i_octet_without_dlci_available = s->far.parms.i_octet_without_dlci_available;
+        report.connect_parameters.i_char_stat_available = s->far.parms.i_char_stat_available;
+        report.connect_parameters.i_char_dyn_available = s->far.parms.i_char_dyn_available;
+        /* Unlike I_OCTET, I_OCTET-CS is only defined without a DLCI field. */
+        report.connect_parameters.i_octet_cs_available = s->far.parms.i_octet_cs_available;
+        report.connect_parameters.i_char_stat_cs_available = s->far.parms.i_char_stat_cs_available;
+        report.connect_parameters.i_char_dyn_cs_available = s->far.parms.i_char_dyn_cs_available;
+        break;
+    case V150_1_STATUS_REASON_DATA_FORMAT_CHANGED:
+        report.data_format_change.bits = 5 + ((s->far.parms.data_format_code >> 5) & 0x03);
+        report.data_format_change.parity_code = (s->far.parms.data_format_code >> 2) & 0x07;
+        report.data_format_change.stop_bits = 1 + (s->far.parms.data_format_code & 0x03);
+        break;
+    case V150_1_STATUS_REASON_BREAK_RECEIVED:
+        report.break_received.source = s->far.break_source;
+        report.break_received.type = s->far.break_type;
+        report.break_received.duration = s->far.break_duration*10;
+        break;
+    case V150_1_STATUS_REASON_RATE_RETRAIN_RECEIVED:
+        break;
+    case V150_1_STATUS_REASON_RATE_RENEGOTIATION_RECEIVED:
+        break;
+    case V150_1_STATUS_REASON_BUSY_CHANGED:
+        report.busy_change.local_busy = s->near.parms.busy;
+        report.busy_change.far_busy = s->far.parms.busy;
+        break;
+    }
+    /*endswitch*/
+    if (s->rx_status_report_handler)
+        s->rx_status_report_handler(s->rx_status_report_user_data, &report);
+    /*endif*/
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int send_spe_signal(v150_1_state_t *s, int signal)
+{
+    span_log(&s->logging, SPAN_LOG_FLOW, "Signal to SPE %s\n", v150_1_signal_to_str(signal));
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int send_ip_signal(v150_1_state_t *s, int signal)
+{
+    span_log(&s->logging, SPAN_LOG_FLOW, "Signal to IP %s\n", v150_1_signal_to_str(signal));
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int stop_timer(v150_1_state_t *s)
+{
+    span_log(&s->logging, SPAN_LOG_FLOW, "Stop timer\n");
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int generic_macro(v150_1_state_t *s, int signal, int ric)
+{
+    span_timestamp_t now;
+
+    /* Figure 25/V.150.1 */
+    span_log(&s->logging,
+             SPAN_LOG_FLOW,
+             "IP signal %s(%s, %s)\n",
+             v150_1_media_state_to_str(s->local_media_state),
+             v150_1_signal_to_str(signal),
+             v150_1_sse_moip_ric_to_str(ric));
+    if (s->local_media_state == s->remote_media_state)
+    {
+        /* Stop the call discrimination timer */
+        s->call_discrimination_timer = 0;
+        update_call_discrimination_timer(s, s->call_discrimination_timer);
+    }
+    else
+    {
+        /* Start the call discrimination timer */
+        if (s->call_discrimination_timer == 0)
+        {
+            now = update_call_discrimination_timer(s, ~0);
+            s->call_discrimination_timer = now + s->call_discrimination_timeout;
+            update_call_discrimination_timer(s, s->call_discrimination_timer);
+        }
+        /*endif*/
+    }
+    /*endif*/
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static void update_media_states(v150_1_state_t *s, int local, int remote)
+{
+    if (local != s->local_media_state  ||  remote != s->remote_media_state)
+    {
+        s->remote_media_state = remote;
+        s->local_media_state = local;
+        status_report(s, V150_1_STATUS_REASON_MEDIA_STATE_CHANGED);
+    }
+    /*endif*/
+}
+/*- End of function --------------------------------------------------------*/
+
+static int v150_1_figures_26_to_31(v150_1_state_t *s, int signal, const uint8_t *msg, int len)
+{
+    /* Figure 26/V.150.1 to 31/V.150.1 */
+    switch (signal)
+    {
+    case V150_1_SIGNAL_TONE_2100HZ:
+        if (s->cdscselect == V150_1_CDSCSELECT_VBD_SELECT
+            ||
+            s->cdscselect == V150_1_CDSCSELECT_MIXED)
+        {
+            update_media_states(s, V150_1_MEDIA_STATE_VOICE_BAND_DATA, s->remote_media_state);
+            //send ANS or ANSam
+            generic_macro(s, V150_1_SIGNAL_ANS, 0);
+        }
+        else
+        {
+            send_spe_signal(s, V150_1_SIGNAL_BLOCK_2100HZ_TONE);
+        }
+        /*endif*/
+        break;
+    case V150_1_SIGNAL_ANS:
+        if (s->cdscselect == V150_1_CDSCSELECT_VBD_SELECT
+            ||
+            s->cdscselect == V150_1_CDSCSELECT_MIXED)
+        {
+            update_media_states(s, V150_1_MEDIA_STATE_VOICE_BAND_DATA, s->remote_media_state);
+            generic_macro(s, V150_1_SIGNAL_ANS, 0);
+        }
+        else
+        {
+            generic_macro(s, V150_1_SIGNAL_RFC4733_ANS_GEN, 0);
+            send_spe_signal(s, V150_1_SIGNAL_CONCEAL_MODEM);
+        }
+        /*endif*/
+        break;
+    case V150_1_SIGNAL_ANSAM:
+        if (s->cdscselect == V150_1_CDSCSELECT_VBD_SELECT
+            ||
+            s->cdscselect == V150_1_CDSCSELECT_MIXED)
+        {
+            update_media_states(s, V150_1_MEDIA_STATE_VOICE_BAND_DATA, s->remote_media_state);
+            generic_macro(s, V150_1_SIGNAL_ANSAM, 0);
+        }
+        else
+        {
+            generic_macro(s, V150_1_SIGNAL_RFC4733_ANSAM_GEN, 0);
+            send_spe_signal(s, V150_1_SIGNAL_CONCEAL_MODEM);
+        }
+        /*endif*/
+        break;
+    case V150_1_SIGNAL_RFC4733_ANS:
+        send_spe_signal(s, V150_1_SIGNAL_ANS_GEN);
+        send_spe_signal(s, V150_1_SIGNAL_CONCEAL_MODEM);
+        break;
+    case V150_1_SIGNAL_RFC4733_ANSAM:
+        send_spe_signal(s, V150_1_SIGNAL_ANSAM_GEN);
+        send_spe_signal(s, V150_1_SIGNAL_CONCEAL_MODEM);
+        break;
+    case V150_1_SIGNAL_RFC4733_ANS_PR:
+        send_spe_signal(s, V150_1_SIGNAL_ANS_PR_GEN);
+        send_spe_signal(s, V150_1_SIGNAL_CONCEAL_MODEM);
+        break;
+    case V150_1_SIGNAL_RFC4733_ANSAM_PR:
+        send_spe_signal(s, V150_1_SIGNAL_ANSAM_PR_GEN);
+        send_spe_signal(s, V150_1_SIGNAL_CONCEAL_MODEM);
+        break;
+    case V150_1_SIGNAL_ANS_PR:
+        break;
+    case V150_1_SIGNAL_ANSAM_PR:
+        break;
+    case V150_1_SIGNAL_UNKNOWN:
+    case V150_1_SIGNAL_CALL_DISCRIMINATION_TIMEOUT:
+        if (s->cdscselect == V150_1_CDSCSELECT_VBD_SELECT
+            ||
+            s->cdscselect == V150_1_CDSCSELECT_MIXED)
+        {
+            update_media_states(s, V150_1_MEDIA_STATE_VOICE_BAND_DATA, s->remote_media_state);
+            generic_macro(s, signal, 0);
+        }
+        /*endif*/
+        break;
+    case V150_1_SIGNAL_VBD:
+        if (s->cdscselect == V150_1_CDSCSELECT_VBD_SELECT
+            ||
+            s->cdscselect == V150_1_CDSCSELECT_MIXED)
+        {
+            update_media_states(s, V150_1_MEDIA_STATE_VOICE_BAND_DATA, V150_1_MEDIA_STATE_VOICE_BAND_DATA);
+            generic_macro(s, signal, 0);
+        }
+        else
+        {
+            update_media_states(s, V150_1_MEDIA_STATE_VOICE_BAND_DATA, s->remote_media_state);
+            generic_macro(s, signal, 0);
+        }
+        /*endif*/
+        break;
+    case V150_1_SIGNAL_MODEM_RELAY:
+        span_log(&s->logging, SPAN_LOG_FLOW, "Modem relay signal %s\n", v150_1_signal_to_str(signal));
+        break;
+    case V150_1_SIGNAL_CM:
+        span_log(&s->logging, SPAN_LOG_FLOW, "SPE signal %s\n", v150_1_signal_to_str(signal));
+        if (s->cdscselect == V150_1_CDSCSELECT_VBD_SELECT
+            ||
+            s->cdscselect == V150_1_CDSCSELECT_MIXED)
+        {
+            update_media_states(s, V150_1_MEDIA_STATE_VOICE_BAND_DATA, V150_1_MEDIA_STATE_MODEM_RELAY);
+            generic_macro(s, V150_1_SIGNAL_MODEM_RELAY_GEN, V150_1_SSE_MOIP_RIC_V8_CM);
+        }
+        else
+        {
+            update_media_states(s, V150_1_MEDIA_STATE_MODEM_RELAY, V150_1_MEDIA_STATE_MODEM_RELAY);
+            generic_macro(s, V150_1_SIGNAL_MODEM_RELAY_GEN, V150_1_SSE_MOIP_RIC_V8_CM);
+        }
+        /*endif*/
+        break;
+    /*supported modulations */
+    default:
+        span_log(&s->logging, SPAN_LOG_FLOW, "Unexpected signal %s\n", v150_1_signal_to_str(signal));
+        break;
+    }
+    /*endswitch*/
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int v150_1_figure_32(v150_1_state_t *s, int signal, const uint8_t *msg, int len)
+{
+    /* Figure 32/V.150.1 */
+    switch (signal)
+    {
+    case V150_1_SIGNAL_AUDIO:
+        //send SSE p'
+        generic_macro(s, signal, 0);
+        break;
+    default:
+        span_log(&s->logging, SPAN_LOG_FLOW, "Unexpected signal %s\n", v150_1_signal_to_str(signal));
+        break;
+    }
+    /*endswitch*/
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int v150_1_figure_33(v150_1_state_t *s, int signal, const uint8_t *msg, int len)
+{
+    /* Figure 33/V.150.1 */
+    switch (signal)
+    {
+    case V150_1_SIGNAL_AUDIO:
+        //send SSE p'
+        generic_macro(s, signal, 0);
+        break;
+    default:
+        span_log(&s->logging, SPAN_LOG_FLOW, "Unexpected signal %s\n", v150_1_signal_to_str(signal));
+        break;
+    }
+    /*endswitch*/
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int v150_1_figure_34(v150_1_state_t *s, int signal, const uint8_t *msg, int len)
+{
+    /* Figure 34/V.150.1 */
+    switch (signal)
+    {
+    case V150_1_SIGNAL_AUDIO:
+        //send SSE p'
+        generic_macro(s, signal, 0);
+        break;
+    case V150_1_SIGNAL_MODEM_RELAY:
+        stop_timer(s);
+        break;
+    case V150_1_SIGNAL_VBD:
+        //send SSE RC
+        generic_macro(s, signal, 0);
+        break;
+    default:
+        span_log(&s->logging, SPAN_LOG_FLOW, "Unexpected signal %s\n", v150_1_signal_to_str(signal));
+        break;
+    }
+    /*endswitch*/
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int v150_1_figure_35(v150_1_state_t *s, int signal, const uint8_t *msg, int len)
+{
+    /* Figure 35/V.150.1 */
+    switch (signal)
+    {
+    case V150_1_SIGNAL_JM:
+        if (s->cdscselect == V150_1_CDSCSELECT_VBD_SELECT
+            ||
+            s->cdscselect == V150_1_CDSCSELECT_MIXED)
+        {
+        }
+        else
+        {
+        }
+        /*endif*/
+        break;
+    case V150_1_SIGNAL_VBD:
+        update_media_states(s, s->local_media_state, V150_1_MEDIA_STATE_VOICE_BAND_DATA);
+        break;
+    default:
+        span_log(&s->logging, SPAN_LOG_FLOW, "Unexpected signal %s\n", v150_1_signal_to_str(signal));
+        break;
+    }
+    /*endswitch*/
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int v150_1_figure_36(v150_1_state_t *s, int signal, const uint8_t *msg, int len)
+{
+    /* Figure 36/V.150.1 */
+    switch (signal)
+    {
+    case V150_1_SIGNAL_AUDIO:
+        update_media_states(s, V150_1_MEDIA_STATE_INITIAL_AUDIO, V150_1_MEDIA_STATE_VOICE_BAND_DATA);
+        break;
+    case V150_1_SIGNAL_MODEM_RELAY:
+        stop_timer(s);
+        break;
+    case V150_1_SIGNAL_VBD:
+        stop_timer(s);
+        update_media_states(s, V150_1_MEDIA_STATE_INITIAL_AUDIO, V150_1_MEDIA_STATE_VOICE_BAND_DATA);
+        // send sse p'
+        generic_macro(s, signal, 0);
+        break;
+    default:
+        span_log(&s->logging, SPAN_LOG_FLOW, "Unexpected signal %s\n", v150_1_signal_to_str(signal));
+        break;
+    }
+    /*endswitch*/
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int v150_1_figure_37(v150_1_state_t *s, int signal, const uint8_t *msg, int len)
+{
+    /* Figure 37/V.150.1 */
+    switch (signal)
+    {
+    case V150_1_SIGNAL_AUDIO:
+        update_media_states(s, V150_1_MEDIA_STATE_INITIAL_AUDIO, V150_1_MEDIA_STATE_INITIAL_AUDIO);
+        break;
+    case V150_1_SIGNAL_MODEM_RELAY:
+        stop_timer(s);
+        break;
+    case V150_1_SIGNAL_VBD:
+        stop_timer(s);
+        break;
+    default:
+        span_log(&s->logging, SPAN_LOG_FLOW, "Unexpected signal %s\n", v150_1_signal_to_str(signal));
+        break;
+    }
+    /*endswitch*/
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int v150_1_figure_38(v150_1_state_t *s, int signal, const uint8_t *msg, int len)
+{
+    /* Figure 38/V.150.1 */
+    switch (signal)
+    {
+    case V150_1_SIGNAL_AUDIO:
+        update_media_states(s, V150_1_MEDIA_STATE_INITIAL_AUDIO, V150_1_MEDIA_STATE_INITIAL_AUDIO);
+        break;
+    case V150_1_SIGNAL_VBD:
+        stop_timer(s);
+        break;
+    default:
+        span_log(&s->logging, SPAN_LOG_FLOW, "Unexpected signal %s\n", v150_1_signal_to_str(signal));
+        break;
+    }
+    /*endswitch*/
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int v150_1_figure_39(v150_1_state_t *s, int signal, const uint8_t *msg, int len)
+{
+    /* Figure 39/V.150.1 */
+    switch (signal)
+    {
+    case V150_1_SIGNAL_MODEM_RELAY:
+        break;
+    case V150_1_SIGNAL_CM:
+        break;
+    case V150_1_SIGNAL_RFC4733_ANS:
+        send_spe_signal(s, V150_1_SIGNAL_ANS_GEN);
+        break;
+    case V150_1_SIGNAL_RFC4733_ANSAM:
+        send_spe_signal(s, V150_1_SIGNAL_ANSAM_GEN);
+        break;
+    case V150_1_SIGNAL_RFC4733_ANS_PR:
+        send_spe_signal(s, V150_1_SIGNAL_ANS_GEN);
+        break;
+    case V150_1_SIGNAL_RFC4733_ANSAM_PR:
+        send_spe_signal(s, V150_1_SIGNAL_ANSAM_GEN);
+        break;
+    case V150_1_SIGNAL_ANS:
+        if (s->rfc4733_preferred)
+        {
+            generic_macro(s, V150_1_SIGNAL_RFC4733_ANS_GEN, 0);
+        }
+        else
+        {
+            /* Pass the audio through */
+        }
+        /*endif*/
+        break;
+    case V150_1_SIGNAL_ANSAM:
+        if (s->rfc4733_preferred)
+        {
+            generic_macro(s, V150_1_SIGNAL_RFC4733_ANSAM_GEN, 0);
+        }
+        else
+        {
+            /* Pass the audio through */
+        }
+        /*endif*/
+        break;
+    case V150_1_SIGNAL_ANS_PR:
+        if (s->rfc4733_preferred)
+        {
+            generic_macro(s, V150_1_SIGNAL_RFC4733_ANS_PR_GEN, 0);
+        }
+        else
+        {
+            /* Pass the audio through */
+        }
+        /*endif*/
+        break;
+    case V150_1_SIGNAL_ANSAM_PR:
+        if (s->rfc4733_preferred)
+        {
+            generic_macro(s, V150_1_SIGNAL_RFC4733_ANSAM_PR_GEN, 0);
+        }
+        else
+        {
+            /* Pass the audio through */
+        }
+        /*endif*/
+        break;
+    default:
+        span_log(&s->logging, SPAN_LOG_FLOW, "Unexpected signal %s\n", v150_1_signal_to_str(signal));
+        break;
+    }
+    /*endswitch*/
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) v150_1_state_machine(v150_1_state_t *s, int signal, const uint8_t *msg, int len)
+{
+    span_log(&s->logging,
+             SPAN_LOG_FLOW,
+             "State machine - %s   %s   %s\n",
+             v150_1_media_state_to_str(s->local_media_state),
+             v150_1_media_state_to_str(s->remote_media_state),
+             v150_1_signal_to_str(signal));
+    /* Figure 40/V.150.1, leading out to the other SDL figures */
+    switch (signal)
+    {
+    case V150_1_SIGNAL_SILENCE:
+        if (s->local_media_state != V150_1_MEDIA_STATE_INITIAL_AUDIO
+            ||
+            s->remote_media_state != V150_1_MEDIA_STATE_INITIAL_AUDIO)
+        {
+            s->remote_media_state = V150_1_MEDIA_STATE_INDETERMINATE;
+            s->local_media_state = V150_1_MEDIA_STATE_INITIAL_AUDIO;
+            status_report(s, V150_1_STATUS_REASON_MEDIA_STATE_CHANGED);
+            generic_macro(s, signal, 0);
+        }
+        /*endif*/
+        break;
+    case V150_1_SIGNAL_ABORT:
+        s->remote_media_state = V150_1_MEDIA_STATE_INDETERMINATE;
+        s->local_media_state = V150_1_MEDIA_STATE_INITIAL_AUDIO;
+        status_report(s, V150_1_STATUS_REASON_MEDIA_STATE_CHANGED);
+        generic_macro(s, signal, 0);
+        break;
+    case V150_1_SIGNAL_CALL_DISCRIMINATION_TIMER_EXPIRED:
+        /* Time to give up with negotiation, and go with the flow */
+        s->remote_media_state = V150_1_MEDIA_STATE_INDETERMINATE;
+        s->local_media_state = V150_1_MEDIA_STATE_INITIAL_AUDIO;
+        status_report(s, V150_1_STATUS_REASON_MEDIA_STATE_CHANGED);
+        break;
+    default:
+        switch (s->local_media_state)
+        {
+        case V150_1_MEDIA_STATE_INDETERMINATE:
+            switch (s->remote_media_state)
+            {
+            case V150_1_MEDIA_STATE_INDETERMINATE:
+                break;
+            case V150_1_MEDIA_STATE_INITIAL_AUDIO:
+                break;
+            case V150_1_MEDIA_STATE_VOICE_BAND_DATA:
+                break;
+            case V150_1_MEDIA_STATE_FAX_RELAY:
+                break;
+            case V150_1_MEDIA_STATE_MODEM_RELAY:
+                break;
+            case V150_1_MEDIA_STATE_TEXT_RELAY:
+                break;
+            }
+            /*endswitch*/
+            break;
+        case V150_1_MEDIA_STATE_INITIAL_AUDIO:
+            switch (s->remote_media_state)
+            {
+            case V150_1_MEDIA_STATE_INDETERMINATE:
+                break;
+            case V150_1_MEDIA_STATE_INITIAL_AUDIO:
+                v150_1_figures_26_to_31(s, signal, msg, len);
+                break;
+            case V150_1_MEDIA_STATE_VOICE_BAND_DATA:
+                v150_1_figure_33(s, signal, msg, len);
+                break;
+            case V150_1_MEDIA_STATE_FAX_RELAY:
+                break;
+            case V150_1_MEDIA_STATE_MODEM_RELAY:
+                v150_1_figure_32(s, signal, msg, len);
+                break;
+            case V150_1_MEDIA_STATE_TEXT_RELAY:
+                break;
+            }
+            /*endswitch*/
+            break;
+        case V150_1_MEDIA_STATE_VOICE_BAND_DATA:
+            switch (s->remote_media_state)
+            {
+            case V150_1_MEDIA_STATE_INDETERMINATE:
+                break;
+            case V150_1_MEDIA_STATE_INITIAL_AUDIO:
+                v150_1_figure_37(s, signal, msg, len);
+                break;
+            case V150_1_MEDIA_STATE_VOICE_BAND_DATA:
+                v150_1_figure_39(s, signal, msg, len);
+                break;
+            case V150_1_MEDIA_STATE_FAX_RELAY:
+                break;
+            case V150_1_MEDIA_STATE_MODEM_RELAY:
+                v150_1_figure_38(s, signal, msg, len);
+                break;
+            case V150_1_MEDIA_STATE_TEXT_RELAY:
+                break;
+            }
+            /*endswitch*/
+            break;
+        case V150_1_MEDIA_STATE_FAX_RELAY:
+            switch (s->remote_media_state)
+            {
+            case V150_1_MEDIA_STATE_INDETERMINATE:
+                break;
+            case V150_1_MEDIA_STATE_INITIAL_AUDIO:
+                break;
+            case V150_1_MEDIA_STATE_VOICE_BAND_DATA:
+                break;
+            case V150_1_MEDIA_STATE_FAX_RELAY:
+                break;
+            case V150_1_MEDIA_STATE_MODEM_RELAY:
+                break;
+            case V150_1_MEDIA_STATE_TEXT_RELAY:
+                break;
+            }
+            /*endswitch*/
+            break;
+        case V150_1_MEDIA_STATE_MODEM_RELAY:
+            switch (s->remote_media_state)
+            {
+            case V150_1_MEDIA_STATE_INDETERMINATE:
+                break;
+            case V150_1_MEDIA_STATE_INITIAL_AUDIO:
+                v150_1_figure_34(s, signal, msg, len);
+                break;
+            case V150_1_MEDIA_STATE_VOICE_BAND_DATA:
+                v150_1_figure_36(s, signal, msg, len);
+                break;
+            case V150_1_MEDIA_STATE_FAX_RELAY:
+                break;
+            case V150_1_MEDIA_STATE_MODEM_RELAY:
+                v150_1_figure_35(s, signal, msg, len);
+                break;
+            case V150_1_MEDIA_STATE_TEXT_RELAY:
+                break;
+            }
+            /*endswitch*/
+            break;
+        case V150_1_MEDIA_STATE_TEXT_RELAY:
+            switch (s->remote_media_state)
+            {
+            case V150_1_MEDIA_STATE_INDETERMINATE:
+                break;
+            case V150_1_MEDIA_STATE_INITIAL_AUDIO:
+                break;
+            case V150_1_MEDIA_STATE_VOICE_BAND_DATA:
+                break;
+            case V150_1_MEDIA_STATE_FAX_RELAY:
+                break;
+            case V150_1_MEDIA_STATE_MODEM_RELAY:
+                break;
+            case V150_1_MEDIA_STATE_TEXT_RELAY:
+                break;
+            }
+            /*endswitch*/
+            break;
+        }
+        /*endswitch*/
+    }
+    /*endswitch*/
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int) v150_1_set_bits_per_character(v150_1_state_t *s, int bits)
 {
     if (bits < 5  ||  bits > 8)
@@ -1245,82 +2108,88 @@ SPAN_DECLARE(int) v150_1_set_stop_bits(v150_1_state_t *s, int bits)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int status_report(v150_1_state_t *s, int reason)
+static int select_info_msg_type(v150_1_state_t *s)
 {
-    v150_1_status_t report;
+    int i;
 
-    report.reason = reason;
-    switch (reason)
+    /* Select the first available information message type we find in the preferences list */
+    for (i = 0;  i < 10  &&  s->near.info_msg_preferences[i] >= 0;  i++)
     {
-    case V150_1_STATUS_REASON_STATE_CHANGED:
-        report.state_change.state = s->far.parms.connection_state;
-        report.state_change.cleardown_reason = s->far.parms.cleardown_reason;
-        break;
-    case V150_1_STATUS_REASON_DATA_FORMAT_CHANGED:
-        report.data_format_change.bits = 5 + ((s->far.parms.data_format_code >> 5) & 0x03);
-        report.data_format_change.parity_code = (s->far.parms.data_format_code >> 2) & 0x07;
-        report.data_format_change.stop_bits = 1 + (s->far.parms.data_format_code & 0x03);
-        break;
-    case V150_1_STATUS_REASON_BREAK_RECEIVED:
-        report.break_received.source = s->far.break_source;
-        report.break_received.type = s->far.break_type;
-        report.break_received.duration = s->far.break_duration*10;
-        break;
-    case V150_1_STATUS_REASON_RATE_RETRAIN_RECEIVED:
-        break;
-    case V150_1_STATUS_REASON_RATE_RENEGOTIATION_RECEIVED:
-        break;
-    case V150_1_STATUS_REASON_BUSY_CHANGED:
-        report.busy_change.local_busy = s->near.parms.busy;
-        report.busy_change.far_busy = s->far.parms.busy;
-        break;
-    case V150_1_STATUS_REASON_PHYSUP:
-        report.physup_parameters.selmod = s->far.parms.selmod;
-        report.physup_parameters.tdsr = s->far.parms.tdsr;
-        report.physup_parameters.rdsr = s->far.parms.rdsr;
-
-        report.physup_parameters.txsen = s->far.parms.txsen;
-        report.physup_parameters.txsr = s->far.parms.txsr;
-        report.physup_parameters.rxsen = s->far.parms.rxsen;
-        report.physup_parameters.rxsr = s->far.parms.rxsr;
-        break;
-    case V150_1_STATUS_REASON_CONNECTED:
-        report.connect_parameters.selmod = s->far.parms.selmod;
-        report.connect_parameters.tdsr = s->far.parms.tdsr;
-        report.connect_parameters.rdsr = s->far.parms.rdsr;
-
-        report.connect_parameters.selected_compression_direction = s->far.parms.selected_compression_direction;
-        report.connect_parameters.selected_compression = s->far.parms.selected_compression;
-        report.connect_parameters.selected_error_correction = s->far.parms.selected_error_correction;
-
-        report.connect_parameters.compression_tx_dictionary_size = s->far.parms.compression_tx_dictionary_size;
-        report.connect_parameters.compression_rx_dictionary_size = s->far.parms.compression_rx_dictionary_size;
-        report.connect_parameters.compression_tx_string_length = s->far.parms.compression_tx_string_length;
-        report.connect_parameters.compression_rx_string_length = s->far.parms.compression_rx_string_length;
-        report.connect_parameters.compression_tx_history_size = s->far.parms.compression_tx_history_size;
-        report.connect_parameters.compression_rx_history_size = s->far.parms.compression_rx_history_size;
-
-        /* I_RAW-OCTET is always available. There is no selection flag for it. */
-        report.connect_parameters.i_raw_octet_available = true;
-        report.connect_parameters.i_raw_bit_available = s->far.parms.i_raw_bit_available;
-        report.connect_parameters.i_frame_available = s->far.parms.i_frame_available;
-        /* I_OCTET is an oddity, as you need to know in advance whether there will be a DLCI field
-           present. So, functionally its really like 2 different types of message. */
-        report.connect_parameters.i_octet_with_dlci_available = s->far.parms.i_octet_with_dlci_available;
-        report.connect_parameters.i_octet_without_dlci_available = s->far.parms.i_octet_without_dlci_available;
-        report.connect_parameters.i_char_stat_available = s->far.parms.i_char_stat_available;
-        report.connect_parameters.i_char_dyn_available = s->far.parms.i_char_dyn_available;
-        /* Unlike I_OCTET, I_OCTET-CS is only defined without a DLCI field. */
-        report.connect_parameters.i_octet_cs_available = s->far.parms.i_octet_cs_available;
-        report.connect_parameters.i_char_stat_cs_available = s->far.parms.i_char_stat_cs_available;
-        report.connect_parameters.i_char_dyn_cs_available = s->far.parms.i_char_dyn_cs_available;
-        break;
+        switch (s->near.info_msg_preferences[i])
+        {
+        case V150_1_MSGID_I_RAW_OCTET:
+            /* This is always supported */
+            s->near.info_stream_msg_id = s->near.info_msg_preferences[i];
+            return 0;
+        case V150_1_MSGID_I_RAW_BIT:
+            if (s->near.parms.i_raw_bit_available)
+            {
+                s->near.info_stream_msg_id = s->near.info_msg_preferences[i];
+                return 0;
+            }
+            /*endif*/
+            break;
+        case V150_1_MSGID_I_OCTET:
+            /* This is always supported */
+            s->near.info_stream_msg_id = s->near.info_msg_preferences[i];
+            return 0;
+        case V150_1_MSGID_I_CHAR_STAT:
+            if (s->near.parms.i_char_stat_available)
+            {
+                s->near.info_stream_msg_id = s->near.info_msg_preferences[i];
+                return 0;
+            }
+            /*endif*/
+            break;
+        case V150_1_MSGID_I_CHAR_DYN:
+            if (s->near.parms.i_char_dyn_available)
+            {
+                s->near.info_stream_msg_id = s->near.info_msg_preferences[i];
+                return 0;
+            }
+            /*endif*/
+            break;
+        case V150_1_MSGID_I_FRAME:
+            if (s->near.parms.i_frame_available)
+            {
+                s->near.info_stream_msg_id = s->near.info_msg_preferences[i];
+                return 0;
+            }
+            /*endif*/
+            break;
+        case V150_1_MSGID_I_OCTET_CS:
+            if (s->near.parms.i_octet_cs_available)
+            {
+                s->near.info_stream_msg_id = s->near.info_msg_preferences[i];
+                return 0;
+            }
+            /*endif*/
+            break;
+        case V150_1_MSGID_I_CHAR_STAT_CS:
+            if (s->near.parms.i_char_stat_cs_available)
+            {
+                s->near.info_stream_msg_id = s->near.info_msg_preferences[i];
+                return 0;
+            }
+            /*endif*/
+            break;
+        case V150_1_MSGID_I_CHAR_DYN_CS:
+            if (s->near.parms.i_char_dyn_cs_available)
+            {
+                s->near.info_stream_msg_id = s->near.info_msg_preferences[i];
+                return 0;
+            }
+            /*endif*/
+            break;
+        default:
+            s->near.info_stream_msg_id = -1;
+            return -1;
+        }
+        /*endswitch*/
     }
-    /*endswitch*/
-    if (s->rx_status_report_handler)
-        s->rx_status_report_handler(s->rx_status_report_user_data, &report);
-    /*endif*/
-    return 0;
+    /*endfor*/
+    s->near.info_stream_msg_id = -1;
+    return -1;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1350,9 +2219,7 @@ SPAN_DECLARE(int) v150_1_tx_null(v150_1_state_t *s)
     res = -1;
     /* This isn't a real message. Its marked as reserved by the ITU-T in V.150.1 */
     pkt[0] = V150_1_MSGID_NULL;
-    if (s->tx_packet_handler)
-        res = s->tx_packet_handler(s->tx_packet_user_data, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, 1);
-    /*endif*/
+    res = sprt_tx(&s->sprt, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, 1);
     span_log(&s->logging, SPAN_LOG_FLOW, "NULL sent\n");
     return res;
 }
@@ -1406,14 +2273,15 @@ SPAN_DECLARE(int) v150_1_tx_init(v150_1_state_t *s)
     pkt[2] = i;
     span_log(&s->logging, SPAN_LOG_FLOW, "Sending INIT\n");
     log_init(s, &s->near.parms);
-    if (s->tx_packet_handler)
-        res = s->tx_packet_handler(s->tx_packet_user_data, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, 3);
-    /*endif*/
+    res = sprt_tx(&s->sprt, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, 3);
     if (res >= 0)
     {
         s->near.parms.connection_state = V150_1_STATE_INITED;
         if (s->far.parms.connection_state >= V150_1_STATE_INITED)
+        {
+            select_info_msg_type(s);
             s->joint_connection_state = V150_1_STATE_INITED;
+        }
         /*endif*/
     }
     /*endif*/
@@ -1471,9 +2339,7 @@ SPAN_DECLARE(int) v150_1_tx_xid_xchg(v150_1_state_t *s)
         memset(&pkt[7], 0, 12);
     }
     /*endif*/
-    if (s->tx_packet_handler)
-        res = s->tx_packet_handler(s->tx_packet_user_data, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, 19);
-    /*endif*/
+    res = sprt_tx(&s->sprt, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, 19);
     span_log(&s->logging, SPAN_LOG_FLOW, "XID xchg sent\n");
     return res;
 }
@@ -1526,9 +2392,7 @@ SPAN_DECLARE(int) v150_1_tx_jm_info(v150_1_state_t *s)
         }
         /*endif*/
     }
-    if (s->tx_packet_handler)
-        res = s->tx_packet_handler(s->tx_packet_user_data, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, len);
-    /*endif*/
+    res = sprt_tx(&s->sprt, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, len);
     span_log(&s->logging, SPAN_LOG_FLOW, "JM info sent\n");
     return res;
 }
@@ -1540,11 +2404,13 @@ SPAN_DECLARE(int) v150_1_tx_start_jm(v150_1_state_t *s)
     uint8_t pkt[256];
 
     res = -1;
-    pkt[0] = V150_1_MSGID_START_JM;
-    if (s->tx_packet_handler)
-        res = s->tx_packet_handler(s->tx_packet_user_data, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, 1);
+    if (s->near.parms.connection_state != V150_1_STATE_IDLE)
+    {
+        pkt[0] = V150_1_MSGID_START_JM;
+        res = sprt_tx(&s->sprt, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, 1);
+        span_log(&s->logging, SPAN_LOG_FLOW, "Start JM sent\n");
+    }
     /*endif*/
-    span_log(&s->logging, SPAN_LOG_FLOW, "Start JM sent\n");
     return res;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1611,18 +2477,16 @@ SPAN_DECLARE(int) v150_1_tx_connect(v150_1_state_t *s)
         len += 4;
     }
     /*endif*/
-    if (s->tx_packet_handler)
-        res = s->tx_packet_handler(s->tx_packet_user_data, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, len);
-    /*endif*/
+    res = sprt_tx(&s->sprt, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, len);
     if (res >= 0)
     {
         s->near.parms.connection_state = V150_1_STATE_CONNECTED;
         if (s->near.parms.connection_state >= V150_1_STATE_CONNECTED)
             s->joint_connection_state = V150_1_STATE_CONNECTED;
         /*endif*/
+        span_log(&s->logging, SPAN_LOG_FLOW, "Connect sent\n");
     }
     /*endif*/
-    span_log(&s->logging, SPAN_LOG_FLOW, "Connect sent\n");
     return res;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1633,13 +2497,19 @@ SPAN_DECLARE(int) v150_1_tx_break(v150_1_state_t *s, int source, int type, int d
     uint8_t pkt[256];
 
     res = -1;
-    pkt[0] = V150_1_MSGID_BREAK;
-    pkt[1] = (source << 4) | type;
-    pkt[2] = duration/10;
-    if (s->tx_packet_handler)
-        res = s->tx_packet_handler(s->tx_packet_user_data, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, 3);
+    if (s->near.parms.connection_state != V150_1_STATE_IDLE)
+    {
+        pkt[0] = V150_1_MSGID_BREAK;
+        pkt[1] = (source << 4) | type;
+        pkt[2] = duration/10;
+        res = sprt_tx(&s->sprt, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, 3);
+        if (res >= 0)
+        {
+            span_log(&s->logging, SPAN_LOG_FLOW, "Break sent\n");
+        }
+        /*endif*/
+    }
     /*endif*/
-    span_log(&s->logging, SPAN_LOG_FLOW, "Break sent\n");
     return res;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1650,11 +2520,17 @@ SPAN_DECLARE(int) v150_1_tx_break_ack(v150_1_state_t *s)
     uint8_t pkt[256];
 
     res = -1;
-    pkt[0] = V150_1_MSGID_BREAKACK;
-    if (s->tx_packet_handler)
-        res = s->tx_packet_handler(s->tx_packet_user_data, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, 1);
+    if (s->near.parms.connection_state != V150_1_STATE_IDLE)
+    {
+        pkt[0] = V150_1_MSGID_BREAKACK;
+        res = sprt_tx(&s->sprt, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, 1);
+        if (res >= 0)
+        {
+            span_log(&s->logging, SPAN_LOG_FLOW, "Break ACK sent\n");
+        }
+        /*endif*/
+    }
     /*endif*/
-    span_log(&s->logging, SPAN_LOG_FLOW, "Break ACK sent\n");
     return res;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1710,10 +2586,12 @@ SPAN_DECLARE(int) v150_1_tx_mr_event(v150_1_state_t *s, int event_id)
         break;
     }
     /*endswitch*/
-    if (s->tx_packet_handler)
-        res = s->tx_packet_handler(s->tx_packet_user_data, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, len);
+    res = sprt_tx(&s->sprt, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, len);
+    if (res >= 0)
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "MR-event %s (%d) sent\n", v150_1_mr_event_type_to_str(event_id), event_id);
+    }
     /*endif*/
-    span_log(&s->logging, SPAN_LOG_FLOW, "MR-event sent\n");
     return res;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1725,17 +2603,21 @@ SPAN_DECLARE(int) v150_1_tx_cleardown(v150_1_state_t *s, int reason)
 
     res = -1;
 
-    pkt[0] = V150_1_MSGID_CLEARDOWN;
-    pkt[1] = reason;
-    pkt[2] = 0; /* Vendor tag */
-    pkt[3] = 0; /* Vendor info */
-    if (s->tx_packet_handler)
-        res = s->tx_packet_handler(s->tx_packet_user_data, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, 4);
+    if (s->near.parms.connection_state != V150_1_STATE_IDLE)
+    {
+        pkt[0] = V150_1_MSGID_CLEARDOWN;
+        pkt[1] = reason;
+        pkt[2] = 0; /* Vendor tag */
+        pkt[3] = 0; /* Vendor info */
+        res = sprt_tx(&s->sprt, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, 4);
+        if (res >= 0)
+        {
+            s->near.parms.connection_state = V150_1_STATE_IDLE;
+            span_log(&s->logging, SPAN_LOG_FLOW, "Cleardown sent\n");
+        }
+        /*endif*/
+    }
     /*endif*/
-    if (res >= 0)
-        s->near.parms.connection_state = V150_1_STATE_IDLE;
-    /*endif*/
-    span_log(&s->logging, SPAN_LOG_FLOW, "Cleardown sent\n");
     return res;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1794,9 +2676,7 @@ SPAN_DECLARE(int) v150_1_tx_prof_xchg(v150_1_state_t *s)
         memset(&pkt[7], 0, 12);
     }
     /*endif*/
-    if (s->tx_packet_handler)
-        res = s->tx_packet_handler(s->tx_packet_user_data, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, 19);
-    /*endif*/
+    res = sprt_tx(&s->sprt, SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED, pkt, 19);
     span_log(&s->logging, SPAN_LOG_FLOW, "Prof xchg sent\n");
     return res;
 }
@@ -2018,9 +2898,7 @@ SPAN_DECLARE(int) v150_1_tx_info_stream(v150_1_state_t *s, const uint8_t buf[], 
     /*endswitch*/
     if (res >= 0)
     {
-        if (s->tx_packet_handler)
-            res = s->tx_packet_handler(s->tx_packet_user_data, s->near.info_stream_channel, pkt, res);
-        /*endif*/
+        res = sprt_tx(&s->sprt, s->near.info_stream_channel, pkt, res);
     }
     else
     {
@@ -2028,91 +2906,6 @@ SPAN_DECLARE(int) v150_1_tx_info_stream(v150_1_state_t *s, const uint8_t buf[], 
     }
     /*endif*/
     return res;
-}
-/*- End of function --------------------------------------------------------*/
-
-static int select_info_msg_type(v150_1_state_t *s)
-{
-    int i;
-
-    /* Select the first available information message type we find in the preferences list */
-    for (i = 0;  i < 10  &&  s->near.info_msg_preferences[i] >= 0;  i++)
-    {
-        switch (s->near.info_msg_preferences[i])
-        {
-        case V150_1_MSGID_I_RAW_OCTET:
-            /* This is always supported */
-            s->near.info_stream_msg_id = s->near.info_msg_preferences[i];
-            return 0;
-        case V150_1_MSGID_I_RAW_BIT:
-            if (s->near.parms.i_raw_bit_available)
-            {
-                s->near.info_stream_msg_id = s->near.info_msg_preferences[i];
-                return 0;
-            }
-            /*endif*/
-            break;
-        case V150_1_MSGID_I_OCTET:
-            /* This is always supported */
-            s->near.info_stream_msg_id = s->near.info_msg_preferences[i];
-            return 0;
-        case V150_1_MSGID_I_CHAR_STAT:
-            if (s->near.parms.i_char_stat_available)
-            {
-                s->near.info_stream_msg_id = s->near.info_msg_preferences[i];
-                return 0;
-            }
-            /*endif*/
-            break;
-        case V150_1_MSGID_I_CHAR_DYN:
-            if (s->near.parms.i_char_dyn_available)
-            {
-                s->near.info_stream_msg_id = s->near.info_msg_preferences[i];
-                return 0;
-            }
-            /*endif*/
-            break;
-        case V150_1_MSGID_I_FRAME:
-            if (s->near.parms.i_frame_available)
-            {
-                s->near.info_stream_msg_id = s->near.info_msg_preferences[i];
-                return 0;
-            }
-            /*endif*/
-            break;
-        case V150_1_MSGID_I_OCTET_CS:
-            if (s->near.parms.i_octet_cs_available)
-            {
-                s->near.info_stream_msg_id = s->near.info_msg_preferences[i];
-                return 0;
-            }
-            /*endif*/
-            break;
-        case V150_1_MSGID_I_CHAR_STAT_CS:
-            if (s->near.parms.i_char_stat_cs_available)
-            {
-                s->near.info_stream_msg_id = s->near.info_msg_preferences[i];
-                return 0;
-            }
-            /*endif*/
-            break;
-        case V150_1_MSGID_I_CHAR_DYN_CS:
-            if (s->near.parms.i_char_dyn_cs_available)
-            {
-                s->near.info_stream_msg_id = s->near.info_msg_preferences[i];
-                return 0;
-            }
-            /*endif*/
-            break;
-        default:
-            s->near.info_stream_msg_id = -1;
-            return -1;
-        }
-        /*endswitch*/
-    }
-    /*endfor*/
-    s->near.info_stream_msg_id = -1;
-    return -1;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -2156,7 +2949,9 @@ static int v150_1_process_init(v150_1_state_t *s, const uint8_t buf[], int len)
     s->near.parms.i_char_stat_cs_available = s->near.parms.i_char_stat_cs_supported  &&  s->far.parms.i_char_stat_cs_supported;
     s->near.parms.i_char_dyn_cs_available = s->near.parms.i_char_dyn_cs_supported  &&  s->far.parms.i_char_dyn_cs_supported;
 
-    select_info_msg_type(s);
+    if (s->far.parms.connection_state >= V150_1_STATE_INITED)
+        select_info_msg_type(s);
+    /*endif*/
     span_log(&s->logging, SPAN_LOG_FLOW, "Received INIT\n");
     log_init(s, &s->far.parms);
 
@@ -2164,7 +2959,7 @@ static int v150_1_process_init(v150_1_state_t *s, const uint8_t buf[], int len)
     if (s->near.parms.connection_state >= V150_1_STATE_INITED)
         s->joint_connection_state = V150_1_STATE_INITED;
     /*endif*/
-    status_report(s, V150_1_STATUS_REASON_STATE_CHANGED);
+    status_report(s, V150_1_STATUS_REASON_CONNECTION_STATE_CHANGED);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2410,7 +3205,7 @@ static int v150_1_process_connect(v150_1_state_t *s, const uint8_t buf[], int le
     if (s->near.parms.connection_state >= V150_1_STATE_CONNECTED)
         s->joint_connection_state = V150_1_STATE_CONNECTED;
     /*endif*/
-    status_report(s, V150_1_STATUS_REASON_STATE_CHANGED);
+    status_report(s, V150_1_STATUS_REASON_CONNECTION_STATE_CONNECTED);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2479,13 +3274,13 @@ static int v150_1_process_mr_event(v150_1_state_t *s, const uint8_t buf[], int l
     /*endif*/
 
     event = buf[1];
-    span_log(&s->logging, SPAN_LOG_FLOW, "MR_EVENT type %s (%d) received\n", v150_1_mr_event_type_to_str(event), event);
+    span_log(&s->logging, SPAN_LOG_FLOW, "MR-event %s (%d) received\n", v150_1_mr_event_type_to_str(event), event);
     switch (event)
     {
     case V150_1_MR_EVENT_ID_NULL:
         if (len != 3)
         {
-            span_log(&s->logging, SPAN_LOG_WARNING, "Invalid MR_EVENT message length %d\n", len);
+            span_log(&s->logging, SPAN_LOG_WARNING, "Invalid MR-event message length %d\n", len);
             return -1;
         }
         /*endif*/
@@ -2494,7 +3289,7 @@ static int v150_1_process_mr_event(v150_1_state_t *s, const uint8_t buf[], int l
     case V150_1_MR_EVENT_ID_RETRAIN:
         if (len != 3)
         {
-            span_log(&s->logging, SPAN_LOG_WARNING, "Invalid MR_EVENT message length %d\n", len);
+            span_log(&s->logging, SPAN_LOG_WARNING, "Invalid MR-event message length %d\n", len);
             return -1;
         }
         /*endif*/
@@ -2517,7 +3312,7 @@ static int v150_1_process_mr_event(v150_1_state_t *s, const uint8_t buf[], int l
     case V150_1_MR_EVENT_ID_PHYSUP:
         if (len != 10)
         {
-            span_log(&s->logging, SPAN_LOG_WARNING, "Invalid MR_EVENT message length %d\n", len);
+            span_log(&s->logging, SPAN_LOG_WARNING, "Invalid MR-event message length %d\n", len);
             return -1;
         }
         /*endif*/
@@ -2545,10 +3340,10 @@ static int v150_1_process_mr_event(v150_1_state_t *s, const uint8_t buf[], int l
         if (s->near.parms.connection_state >= V150_1_STATE_PHYSUP)
             s->joint_connection_state = V150_1_STATE_PHYSUP;
         /*endif*/
-        status_report(s, V150_1_STATUS_REASON_STATE_CHANGED);
+        status_report(s, V150_1_STATUS_REASON_CONNECTION_STATE_PHYSUP);
         break;
     default:
-        span_log(&s->logging, SPAN_LOG_WARNING, "Unknown MR_EVENT type %d received\n", event);
+        span_log(&s->logging, SPAN_LOG_WARNING, "Unknown MR-event type %d received\n", event);
         break;
     }
     /*endif*/
@@ -2580,7 +3375,7 @@ static int v150_1_process_cleardown(v150_1_state_t *s, const uint8_t buf[], int 
     // vendor_info = buf[3];
     /* A cleardown moves everything back to square one. */
     s->far.parms.connection_state = V150_1_STATE_IDLE;
-    status_report(s, V150_1_STATUS_REASON_STATE_CHANGED);
+    status_report(s, V150_1_STATUS_REASON_CONNECTION_STATE_CHANGED);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2681,8 +3476,8 @@ static int v150_1_process_i_raw_octet(v150_1_state_t *s, const uint8_t buf[], in
     /*endif*/
     for (i = 0;  i < n;  i++)
     {
-        if (s->rx_octet_handler)
-            s->rx_octet_handler(s->rx_octet_handler_user_data, &buf[header], len - header, -1);
+        if (s->rx_data_handler)
+            s->rx_data_handler(s->rx_data_handler_user_data, &buf[header], len - header, -1);
         /*endif*/
     }
     /*endif*/
@@ -2742,8 +3537,8 @@ static int v150_1_process_i_raw_bit(v150_1_state_t *s, const uint8_t buf[], int 
     /*endif*/
     for (i = 0;  i < n;  i++)
     {
-        if (s->rx_octet_handler)
-            s->rx_octet_handler(s->rx_octet_handler_user_data, &buf[header], len - header, -1);
+        if (s->rx_data_handler)
+            s->rx_data_handler(s->rx_data_handler_user_data, &buf[header], len - header, -1);
         /*endif*/
     }
     /*endfor*/
@@ -2801,8 +3596,8 @@ static int v150_1_process_i_octet(v150_1_state_t *s, const uint8_t buf[], int le
     /*endif*/
     if (len > header)
     {
-        if (s->rx_octet_handler)
-            s->rx_octet_handler(s->rx_octet_handler_user_data, &buf[header], len - header, -1);
+        if (s->rx_data_handler)
+            s->rx_data_handler(s->rx_data_handler_user_data, &buf[header], len - header, -1);
         /*endif*/
     }
     /*endif*/
@@ -2833,8 +3628,8 @@ static int v150_1_process_i_char_stat(v150_1_state_t *s, const uint8_t buf[], in
     /*endif*/
     if (len > 2)
     {
-        if (s->rx_octet_handler)
-            s->rx_octet_handler(s->rx_octet_handler_user_data, &buf[2], len - 2, -1);
+        if (s->rx_data_handler)
+            s->rx_data_handler(s->rx_data_handler_user_data, &buf[2], len - 2, -1);
         /*endif*/
     }
     /*endif*/
@@ -2864,8 +3659,8 @@ static int v150_1_process_i_char_dyn(v150_1_state_t *s, const uint8_t buf[], int
     /*endif*/
     if (len > 2)
     {
-        if (s->rx_octet_handler)
-            s->rx_octet_handler(s->rx_octet_handler_user_data, &buf[2], len - 2, -1);
+        if (s->rx_data_handler)
+            s->rx_data_handler(s->rx_data_handler_user_data, &buf[2], len - 2, -1);
         /*endif*/
     }
     /*endif*/
@@ -2897,8 +3692,8 @@ static int v150_1_process_i_frame(v150_1_state_t *s, const uint8_t buf[], int le
     data_frame_state = buf[1] & 0x03;
     if (len > 2)
     {
-        if (s->rx_octet_handler)
-            s->rx_octet_handler(s->rx_octet_handler_user_data, &buf[2], len - 2, -1);
+        if (s->rx_data_handler)
+            s->rx_data_handler(s->rx_data_handler_user_data, &buf[2], len - 2, -1);
         /*endif*/
     }
     /*endif*/
@@ -2926,8 +3721,8 @@ static int v150_1_process_i_octet_cs(v150_1_state_t *s, const uint8_t buf[], int
     character_seq_no = get_net_unaligned_uint16(&buf[1]);
     /* Check for a gap in the data */
     fill = (character_seq_no - s->far.parms.octet_cs_next_seq_no) & 0xFFFF;
-    if (s->rx_octet_handler)
-        s->rx_octet_handler(s->rx_octet_handler_user_data, &buf[3], len - 3, fill);
+    if (s->rx_data_handler)
+        s->rx_data_handler(s->rx_data_handler_user_data, &buf[3], len - 3, fill);
     /*endif*/
     s->far.parms.octet_cs_next_seq_no = (character_seq_no + len - 3) & 0xFFFF;
     return 0;
@@ -2961,8 +3756,8 @@ static int v150_1_process_i_char_stat_cs(v150_1_state_t *s, const uint8_t buf[],
     character_seq_no = get_net_unaligned_uint16(&buf[2]);
     /* Check for a gap in the data */
     fill = (character_seq_no - s->far.parms.octet_cs_next_seq_no) & 0xFFFF;
-    if (s->rx_octet_handler)
-        s->rx_octet_handler(s->rx_octet_handler_user_data, &buf[4], len - 4, fill);
+    if (s->rx_data_handler)
+        s->rx_data_handler(s->rx_data_handler_user_data, &buf[4], len - 4, fill);
     /*endif*/
     s->far.parms.octet_cs_next_seq_no = (character_seq_no + len - 4) & 0xFFFF;
     return 0;
@@ -2995,18 +3790,24 @@ static int v150_1_process_i_char_dyn_cs(v150_1_state_t *s, const uint8_t buf[], 
     character_seq_no = get_net_unaligned_uint16(&buf[2]);
     /* Check for a gap in the data */
     fill = (character_seq_no - s->far.parms.octet_cs_next_seq_no) & 0xFFFF;
-    if (s->rx_octet_handler)
-        s->rx_octet_handler(s->rx_octet_handler_user_data, &buf[4], len - 4, fill);
+    if (s->rx_data_handler)
+        s->rx_data_handler(s->rx_data_handler_user_data, &buf[4], len - 4, fill);
     /*endif*/
     s->far.parms.octet_cs_next_seq_no = (character_seq_no + len - 4) & 0xFFFF;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) v150_1_process_rx_msg(v150_1_state_t *s, int chan, int seq_no, const uint8_t buf[], int len)
+static int process_rx_sprt_msg(void *user_data, int chan, int seq_no, const uint8_t buf[], int len)
 {
     int res;
     int msg_id;
+    v150_1_state_t *s;
+
+    s  = (v150_1_state_t *) user_data;
+
+    span_log(&s->logging, SPAN_LOG_FLOW, "%s (%d) seq %d\n", sprt_transmission_channel_to_str(chan), chan, seq_no);
+    span_log_buf(&s->logging, SPAN_LOG_FLOW, "", buf, len);
 
     if (chan < SPRT_TCID_MIN  ||  chan > SPRT_TCID_MAX)
     {
@@ -3106,6 +3907,13 @@ SPAN_DECLARE(int) v150_1_process_rx_msg(v150_1_state_t *s, int chan, int seq_no,
         span_log(&s->logging, SPAN_LOG_FLOW, "Bad message\n");
     /*endif*/
     return res;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) v150_1_test_rx_sprt_msg(v150_1_state_t *s, int chan, int seq_no, const uint8_t buf[], int len)
+{
+    process_rx_sprt_msg((void *) s, chan, seq_no, buf, len);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -3292,21 +4100,231 @@ SPAN_DECLARE(int) v150_1_set_rx_data_signalling_rate(v150_1_state_t *s, int rate
 }
 /*- End of function --------------------------------------------------------*/
 
+static void set_joint_cdscselect(v150_1_state_t *s)
+{
+    /* See Table 32/V.150.1 */
+    if (s->near.parms.cdscselect == V150_1_CDSCSELECT_INDETERMINATE
+        ||
+        s->far.parms.cdscselect == V150_1_CDSCSELECT_INDETERMINATE)
+    {
+        s->cdscselect = V150_1_CDSCSELECT_INDETERMINATE;
+    }
+    else if (s->near.parms.cdscselect == V150_1_CDSCSELECT_AUDIO_RFC4733
+        ||
+        s->far.parms.cdscselect == V150_1_CDSCSELECT_AUDIO_RFC4733)
+    {
+        s->cdscselect = V150_1_CDSCSELECT_AUDIO_RFC4733;
+    }
+    else if (s->near.parms.cdscselect == V150_1_CDSCSELECT_VBD_SELECT
+             ||
+             s->far.parms.cdscselect == V150_1_CDSCSELECT_VBD_SELECT)
+    {
+        s->cdscselect = V150_1_CDSCSELECT_VBD_SELECT;
+    }
+    else
+    {
+        s->cdscselect = V150_1_CDSCSELECT_MIXED;
+    }
+    /*endif*/
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) v150_1_set_near_cdscselect(v150_1_state_t *s, v150_1_cdscselect_t select)
+{
+    s->near.parms.cdscselect = select;
+    set_joint_cdscselect(s);
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) v150_1_set_far_cdscselect(v150_1_state_t *s, v150_1_cdscselect_t select)
+{
+    s->far.parms.cdscselect = select;
+    set_joint_cdscselect(s);
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) v150_1_set_call_discrimination_timeout(v150_1_state_t *s, int timeout)
+{
+    s->call_discrimination_timeout = timeout;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(logging_state_t *) v150_1_get_logging_state(v150_1_state_t *s)
 {
     return &s->logging;
 }
 /*- End of function --------------------------------------------------------*/
 
+int sse_status_handler(v150_1_state_t *s, int status)
+{
+    span_log(&s->logging, SPAN_LOG_FLOW, "SSE status event %s\n", v150_1_sse_status_to_str(status));
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static void sprt_status_handler(void *user_data, int status)
+{
+    v150_1_state_t *s;
+
+    s = (v150_1_state_t *) user_data;
+    span_log(&s->logging, SPAN_LOG_FLOW, "SPRT status event %d\n", status);
+}
+/*- End of function --------------------------------------------------------*/
+
+static void call_discrimination_timer_expired(v150_1_state_t *s, span_timestamp_t now)
+{
+    v150_1_state_machine(s, V150_1_SIGNAL_CALL_DISCRIMINATION_TIMER_EXPIRED, NULL, 0);
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) v150_1_timer_expired(v150_1_state_t *s, span_timestamp_t now)
+{
+    span_log(&s->logging, SPAN_LOG_FLOW, "V.150.1 timer expired at %lu\n", now);
+
+    if (now < s->latest_timer)
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "V.150.1 timer returned %luus early\n", s->latest_timer - now);
+        /* Request the same timeout point again. */
+        if (s->timer_handler)
+            s->timer_handler(s->timer_user_data, s->latest_timer);
+        /*endif*/
+        return 0;
+    }
+    /*endif*/
+
+    if (s->call_discrimination_timer != 0  &&  s->call_discrimination_timer <= now)
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "Call discrimination timer expired\n");
+        call_discrimination_timer_expired(s, now);
+    }
+    /*endif*/
+    if (s->sse_timer != 0  &&  s->sse_timer <= now)
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "SSE timer expired\n");
+        v150_1_sse_timer_expired(s, now);
+    }
+    /*endif*/
+    if (s->sprt_timer != 0  &&  s->sprt_timer <= now)
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "SPRT timer expired\n");
+        sprt_timer_expired(&s->sprt, now);
+    }
+    /*endif*/
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static span_timestamp_t select_timer(v150_1_state_t *s)
+{
+    span_timestamp_t shortest;
+    int shortest_is;
+
+    /* Find the earliest expiring of the active timers, and set the timeout to that. */
+    shortest = ~0;
+    shortest_is = 0;
+    if (s->sprt_timer  &&  s->sprt_timer < shortest)
+    {
+        shortest = s->sprt_timer;
+        shortest_is = 0;
+    }
+    /*endif*/
+    if (s->sse_timer  &&  s->sse_timer < shortest)
+    {
+        shortest = s->sse_timer;
+        shortest_is = 1;
+    }
+    /*endif*/
+    if (s->call_discrimination_timer  &&  s->call_discrimination_timer < shortest)
+    {
+        shortest = s->call_discrimination_timer;
+        shortest_is = 2;
+    }
+    /*endif*/
+
+    /* If we haven't shrunk shortest from maximum, we have no timer to set, so we stop the timer,
+       if its set. */
+    if (shortest == ~0)
+        shortest = 0;
+    /*endif*/
+    span_log(&s->logging, SPAN_LOG_FLOW, "Update timer to %lu (%d)\n", shortest, shortest_is);
+    s->latest_timer = shortest;
+    return shortest;
+}
+/*- End of function --------------------------------------------------------*/
+
+static span_timestamp_t update_call_discrimination_timer(v150_1_state_t *s, span_timestamp_t timeout)
+{
+    span_timestamp_t res;
+
+    if (timeout != ~0)
+    {
+        s->call_discrimination_timer = timeout;
+        timeout = select_timer(s);
+    }
+    /*endif*/
+    res = 0;
+    if (s->timer_handler)
+        res = s->timer_handler(s->timer_user_data, timeout);
+    /*endif*/
+    return res;
+}
+/*- End of function --------------------------------------------------------*/
+
+span_timestamp_t update_sse_timer(void *user_data, span_timestamp_t timeout)
+{
+    v150_1_state_t *s;
+    span_timestamp_t res;
+
+    s = (v150_1_state_t *) user_data;
+    if (timeout != ~0)
+    {
+        s->sse_timer = timeout;
+        timeout = select_timer(s);
+    }
+    /*endif*/
+    res = 0;
+    if (s->timer_handler)
+        res = s->timer_handler(s->timer_user_data, timeout);
+    /*endif*/
+    return res;
+}
+/*- End of function --------------------------------------------------------*/
+
+static span_timestamp_t update_sprt_timer(void *user_data, span_timestamp_t timeout)
+{
+    v150_1_state_t *s;
+    span_timestamp_t res;
+
+    s = (v150_1_state_t *) user_data;
+    if (timeout != ~0)
+    {
+        s->sprt_timer = timeout;
+        timeout = select_timer(s);
+    }
+    /*endif*/
+    res = 0;
+    if (s->timer_handler)
+        res = s->timer_handler(s->timer_user_data, timeout);
+    /*endif*/
+    return res;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(v150_1_state_t *) v150_1_init(v150_1_state_t *s,
-                                           v150_1_tx_packet_handler_t tx_packet_handler,
-                                           void *tx_packet_user_data,
-                                           v150_1_rx_octet_handler_t rx_octet_handler,
-                                           void *rx_octet_handler_user_data,
+                                           sprt_tx_packet_handler_t sprt_tx_packet_handler,
+                                           void *sprt_tx_packet_handler_user_data,
+                                           uint8_t sprt_tx_payload_type,
+                                           uint8_t sprt_rx_payload_type,
+                                           v150_1_sse_tx_packet_handler_t sse_tx_packet_handler,
+                                           void *sse_tx_packet_user_data,
+                                           v150_1_timer_handler_t v150_1_timer_handler,
+                                           void *v150_1_timer_user_data,
+                                           v150_1_rx_data_handler_t rx_data_handler,
+                                           void *rx_data_handler_user_data,
                                            v150_1_rx_status_report_handler_t rx_status_report_handler,
                                            void *rx_status_report_user_data)
 {
-    if (tx_packet_handler == NULL  ||  rx_octet_handler == NULL  ||  rx_status_report_handler == NULL)
+    if (sprt_tx_packet_handler == NULL  ||  rx_data_handler == NULL  ||  rx_status_report_handler == NULL)
         return NULL;
     /*endif*/
     if (s == NULL)
@@ -3400,12 +4418,40 @@ SPAN_DECLARE(v150_1_state_t *) v150_1_init(v150_1_state_t *s,
                                    | V150_1_STOP_BITS_1;
     s->far.parms.data_format_code = -1;
 
-    s->tx_packet_handler = tx_packet_handler;
-    s->tx_packet_user_data = tx_packet_user_data;
-    s->rx_octet_handler = rx_octet_handler;
-    s->rx_octet_handler_user_data = rx_octet_handler_user_data;
+    s->remote_media_state = V150_1_MEDIA_STATE_INITIAL_AUDIO;
+    s->local_media_state = V150_1_MEDIA_STATE_INITIAL_AUDIO;
+
+    s->call_discrimination_timeout = V150_1_CALL_DISCRIMINATION_DEFAULT_TIMEOUT;
+
+    s->near.parms.sprt_subsession_id = 0;
+    s->near.parms.sprt_payload_type = sprt_tx_payload_type;
+    s->far.parms.sprt_payload_type = sprt_rx_payload_type;
+
+    s->rx_data_handler = rx_data_handler;
+    s->rx_data_handler_user_data = rx_data_handler_user_data;
     s->rx_status_report_handler = rx_status_report_handler;
     s->rx_status_report_user_data = rx_status_report_user_data;
+
+    s->timer_handler = v150_1_timer_handler;
+    s->timer_user_data = v150_1_timer_user_data;
+
+    v150_1_sse_init(s, 
+                    sse_tx_packet_handler,
+                    sse_tx_packet_user_data);
+
+    sprt_init(&s->sprt,
+              s->near.parms.sprt_subsession_id,
+              s->near.parms.sprt_payload_type,
+              s->far.parms.sprt_payload_type,
+              NULL /* Use default params */,
+              sprt_tx_packet_handler,
+              sprt_tx_packet_handler_user_data,
+              process_rx_sprt_msg,
+              s,
+              update_sprt_timer,
+              s,
+              sprt_status_handler,
+              s);
 
     return s;
 }

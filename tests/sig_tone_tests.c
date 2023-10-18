@@ -93,6 +93,7 @@ static void plot_frequency_response(void)
     {
         exit(2);
     }
+    /*endif*/
 
     fprintf(gnucmd, "set autoscale\n");
     fprintf(gnucmd, "unset log\n");
@@ -111,6 +112,7 @@ static void plot_frequency_response(void)
     {
         exit(2);
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -194,6 +196,7 @@ static void tx_handler(void *user_data, int what, int level, int duration)
             time = pattern_2_tones[tx_section][0];
             tone = pattern_2_tones[tx_section][1];
         }
+        /*endif*/
         if (time)
         {
             printf("Tx: [%04x] %s %s for %d samples (%dms)\n",
@@ -209,6 +212,7 @@ static void tx_handler(void *user_data, int what, int level, int duration)
         {
             printf("End of sequence\n");
         }
+        /*endif*/
     }
     /*endif*/
 }
@@ -228,6 +232,7 @@ static void rx_handler(void *user_data, int what, int level, int duration)
         printf(" %s", (x)  ?  "on "  : "off");
         if (x == tone_1_present)
             exit(2);
+        /*endif*/
         tone_1_present = x;
     }
     else
@@ -235,6 +240,7 @@ static void rx_handler(void *user_data, int what, int level, int duration)
         printf(" ---");
         if (x != tone_1_present)
             exit(2);
+        /*endif*/
     }
     /*endif*/
     x = what & SIG_TONE_2_PRESENT;
@@ -243,12 +249,14 @@ static void rx_handler(void *user_data, int what, int level, int duration)
         printf(" %s", (x)  ?  "on "  : "off");
         if (x == tone_2_present)
             exit(2);
+        /*endif*/
         tone_2_present = x;
     }
     else
     {
         if (x != tone_2_present)
             exit(2);
+        /*endif*/
         printf(" ---");
     }
     /*endif*/
@@ -318,6 +326,7 @@ static void map_frequency_response(sig_tone_rx_state_t *s, template_t template[]
         /*endif*/
         if (freq > template[template_entry].freq)
             template_entry++;
+        /*endif*/
     }
     /*endfor*/
     swept_tone_free(swept);
@@ -425,6 +434,7 @@ static void level_and_ratio_tests(sig_tone_rx_state_t *s, double pitch[2])
                 tone = dds_mod(&phase[0], phase_rate[0], gain, 0);
                 if (phase_rate[1])
                     tone += dds_mod(&phase[1], phase_rate[1], gain, 0);
+                /*endif*/
                 power_meter_update(&noise_meter, noise);
                 power_meter_update(&tone_meter, tone);
                 amp[i] = noise + tone;
@@ -437,6 +447,7 @@ static void level_and_ratio_tests(sig_tone_rx_state_t *s, double pitch[2])
                 printf("Measured tone = %.2fdBm0, noise = %.2fdBm0\n", power_meter_current_dbm0(&tone_meter), power_meter_current_dbm0(&noise_meter));
                 if (rx_handler_callbacks != 1)
                     printf("Callbacks = %d\n", rx_handler_callbacks);
+                /*endif*/
             }
             /*endif*/
             tone_level += 1.0f;
@@ -535,7 +546,9 @@ int main(int argc, char *argv[])
             exit(2);
             break;
         }
+        /*endswitch*/
     }
+    /*endwhile*/
 
     for (type = 1;  type <= 3;  type++)
     {
@@ -549,6 +562,7 @@ int main(int argc, char *argv[])
             template[i].min_level = 0.0;
             template[i].max_level = 0.0;
         }
+        /*endfor*/
         fc[0] =
         fc[1] = 0.0;
         switch (type)
@@ -650,6 +664,7 @@ int main(int argc, char *argv[])
         sequence_tests(&tx_state, &rx_state, munge);
         if (munge)
             codec_munge_free(munge);
+        /*endif*/
     }
     /*endfor*/
 

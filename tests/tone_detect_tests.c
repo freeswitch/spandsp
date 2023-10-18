@@ -80,6 +80,7 @@ static int periodogram_tests(void)
         printf("Test failed\n");
         return -1;
     }
+    /*endif*/
     pg_scale = periodogram_generate_phase_offset(&phase_offset, FREQ1, DEC_SAMPLE_RATE, PG_WINDOW);
     scale1 = dds_scaling_dbm0f(-6.0f);
     scale2 = dds_scaling_dbm0f(-6.0f);
@@ -103,12 +104,14 @@ static int periodogram_tests(void)
                 camp[j].re += awgn(noise_source_re);
                 camp[j].im += awgn(noise_source_im);
             }
+            /*endfor*/
             result = periodogram(coeffs, camp, PG_WINDOW);
             level = sqrtf(result.re*result.re + result.im*result.im);
             freq_error = periodogram_freq_error(&phase_offset, pg_scale, &last_result, &result);
             last_result = result;
             if (i == 0)
                 continue;
+            /*endif*/
 
             printf("Signal level = %.5f, freq error = %.5f\n", level, freq_error);
             if (level < scale1*0.8f  ||  level > scale1*1.2f)
@@ -116,15 +119,19 @@ static int periodogram_tests(void)
                 printf("Test failed - %ddBm0 of noise, signal is %f (%f)\n", k, level, scale1);
                 return -1;
             }
+            /*endif*/
             if (freq_error < -10.0f  ||  freq_error > 10.0f)
             {
                 printf("Test failed - %ddBm0 of noise, %fHz error\n", k, freq_error);
                 return -1;
             }
+            /*endif*/
         }
+        /*endfor*/
         awgn_free(noise_source_re);
         awgn_free(noise_source_im);
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -133,6 +140,7 @@ int main(int argc, char *argv[])
 {
     if (periodogram_tests())
         exit(2);
+    /*endif*/
     printf("Tests passed\n");
     return 0;
 }

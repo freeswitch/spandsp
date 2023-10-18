@@ -106,6 +106,7 @@ static int rx_indicator_handler(t38_core_state_t *s, void *user_data, int indica
         ok_indicator_packets++;
     else
         bad_indicator_packets++;
+    /*endif*/
     //printf("Hit indicator %d\n", indicator);
     return 0;
 }
@@ -117,6 +118,7 @@ static int rx_data_handler(t38_core_state_t *s, void *user_data, int data_type, 
         ok_data_packets++;
     else
         bad_data_packets++;
+    /*endif*/
     msg_list_ptr2 += 2;
     //printf("Hit data %d, field %d\n", data_type, field_type);
     return 0;
@@ -131,6 +133,7 @@ static int tx_packet_handler(t38_core_state_t *s, void *user_data, const uint8_t
     span_log(t38_core_get_logging_state(s), SPAN_LOG_FLOW, "Send seq %d, len %d, count %d\n", s->tx_seq_no, len, count);
     if (t38_core_rx_ifp_packet(t, buf, len, seq_no) < 0)
         succeeded = false;
+    /*endif*/
     seq_no++;
     return 0;
 }
@@ -170,7 +173,9 @@ static int encode_decode_tests(t38_core_state_t *a, t38_core_state_t *b)
             msg_list_ptr--;
             break;
         }
+        /*endif*/
     }
+    /*endfor*/
 
     /* Try all the data types, as single field messages with no data */
     for (i = 0;  i < 100;  i++)
@@ -185,10 +190,14 @@ static int encode_decode_tests(t38_core_state_t *a, t38_core_state_t *b)
                 msg_list_ptr -= 2;
                 break;
             }
+            /*endif*/
         }
+        /*endfor*/
         if (j == 0)
             break;
+        /*endif*/
     }
+    /*endfor*/
 
     /* Try all the data types and field types, as single field messages with data */
     for (i = 0;  i < 100;  i++)
@@ -203,10 +212,14 @@ static int encode_decode_tests(t38_core_state_t *a, t38_core_state_t *b)
                 msg_list_ptr -= 2;
                 break;
             }
+            /*endif*/
         }
+        /*endfor*/
         if (j == 0)
             break;
+        /*endif*/
     }
+    /*endfor*/
 
     /* Try all the data types and field types, as multi-field messages, but with 0 fields */
     for (i = 0;  i < 100;  i++)
@@ -216,10 +229,13 @@ static int encode_decode_tests(t38_core_state_t *a, t38_core_state_t *b)
             skip = 1;
             if (t38_core_send_data_multi_field(a, i, field, 0, T38_PACKET_CATEGORY_CONTROL_DATA) < 0)
                 break;
+            /*endif*/
         }
         if (j == 0)
             break;
+        /*endif*/
     }
+    /*endfor*/
 
     /* Try all the data types and field types, as multi-field messages */
     for (i = 0;  i < 100;  i++)
@@ -246,10 +262,14 @@ static int encode_decode_tests(t38_core_state_t *a, t38_core_state_t *b)
                 msg_list_ptr -= 4;
                 break;
             }
+            /*endif*/
         }
+        /*endfor*/
         if (j == 0)
             break;
+        /*endif*/
     }
+    /*endfor*/
 
     printf("Indicator packets: OK = %d, bad = %d\n", ok_indicator_packets, bad_indicator_packets);
     printf("Data packets: OK = %d, bad = %d\n", ok_data_packets, bad_data_packets);
@@ -262,11 +282,13 @@ static int encode_decode_tests(t38_core_state_t *a, t38_core_state_t *b)
             printf("Tests failed\n");
             return -1;
         }
+        /*endif*/
         if (ok_data_packets != 288  ||  bad_data_packets != 0)
         {
             printf("Tests failed\n");
             return -1;
         }
+        /*endif*/
     }
     else
     {
@@ -275,17 +297,21 @@ static int encode_decode_tests(t38_core_state_t *a, t38_core_state_t *b)
             printf("Tests failed\n");
             return -1;
         }
+        /*endif*/
         if (ok_data_packets != 720  ||  bad_data_packets != 0)
         {
             printf("Tests failed\n");
             return -1;
         }
+        /*endif*/
     }
+    /*endif*/
     if (missing_packets > 0)
     {
         printf("Tests failed\n");
         return -1;
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -315,7 +341,9 @@ static int encode_then_decode_tests(t38_core_state_t *a, t38_core_state_t *b)
             msg_list_ptr--;
             break;
         }
+        /*endif*/
     }
+    /*endfor*/
 
     /* Try all the data types, as single field messages with no data */
     for (i = 0;  i < 100;  i++)
@@ -330,10 +358,14 @@ static int encode_then_decode_tests(t38_core_state_t *a, t38_core_state_t *b)
                 msg_list_ptr -= 2;
                 break;
             }
+            /*endif*/
         }
+        /*endfor*/
         if (j == 0)
             break;
+        /*endif*/
     }
+    /*endfor*/
 
     /* Try all the data types and field types, as single field messages with data */
     for (i = 0;  i < 100;  i++)
@@ -348,10 +380,13 @@ static int encode_then_decode_tests(t38_core_state_t *a, t38_core_state_t *b)
                 msg_list_ptr -= 2;
                 break;
             }
+            /*endif*/
         }
         if (j == 0)
             break;
+        /*endif*/
     }
+    /*endfor*/
 
     /* Try all the data types and field types, as multi-field messages, but with 0 fields */
     for (i = 0;  i < 100;  i++)
@@ -361,10 +396,13 @@ static int encode_then_decode_tests(t38_core_state_t *a, t38_core_state_t *b)
             skip = 1;
             if (t38_core_send_data_multi_field(a, i, field, 0, T38_PACKET_CATEGORY_CONTROL_DATA) < 0)
                 break;
+            /*endif*/
         }
         if (j == 0)
             break;
+        /*endif*/
     }
+    /*endfor*/
 
     /* Try all the data types and field types, as multi-field messages */
     for (i = 0;  i < 100;  i++)
@@ -391,18 +429,24 @@ static int encode_then_decode_tests(t38_core_state_t *a, t38_core_state_t *b)
                 msg_list_ptr -= 4;
                 break;
             }
+            /*endif*/
         }
+        /*endfor*/
         if (j == 0)
             break;
+        /*endif*/
     }
+    /*endfor*/
 
     /* Now split up the big concatented block of IFP packets. */
     for (i = 0, seq_no = 0;  i < concat_len;  i += len)
     {
         if ((len = t38_core_rx_ifp_stream(b, &concat[i], concat_len - i, seq_no)) < 0)
             succeeded = false;
+        /*endif*/
         seq_no++;
     }
+    /*endif*/
 
     printf("Indicator packets: OK = %d, bad = %d\n", ok_indicator_packets, bad_indicator_packets);
     printf("Data packets: OK = %d, bad = %d\n", ok_data_packets, bad_data_packets);
@@ -415,11 +459,13 @@ static int encode_then_decode_tests(t38_core_state_t *a, t38_core_state_t *b)
             printf("Tests failed\n");
             return -1;
         }
+        /*endif*/
         if (ok_data_packets != 288  ||  bad_data_packets != 0)
         {
             printf("Tests failed\n");
             return -1;
         }
+        /*endif*/
     }
     else
     {
@@ -428,17 +474,21 @@ static int encode_then_decode_tests(t38_core_state_t *a, t38_core_state_t *b)
             printf("Tests failed\n");
             return -1;
         }
+        /*endif*/
         if (ok_data_packets != 720  ||  bad_data_packets != 0)
         {
             printf("Tests failed\n");
             return -1;
         }
+        /*endif*/
     }
+    /*endif*/
     if (missing_packets > 0)
     {
         printf("Tests failed\n");
         return -1;
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -461,10 +511,13 @@ static int attack_tests(t38_core_state_t *s, int packets)
         {
             for (j = 0;  j < len;  j++)
                 buf[j] = (rand() >> 16) & 0xFF;
+            /*endfor*/
             t38_core_rx_ifp_packet(s, buf, len, seq_no);
             seq_no = (seq_no + 1) & 0xFFFF;
         }
+        /*endfor*/
     }
+    /*endfor*/
 
     return 0;
 }
@@ -492,7 +545,9 @@ int main(int argc, char *argv[])
             exit(2);
             break;
         }
+        /*endswitch*/
     }
+    /*endwhile*/
 
     /* Tests in UDP type mode, for UDPTL and RTP */
     for (t38_version = 0;  t38_version < 2;  t38_version++)
@@ -512,6 +567,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Cannot start the T.38 core\n");
             exit(2);
         }
+        /*endif*/
         if ((t38_core_b = t38_core_init(&t38_core_bx,
                                         rx_indicator_handler,
                                         rx_data_handler,
@@ -523,6 +579,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Cannot start the T.38 core\n");
             exit(2);
         }
+        /*endif*/
 
         t38_set_t38_version(t38_core_a, t38_version);
         t38_set_t38_version(t38_core_b, t38_version);
@@ -538,6 +595,7 @@ int main(int argc, char *argv[])
             printf("Encode/decode tests failed\n");
             exit(2);
         }
+        /*endif*/
 
         if ((t38_core_a = t38_core_init(&t38_core_ax,
                                         rx_indicator_attack_handler,
@@ -550,6 +608,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Cannot start the T.38 core\n");
             exit(2);
         }
+        /*endif*/
 
         t38_set_t38_version(t38_core_a, t38_version);
 
@@ -561,7 +620,9 @@ int main(int argc, char *argv[])
             printf("Attack tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
 
     /* Tests in TCP without TPKT mode, like T.38 version 0 */
     for (t38_version = 0;  t38_version < 2;  t38_version++)
@@ -582,6 +643,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Cannot start the T.38 core\n");
             exit(2);
         }
+        /*endif*/
         if ((t38_core_b = t38_core_init(&t38_core_bx,
                                         rx_indicator_handler,
                                         rx_data_handler,
@@ -593,6 +655,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Cannot start the T.38 core\n");
             exit(2);
         }
+        /*endif*/
 
         t38_set_t38_version(t38_core_a, t38_version);
         t38_set_t38_version(t38_core_b, t38_version);
@@ -614,6 +677,7 @@ int main(int argc, char *argv[])
             printf("Encode then decode tests failed\n");
             exit(2);
         }
+        /*endif*/
 
         if ((t38_core_a = t38_core_init(&t38_core_ax,
                                         rx_indicator_attack_handler,
@@ -626,6 +690,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Cannot start the T.38 core\n");
             exit(2);
         }
+        /*endif*/
 
         t38_set_t38_version(t38_core_a, t38_version);
 
@@ -641,7 +706,9 @@ int main(int argc, char *argv[])
             printf("Attack tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
 
     /* Tests in TCP with TPKT mode, like T.38 versions >0 */
     for (t38_version = 0;  t38_version < 2;  t38_version++)
@@ -662,6 +729,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Cannot start the T.38 core\n");
             exit(2);
         }
+        /*endif*/
         if ((t38_core_b = t38_core_init(&t38_core_bx,
                                         rx_indicator_handler,
                                         rx_data_handler,
@@ -673,6 +741,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Cannot start the T.38 core\n");
             exit(2);
         }
+        /*endif*/
 
         t38_set_t38_version(t38_core_a, t38_version);
         t38_set_t38_version(t38_core_b, t38_version);
@@ -694,6 +763,7 @@ int main(int argc, char *argv[])
             printf("Encode then decode tests failed\n");
             exit(2);
         }
+        /*endif*/
 
         if ((t38_core_a = t38_core_init(&t38_core_ax,
                                         rx_indicator_attack_handler,
@@ -706,6 +776,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Cannot start the T.38 core\n");
             exit(2);
         }
+        /*endif*/
         t38_set_t38_version(t38_core_a, t38_version);
 
         t38_set_pace_transmission(t38_core_a, false);
@@ -720,13 +791,16 @@ int main(int argc, char *argv[])
             printf("Attack tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
 
     if (!succeeded)
     {
         printf("Tests failed\n");
         exit(2);
     }
+    /*endif*/
     printf("Tests passed\n");
     return 0;
 }

@@ -60,6 +60,7 @@ static void frame_handler(void *user_data, const uint8_t *buf, int len)
 
     if ((ret = write((intptr_t) user_data, buf, len)) != len)
         fprintf(stderr, "Write error %d/%d\n", ret, errno);
+    /*endif*/
     out_octets_to_date += len;
 }
 
@@ -69,6 +70,7 @@ static void data_handler(void *user_data, const uint8_t *buf, int len)
 
     if ((ret = write((intptr_t) user_data, buf, len)) != len)
         fprintf(stderr, "Write error %d/%d\n", ret, errno);
+    /*endif*/
     out_octets_to_date += len;
 }
 
@@ -115,7 +117,9 @@ int main(int argc, char *argv[])
             exit(2);
             break;
         }
+        /*endswitch*/
     }
+    /*endwhile*/
     argc -= optind;
     argv += optind;
     if (argc < 1)
@@ -123,6 +127,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Usage: %s [-c] [-d] [-s] <in-file> [<out-file>]\n", argv0);
         exit(2);
     }
+    /*endif*/
     if (do_compression)
     {
         original_file = argv[0];
@@ -133,6 +138,7 @@ int main(int argc, char *argv[])
         original_file = NULL;
         compressed_file = argv[0];
     }
+    /*endif*/
     decompressed_file = (argc > 1)  ?  argv[1]  :  DECOMPRESSED_FILE_NAME;
     if (do_compression)
     {
@@ -142,11 +148,13 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Error opening file '%s'.\n", original_file);
             exit(2);
         }
+        /*endif*/
         if ((v42bis_fd = open(compressed_file, O_WRONLY | O_CREAT | O_TRUNC, 0666)) < 0)
         {
             fprintf(stderr, "Error opening file '%s'.\n", compressed_file);
             exit(2);
         }
+        /*endif*/
 
         time(&now);
         state_a = v42bis_init(NULL, 3, 512, 6, frame_handler, (void *) (intptr_t) v42bis_fd, 512, data_handler, NULL, 512);
@@ -167,23 +175,29 @@ int main(int argc, char *argv[])
                         fprintf(stderr, "Bad return code from compression\n");
                         exit(2);
                     }
+                    /*endif*/
                     v42bis_compress_flush(state_a);
                     seg += stutter_time;
                     stutter_time = rand() & 0x3FF;
                 }
+                /*endwhile*/
             }
+            /*endif*/
             if (v42bis_compress(state_a, buf + seg, len - seg))
             {
                 fprintf(stderr, "Bad return code from compression\n");
                 exit(2);
             }
+            /*endif*/
             in_octets_to_date += len;
         }
+        /*endwhile*/
         v42bis_compress_flush(state_a);
         printf("%d bytes compressed to %d bytes in %lds\n", in_octets_to_date, out_octets_to_date, time(NULL) - now);
         close(in_fd);
         close(v42bis_fd);
     }
+    /*endif*/
 
     if (do_decompression)
     {
@@ -193,11 +207,13 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Error opening file '%s'.\n", compressed_file);
             exit(2);
         }
+        /*endif*/
         if ((out_fd = open(decompressed_file, O_WRONLY | O_CREAT | O_TRUNC, 0666)) < 0)
         {
             fprintf(stderr, "Error opening file '%s'.\n", decompressed_file);
             exit(2);
         }
+        /*endif*/
 
         time(&now);
         state_b = v42bis_init(NULL, 3, 512, 6, frame_handler, (void *) (intptr_t) v42bis_fd, 512, data_handler, (void *) (intptr_t) out_fd, 512);
@@ -212,13 +228,16 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "Bad return code from decompression\n");
                 exit(2);
             }
+            /*endif*/
             in_octets_to_date += len;
         }
+        /*endwhile*/
         v42bis_decompress_flush(state_b);
         printf("%d bytes decompressed to %d bytes in %lds\n", in_octets_to_date, out_octets_to_date, time(NULL) - now);
         close(v42bis_fd);
         close(out_fd);
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

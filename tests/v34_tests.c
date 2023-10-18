@@ -486,6 +486,7 @@ static void v34_mapping_frame_tests(int test_baud_rate, int test_bps, bool duple
         {
             printf("Bits %d %d\n", bits[2*j], bits[2*j + 1]);
         }
+        /*endfor*/
 #endif
         v34_put_mapping_frame(&v34_caller.rx, bits);
     }

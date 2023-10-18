@@ -443,14 +443,14 @@ static const struct ademco_code_s ademco_codes[] =
     {-1,    "???"}
 };
 
-#define GOERTZEL_SAMPLES_PER_BLOCK  55              /* We need to detect over a +-5% range */
+#define GOERTZEL_SAMPLES_PER_BLOCK              55                  /* We need to detect over a +-5% range */
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-#define DETECTION_THRESHOLD         3035            /* -42dBm0 */
-#define TONE_TO_TOTAL_ENERGY        45.2233f        /* -0.85dB */
+static const int detection_threshold            = goertzel_threshold_dbm0(GOERTZEL_SAMPLES_PER_BLOCK, -42.0f);
+static const float tone_to_total_energy         = GOERTZEL_SAMPLES_PER_BLOCK*db_to_power_ratio(-0.85f);
 #else
-#define DETECTION_THRESHOLD         49728296.6f     /* -42dBm0 [((GOERTZEL_SAMPLES_PER_BLOCK*32768.0/1.4142)*10^((-42 - DBM0_MAX_SINE_POWER)/20.0))^2] */
-#define TONE_TO_TOTAL_ENERGY        45.2233f        /* -0.85dB [GOERTZEL_SAMPLES_PER_BLOCK*10^(-0.85/10.0)] */
+static const float detection_threshold          = goertzel_threshold_dbm0(GOERTZEL_SAMPLES_PER_BLOCK, -42.0f);
+static const float tone_to_total_energy         = GOERTZEL_SAMPLES_PER_BLOCK*db_to_power_ratio(-0.85f);
 #endif
 
 static int tone_rx_init = false;
@@ -906,17 +906,17 @@ SPAN_DECLARE(int) ademco_contactid_sender_rx(ademco_contactid_sender_state_t *s,
         energy_1400 = goertzel_result(&s->tone_1400);
         energy_2300 = goertzel_result(&s->tone_2300);
         hit = 0;
-        if (energy_1400 > DETECTION_THRESHOLD  ||  energy_2300 > DETECTION_THRESHOLD)
+        if (energy_1400 > detection_threshold  ||  energy_2300 > detection_threshold)
         {
             if (energy_1400 > energy_2300)
             {
-                if (energy_1400 > TONE_TO_TOTAL_ENERGY*s->energy)
+                if (energy_1400 > tone_to_total_energy*s->energy)
                     hit = 1;
                 /*endif*/
             }
             else
             {
-                if (energy_2300 > TONE_TO_TOTAL_ENERGY*s->energy)
+                if (energy_2300 > tone_to_total_energy*s->energy)
                     hit = 2;
                 /*endif*/
             }

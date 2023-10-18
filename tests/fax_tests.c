@@ -203,6 +203,7 @@ static int phase_b_handler(void *user_data, int result)
             printf("%c: Phase B: remote ident incorrect! - expected '%s'\n", ch, info->ident);
             status = T30_ERR_IDENT_UNACCEPTABLE;
         }
+        /*endif*/
     }
     else
     {
@@ -211,7 +212,9 @@ static int phase_b_handler(void *user_data, int result)
             printf("%c: Phase B: remote ident missing!\n", ch);
             status = T30_ERR_IDENT_UNACCEPTABLE;
         }
+        /*endif*/
     }
+    /*endif*/
     if ((u = t30_get_rx_sub_address(s)))
     {
         printf("%c: Phase B: remote sub-address '%s'\n", ch, u);
@@ -220,6 +223,7 @@ static int phase_b_handler(void *user_data, int result)
             printf("%c: Phase B: remote sub-address incorrect! - expected '%s'\n", ch, info->sub_address);
             status = T30_ERR_SUB_UNACCEPTABLE;
         }
+        /*endif*/
     }
     else
     {
@@ -228,7 +232,9 @@ static int phase_b_handler(void *user_data, int result)
             printf("%c: Phase B: remote sub-address missing!\n", ch);
             status = T30_ERR_SUB_UNACCEPTABLE;
         }
+        /*endif*/
     }
+    /*endif*/
     if ((u = t30_get_rx_polled_sub_address(s)))
     {
         printf("%c: Phase B: remote polled sub-address '%s'\n", ch, u);
@@ -237,6 +243,7 @@ static int phase_b_handler(void *user_data, int result)
             printf("%c: Phase B: remote polled sub-address incorrect! - expected '%s'\n", ch, info->polled_sub_address);
             status = T30_ERR_PSA_UNACCEPTABLE;
         }
+        /*endif*/
     }
     else
     {
@@ -245,7 +252,9 @@ static int phase_b_handler(void *user_data, int result)
             printf("%c: Phase B: remote polled sub-address missing!\n", ch);
             status = T30_ERR_PSA_UNACCEPTABLE;
         }
+        /*endif*/
     }
+    /*endif*/
     if ((u = t30_get_rx_selective_polling_address(s)))
     {
         printf("%c: Phase B: remote selective polling address '%s'\n", ch, u);
@@ -254,6 +263,7 @@ static int phase_b_handler(void *user_data, int result)
             printf("%c: Phase B: remote selective polling address incorrect! - expected '%s'\n", ch, info->selective_polling_address);
             status = T30_ERR_SEP_UNACCEPTABLE;
         }
+        /*endif*/
     }
     else
     {
@@ -262,7 +272,9 @@ static int phase_b_handler(void *user_data, int result)
             printf("%c: Phase B: remote selective polling address missing!\n", ch);
             status = T30_ERR_SEP_UNACCEPTABLE;
         }
+        /*endif*/
     }
+    /*endif*/
     if ((u = t30_get_rx_sender_ident(s)))
     {
         printf("%c: Phase B: remote sender ident '%s'\n", ch, u);
@@ -271,6 +283,7 @@ static int phase_b_handler(void *user_data, int result)
             printf("%c: Phase B: remote sender ident incorrect! - expected '%s'\n", ch, info->sender_ident);
             status = T30_ERR_SID_UNACCEPTABLE;
         }
+        /*endif*/
     }
     else
     {
@@ -279,7 +292,9 @@ static int phase_b_handler(void *user_data, int result)
             printf("%c: Phase B: remote sender ident missing!\n", ch);
             status = T30_ERR_SID_UNACCEPTABLE;
         }
+        /*endif*/
     }
+    /*endif*/
     if ((u = t30_get_rx_password(s)))
     {
         printf("%c: Phase B: remote password '%s'\n", ch, u);
@@ -288,6 +303,7 @@ static int phase_b_handler(void *user_data, int result)
             printf("%c: Phase B: remote password incorrect! - expected '%s'\n", ch, info->password);
             status = T30_ERR_PWD_UNACCEPTABLE;
         }
+        /*endif*/
     }
     else
     {
@@ -296,7 +312,9 @@ static int phase_b_handler(void *user_data, int result)
             printf("%c: Phase B: remote password missing!\n", ch);
             status = T30_ERR_PWD_UNACCEPTABLE;
         }
+        /*endif*/
     }
+    /*endif*/
     if ((len = t30_get_rx_nsf(s, &v)))
     {
         printf("%c: Phase B: NSF %d bytes\n", ch, len);
@@ -304,6 +322,7 @@ static int phase_b_handler(void *user_data, int result)
         {
             printf("%c: Phase B: remote NSF incorrect! - expected %u bytes\n", ch, (unsigned int) info->nsf_len);
         }
+        /*endif*/
     }
     else
     {
@@ -311,7 +330,9 @@ static int phase_b_handler(void *user_data, int result)
         {
             printf("%c: Phase B: remote NSF missing! - expected %u bytes\n", ch, (unsigned int) info->nsf_len);
         }
+        /*endif*/
     }
+    /*endif*/
     if ((len = t30_get_rx_nsc(s, &v)))
     {
         printf("%c: Phase B: NSC %d bytes\n", ch, len);
@@ -319,6 +340,7 @@ static int phase_b_handler(void *user_data, int result)
         {
             printf("%c: Phase B: remote NSC incorrect! - expected %u bytes\n", ch, (unsigned int) info->nsc_len);
         }
+        /*endif*/
     }
     else
     {
@@ -326,7 +348,9 @@ static int phase_b_handler(void *user_data, int result)
         {
             printf("%c: Phase B: remote NSC missing! - expected %u bytes\n", ch, (unsigned int) info->nsc_len);
         }
+        /*endif*/
     }
+    /*endif*/
     if ((len = t30_get_rx_nss(s, &v)))
     {
         printf("%c: Phase B: NSS %d bytes\n", ch, len);
@@ -334,6 +358,7 @@ static int phase_b_handler(void *user_data, int result)
         {
             printf("%c: Phase B: remote NSS incorrect! - expected %u bytes\n", ch, (unsigned int) info->nss_len);
         }
+        /*endif*/
     }
     else
     {
@@ -341,7 +366,9 @@ static int phase_b_handler(void *user_data, int result)
         {
             printf("%c: Phase B: remote NSS missing! - expected %u bytes\n", ch, (unsigned int) info->nsf_len);
         }
+        /*endif*/
     }
+    /*endif*/
 
     return status;
 }
@@ -365,6 +392,7 @@ static int phase_d_handler(void *user_data, int result)
 
     if (use_receiver_not_ready)
         t30_set_receiver_not_ready(s, 3);
+    /*endif*/
 
     if (test_local_interrupt)
     {
@@ -387,8 +415,11 @@ static int phase_d_handler(void *user_data, int result)
             case T30_PIN:
                 break;
             }
+            /*endswitch*/
         }
+        /*endif*/
     }
+    /*endif*/
     return T30_ERR_OK;
 }
 /*- End of function --------------------------------------------------------*/
@@ -486,8 +517,10 @@ static int tx_packet_handler(t38_core_state_t *s, void *user_data, const uint8_t
 
             if (g1050_put(chain[chan].path.g1050_path, buf, len, chain[chan].t38_subst_seq, when) < 0)
                 printf("Lost packet %d\n", chain[chan].t38_subst_seq);
+            /*endif*/
             chain[chan].t38_subst_seq = (chain[chan].t38_subst_seq + 1) & 0xFFFF;
         }
+        /*endfor*/
     }
     else
     {
@@ -497,8 +530,11 @@ static int tx_packet_handler(t38_core_state_t *s, void *user_data, const uint8_t
         {
             if (g1050_put(chain[chan].path.g1050_path, buf, len, s->tx_seq_no, when) < 0)
                 printf("Lost packet %d\n", s->tx_seq_no);
+            /*endif*/
         }
+        /*endfor*/
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -534,9 +570,11 @@ static void t33_tests(void)
             {
                 if (type == T33_NONE)
                     break;
+                /*endif*/
                 printf("Bad sub-address field\n");
                 exit(2);
             }
+            /*endif*/
             switch (type)
             {
             case T33_SST:
@@ -548,13 +586,17 @@ static void t33_tests(void)
                 t33_sub_address_add_field(new_t33, num, type);
                 break;
             }
+            /*endswitch*/
         }
+        /*endfor*/
         if (strcmp((const char *) pkts[n], (const char *) new_t33))
         {
             printf("Re-encode mismatch '%s' '%s'\n", pkts[n], new_t33);
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -742,6 +784,7 @@ int main(int argc, char *argv[])
             {
                 if (optarg[i] != '-'  &&  optarg[i] != '\0')
                     continue;
+                /*endif*/
                 j = optarg[i];
                 optarg[i] = '\0';
                 if (strcmp(&optarg[k], "FAX") == 0)
@@ -777,10 +820,13 @@ int main(int argc, char *argv[])
                     fprintf(stderr, "Unknown FAX path element %s\n", &optarg[k]);
                     exit(2);
                 }
+                /*endif*/
                 k = i + 1;
                 if (j == '\0')
                     break;
+                /*endif*/
             }
+            /*endfor*/
 #if 0
             if ((chain[0].node_type == AUDIO_FAX  &&  chain[chain_elements - 1].node_type != AUDIO_FAX)
                 ||
@@ -789,6 +835,7 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "Invalid FAX path\n");
                 exit(2);
             }
+            /*endif*/
 #endif
             break;
         case 'P':
@@ -826,6 +873,7 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "Unknown T.38 transport mode\n");
                 exit(2);
             }
+            /*endif*/
             break;
         case 'v':
             t38_version = atoi(optarg);
@@ -845,17 +893,21 @@ int main(int argc, char *argv[])
             exit(2);
             break;
         }
+        /*endswitch*/
     }
+    /*endwhile*/
 
     if (code_to_look_up >= 0)
     {
         printf("Result code %d is %s\n", code_to_look_up, t30_completion_code_to_str(code_to_look_up));
         exit(0);
     }
+    /*endif*/
 
     printf("Using T.38 version %d\n", t38_version);
     if (use_ecm)
         printf("Using ECM\n");
+    /*endif*/
 
     wave_handle = NULL;
     if (log_audio)
@@ -865,7 +917,9 @@ int main(int argc, char *argv[])
             fprintf(stderr, "    Cannot create audio file '%s'\n", OUTPUT_WAVE_FILE_NAME);
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
     memset(silence, 0, sizeof(silence));
 
     srand48(0x1234567);
@@ -894,6 +948,7 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "    Cannot start FAX instance\n");
                 exit(2);
             }
+            /*endif*/
             chain[i].t30_state = fax_get_t30_state(chain[i].node.fax_state);
 
             logging = fax_get_logging_state(chain[i].node.fax_state);
@@ -921,6 +976,7 @@ int main(int argc, char *argv[])
                 signal_scaling = powf(10.0f, signal_level/20.0f);
                 printf("Signal scaling %f\n", signal_scaling);
             }
+            /*endif*/
             break;
         case T38_FAX:
             if ((chain[i].node.t38_state = t38_terminal_init(NULL, (i == 0), tx_packet_handler, (void *) (intptr_t) i)) == NULL)
@@ -928,6 +984,7 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "    Cannot start the T.38 terminal instance\n");
                 exit(2);
             }
+            /*endif*/
             chain[i].t30_state = t38_terminal_get_t30_state(chain[i].node.t38_state);
             chain[i].t38_core_state = t38_terminal_get_t38_core_state(chain[i].node.t38_state);
 
@@ -961,7 +1018,9 @@ int main(int argc, char *argv[])
                     chain[i].t38_peer = i + 1;
                     break;
                 }
+                /*endswitch*/
             }
+            /*endif*/
             break;
         case T31_AUDIO_FAX:
             break;
@@ -974,6 +1033,7 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "    Cannot start FAX tester instance\n");
                 exit(2);
             }
+            /*endif*/
             logging = faxtester_get_logging_state(chain[i].node.faxtester_state);
             span_log_set_level(logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
             span_log_set_tag(logging, chain[i].tag);
@@ -999,7 +1059,9 @@ int main(int argc, char *argv[])
                     chain[i].t38_peer = i + 1;
                     break;
                 }
+                /*endswitch*/
             }
+            /*endif*/
 
             chain[i].awgn_state = NULL;
             signal_scaling = 1.0f;
@@ -1009,6 +1071,7 @@ int main(int argc, char *argv[])
                 signal_scaling = powf(10.0f, signal_level/20.0f);
                 printf("Signal scaling %f\n", signal_scaling);
             }
+            /*endif*/
             break;
         case REPLAY_AUDIO_FAX:
             if ((chain[i].node.wave_handle = sf_open_telephony_read(replay_file_name, 1)) == NULL)
@@ -1016,7 +1079,7 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "    Cannot open audio file '%s'\n", replay_file_name);
                 exit(2);
             }
-
+            /*endif*/
             chain[i].path.audio_in_buf = &chain[i + ((i == 0)  ?  1  :  -1)].audio_buf[0];
             chain[i].path.audio_out_buf = &chain[i].audio_buf[0];
             break;
@@ -1026,6 +1089,7 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "    Cannot start T.38 gateway instance\n");
                 exit(2);
             }
+            /*endif*/
             chain[i].t38_core_state = t38_gateway_get_t38_core_state(chain[i].node.t38_gateway_state);
 
             logging = t38_gateway_get_logging_state(chain[i].node.t38_gateway_state);
@@ -1067,7 +1131,9 @@ int main(int argc, char *argv[])
                     chain[i].path.audio_in_buf = &chain[i - 1].audio_buf[0];
                     break;
                 }
+                /*endswitch*/
             }
+            /*endif*/
 
             chain[i].path.audio_out_buf = &chain[i].audio_buf[0];
 
@@ -1079,13 +1145,16 @@ int main(int argc, char *argv[])
                 signal_scaling = powf(10.0f, signal_level/20.0f);
                 printf("Signal scaling %f\n", signal_scaling);
             }
+            /*endif*/
         }
         if ((chain[i].path.g1050_path = g1050_init(g1050_model_no, g1050_speed_pattern_no, 100, 33)) == NULL)
         {
             fprintf(stderr, "    Failed to start IP network path model\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
 
     for (i = 0;  i < chain_elements;  i++)
     {
@@ -1113,13 +1182,14 @@ int main(int argc, char *argv[])
             t30_set_tx_page_header_info(chain[i].t30_state, page_header_info);
             if (page_header_tz)
                 t30_set_tx_page_header_tz(chain[i].t30_state, page_header_tz);
-
+            /*endif*/
             if (i != 0)
             {
                 t30_set_tx_nsf(chain[i].t30_state, (const uint8_t *) "\x50\x00\x00\x00Spandsp\x00", 12);
                 chain[chain[i].peer].expected_rx_info.nsf = (uint8_t *) "\x50\x00\x00\x00Spandsp\x00";
                 chain[chain[i].peer].expected_rx_info.nsf_len = 12;
             }
+            /*endif*/
 
             t30_set_supported_modems(chain[i].t30_state, supported_modems);
             t30_set_supported_t30_features(chain[i].t30_state,
@@ -1190,6 +1260,7 @@ int main(int argc, char *argv[])
                                                     | T4_RESOLUTION_200_100);
                 break;
             }
+            /*endswitch*/
             if (colour_enabled)
             {
                 t30_set_supported_colour_resolutions(chain[i].t30_state,
@@ -1204,6 +1275,7 @@ int main(int argc, char *argv[])
             {
                 t30_set_supported_colour_resolutions(chain[i].t30_state, 0);
             }
+            /*endif*/
             if (t37_like_output)
             {
                 t30_set_supported_output_compressions(chain[i].t30_state,
@@ -1218,6 +1290,7 @@ int main(int argc, char *argv[])
                                                       T4_COMPRESSION_T6
                                                     | T4_COMPRESSION_JPEG);
             }
+            /*endif*/
 
             t30_set_ecm_capability(chain[i].t30_state, use_ecm);
             t30_set_supported_compressions(chain[i].t30_state,
@@ -1241,6 +1314,7 @@ int main(int argc, char *argv[])
                                          | 0);
             t30_set_minimum_scan_line_time(chain[i].t30_state, scan_line_time);
         }
+        /*endif*/
 
         switch (chain[i].node_type)
         {
@@ -1265,9 +1339,12 @@ int main(int argc, char *argv[])
                 t38_terminal_set_tep_mode(chain[i].node.t38_state, false);
                 break;
             }
+            /*endswitch*/
             break;
         }
+        /*endswitch*/
     }
+    /*endfor*/
 
     for (i = 0;  i < chain_elements;  i++)
     {
@@ -1279,6 +1356,7 @@ int main(int argc, char *argv[])
                 chain[i].node.faxtester_state->far_fax = chain[chain[i].peer].node.fax_state;
             else
                 chain[i].node.faxtester_state->far_t38 = chain[chain[i].peer].node.t38_state;
+            /*endif*/
             chain[i].node.faxtester_state->far_t30 = chain[chain[i].peer].t30_state;
             chain[i].node.faxtester_state->far_tag = chain[i].peer + 'A';
 
@@ -1291,11 +1369,15 @@ int main(int argc, char *argv[])
         case PASSTHROUGH:
             if (chain[i - 1].path.audio_in_buf == &chain[i].audio_buf[0])
                 chain[i - 1].path.audio_in_buf = &chain[i + 1].audio_buf[0];
+            /*endif*/
             if (chain[i + 1].path.audio_in_buf == &chain[i].audio_buf[0])
                 chain[i + 1].path.audio_in_buf = &chain[i - 1].audio_buf[0];
+            /*endif*/
             break;
         }
+        /*endswitch*/
     }
+    /*endfor*/
 
     switch (chain[chain_elements - 1].node_type)
     {
@@ -1304,8 +1386,10 @@ int main(int argc, char *argv[])
         k = (use_polled_mode)  ?  (chain_elements - 1)  :  0;
         if (chain[k].t30_state)
             t30_set_tx_file(chain[k].t30_state, input_tiff_file_name, start_page, end_page);
+        /*endif*/
         break;
     }
+    /*endswitch*/
     switch (chain[0].node_type)
     {
     case AUDIO_FAX:
@@ -1313,8 +1397,10 @@ int main(int argc, char *argv[])
         k = (use_polled_mode)  ?  0  :  (chain_elements - 1);
         if (chain[k].t30_state)
             t30_set_rx_file(chain[k].t30_state, output_tiff_file_name, -1);
+        /*endif*/
         break;
     }
+    /*endswitch*/
 
 #if defined(ENABLE_GUI)
     if (use_gui)
@@ -1355,13 +1441,16 @@ int main(int argc, char *argv[])
                     k = (i == 0)  ?  0  :  2;
                     for (j = 0;  j < chain[i].path.audio_in_buf->len;  j++)
                         audio_log[4*j + k] = chain[i].path.audio_in_buf->amp[j];
+                    /*endfor*/
                 }
+                /*endif*/
                 fax_rx(chain[i].node.fax_state, chain[i].path.audio_in_buf->amp, chain[i].path.audio_in_buf->len);
                 if (!t30_call_active(chain[i].t30_state))
                 {
                     chain[i].completed = true;
                     continue;
                 }
+                /*endif*/
 
                 chain[i].path.audio_out_buf->len = fax_tx(chain[i].node.fax_state, chain[i].path.audio_out_buf->amp, SAMPLES_PER_CHUNK);
                 if (!use_transmit_on_idle)
@@ -1374,24 +1463,32 @@ int main(int argc, char *argv[])
                         vec_zeroi16(&chain[i].path.audio_out_buf->amp[chain[i].path.audio_out_buf->len], SAMPLES_PER_CHUNK - chain[i].path.audio_out_buf->len);
                         chain[i].path.audio_out_buf->len = SAMPLES_PER_CHUNK;
                     }
+                    /*endif*/
                 }
+                /*endif*/
                 if (chain[i].awgn_state)
                 {
                     for (j = 0;  j < chain[i].path.audio_out_buf->len;  j++)
                         chain[i].path.audio_out_buf->amp[j] = ((int16_t) (chain[i].path.audio_out_buf->amp[j]*signal_scaling)) + awgn(chain[i].awgn_state);
+                    /*endfor*/
                 }
+                /*endif*/
                 if (log_audio)
                 {
                     k = (i == 0)  ?  1  :  3;
                     for (j = 0;  j < chain[i].path.audio_out_buf->len;  j++)
                         audio_log[4*j + k] = chain[i].path.audio_out_buf->amp[j];
+                    /*endfor*/
                 }
+                /*endif*/
                 if (feedback_audio)
                 {
                     for (j = 0;  j < chain[i].path.audio_out_buf->len;  j++)
                         chain[i].path.audio_out_buf->amp[j] += t38_amp_hist_a[hist_ptr][j] >> 1;
+                    /*endfor*/
                     memcpy(t38_amp_hist_a[hist_ptr], chain[i].path.audio_out_buf->amp, sizeof(int16_t)*SAMPLES_PER_CHUNK);
                 }
+                /*endif*/
                 break;
             case T38_FAX:
                 /* Update timing */
@@ -1409,9 +1506,11 @@ int main(int argc, char *argv[])
 #if defined(ENABLE_GUI)
                     if (use_gui)
                         media_monitor_rx(seq_no, tx_when, rx_when);
+                    /*endif*/
 #endif
                     t38_core_rx_ifp_packet(chain[chain[i].t38_peer].t38_core_state, msg, msg_len, seq_no);
                 }
+                /*endwhile*/
                 break;
             case TSB85_AUDIO_FAX:
                 /* Update timing */
@@ -1429,17 +1528,22 @@ int main(int argc, char *argv[])
                     k = (i == 0)  ?  0  :  2;
                     for (j = 0;  j < chain[i].path.audio_in_buf->len;  j++)
                         audio_log[4*j + k] = chain[i].path.audio_in_buf->amp[j];
+                    /*endfor*/
                 }
+                /*endif*/
                 faxtester_rx(chain[i].node.faxtester_state, chain[i].path.audio_in_buf->amp, chain[i].path.audio_in_buf->len);
                 chain[i].path.audio_out_buf->len = faxtester_tx(chain[i].node.faxtester_state, chain[i].path.audio_out_buf->amp, SAMPLES_PER_CHUNK);
                 if (chain[i].path.audio_out_buf->len == 0)
                     break;
+                /*endif*/
                 if (log_audio)
                 {
                     k = (i == 0)  ?  1  :  3;
                     for (j = 0;  j < chain[i].path.audio_out_buf->len;  j++)
                         audio_log[4*j + k] = chain[i].path.audio_out_buf->amp[j];
+                    /*endfor*/
                 }
+                /*endif*/
                 if (chain[i].node.faxtester_state->test_for_call_clear  &&  !chain[i].node.faxtester_state->far_end_cleared_call)
                 {
                     chain[i].node.faxtester_state->call_clear_timer += chain[i].path.audio_out_buf->len;
@@ -1456,6 +1560,7 @@ int main(int argc, char *argv[])
                             printf("Test failed\n");
                             exit(2);
                         }
+                        /*endif*/
                         span_log(faxtester_get_logging_state(chain[i].node.faxtester_state), SPAN_LOG_FLOW, "Clear time OK\n");
                         chain[i].node.faxtester_state->far_end_cleared_call = true;
                         chain[i].node.faxtester_state->test_for_call_clear = false;
@@ -1471,6 +1576,7 @@ int main(int argc, char *argv[])
                 chain[i].path.audio_out_buf->len = sf_readf_short(chain[i].node.wave_handle, chain[i].path.audio_out_buf->amp, SAMPLES_PER_CHUNK);
                 if (chain[i].path.audio_out_buf->len == 0)
                     break;
+                /*endif*/
                 break;
             case AUDIO_TO_T38_GATEWAY:
                 /* Update timing */
@@ -1490,13 +1596,15 @@ int main(int argc, char *argv[])
                     drop_frame = drop_frame_rate;
                     if (t38_gateway_rx_fillin(chain[i].node.t38_gateway_state, SAMPLES_PER_CHUNK))
                         break;
+                    /*endif*/
                 }
                 else
                 {
                     if (t38_gateway_rx(chain[i].node.t38_gateway_state, chain[i].path.audio_in_buf->amp, chain[i].path.audio_in_buf->len))
                         break;
+                    /*endif*/
                 }
-
+                /*endif*/
                 chain[i].path.audio_out_buf->len = t38_gateway_tx(chain[i].node.t38_gateway_state, chain[i].path.audio_out_buf->amp, SAMPLES_PER_CHUNK);
                 if (!use_transmit_on_idle)
                 {
@@ -1505,50 +1613,64 @@ int main(int argc, char *argv[])
                         vec_zeroi16(&chain[i].path.audio_out_buf->amp[chain[i].path.audio_out_buf->len], SAMPLES_PER_CHUNK - chain[i].path.audio_out_buf->len);
                         chain[i].path.audio_out_buf->len = SAMPLES_PER_CHUNK;
                     }
+                    /*endif*/
                 }
+                /*endif*/
                 if (feedback_audio)
                 {
                     for (j = 0;  j < chain[i].path.audio_out_buf->len;  j++)
                         chain[i].path.audio_out_buf->amp[j] += t38_amp_hist_a[hist_ptr][j] >> 1;
+                    /*endfor*/
                     vec_movei16(t38_amp_hist_a[hist_ptr], chain[i].path.audio_out_buf->amp, SAMPLES_PER_CHUNK);
                 }
-
+                /*endif*/
 #if 0
                 if (log_audio)
                 {
                     k = (i == 0)  ?  1  :  3;
                     for (j = 0;  j < chain[i].path.audio_out_buf->len;  j++)
                         audio_log[4*j + k] = chain[i].path.audio_out_buf->amp[j];
+                    /*endfor*/
                 }
+                /*endif*/
 #endif
                 while ((msg_len = g1050_get(chain[i].path.g1050_path, msg, 1024, when, &seq_no, &tx_when, &rx_when)) >= 0)
                 {
 #if defined(ENABLE_GUI)
                     if (use_gui)
                         media_monitor_rx(seq_no, tx_when, rx_when);
+                    /*endif*/
 #endif
                     t38_core_rx_ifp_packet(chain[chain[i].t38_peer].t38_core_state, msg, msg_len, seq_no);
                 }
+                /*endwhile*/
                 break;
             }
+            /*endfor*/
         }
+        /*endfor*/
         if (log_audio)
         {
             outframes = sf_writef_short(wave_handle, audio_log, SAMPLES_PER_CHUNK);
             if (outframes != SAMPLES_PER_CHUNK)
                 break;
+            /*endif*/
         }
+        /*endif*/
 
         when += (float) SAMPLES_PER_CHUNK/(float) SAMPLE_RATE;
 
         if (chain[0].completed  &&  chain[chain_elements - 1].completed)
             break;
+        /*endif*/
 #if defined(ENABLE_GUI)
         if (use_gui)
             media_monitor_update_display();
+        /*endif*/
 #endif
         if (++hist_ptr > 3)
             hist_ptr = 0;
+        /*endif*/
     }
 
     for (i = 0;  i < chain_elements;  i++)
@@ -1564,7 +1686,9 @@ int main(int argc, char *argv[])
                    (t38_stats.error_correcting_mode)  ?  "ECM"  :  "non-ECM");
             break;
         }
+        /*endswitch*/
     }
+    /*endfor*/
     if (log_audio)
     {
         if (sf_close_telephony(wave_handle))
@@ -1572,35 +1696,45 @@ int main(int argc, char *argv[])
             fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_WAVE_FILE_NAME);
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
 
     /* Check how many pages should have been transferred */
     expected_pages = get_tiff_total_pages(input_tiff_file_name);
     if (end_page >= 0  &&  expected_pages > end_page + 1)
         expected_pages = end_page + 1;
+    /*endif*/
     if (start_page >= 0)
         expected_pages -= start_page;
+    /*endif*/
     /* Check how many pages were transferred */
     for (j = 0;  j < 2;  j++)
     {
         i = (j == 0)  ?  0  :  (chain_elements - 1);
         if (!chain[i].phase_e_reached)
             break;
+        /*endif*/
         if (!chain[i].succeeded)
             break;
+        /*endif*/
 
         t30_get_transfer_statistics(chain[i].t30_state, &t30_stats);
         if ((!use_polled_mode  &&  i != 0)  ||  (use_polled_mode  &&  i == 0))
         {
             if (t30_stats.pages_tx != 0  ||  t30_stats.pages_rx != expected_pages)
                 break;
+            /*endif*/
         }
         else
         {
             if (t30_stats.pages_tx != expected_pages  ||  t30_stats.pages_rx != 0)
                 break;
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endfor*/
     for (i = 0;  i < chain_elements;  i++)
     {
         switch (chain[i].node_type)
@@ -1621,23 +1755,28 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "    Cannot close audio file '%s'\n", replay_file_name);
                 exit(2);
             }
+            /*endif*/
             chain[i].node.wave_handle = NULL;
             break;
         case AUDIO_TO_T38_GATEWAY:
             t38_gateway_free(chain[i].node.t38_gateway_state);
             break;
         }
+        /*endswitch*/
         if (chain[i].path.g1050_path)
         {
             g1050_free(chain[i].path.g1050_path);
             chain[i].path.g1050_path = NULL;
         }
+        /*endif*/
     }
+    /*endfor*/
     if (j < 2)
     {
         printf("Tests failed\n");
         exit(2);
     }
+    /*endif*/
     t33_tests();
     printf("Tests passed\n");
     return 0;

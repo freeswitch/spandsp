@@ -92,8 +92,11 @@ static int t85_row_write_handler(void *user_data, const uint8_t buf[], size_t le
                 data5[data5_ptr + 3*(8*i + j)] |= bit_mask;
             else
                 data5[data5_ptr + 3*(8*i + j)] &= ~bit_mask;
+            /*endif*/
         }
+        /*endfor*/
     }
+    /*endfor*/
     data5_ptr += 3*8*len;
     write_row++;
     return 0;
@@ -106,6 +109,7 @@ static int t85_comment_handler(void *user_data, const uint8_t buf[], size_t len)
         printf("Comment (%lu): %s\n", (unsigned long int) len, buf);
     else
         printf("Comment (%lu): ---\n", (unsigned long int) len);
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -172,11 +176,13 @@ int main(int argc, char *argv[])
         printf("Unable to open '%s'!\n", source_file);
         return 1;
     }
+    /*endif*/
     if (TIFFSetDirectory(tif, (tdir_t) 0) < 0)
     {
         printf("Unable to set directory '%s'!\n", source_file);
         return 1;
     }
+    /*endif*/
 
     w = 0;
     TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &w);
@@ -212,6 +218,7 @@ int main(int argc, char *argv[])
             colour_map[3*i + 2] = (map_b[i] >> 8) & 0xFF;
             printf("Map %3d - %5d %5d %5d\n", i, colour_map[3*i], colour_map[3*i + 1], colour_map[3*i + 2]);
         }
+        /*endfor*/
 #else
         /* Sweep the colormap in the order that seems to work for l04x_02x.tif */
         for (i = 0;  i < (1 << bits_per_pixel);  i++)
@@ -220,6 +227,7 @@ int main(int argc, char *argv[])
             colour_map[256 + i] = (map_a[i] >> 8) & 0xFF;
             colour_map[2*256 + i] = (map_b[i] >> 8) & 0xFF;
         }
+        /*endfor*/
 #endif
         lab_params_t lab;
 
@@ -229,11 +237,13 @@ int main(int argc, char *argv[])
         lab_to_srgb(&lab, colour_map, colour_map, 256);
         for (i = 0;  i < (1 << bits_per_pixel);  i++)
             printf("Map %3d - %5d %5d %5d\n", i, colour_map[3*i], colour_map[3*i + 1], colour_map[3*i + 2]);
+        /*endfor*/
     }
     else
     {
         printf("There is no colour map\n");
     }
+    /*endif*/
     process_raw = false;
     printf("Compression is ");
     switch (compression)
@@ -268,6 +278,7 @@ int main(int argc, char *argv[])
         printf("Unexpected compression %d\n", compression);
         break;
     }
+    /*endswitch*/
 
     outsize = 0;
     if (process_raw)
@@ -284,14 +295,17 @@ int main(int argc, char *argv[])
             printf("JPEG tables %u\n", jpeg_table_len);
             printf("YYY %d - %x %x %x %x\n", jpeg_table_len, jpeg_table[0], jpeg_table[1], jpeg_table[2], jpeg_table[3]);
         }
+        /*endif*/
 
         for (i = 0, total_image_len = 0;  i < nstrips;  i++)
             total_image_len += TIFFRawStripSize(tif, i);
+        /*endfor*/
         if ((data = malloc(total_image_len)) == NULL)
         {
             printf("Failed to allocate buffer\n");
             exit(2);
         }
+        /*endif*/
         for (i = 0, total_len = 0;  i < nstrips;  i++, total_len += len)
         {
             if ((len = TIFFReadRawStrip(tif, i, &data[total_len], total_image_len - total_len)) < 0)
@@ -299,12 +313,16 @@ int main(int argc, char *argv[])
                 printf("TIFF read error.\n");
                 return -1;
             }
+            /*endif*/
         }
+        /*endfor*/
         if (jpeg_table_len > 0)
             memcpy(data, jpeg_table, jpeg_table_len - 2);
+        /*endif*/
 
         if (total_len != total_image_len)
             printf("Size mismatch %ld %ld\n", (long int) total_len, (long int) total_image_len);
+        /*endif*/
         off = total_len;
         switch (compression)
         {
@@ -316,11 +334,13 @@ int main(int argc, char *argv[])
             printf("T.85 image %ld bytes\n", (long int) total_len);
             for (i = 0;  i < 16;  i++)
                 printf("0x%02x\n", data[i]);
+            /*endif*/
             t85_decode_init(&t85_dec, t85_row_write_handler, NULL);
             t85_decode_set_comment_handler(&t85_dec, 1000, t85_comment_handler, NULL);
             result = t85_decode_put(&t85_dec, data, total_len);
             if (result == T4_DECODE_MORE_DATA)
                 result = t85_decode_put(&t85_dec, NULL, 0);
+            /*endif*/
             len = t85_decode_get_compressed_image_size(&t85_dec);
             printf("Compressed image is %d bytes, %d rows\n", len/8, write_row);
             t85_decode_release(&t85_dec);
@@ -353,8 +373,11 @@ int main(int argc, char *argv[])
                     {
                         break;
                     }
+                    /*endif*/
                 }
+                /*endfor*/
             }
+            /*endif*/
 
             bit_mask = 0x80;
             t85_decode_init(&t85_dec, t85_row_write_handler, NULL);
@@ -378,11 +401,13 @@ int main(int argc, char *argv[])
                 len = t85_decode_get_compressed_image_size(&t85_dec);
                 printf("Compressed image is %d bytes, %d rows\n", len/8, write_row);
             }
+            /*endfor*/
             if (result == T4_DECODE_MORE_DATA)
             {
                 printf("More\n");
                 result = t85_decode_put(&t85_dec, NULL, 0);
             }
+            /*endif*/
             len = t85_decode_get_compressed_image_size(&t85_dec);
             printf("Compressed image is %d bytes, %d rows\n", len/8, write_row);
             t85_decode_release(&t85_dec);
@@ -395,12 +420,14 @@ int main(int argc, char *argv[])
                 data5[j + 1] = colour_map[3*i + 1];
                 data5[j + 2] = colour_map[3*i + 2];
             }
+            /*endfor*/
 
             if ((tif = TIFFOpen(OUT_FILE_NAME, "w")) == NULL)
             {
                 printf("Unable to open '%s'!\n", OUT_FILE_NAME);
                 return 1;
             }
+            /*endif*/
             TIFFSetField(tif, TIFFTAG_SUBFILETYPE, FILETYPE_PAGE);
             TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, w);
             // libtiff requires IMAGELENGTH to be set before SAMPLESPERPIXEL,
@@ -426,12 +453,14 @@ int main(int argc, char *argv[])
             {
                 TIFFWriteScanline(tif, data5 + off, i, 0);
             }
+            /*endfor*/
             TIFFWriteDirectory(tif);
             TIFFClose(tif);
             return 0;
         case COMPRESSION_JPEG:
             break;
         }
+        /*endswitch*/
     }
     else
     {
@@ -453,8 +482,10 @@ int main(int argc, char *argv[])
         {
             if (TIFFReadScanline(tif, data + off, row, 0) < 0)
                 return 1;
+            /*endif*/
             off += bytes_per_row;
         }
+        /*endfor*/
         printf("total %u, off %ld\n", totdata, (long int) off);
 
         /* We now have the image in memory in RGB form */
@@ -493,18 +524,22 @@ int main(int argc, char *argv[])
                 set_lab_gamut(&lab_param, 0, 100, -85, 85, -75, 125, false);
                 break;
             }
+            /*endswitch*/
             //if (!t42_srgb_to_itulab_jpeg(logging, &lab_param, (tdata_t) &outptr, &outsize, data, off, w, h, 3))
             {
                 printf("Failed to convert to ITULAB\n");
                 return 1;
             }
+            /*endif*/
             end = rdtscll();
             printf("Duration %" PRIu64 "\n", end - start);
             free(data);
             data = (uint8_t *) outptr;
             off = outsize;
         }
+        /*endif*/
     }
+    /*endif*/
     TIFFClose(tif);
 
     printf("XXX - image is %d by %d, %ld bytes\n", w, h, (long int) off);
@@ -516,6 +551,7 @@ int main(int argc, char *argv[])
         printf("Unable to open '%s'!\n", OUT_FILE_NAME);
         return 1;
     }
+    /*endif*/
     TIFFSetField(tif, TIFFTAG_SUBFILETYPE, FILETYPE_PAGE);
     TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, w);
     /* libtiff requires IMAGELENGTH to be set before SAMPLESPERPIXEL,
@@ -548,6 +584,7 @@ int main(int argc, char *argv[])
 #endif
         if (YCbCrSubsampleHoriz  ||  YCbCrSubsampleVert)
             TIFFSetField(tif, TIFFTAG_YCBCRSUBSAMPLING, YCbCrSubsampleHoriz, YCbCrSubsampleVert);
+        /*endif*/
         bytes_per_row = (bits_per_pixel + 7)/8;
         bytes_per_row *= w*samples_per_pixel;
         totdata = h*bytes_per_row;
@@ -567,6 +604,7 @@ int main(int argc, char *argv[])
             printf("Failed to convert from ITULAB\n");
             return 1;
         }
+        /*endif*/
         free(data);
 #else
         if ((data2 = malloc(totdata)) == NULL)
@@ -574,12 +612,14 @@ int main(int argc, char *argv[])
             printf("Failed to allocate buffer\n");
             exit(2);
         }
+        /*endif*/
         start = rdtscll();
         //if (!t42_itulab_jpeg_to_srgb(logging, &lab_param, data2, &off, data, off, &w, &h, &samples_per_pixel))
         {
             printf("Failed to convert from ITULAB\n");
             return 1;
         }
+        /*endif*/
         end = rdtscll();
         printf("Duration %" PRIu64 "\n", end - start);
         free(data);
@@ -591,8 +631,10 @@ int main(int argc, char *argv[])
         {
             if (TIFFWriteScanline(tif, data2 + off, row, 0) < 0)
                 return 1;
+            /*endif*/
             off += bytes_per_row;
         }
+        /*endfor*/
 #endif
         free(data2);
     }
@@ -607,13 +649,16 @@ int main(int argc, char *argv[])
 #endif
         if (YCbCrSubsampleHoriz  ||  YCbCrSubsampleVert)
             TIFFSetField(tif, TIFFTAG_YCBCRSUBSAMPLING, YCbCrSubsampleHoriz, YCbCrSubsampleVert);
+        /*endif*/
         if (TIFFWriteRawStrip(tif, 0, (tdata_t) data, off) == -1)
         {
             printf("Write error to TIFF file\n");
             return 1;
         }
+        /*endif*/
         free(data);
     }
+    /*endif*/
     TIFFWriteDirectory(tif);
     TIFFClose(tif);
     printf("Done!\n");

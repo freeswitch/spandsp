@@ -110,9 +110,12 @@ static void dump_image_as_xxx(const uint8_t buf[], int bytes_per_row, int len)
         {
             for (k = 0;  k < 8;  k++)
                 printf((buf[i*bytes_per_row + j] & (0x80 >> k))  ?  "X"  :  " ");
+            /*endfor*/
         }
+        /*endfor*/
         printf("\n");
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 #endif
@@ -130,6 +133,7 @@ static int row_read_handler(void *user_data, uint8_t buf[], size_t len)
         row = 0;
         return 0;
     }
+    /*endif*/
     s = t4_t6_test_patterns[row++];
     memset(buf, 0, len);
     for (i = 0;  i < len;  i++)
@@ -138,10 +142,14 @@ static int row_read_handler(void *user_data, uint8_t buf[], size_t len)
         {
             if (*s++ != ' ')
                 buf[i] |= (0x80 >> j);
+            /*endif*/
         }
+        /*endfor*/
     }
+    /*endfor*/
     if (*s)
         printf("Oops - '%c' at end of row %d\n", *s, row);
+    /*endif*/
     return len;
 }
 /*- End of function --------------------------------------------------------*/
@@ -158,9 +166,11 @@ static int row_write_handler(void *user_data, const uint8_t buf[], size_t len)
     //printf("Row %d\n", row);
     if (len == 0)
         return 0;
+    /*endif*/
     s = t4_t6_test_patterns[row++];
     if (row >= TEST_ROWS)
         row = 0;
+    /*endif*/
     memset(ref, 0, len);
     for (i = 0;  i < len;  i++)
     {
@@ -168,15 +178,20 @@ static int row_write_handler(void *user_data, const uint8_t buf[], size_t len)
         {
             if (*s++ != ' ')
                 ref[i] |= (0x80 >> j);
+            /*endif*/
         }
+        /*endfor*/
     }
+    /*endfor*/
     if (*s)
         printf("Oops - '%c' at end of row %d\n", *s, row);
+    /*endif*/
     if (memcmp(buf, ref, len))
     {
         printf("Test failed at row %d\n", row);
         exit(2);
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -209,6 +224,7 @@ static int detect_page_end(int bit, int page_ended)
         expected_eols = (page_ended == T4_COMPRESSION_T6)  ?  2  :  6;
         return 0;
     }
+    /*endif*/
 
     /* Monitor whether the EOLs are there in the correct amount */
     if (bit == 0)
@@ -226,11 +242,14 @@ static int detect_page_end(int bit, int page_ended)
                 consecutive_eols++;
             else
                 consecutive_eols = 0;
+            /*endif*/
             consecutive_zeros = 0;
             consecutive_ones = 0;
         }
+        /*endif*/
         if (max_consecutive_eols < consecutive_eols)
             max_consecutive_eols = consecutive_eols;
+        /*endif*/
     }
     else if (bit == SIG_STATUS_END_OF_DATA)
     {
@@ -241,10 +260,12 @@ static int detect_page_end(int bit, int page_ended)
                 printf("Only %d EOLs (should be %d)\n", max_consecutive_eols, expected_eols);
                 return 2;
             }
+            /*endif*/
             consecutive_zeros = 0;
             consecutive_eols = 0;
             max_consecutive_eols = 0;
         }
+        /*endif*/
         if (!page_ended)
         {
             /* We might need to push a few bits to get the receiver to report the
@@ -254,10 +275,13 @@ static int detect_page_end(int bit, int page_ended)
                 printf("Receiver missed the end of page mark\n");
                 return 2;
             }
+            /*endif*/
             return 0;
         }
+        /*endif*/
         return 1;
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -299,6 +323,7 @@ int main(int argc, char *argv[])
             block_size = atoi(optarg);
             if (block_size > 1024)
                 block_size = 1024;
+            /*endif*/
             break;
         case 'c':
             if (strcmp(optarg, "T41D") == 0)
@@ -316,6 +341,7 @@ int main(int argc, char *argv[])
                 compression = T4_COMPRESSION_T6;
                 compression_step = -1;
             }
+            /*endif*/
             break;
         case 'm':
             min_row_bits = atoi(optarg);
@@ -325,7 +351,9 @@ int main(int argc, char *argv[])
             exit(2);
             break;
         }
+        /*endswitch*/
     }
+    /*endwhile*/
 
     end_of_page = false;
 #if 1
@@ -336,6 +364,7 @@ int main(int argc, char *argv[])
         printf("Failed to init T.4/T.6 encoder\n");
         exit(2);
     }
+    /*endif*/
     span_log_set_level(t4_t6_encode_get_logging_state(send_state), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
     t4_t6_encode_set_min_bits_per_row(send_state, min_row_bits);
     t4_t6_encode_set_max_2d_rows_per_1d_row(send_state, 2);
@@ -346,12 +375,14 @@ int main(int argc, char *argv[])
         printf("Failed to init T.4/T.6 decoder\n");
         exit(2);
     }
+    /*endif*/
     span_log_set_level(t4_t6_decode_get_logging_state(receive_state), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
 
     /* Now send and receive the test data with all compression modes. */
     /* If we are stepping around the compression schemes, reset to the start of the sequence. */
     if (compression_step > 0)
         compression_step = 0;
+    /*endif*/
     for (;;)
     {
         end_marks = 0;
@@ -360,14 +391,18 @@ int main(int argc, char *argv[])
             compression = compression_sequence[compression_step++];
             if (compression < 0)
                 break;
+            /*endif*/
         }
+        /*endif*/
         t4_t6_encode_set_encoding(send_state, compression);
         t4_t6_decode_set_encoding(receive_state, compression);
 
         if (t4_t6_encode_restart(send_state, 1728, -1))
             break;
+        /*endif*/
         if (t4_t6_decode_restart(receive_state, 1728))
             break;
+        /*endif*/
         detect_page_end(-1000000, compression);
         switch (block_size)
         {
@@ -383,11 +418,15 @@ int main(int argc, char *argv[])
                         printf("Test failed\n");
                         exit(2);
                     }
+                    /*endif*/
                     break;
                 }
+                /*endif*/
                 if (!end_of_page)
                     end_of_page = t4_t6_decode_put_bit(receive_state, bit & 1);
+                /*endif*/
             }
+            /*endfor*/
             break;
         default:
             do
@@ -401,17 +440,22 @@ int main(int argc, char *argv[])
                         tests_failed++;
                         break;
                     }
+                    /*endif*/
                     chunk_buf[0] = 0xFF;
                     len = 1;
                 }
+                /*endif*/
                 end_of_page = t4_t6_decode_put(receive_state, chunk_buf, len);
             }
             while (!end_of_page);
             break;
         }
+        /*endswitch*/
         if (compression_step < 0)
             break;
+        /*endif*/
     }
+    /*endfor*/
     t4_t6_encode_free(send_state);
     t4_t6_decode_free(receive_state);
 #endif

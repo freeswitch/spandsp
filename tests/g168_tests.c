@@ -61,6 +61,7 @@ static void signal_load(signal_source_t *sig, const char *name)
         fprintf(stderr, "    Error reading sound file '%s'\n", sig->name);
         exit(2);
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -71,6 +72,7 @@ static void signal_free(signal_source_t *sig)
         fprintf(stderr, "    Cannot close sound file '%s'\n", sig->name);
         exit(2);
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -88,6 +90,7 @@ static int16_t signal_amp(signal_source_t *sig)
     tx = sig->signal[sig->cur++]*sig->gain;
     if (sig->cur >= sig->max)
         sig->cur = 0;
+    /*endif*/
     return tx;
 }
 /*- End of function --------------------------------------------------------*/
@@ -160,6 +163,7 @@ int main(int argc, char *argv[])
         tone_gen(&tone_state, amp, 8000);
         for (i = 0;  i < 10;  i++)
             power[i] = 0.0f;
+        /*endfor*/
         for (i = 0;  i < 800;  i++)
         {
             signal = fir32(&line_model_d2, amp[i]);
@@ -183,6 +187,7 @@ int main(int argc, char *argv[])
             signal = amp[i];
             power[9] += ((signal*signal - power[9])/32.0f);
         }
+        /*endfor*/
         printf("%d %f %f %f %f %f %f %f %f %f %f\n",
                f,
                sqrt(power[0])*LINE_MODEL_D2_GAIN,
@@ -196,9 +201,11 @@ int main(int argc, char *argv[])
                sqrt(power[8]),
                sqrt(power[9]));
     }
+    /*endfor*/
     awgn_init_dbm0(&noise_source, 1234567, -20.0f);
     for (i = 0;  i < 10;  i++)
         power[i] = 0.0f;
+    /*endfor*/
     signal_restart(&local_css, 0.0f);
     signal_restart(&far_css, 0.0f);
     for (i = 0;  i < SAMPLE_RATE;  i++)
@@ -226,8 +233,10 @@ int main(int argc, char *argv[])
         signal = value;
         power[9] += ((signal*signal - power[9])/32.0f);
     }
+    /*endfor*/
     for (i = 0;  i < 10;  i++)
         power[i] = 0.0f;
+    /*endfor*/
     for (i = 0;  i < SAMPLE_RATE;  i++)
     {
         value = signal_amp(&local_css);
@@ -253,6 +262,7 @@ int main(int argc, char *argv[])
         signal = value;
         power[9] += ((signal*signal - power[9])/32.0f);
     }
+    /*endfor*/
     printf("%d %f %f %f %f %f %f %f %f %f %f\n",
            0,
            sqrt(power[0])*LINE_MODEL_D2_GAIN,
@@ -304,9 +314,11 @@ int main(int argc, char *argv[])
 
     for (i = 0;  i < (int) (sizeof(css_c1)/sizeof(css_c1[0]));  i++)
         printf("%d\n", css_c1[i]);
+    /*endfor*/
     printf("\n");
     for (i = 0;  i < (int) (sizeof(css_c1)/sizeof(css_c3[0]));  i++)
         printf("%d\n", css_c3[i]);
+    /*endfor*/
     signal_free(&local_css);
     signal_free(&far_css);
     fir32_free(&line_model_d2);

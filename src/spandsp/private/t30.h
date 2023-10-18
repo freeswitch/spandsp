@@ -151,6 +151,11 @@ struct t30_state_s
     /*! \brief An opaque pointer passed to the document delivery handler. */
     void *document_put_user_data;
 
+    /*! \brief The maximum permitted number of retries of a single command allowed. */
+    int max_command_tries;
+    /*! \brief The maximum permitted number of retries of a single response request allowed. */
+    int max_response_tries;
+
     /*! \brief The DIS code for the minimum scan row time we require. This is usually 0ms,
         but if we are trying to simulate another type of FAX machine, we may need a non-zero
         value here. */

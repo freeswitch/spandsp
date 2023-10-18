@@ -132,6 +132,7 @@ SPAN_DECLARE(int) goertzel_update(goertzel_state_t *s,
     float v1;
 #endif
 
+    /* Adjust the length, so we don't run off the end of a processing block */
     if (samples > s->samples - s->current_sample)
         samples = s->samples - s->current_sample;
     /*endif*/
@@ -180,7 +181,8 @@ SPAN_DECLARE(float) goertzel_result(goertzel_state_t *s)
 #endif
     /* Now calculate the non-recursive side of the filter. */
     /* The result here is not scaled down to allow for the magnification
-       effect of the filter (the usual DFT magnification effect). */
+       effect of the filter (the usual DFT magnification effect). So,
+       the result will be s->samples times the true energy. */
 #if defined(SPANDSP_USE_FIXED_POINT)
     x = (int32_t) s->v3*s->v3;
     y = (int32_t) s->v2*s->v2;
@@ -196,7 +198,7 @@ SPAN_DECLARE(float) goertzel_result(goertzel_state_t *s)
     return x;
 #else
     v1 = s->v3*s->v3 + s->v2*s->v2 - s->v2*s->v3*s->fac;
-    v1 *= 2.0;
+    v1 *= 2.0f;
     goertzel_reset(s);
     return v1;
 #endif

@@ -107,15 +107,15 @@ struct sprt_state_s
 
     struct
     {
-        int subsession_id;
-        int payload_type;
+        uint8_t subsession_id;
+        uint8_t payload_type;
 
         sprt_chan_t chan[SPRT_CHANNELS];
     } rx;
     struct
     {
-        int subsession_id;
-        int payload_type;
+        uint8_t subsession_id;
+        uint8_t payload_type;
 
         sprt_chan_t chan[SPRT_CHANNELS];
 

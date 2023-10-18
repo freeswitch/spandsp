@@ -40,6 +40,7 @@ static void vec_copyf_dumb(float z[], const float x[], int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i];
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -57,6 +58,7 @@ static int test_vec_copyf(void)
         za[i] = -0.5f;
         zb[i] = -0.5f;
     }
+    /*endfor*/
     vec_copyf_dumb(za + 3, x + 1, 0);
     vec_copyf(zb + 3, x + 1, 0);
     for (i = 0;  i < 99;  i++)
@@ -67,7 +69,9 @@ static int test_vec_copyf(void)
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     vec_copyf_dumb(za + 3, x + 1, 1);
     vec_copyf(zb + 3, x + 1, 1);
     for (i = 0;  i < 99;  i++)
@@ -78,7 +82,9 @@ static int test_vec_copyf(void)
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     vec_copyf_dumb(za + 3, x + 1, 29);
     vec_copyf(zb + 3, x + 1, 29);
     for (i = 0;  i < 99;  i++)
@@ -89,7 +95,9 @@ static int test_vec_copyf(void)
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -100,6 +108,7 @@ static void vec_negatef_dumb(float z[], const float x[], int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = -x[i];
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -117,6 +126,7 @@ static int test_vec_negatef(void)
         za[i] = -0.5f;
         zb[i] = -0.5f;
     }
+    /*endfor*/
     vec_negatef_dumb(za + 3, x + 1, 0);
     vec_negatef(zb + 3, x + 1, 0);
     for (i = 0;  i < 99;  i++)
@@ -127,7 +137,9 @@ static int test_vec_negatef(void)
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     vec_negatef_dumb(za + 3, x + 1, 1);
     vec_negatef(zb + 3, x + 1, 1);
     for (i = 0;  i < 99;  i++)
@@ -138,7 +150,9 @@ static int test_vec_negatef(void)
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     vec_negatef_dumb(za + 3, x + 1, 29);
     vec_negatef(zb + 3, x + 1, 29);
     for (i = 0;  i < 99;  i++)
@@ -149,7 +163,9 @@ static int test_vec_negatef(void)
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -160,6 +176,7 @@ static void vec_zerof_dumb(float z[], int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = 0.0f;
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -175,6 +192,7 @@ static int test_vec_zerof(void)
         za[i] = -1.0f;
         zb[i] = -1.0f;
     }
+    /*endfor*/
     vec_zerof_dumb(za + 3, 0);
     vec_zerof(zb + 3, 0);
     for (i = 0;  i < 99;  i++)
@@ -185,7 +203,9 @@ static int test_vec_zerof(void)
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     vec_zerof_dumb(za + 3, 1);
     vec_zerof(zb + 3, 1);
     for (i = 0;  i < 99;  i++)
@@ -196,7 +216,9 @@ static int test_vec_zerof(void)
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     vec_zerof_dumb(za + 3, 29);
     vec_zerof(zb + 3, 29);
     for (i = 0;  i < 99;  i++)
@@ -207,7 +229,9 @@ static int test_vec_zerof(void)
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -218,6 +242,7 @@ static void vec_setf_dumb(float z[], float x, int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = x;
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -233,6 +258,7 @@ static int test_vec_setf(void)
         za[i] = -1.0f;
         zb[i] = -1.0f;
     }
+    /*endfor*/
     vec_setf_dumb(za + 3, 42.0f, 0);
     vec_setf(zb + 3, 42.0f, 0);
     for (i = 0;  i < 99;  i++)
@@ -243,7 +269,9 @@ static int test_vec_setf(void)
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     vec_setf_dumb(za + 3, 42.0f, 1);
     vec_setf(zb + 3, 42.0f, 1);
     for (i = 0;  i < 99;  i++)
@@ -254,7 +282,9 @@ static int test_vec_setf(void)
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     vec_setf_dumb(za + 3, 42.0f, 29);
     vec_setf(zb + 3, 42.0f, 29);
     for (i = 0;  i < 99;  i++)
@@ -265,7 +295,9 @@ static int test_vec_setf(void)
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -278,6 +310,7 @@ static double vec_dot_prod_dumb(const double x[], const double y[], int n)
     z = 0.0;
     for (i = 0;  i < n;  i++)
         z += x[i]*y[i];
+    /*endfor*/
     return z;
 }
 /*- End of function --------------------------------------------------------*/
@@ -297,6 +330,7 @@ static int test_vec_dot_prod(void)
         x[i] = rand();
         y[i] = rand();
     }
+    /*endfor*/
     for (i = 1;  i < 99;  i++)
     {
         zsa = vec_dot_prod(x, y, i);
@@ -308,7 +342,9 @@ static int test_vec_dot_prod(void)
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -321,6 +357,7 @@ static float vec_dot_prodf_dumb(const float x[], const float y[], int n)
     z = 0.0;
     for (i = 0;  i < n;  i++)
         z += x[i]*y[i];
+    /*endfor*/
     return z;
 }
 /*- End of function --------------------------------------------------------*/
@@ -340,6 +377,7 @@ static int test_vec_dot_prodf(void)
         x[i] = rand();
         y[i] = rand();
     }
+    /*endfor*/
     for (i = 1;  i < 99;  i++)
     {
         zsa = vec_dot_prodf(x, y, i);
@@ -351,7 +389,9 @@ static int test_vec_dot_prodf(void)
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -362,6 +402,7 @@ static void vec_addf_dumb(float z[], const float x[], const float y[], int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i] + y[i];
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -381,6 +422,7 @@ static int test_vec_addf(void)
         x[i] = rand();
         y[i] = rand();
     }
+    /*endfor*/
     for (i = 1;  i < 90;  i++)
     {
         /* Force address misalignment, to check this works OK */
@@ -395,8 +437,11 @@ static int test_vec_addf(void)
                 printf("Tests failed\n");
                 exit(2);
             }
+            /*endif*/
         }
+        /*endfor*/
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -407,6 +452,7 @@ static void vec_subf_dumb(float z[], const float x[], const float y[], int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i] - y[i];
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -426,6 +472,7 @@ static int test_vec_subf(void)
         x[i] = rand();
         y[i] = rand();
     }
+    /*endfor*/
     for (i = 1;  i < 90;  i++)
     {
         /* Force address misalignment, to check this works OK */
@@ -440,8 +487,11 @@ static int test_vec_subf(void)
                 printf("Tests failed\n");
                 exit(2);
             }
+            /*endif*/
         }
+        /*endfor*/
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -452,6 +502,7 @@ static void vec_mulf_dumb(float z[], const float x[], const float y[], int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i]*y[i];
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -471,6 +522,7 @@ static int test_vec_mulf(void)
         x[i] = rand();
         y[i] = rand();
     }
+    /*endfor*/
     for (i = 1;  i < 90;  i++)
     {
         /* Force address misalignment, to check this works OK */
@@ -485,8 +537,11 @@ static int test_vec_mulf(void)
                 printf("Tests failed\n");
                 exit(2);
             }
+            /*endif*/
         }
+        /*endfor*/
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -502,6 +557,7 @@ static void vec_lmsf_dumb(const float x[], float y[], int n, float error)
         /* Leak a little to tame uncontrolled wandering */
         y[i] = y[i]*LMS_LEAK_RATE + x[i]*error;
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -521,6 +577,7 @@ static int test_vec_lmsf(void)
         ya[i] =
         yb[i] = rand();
     }
+    /*endfor*/
     for (i = 1;  i < 99;  i++)
     {
         vec_lmsf(x, ya, i, 0.1f);
@@ -534,8 +591,11 @@ static int test_vec_lmsf(void)
                 printf("Tests failed\n");
                 exit(2);
             }
+            /*endif*/
         }
+        /*endfor*/
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -546,6 +606,7 @@ static void vec_scaledxy_addf_dumb(float z[], const float x[], float x_scale, co
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i]*x_scale + y[i]*y_scale;
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -565,6 +626,7 @@ static int test_vec_scaledxy_addf(void)
         x[i] = rand();
         y[i] = rand();
     }
+    /*endfor*/
     for (i = 1;  i < 99;  i++)
     {
         vec_scaledxy_addf(za, x, 2.5f, y, 1.5f, i);
@@ -578,8 +640,11 @@ static int test_vec_scaledxy_addf(void)
                 printf("Tests failed\n");
                 exit(2);
             }
+            /*endif*/
         }
+        /*endfor*/
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -590,6 +655,7 @@ static void vec_scaledy_addf_dumb(float z[], const float x[], const float y[], f
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i] + y[i]*y_scale;
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -609,6 +675,7 @@ static int test_vec_scaledy_addf(void)
         x[i] = rand();
         y[i] = rand();
     }
+    /*endfor*/
     for (i = 1;  i < 99;  i++)
     {
         vec_scaledy_addf(za, x, y, 1.5f, i);
@@ -622,8 +689,11 @@ static int test_vec_scaledy_addf(void)
                 printf("Tests failed\n");
                 exit(2);
             }
+            /*endif*/
         }
+        /*endfor*/
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

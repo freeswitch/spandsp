@@ -93,6 +93,7 @@ static int adsi_create_message(adsi_tx_state_t *s, uint8_t *msg)
     case ADSI_STANDARD_CLASS:
         if (cycle > 3)
             cycle = 0;
+        /*endif*/
         switch (cycle)
         {
         case 0:
@@ -124,10 +125,12 @@ static int adsi_create_message(adsi_tx_state_t *s, uint8_t *msg)
             len = adsi_add_field(s, msg, len, 0, (uint8_t *) "6095551212", 10);
             break;
         }
+        /*endswitch*/
         break;
     case ADSI_STANDARD_CLIP:
         if (cycle > 4)
             cycle = 0;
+        /*endif*/
         switch (cycle)
         {
         case 0:
@@ -160,10 +163,12 @@ static int adsi_create_message(adsi_tx_state_t *s, uint8_t *msg)
             len = adsi_add_field(s, msg, len, CLIP_NUM_MSG, (uint8_t *) "\x03", 1);
             break;
         }
+        /*endswitch*/
         break;
     case ADSI_STANDARD_ACLIP:
         if (cycle > 0)
             cycle = 0;
+        /*endif*/
         switch (cycle)
         {
         case 0:
@@ -175,6 +180,7 @@ static int adsi_create_message(adsi_tx_state_t *s, uint8_t *msg)
             len = adsi_add_field(s, msg, len, ACLIP_CALLER_NAME, (uint8_t *) "Chan Dai Man", 15);
             break;
         }
+        /*endswitch*/
         break;
     case ADSI_STANDARD_JCLIP:
         len = adsi_add_field(s, msg, -1, JCLIP_MDMF_CALLERID, NULL, 0);
@@ -186,6 +192,7 @@ static int adsi_create_message(adsi_tx_state_t *s, uint8_t *msg)
     case ADSI_STANDARD_CLIP_DTMF:
         if (cycle > 4)
             cycle = 0;
+        /*endif*/
         switch (cycle)
         {
         case 0:
@@ -213,12 +220,14 @@ static int adsi_create_message(adsi_tx_state_t *s, uint8_t *msg)
             len = adsi_add_field(s, msg, len, CLIP_DTMF_HASH_UNSPECIFIED, (uint8_t *) "12345678", 8);
             break;
         }
+        /*endswitch*/
         break;
     case ADSI_STANDARD_TDD:
         t = "The quick Brown Fox Jumps Over The Lazy dog 0123456789!@#$%^&*()";
         len = adsi_add_field(s, msg, -1, 0, (uint8_t *) t, strlen(t));
         break;
     }
+    /*endswitch*/
     cycle++;
     return len;
 }
@@ -241,7 +250,9 @@ static void put_adsi_msg(void *user_data, const uint8_t *msg, int len)
         printf("%02x ", msg[i]);
         if ((i & 0xF) == 0xF)
             printf("\n");
+        /*endif*/
     }
+    /*endfor*/
     printf("\n");
     l = -1;
     message_type = -1;
@@ -291,6 +302,7 @@ static void put_adsi_msg(void *user_data, const uint8_t *msg, int len)
                             printf("Caller's name absent: 'O' or 'P'");
                             break;
                         }
+                        /*endswitch*/
                         break;
                     case CLASS_SDMF_MSG_WAITING:
                         break;
@@ -301,8 +313,10 @@ static void put_adsi_msg(void *user_data, const uint8_t *msg, int len)
                             printf("Message waiting/not waiting");
                             break;
                         }
+                        /*endswitch*/
                         break;
                     }
+                    /*endswitch*/
                     break;
                 case ADSI_STANDARD_CLIP:
                     switch (message_type)
@@ -364,8 +378,10 @@ static void put_adsi_msg(void *user_data, const uint8_t *msg, int len)
                             printf("Service information");
                             break;
                         }
+                        /*endswitch*/
                         break;
                     }
+                    /*endswitch*/
                     break;
                 case ADSI_STANDARD_ACLIP:
                     switch (message_type)
@@ -400,8 +416,10 @@ static void put_adsi_msg(void *user_data, const uint8_t *msg, int len)
                             printf("Caller's name absent: 'O' or 'P'");
                             break;
                         }
+                        /*endswitch*/
                         break;
                     }
+                    /*endswitch*/
                     break;
                 case ADSI_STANDARD_JCLIP:
                     switch (message_type)
@@ -425,8 +443,10 @@ static void put_adsi_msg(void *user_data, const uint8_t *msg, int len)
                             printf("Caller's number absent: 'C', 'O', 'P' or 'S'");
                             break;
                         }
+                        /*endswitch*/
                         break;
                     }
+                    /*endswitch*/
                     break;
                 case ADSI_STANDARD_CLIP_DTMF:
                     switch (message_type)
@@ -444,6 +464,7 @@ static void put_adsi_msg(void *user_data, const uint8_t *msg, int len)
                             printf("Unspecified");
                             break;
                         }
+                        /*endswitch*/
                         break;
                     case CLIP_DTMF_C_TERMINATED:
                         switch (field_type)
@@ -458,8 +479,10 @@ static void put_adsi_msg(void *user_data, const uint8_t *msg, int len)
                             printf("Caller's number absent");
                             break;
                         }
+                        /*endswitch*/
                         break;
                     }
+                    /*endswitch*/
                     break;
                 case ADSI_STANDARD_TDD:
                     if (basic_testing)
@@ -472,9 +495,12 @@ static void put_adsi_msg(void *user_data, const uint8_t *msg, int len)
                             printf("String error\n");
                             exit(2);
                         }
+                        /*endif*/
                     }
+                    /*endif*/
                     break;
                 }
+                /*endswitch*/
             }
             else
             {
@@ -501,6 +527,7 @@ static void put_adsi_msg(void *user_data, const uint8_t *msg, int len)
                         printf("Unknown");
                         break;
                     }
+                    /*endswitch*/
                     break;
                 case ADSI_STANDARD_CLIP:
                     switch (message_type)
@@ -521,6 +548,7 @@ static void put_adsi_msg(void *user_data, const uint8_t *msg, int len)
                         printf("Unknown");
                         break;
                     }
+                    /*endswitch*/
                     break;
                 case ADSI_STANDARD_ACLIP:
                     switch (message_type)
@@ -535,6 +563,7 @@ static void put_adsi_msg(void *user_data, const uint8_t *msg, int len)
                         printf("Unknown");
                         break;
                     }
+                    /*endswitch*/
                     break;
                 case ADSI_STANDARD_JCLIP:
                     switch (message_type)
@@ -546,6 +575,7 @@ static void put_adsi_msg(void *user_data, const uint8_t *msg, int len)
                         printf("Unknown");
                         break;
                     }
+                    /*endswitch*/
                     break;
                 case ADSI_STANDARD_CLIP_DTMF:
                     switch (message_type)
@@ -560,14 +590,18 @@ static void put_adsi_msg(void *user_data, const uint8_t *msg, int len)
                         printf("Unknown");
                         break;
                     }
+                    /*endswitch*/
                     break;
                 case ADSI_STANDARD_TDD:
                     printf("Unknown");
                     break;
                 }
+                /*endswitch*/
             }
+            /*endif*/
             printf("\n");
         }
+        /*endif*/
     }
     while (l > 0);
     if (l < -1)
@@ -576,6 +610,7 @@ static void put_adsi_msg(void *user_data, const uint8_t *msg, int len)
         printf("Bad message contents\n");
         exit(2);
     }
+    /*endif*/
     printf("\n");
 }
 /*- End of function --------------------------------------------------------*/
@@ -603,11 +638,15 @@ static void tdd_character_set_tests(void)
             yy = adsi_decode_baudot(rx_adsi, (xx >> 5) & 0x1F);
             if (yy)
                 printf("%c", yy);
+            /*endif*/
         }
+        /*endif*/
         yy = adsi_decode_baudot(rx_adsi, xx & 0x1F);
         if (yy)
             printf("%c", yy);
+        /*endif*/
     }
+    /*endwhile*/
     adsi_tx_free(tx_adsi);
     adsi_rx_free(rx_adsi);
     printf("\n");
@@ -630,6 +669,7 @@ static void basic_tests(int standard)
     tx_adsi = adsi_tx_init(NULL, standard);
     if (short_preamble)
         adsi_tx_set_preamble(tx_adsi, 50, 20, 5, -1);
+    /*endif*/
     rx_adsi = adsi_rx_init(NULL, standard, put_adsi_msg, NULL);
 
     /* Fake an OK condition for the first message test */
@@ -641,6 +681,7 @@ static void basic_tests(int standard)
         {
             if ((len = adsi_tx(tx_adsi, amp, BLOCK_LEN)) == 0)
                 push = 10;
+            /*endif*/
         }
         else
         {
@@ -653,11 +694,14 @@ static void basic_tests(int standard)
                     printf("No message received %s (%d)\n", adsi_standard_to_str(standard), i);
                     exit(2);
                 }
+                /*endif*/
                 good_message_received = false;
                 adsi_msg_len = adsi_create_message(tx_adsi, adsi_msg);
                 adsi_msg_len = adsi_tx_put_message(tx_adsi, adsi_msg, adsi_msg_len);
             }
+            /*endif*/
         }
+        /*endif*/
         if (len < BLOCK_LEN)
         {
             memset(&amp[len], 0, sizeof(int16_t)*(BLOCK_LEN - len));
@@ -673,9 +717,12 @@ static void basic_tests(int standard)
                 fprintf(stderr, "    Error writing audio file\n");
                 exit(2);
             }
+            /*endif*/
         }
+        /*endif*/
         adsi_rx(rx_adsi, amp, len);
     }
+    /*endfor*/
     adsi_rx_free(rx_adsi);
     adsi_tx_free(tx_adsi);
     basic_testing = false;
@@ -702,22 +749,27 @@ static void mitel_cm7291_side_2_and_bellcore_tests(int standard)
             printf("    Cannot open speech file '%s'\n", bellcore_files[j]);
             exit(2);
         }
+        /*endif*/
         while ((frames = sf_readf_short(inhandle, amp, BLOCK_LEN)))
         {
             adsi_rx(rx_adsi, amp, frames);
         }
+        /*endwhile*/
         if (sf_close_telephony(inhandle))
         {
             printf("    Cannot close speech file '%s'\n", bellcore_files[j]);
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     adsi_rx_free(rx_adsi);
     if (j > 470)
     {
         printf("    Failed\n");
         exit(2);
     }
+    /*endif*/
     printf("    Passed\n");
 }
 /*- End of function --------------------------------------------------------*/
@@ -772,6 +824,7 @@ int main(int argc, char *argv[])
                 test_standard = ADSI_STANDARD_TDD;
             else
                 test_standard = atoi(optarg);
+            /*endif*/
             break;
         case 't':
             enable_basic_tests = false;
@@ -782,7 +835,9 @@ int main(int argc, char *argv[])
             exit(2);
             break;
         }
+        /*endswitch*/
     }
+    /*endwhile*/
     outhandle = NULL;
 
     tdd_character_set_tests();
@@ -795,10 +850,12 @@ int main(int argc, char *argv[])
             fprintf(stderr, "    Cannot open audio file '%s'\n", decode_test_file);
             exit(2);
         }
+        /*endif*/
         if (test_standard < 0)
             current_standard = ADSI_STANDARD_CLASS;
         else
             current_standard = test_standard;
+        /*endif*/
 
         rx_adsi = adsi_rx_init(NULL, current_standard, put_adsi_msg, NULL);
 
@@ -810,13 +867,16 @@ int main(int argc, char *argv[])
             len = sf_readf_short(inhandle, amp, BLOCK_LEN);
             if (len == 0)
                 break;
+            /*endif*/
             adsi_rx(rx_adsi, amp, len);
         }
+        /*endfor*/
         if (sf_close_telephony(inhandle))
         {
             fprintf(stderr, "    Cannot close audio file '%s'\n", decode_test_file);
             exit(2);
         }
+        /*endif*/
         adsi_rx_free(rx_adsi);
     }
     else
@@ -828,7 +888,9 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "    Cannot create audio file '%s'\n", OUTPUT_FILE_NAME);
                 exit(2);
             }
+            /*endif*/
         }
+        /*endif*/
         /* Go through all the standards */
         /* This assumes standard 0 is NULL, and TDD is the last in the list */
         if (test_standard < 0)
@@ -841,13 +903,17 @@ int main(int argc, char *argv[])
             first_standard =
             last_standard = test_standard;
         }
+        /*endif*/
         for (current_standard = first_standard;  current_standard <= last_standard;  current_standard++)
         {
             if (enable_basic_tests)
                 basic_tests(current_standard);
+            /*endif*/
             if (enable_talkoff_tests)
                 mitel_cm7291_side_2_and_bellcore_tests(current_standard);
+            /*endif*/
         }
+        /*endfor*/
         if (log_audio)
         {
             if (sf_close_telephony(outhandle))
@@ -855,9 +921,12 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
                 exit(2);
             }
+            /*endif*/
         }
+        /*endif*/
         printf("Tests passed.\n");
     }
+    /*endif*/
 
     return 0;
 }

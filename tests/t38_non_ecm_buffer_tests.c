@@ -86,13 +86,16 @@ static int xxx(t38_non_ecm_buffer_state_t *s, logging_state_t *l, int log_bits, 
             bit = t38_non_ecm_buffer_get_bit((void *) s);
             if (log_bits)
                 printf("Rx bit %d - %d\n", bit_no, bit);
+            /*endif*/
             if (bit != expected)
             {
                 printf("Tests failed - %d %d %d\n", bit_no, bit, expected);
                 exit(2);
             }
+            /*endif*/
             bit_no++;
         }
+        /*endfor*/
     }
     else
     {
@@ -102,10 +105,12 @@ static int xxx(t38_non_ecm_buffer_state_t *s, logging_state_t *l, int log_bits, 
             bit = t38_non_ecm_buffer_get_bit((void *) s);
             if (log_bits)
                 printf("Rx bit %d - %d\n", bit_no, bit);
+            /*endif*/
             if (j < 0)
             {
                 if (bit == 1)
                     j = 18*8 - 5;
+                /*endif*/
             }
             else
             {
@@ -115,15 +120,21 @@ static int xxx(t38_non_ecm_buffer_state_t *s, logging_state_t *l, int log_bits, 
                     printf("Tests failed - %d %d %d\n", bit_no, bit, expected);
                     exit(2);
                 }
+                /*endif*/
                 j++;
                 if (j >= 18*8)
                     j = 0;
+                /*endif*/
             }
+            /*endif*/
             bit_no++;
             if (j == 17*8)
                 return 0;
+            /*endif*/
         }
+        /*endfor*/
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -151,18 +162,22 @@ int main(int argc, char *argv[])
     printf("    We should get ones here\n");
     for (i = 0;  i < 17;  i++)
         xxx(&buffer, &logging, log_bits, i, 1);
+    /*endfor*/
     printf("    We should change to zeros here\n");
     xxx(&buffer, &logging, log_bits, i, 0);
     for (i = 0;  i < 17;  i++)
         xxx(&buffer, &logging, log_bits, i, 0);
+    /*endfor*/
     printf("    We should get the first row here\n");
     xxx(&buffer, &logging, log_bits, i, -1);
     for (i = 0;  i < 17;  i++)
         xxx(&buffer, &logging, log_bits, i, 0);
+    /*endfor*/
     printf("    We should get the second row here\n");
     xxx(&buffer, &logging, log_bits, i, -1);
     for (i = 0;  i < 17;  i++)
         xxx(&buffer, &logging, log_bits, i, 0);
+    /*endfor*/
     printf("    We should get the third row here\n");
     xxx(&buffer, &logging, log_bits, i, -1);
     printf("    Done\n");
@@ -189,6 +204,7 @@ int main(int argc, char *argv[])
         bit = t38_non_ecm_buffer_get_bit((void *) &buffer);
         if (log_bits)
             printf("Rx bit %d - %d\n", n, bit);
+        /*endif*/
         n++;
         if (bit == SIG_STATUS_END_OF_DATA)
         {
@@ -197,8 +213,10 @@ int main(int argc, char *argv[])
                 printf("Tests failed\n");
                 exit(2);
             }
+            /*endif*/
             break;
         }
+        /*endif*/
         if (n >= 18  &&  n <= 96)
         {
             if (bit == (n & 1))
@@ -206,6 +224,7 @@ int main(int argc, char *argv[])
                 printf("Tests failed\n");
                 exit(2);
             }
+            /*endif*/
         }
         else if (n >= 178  &&  n <= 256)
         {
@@ -214,6 +233,7 @@ int main(int argc, char *argv[])
                 printf("Tests failed\n");
                 exit(2);
             }
+            /*endif*/
         }
         else if (n == 139  ||  n == 300)
         {
@@ -222,6 +242,7 @@ int main(int argc, char *argv[])
                 printf("Tests failed\n");
                 exit(2);
             }
+            /*endif*/
         }
         else
         {
@@ -230,8 +251,11 @@ int main(int argc, char *argv[])
                 printf("Tests failed\n");
                 exit(2);
             }
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endfor*/
     t38_non_ecm_buffer_report_input_status(&buffer, &logging);
     t38_non_ecm_buffer_report_output_status(&buffer, &logging);
     t38_non_ecm_buffer_release(&buffer);
@@ -255,6 +279,7 @@ int main(int argc, char *argv[])
         bit = t38_non_ecm_buffer_get_bit((void *) &buffer);
         if (log_bits)
             printf("Rx bit %d - %d\n", n, bit);
+        /*endif*/
         n++;
         if (bit == SIG_STATUS_END_OF_DATA)
         {
@@ -263,8 +288,10 @@ int main(int argc, char *argv[])
                 printf("Tests failed\n");
                 exit(2);
             }
+            /*endif*/
             break;
         }
+        /*endif*/
         if (n >= 18  &&  n <= 96)
         {
             if (bit == (n & 1))
@@ -272,6 +299,7 @@ int main(int argc, char *argv[])
                 printf("Tests failed\n");
                 exit(2);
             }
+            /*endif*/
         }
         else if (n >= 834  &&  n <= 912)
         {
@@ -280,6 +308,7 @@ int main(int argc, char *argv[])
                 printf("Tests failed\n");
                 exit(2);
             }
+            /*endif*/
         }
         else if (n == 429  ||  n == 1238)
         {
@@ -288,6 +317,7 @@ int main(int argc, char *argv[])
                 printf("Tests failed\n");
                 exit(2);
             }
+            /*endif*/
         }
         else
         {
@@ -296,8 +326,11 @@ int main(int argc, char *argv[])
                 printf("Tests failed\n");
                 exit(2);
             }
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endfor*/
     t38_non_ecm_buffer_report_input_status(&buffer, &logging);
     t38_non_ecm_buffer_report_output_status(&buffer, &logging);
     t38_non_ecm_buffer_release(&buffer);
@@ -311,12 +344,15 @@ int main(int argc, char *argv[])
         bit = t38_non_ecm_buffer_get_bit((void *) &buffer);
         if (log_bits)
             printf("Rx bit %d - %d\n", n++, bit);
+        /*endif*/
         if (bit != 1)
         {
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     printf("    Initial ones OK\n");
     /* Now put some zeros into the buffer, but no EOL. We should continue
        getting ones out. */
@@ -327,12 +363,15 @@ int main(int argc, char *argv[])
         bit = t38_non_ecm_buffer_get_bit((void *) &buffer);
         if (log_bits)
             printf("Rx bit %d - %d\n", n++, bit);
+        /*endif*/
         if (bit != 1)
         {
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     printf("    Continuing initial ones OK\n");
     /* Now add a one, to make an EOL. We should see the zeros come out. */
     buf[0] = 0x01;
@@ -342,12 +381,15 @@ int main(int argc, char *argv[])
         bit = t38_non_ecm_buffer_get_bit((void *) &buffer);
         if (log_bits)
             printf("Rx bit %d - %d\n", n++, bit);
+        /*endif*/
         if (bit != 0)
         {
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     printf("    First EOL caused zeros to output OK\n");
     /* Now add another line. We should see the first line come out. This means just the
        23rd bit from now will be a one. */
@@ -359,12 +401,15 @@ int main(int argc, char *argv[])
         bit = t38_non_ecm_buffer_get_bit((void *) &buffer);
         if (log_bits)
             printf("Rx bit %d - %d\n", n++, bit);
+        /*endif*/
         if ((i == 23  &&  bit == 0)  ||  (i != 23  &&  bit != 0))
         {
             printf("Tests failed (%d)\n", i);
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     printf("    Second EOL caused the first row to output OK\n");
     /* Now inject an RTC - 6 EOLs */
     memset(buf, 0, sizeof(buf));
@@ -375,6 +420,7 @@ int main(int argc, char *argv[])
         buf[i + 1] = 0x10;
         buf[i + 2] = 0x01;
     }
+    /*endfor*/
     /* T.4 2D style */
     buf[25 + 0] = 0x00;
     buf[25 + 1] = 0x18;
@@ -393,6 +439,7 @@ int main(int argc, char *argv[])
         bit = t38_non_ecm_buffer_get_bit((void *) &buffer);
         if (log_bits)
             printf("Rx bit %d - %d\n", n++, bit);
+        /*endif*/
         if (i == 7
             ||
             i == 400 + 11 + 0*12
@@ -436,6 +483,7 @@ int main(int argc, char *argv[])
                 printf("Tests failed (%d)\n", i);
                 exit(2);
             }
+            /*endif*/
         }
         else
         {
@@ -444,8 +492,11 @@ int main(int argc, char *argv[])
                 printf("Tests failed (%d)\n", i);
                 exit(2);
             }
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endfor*/
     printf("    RTC output OK\n");
     t38_non_ecm_buffer_report_input_status(&buffer, &logging);
     t38_non_ecm_buffer_report_output_status(&buffer, &logging);
@@ -465,12 +516,15 @@ int main(int argc, char *argv[])
         bit = t38_non_ecm_buffer_get_bit((void *) &buffer);
         if (log_bits)
             printf("Rx bit %d - %d\n", n++, bit);
+        /*endif*/
         if (bit != 1)
         {
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     printf("    Initial ones OK\n");
     /* Now add a one, to make an EOL. We should see the zeros come out. */
     buf[0] = 0x01;
@@ -480,12 +534,15 @@ int main(int argc, char *argv[])
         bit = t38_non_ecm_buffer_get_bit((void *) &buffer);
         if (log_bits)
             printf("Rx bit %d - %d\n", n++, bit);
+        /*endif*/
         if (bit != 0)
         {
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     printf("    First EOL caused zeros to output OK\n");
     /* Now add another line. We should see the first line come out. This means just the
        23rd bit from now will be a one. */
@@ -497,12 +554,15 @@ int main(int argc, char *argv[])
         bit = t38_non_ecm_buffer_get_bit((void *) &buffer);
         if (log_bits)
             printf("Rx bit %d - %d\n", n++, bit);
+        /*endif*/
         if ((i == 23  &&  bit == 0)  ||  (i != 23  &&  bit != 0))
         {
             printf("Tests failed (%d)\n", i);
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     printf("    Second EOL caused the first row to output OK\n");
     /* Now inject an RTC - 6 EOLs */
     memset(buf, 0, sizeof(buf));
@@ -513,6 +573,7 @@ int main(int argc, char *argv[])
         buf[i + 1] = 0x10;
         buf[i + 2] = 0x01;
     }
+    /*endif*/
     /* T.4 2D style */
     buf[25 + 0] = 0x00;
     buf[25 + 1] = 0x18;
@@ -531,6 +592,7 @@ int main(int argc, char *argv[])
         bit = t38_non_ecm_buffer_get_bit((void *) &buffer);
         if (log_bits)
             printf("Rx bit %d - %d\n", n++, bit);
+        /*endif*/
         if (i == 7
             ||
             i == 400 + 11 + 0*12
@@ -574,6 +636,7 @@ int main(int argc, char *argv[])
                 printf("Tests failed (%d)\n", i);
                 exit(2);
             }
+            /*endif*/
         }
         else
         {
@@ -582,8 +645,11 @@ int main(int argc, char *argv[])
                 printf("Tests failed (%d)\n", i);
                 exit(2);
             }
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endfor*/
     printf("    RTC output OK\n");
     t38_non_ecm_buffer_report_input_status(&buffer, &logging);
     t38_non_ecm_buffer_report_output_status(&buffer, &logging);
@@ -598,12 +664,15 @@ int main(int argc, char *argv[])
         bit = t38_non_ecm_buffer_get_bit((void *) &buffer);
         if (log_bits)
             printf("Rx bit %d - %d\n", n++, bit);
+        /*endif*/
         if (bit != 1)
         {
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     printf("    Initial ones from an empty TCF buffer OK\n");
     /* Now send some TCF through, and see that it comes out */
     memset(buf, 0x00, sizeof(buf));
@@ -614,22 +683,27 @@ int main(int argc, char *argv[])
         bit = t38_non_ecm_buffer_get_bit((void *) &buffer);
         if (log_bits)
             printf("Rx bit %d - %d\n", n++, bit);
+        /*endif*/
         if (bit != 0)
         {
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     printf("    Passthrough of TCF OK\n");
     /* Check the right number of bits was buffered */
     bit = t38_non_ecm_buffer_get_bit((void *) &buffer);
     if (log_bits)
         printf("Rx bit %d - %d\n", n++, bit);
+    /*endif*/
     if (bit != SIG_STATUS_END_OF_DATA)
     {
         printf("Tests failed\n");
         exit(2);
     }
+    /*endif*/
     printf("    End of data seen OK\n");
     t38_non_ecm_buffer_report_input_status(&buffer, &logging);
     t38_non_ecm_buffer_report_output_status(&buffer, &logging);
@@ -644,12 +718,15 @@ int main(int argc, char *argv[])
         bit = t38_non_ecm_buffer_get_bit((void *) &buffer);
         if (log_bits)
             printf("Rx bit %d - %d\n", n++, bit);
+        /*endif*/
         if (bit != 1)
         {
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     printf("    Initial ones from an empty TCF buffer OK\n");
 
     /* Now send some initial ones, and see that we continue to get all ones
@@ -661,12 +738,15 @@ int main(int argc, char *argv[])
         bit = t38_non_ecm_buffer_get_bit((void *) &buffer);
         if (log_bits)
             printf("Rx bit %d - %d\n", n++, bit);
+        /*endif*/
         if (bit != 1)
         {
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     printf("    Sustaining ones OK\n");
 
     /* Now send some initial ones, and some TCF through, and see that only
@@ -682,22 +762,27 @@ int main(int argc, char *argv[])
         bit = t38_non_ecm_buffer_get_bit((void *) &buffer);
         if (log_bits)
             printf("Rx bit %d - %d\n", n++, bit);
+        /*endif*/
         if ((i < 4  &&  bit == 0)  ||  (i >= 4  &&  bit != 0))
         {
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     printf("    Passthrough of TCF OK\n");
     /* Check the right number of bits was buffered */
     bit = t38_non_ecm_buffer_get_bit((void *) &buffer);
     if (log_bits)
         printf("Rx bit %d - %d\n", n++, bit);
+    /*endif*/
     if (bit != SIG_STATUS_END_OF_DATA)
     {
         printf("Tests failed\n");
         exit(2);
     }
+    /*endif*/
     printf("    End of data seen OK\n");
     t38_non_ecm_buffer_report_input_status(&buffer, &logging);
     t38_non_ecm_buffer_report_output_status(&buffer, &logging);

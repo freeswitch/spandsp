@@ -117,31 +117,37 @@ int main(int argc, char *argv[])
             exit(2);
             break;
         }
+        /*endswitch*/
     }
+    /*endwhile*/
 
     if ((inhandle = sf_open_telephony_read(in_file_name, 1)) == NULL)
     {
         fprintf(stderr, "    Cannot open audio file '%s'\n", in_file_name);
         exit(2);
     }
+    /*endif*/
 
     if ((outhandle = sf_open_telephony_write(OUT_FILE_NAME, 1)) == NULL)
     {
         fprintf(stderr, "    Cannot create audio file '%s'\n", OUT_FILE_NAME);
         exit(2);
     }
+    /*endif*/
 
     if ((ima_enc_state = ima_adpcm_init(NULL, variant, enc_chunk_size)) == NULL)
     {
         fprintf(stderr, "    Cannot create encoder\n");
         exit(2);
     }
+    /*endif*/
 
     if ((ima_dec_state = ima_adpcm_init(NULL, variant, enc_chunk_size)) == NULL)
     {
         fprintf(stderr, "    Cannot create decoder\n");
         exit(2);
     }
+    /*endif*/
 
     hist_in = 0;
     hist_out = 0;
@@ -157,6 +163,7 @@ int main(int argc, char *argv[])
         ima_bytes = ima_adpcm_encode(ima_enc_state, ima_data, pre_amp, frames);
         if (log_encoded_data)
             write(1, ima_data, ima_bytes);
+        /*endif*/
         total_compressed_bytes += ima_bytes;
         dec_frames = ima_adpcm_decode(ima_dec_state, post_amp, ima_data, ima_bytes);
         total_post_samples += dec_frames;
@@ -165,28 +172,35 @@ int main(int argc, char *argv[])
             history[hist_in++] = pre_amp[i];
             if (hist_in >= HIST_LEN)
                 hist_in = 0;
+            /*endif*/
             pre_energy += (double) pre_amp[i] * (double) pre_amp[i];
         }
+        /*endfor*/
         for (i = 0;  i < dec_frames;  i++)
         {
             post_energy += (double) post_amp[i] * (double) post_amp[i];
             xx = post_amp[i] - history[hist_out++];
             if (hist_out >= HIST_LEN)
                 hist_out = 0;
+            /*endif*/
             diff_energy += (double) xx * (double) xx;
         }
+        /*endfor*/
         sf_writef_short(outhandle, post_amp, dec_frames);
     }
+    /*endwhile*/
     if (sf_close_telephony(inhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", in_file_name);
         exit(2);
     }
+    /*endif*/
     if (sf_close_telephony(outhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
         exit(2);
     }
+    /*endif*/
     ima_adpcm_free(ima_enc_state);
     ima_adpcm_free(ima_dec_state);
 
@@ -203,6 +217,7 @@ int main(int argc, char *argv[])
         printf("Tests failed.\n");
         exit(2);
     }
+    /*endif*/
 
     printf("Tests passed.\n");
     return 0;

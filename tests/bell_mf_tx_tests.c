@@ -62,6 +62,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "    Cannot open audio file '%s'\n", OUTPUT_FILE_NAME);
         exit(2);
     }
+    /*endif*/
 
     gen = bell_mf_tx_init(NULL);
     len = bell_mf_tx(gen, amp, 16384);
@@ -69,21 +70,25 @@ int main(int argc, char *argv[])
     sf_writef_short(outhandle, amp, len);
     if (bell_mf_tx_put(gen, "123", -1))
         printf("Ooops\n");
+    /*endif*/
     len = bell_mf_tx(gen, amp, 16384);
     printf("Generated %d samples\n", len);
     sf_writef_short(outhandle, amp, len);
     if (bell_mf_tx_put(gen, "456", -1))
         printf("Ooops\n");
+    /*endif*/
     len = bell_mf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     sf_writef_short(outhandle, amp, len);
     if (bell_mf_tx_put(gen, "789", -1))
         printf("Ooops\n");
+    /*endif*/
     len = bell_mf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     sf_writef_short(outhandle, amp, len);
     if (bell_mf_tx_put(gen, "*#", -1))
         printf("Ooops\n");
+    /*endif*/
     len = bell_mf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     sf_writef_short(outhandle, amp, len);
@@ -94,6 +99,7 @@ int main(int argc, char *argv[])
         printf("Generated %d samples\n", len);
         if (len > 0)
             sf_writef_short(outhandle, amp, len);
+        /*endif*/
         if (add_digits)
         {
             if (bell_mf_tx_put(gen, "1234567890", -1))
@@ -101,7 +107,9 @@ int main(int argc, char *argv[])
                 printf("Digit buffer full\n");
                 add_digits = 0;
             }
+            /*endif*/
         }
+        /*endif*/
     }
     while (len > 0);
 
@@ -111,26 +119,31 @@ int main(int argc, char *argv[])
     sf_writef_short(outhandle, amp, len);
     if (bell_mf_tx_put(gen, "123", -1))
         printf("Ooops\n");
+    /*endif*/
     len = bell_mf_tx(gen, amp, 16384);
     printf("Generated %d samples\n", len);
     sf_writef_short(outhandle, amp, len);
     if (bell_mf_tx_put(gen, "456", -1))
         printf("Ooops\n");
+    /*endif*/
     len = bell_mf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     sf_writef_short(outhandle, amp, len);
     if (bell_mf_tx_put(gen, "789", -1))
         printf("Ooops\n");
+    /*endif*/
     len = bell_mf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     sf_writef_short(outhandle, amp, len);
     if (bell_mf_tx_put(gen, "0*#", -1))
         printf("Ooops\n");
+    /*endif*/
     len = bell_mf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     sf_writef_short(outhandle, amp, len);
     if (bell_mf_tx_put(gen, "ABC", -1))
         printf("Ooops\n");
+    /*endif*/
     len = bell_mf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     sf_writef_short(outhandle, amp, len);
@@ -141,6 +154,7 @@ int main(int argc, char *argv[])
         printf("Generated %d samples\n", len);
         if (len > 0)
             sf_writef_short(outhandle, amp, len);
+        /*endif*/
         if (add_digits)
         {
             if (bell_mf_tx_put(gen, "1234567890", -1))
@@ -148,7 +162,9 @@ int main(int argc, char *argv[])
                 printf("Digit buffer full\n");
                 add_digits = 0;
             }
+            /*endif*/
         }
+        /*endif*/
     }
     while (len > 0);
 
@@ -157,6 +173,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
         exit (2);
     }
+    /*endif*/
     bell_mf_tx_free(gen);
 
     return 0;

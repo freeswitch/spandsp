@@ -75,6 +75,7 @@ static int row_read_handler(void *user_data, uint8_t buf[], size_t len)
         clip_to_row = 0;
         return 0;
     }
+    /*endif*/
     read_row++;
     return len;
 }
@@ -98,6 +99,7 @@ static int comment_handler(void *user_data, const uint8_t buf[], size_t len)
         printf("Comment (%lu): %s\n", (unsigned long int) len, buf);
     else
         printf("Comment (%lu): ---\n", (unsigned long int) len);
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -138,17 +140,24 @@ static void create_test_image(uint8_t *pic)
                     {
                         repeat[j & 7] = 0;
                     }
+                    /*endif*/
                 }
                 else
                 {
                     if (repeat[j & 7])
                         *p |= 1 << (7 - (j & 7));
+                    /*endif*/
                 }
+                /*endif*/
             }
+            /*endif*/
             if ((j & 7) == 7)
                 ++p;
+            /*endif*/
         }
+        /*endfor*/
     }
+    /*endfor*/
 
     /* Verify the test image has been generated OK, by checking the number of set pixels */
     sum = 0;
@@ -156,12 +165,15 @@ static void create_test_image(uint8_t *pic)
     {
         for (j = 0;  j < 8;  j++)
             sum += ((pic[i] >> j) & 1);
+        /*endfor*/
     }
+    /*endfor*/
     if (sum != 861965)
     {
         printf("WARNING: Test image has %" PRIu32 " foreground pixels. There should be 861965.\n",
                sum);
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -210,12 +222,14 @@ static int test_cycle(const char *test_id,
         t85_enc = t85_encode_init(NULL, width, height, row_read_handler, NULL);
         clip_to_row = 0;
     }
+    /*endif*/
     read_row = 0;
     t85_encode_set_options(t85_enc, l0, mx, options);
     /* A comment inserted here should always succeed. The later one, inserted some way
        down the image, will only succeed if a new chunk is started afterwards. */
     if (comment)
         t85_encode_comment(t85_enc, comment, strlen((const char *) comment) + 1);
+    /*endif*/
 
     testbuf_len = 0;
     max_len = 100;
@@ -225,9 +239,12 @@ static int test_cycle(const char *test_id,
         max_len = 100;
         if (testbuf_len + 100 > TESTBUF_SIZE)
             max_len = TESTBUF_SIZE - testbuf_len;
+        /*endif*/
         if (comment  &&  testbuf_len == 1000)
             t85_encode_comment(t85_enc, comment, strlen((const char *) comment) + 1);
+        /*endif*/
     }
+    /*endwhile*/
     printf("Encoded BIE has %lu bytes\n", (unsigned long int) testbuf_len);
     if (correct_length > 0)
     {
@@ -237,8 +254,10 @@ static int test_cycle(const char *test_id,
             printf("Test failed\n");
             exit(2);
         }
+        /*endif*/
         printf("Test passed\n");
     }
+    /*endif*/
 
     cnt_a = t85_encode_get_compressed_image_size(t85_enc);
     t85_encode_free(t85_enc);
@@ -249,13 +268,16 @@ static int test_cycle(const char *test_id,
         fprintf(stderr, "Out of memory!\n");
         exit(2);
     }
+    /*endif*/
     t85_dec = t85_decode_init(NULL, row_write_handler, decoded_image);
     if (comment  &&  comment[0] != 'X')
         t85_decode_set_comment_handler(t85_dec, 1000, comment_handler, NULL);
+    /*endif*/
     write_row = 0;
     result = t85_decode_put(t85_dec, testbuf, testbuf_len);
     if (result == T4_DECODE_MORE_DATA)
         result = t85_decode_put(t85_dec, NULL, 0);
+    /*endif*/
     cnt_b = t85_decode_get_compressed_image_size(t85_dec);
     if (cnt_a != cnt_b  ||  cnt_a != testbuf_len*8  ||  result != T4_DECODE_OK)
     {
@@ -268,12 +290,14 @@ static int test_cycle(const char *test_id,
         printf("Test failed\n");
         exit(2);
     }
+    /*endif*/
     if (memcmp(decoded_image, image, image_size))
     {
         printf("Image mismatch\n");
         printf("Test failed\n");
         exit(2);
     }
+    /*endif*/
     free(decoded_image);
     t85_decode_free(t85_dec);
     printf("Test passed\n");
@@ -284,9 +308,11 @@ static int test_cycle(const char *test_id,
         fprintf(stderr, "Out of memory!\n");
         exit(2);
     }
+    /*endif*/
     t85_dec = t85_decode_init(NULL, row_write_handler, decoded_image);
     if (comment  &&  comment[0] != 'X')
         t85_decode_set_comment_handler(t85_dec, 1000, comment_handler, NULL);
+    /*endif*/
     write_row = 0;
     result = T4_DECODE_MORE_DATA;
     for (l = 0;  l < testbuf_len;  l++)
@@ -297,9 +323,12 @@ static int test_cycle(const char *test_id,
             l++;
             break;
         }
+        /*endif*/
     }
+    /*endfor*/
     if (result == T4_DECODE_MORE_DATA)
         result = t85_decode_put(t85_dec, NULL, 0);
+    /*endif*/
     if (l != testbuf_len  ||  result != T4_DECODE_OK)
     {
         printf("Decode result %d\n", result);
@@ -310,12 +339,14 @@ static int test_cycle(const char *test_id,
         printf("Test failed\n");
         exit(2);
     }
+    /*endif*/
     if (memcmp(decoded_image, image, image_size))
     {
         printf("Image mismatch\n");
         printf("Test failed\n");
         exit(2);
     }
+    /*endif*/
     free(decoded_image);
     t85_decode_free(t85_dec);
     printf("Test passed\n");

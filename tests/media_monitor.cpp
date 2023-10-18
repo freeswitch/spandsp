@@ -88,6 +88,7 @@ void media_monitor_rx(int seq_no, double departure_time, double arrival_time)
 
     if (s->received_delays)
         delete s->received_delays;
+    /*endif*/
 
     s->canvas_received->current(s->canvas_received);
     fdiff = (arrival_time - departure_time)*1000.0;
@@ -96,27 +97,32 @@ void media_monitor_rx(int seq_no, double departure_time, double arrival_time)
         diff = 0;
     else if (diff > 1999)
         diff = 1999;
+    /*endif*/
     s->received_delays_plot[2*diff + 1]++;
     if (s->received_delays_plot[2*diff + 1] > s->received_delays_plot_max)
     {
         s->received_delays_plot_max = s->received_delays_plot[2*diff + 1];
         s->received_y->maximum(s->received_delays_plot_max);
     }
+    /*endif*/
     if (diff > s->max_diff)
     {
         s->max_diff = diff;
         s->received_x->maximum((double) s->max_diff);
     }
+    /*endif*/
     if (diff < s->min_diff)
     {
         s->min_diff = diff - 1;
         s->received_x->minimum((double) s->min_diff);
     }
+    /*endif*/
 
     s->received_delays = new Ca_Line(2000, s->received_delays_plot, 0, 0, FL_BLUE, CA_NO_POINT);
 
     if (s->sent_re)
         delete s->sent_re;
+    /*endif*/
 
     s->canvas_sent->current(s->canvas_sent);
 
@@ -124,7 +130,9 @@ void media_monitor_rx(int seq_no, double departure_time, double arrival_time)
     {
         for (i = s->highest_seq_no_seen + 1;  i < seq_no;  i++)
             s->sent_re_plot[2*(i%500) + 1] = 0.0;
+        /*endfor*/
     }
+    /*endif*/
     s->sent_re_plot[2*(seq_no%500) + 1] = fdiff;
 
     if (fdiff > s->sent_re_plot_max)
@@ -132,21 +140,25 @@ void media_monitor_rx(int seq_no, double departure_time, double arrival_time)
         s->sent_re_plot_max = fdiff;
         s->sent_y->maximum(s->sent_re_plot_max);
     }
+    /*endif*/
     if (fdiff < s->sent_re_plot_min)
     {
         s->sent_re_plot_min = fdiff - 1.0;
         s->sent_y->minimum(s->sent_re_plot_min);
     }
+    /*endif*/
     s->sent_re = new Ca_Line(500, s->sent_re_plot, 0, 0, FL_BLUE, CA_NO_POINT);
 
     if (seq_no > s->highest_seq_no_seen)
         s->highest_seq_no_seen = seq_no;
+    /*endif*/
 
     if (++skip >= 100)
     {
         skip = 0;
         Fl::check();
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -252,6 +264,7 @@ int start_media_monitor(void)
 
     for (i = 0;  i < 2000;  i++)
         s->received_delays_plot[2*i] = i;
+    /*endfor*/
     s->received_delays_plot_max = 0.0;
     s->min_diff = 2000;
     s->max_diff = 0;
@@ -261,6 +274,7 @@ int start_media_monitor(void)
 
     for (i = 0;  i < 500;  i++)
         s->sent_re_plot[2*i] = i;
+    /*endfor*/
     s->sent_re_plot_min = 99999.0;
     s->sent_re_plot_max = 0.0;
     s->sent_re = NULL;

@@ -48,10 +48,10 @@ EXTRA_DIST = fax_tests.sh \
              msvc/v22bis_tests.2012.vcxproj.filters \
              msvc/v29_tests.2012.vcxproj \
              msvc/v29_tests.2012.vcxproj.filters \
-             msvc/v80_tests.2012.vcxproj \
-             msvc/v80_tests.2012.vcxproj.filters \
              msvc/v8_tests.2012.vcxproj \
              msvc/v8_tests.2012.vcxproj.filters \
+             msvc/v80_tests.2012.vcxproj \
+             msvc/v80_tests.2012.vcxproj.filters \
              msvc/vector_float_tests.2012.vcxproj \
              msvc/vector_float_tests.2012.vcxproj.filters \
              msvc/vector_int_tests.2012.vcxproj \
@@ -153,7 +153,6 @@ noinst_PROGRAMS =   ademco_contactid_tests \
                     tone_detect_tests \
                     tone_generate_tests \
                     tsb85_tests \
-                    v150_1_sse_tests \
                     v150_1_tests \
                     v17_tests \
                     v18_tests \
@@ -347,7 +346,7 @@ sprt_decode_SOURCES = sprt_decode.c pcap_parse.c
 sprt_decode_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(BASE_LIBS)
 
 sprt_tests_SOURCES = sprt_tests.c socket_dgram_harness.c pseudo_terminals.c
-sprt_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(BASE_LIBS) -luv
+sprt_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(BASE_LIBS)
 
 super_tone_rx_tests_SOURCES = super_tone_rx_tests.c
 super_tone_rx_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(BASE_LIBS)
@@ -409,11 +408,8 @@ tone_generate_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(BASE_L
 tsb85_tests_SOURCES = tsb85_tests.c fax_utils.c fax_tester.c
 tsb85_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(BASE_LIBS)
 
-v150_1_tests_SOURCES = v150_1_tests.c
+v150_1_tests_SOURCES = v150_1_tests.c socket_dgram_harness.c pseudo_terminals.c
 v150_1_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(BASE_LIBS)
-
-v150_1_sse_tests_SOURCES = v150_1_sse_tests.c socket_dgram_harness.c pseudo_terminals.c
-v150_1_sse_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(BASE_LIBS)
 
 v17_tests_SOURCES = v17_tests.c line_model_monitor.cpp modem_monitor.cpp
 v17_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(BASE_LIBS)

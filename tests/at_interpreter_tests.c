@@ -446,8 +446,10 @@ static int at_send_hdlc(at_state_t *s, uint8_t *t, int len)
     {
         if (*t == DLE)
             buf[j++] = DLE;
+        /*endif*/
         buf[j++] = *t++;
     }
+    /*endfor*/
     buf[j++] = DLE;
     buf[j++] = ETX;
     at_rx(s, (char *) buf, j);
@@ -473,7 +475,9 @@ static int general_test(at_state_t *s)
             printf("Received: '%s'\n", response_buf);
             return -1;
         }
+        /*endif*/
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -543,6 +547,7 @@ static int at_tx_handler(void *user_data, const uint8_t *buf, size_t len)
         response_buf[response_buf_ptr++] = buf[i];
         putchar(buf[i]);
     }
+    /*endfor*/
     response_buf[response_buf_ptr] = '\0';
 
     return 0;
@@ -558,11 +563,13 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Cannot start the AT interpreter\n");
         exit(2);
     }
+    /*endif*/
     if (general_test(at_state))
     {
         printf("Tests failed.\n");
         exit(2);
     }
+    /*endif*/
     printf("Tests passed.\n");
     at_free(at_state);
     return 0;

@@ -105,6 +105,7 @@ static void reporter(void *user_data, int reason, bert_results_t *results)
         fprintf(stderr, "%p - BERT report %s\n", user_data, bert_event_to_str(reason));
         break;
     }
+    /*endswitch*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -132,8 +133,10 @@ static void v32bis_rx_status(void *user_data, int status)
 #else
             printf("%p: %3d (%15.5f, %15.5f) -> %15.5f\n", user_data, i, coeffs[i].re, coeffs[i].im, powerf(&coeffs[i]));
 #endif
+        /*endfor*/
         break;
     }
+    /*endswitch*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -144,6 +147,7 @@ static void v32bis_putbit(void *user_data, int bit)
         v32bis_rx_status(user_data, bit);
         return;
     }
+    /*endif*/
 
     if (decode_test_file)
     {
@@ -155,7 +159,9 @@ static void v32bis_putbit(void *user_data, int bit)
             bert_put_bit(&caller_bert, bit);
         else
             bert_put_bit(&answerer_bert, bit);
+        /*endif*/
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -163,6 +169,7 @@ static int v32bis_getbit(void *user_data)
 {
     if (user_data == (void *) &caller)
         return bert_get_bit(&caller_bert);
+    /*endif*/
     return bert_get_bit(&answerer_bert);
 }
 /*- End of function --------------------------------------------------------*/
@@ -202,6 +209,7 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
             qam_monitor_update_carrier_tracking(s->qam_monitor, v32bis_rx_carrier_frequency(s->s));
             qam_monitor_update_symbol_tracking(s->qam_monitor, v32bis_rx_symbol_timing_correction(s->s));
         }
+        /*endif*/
 #endif
         printf("%8d [%8.4f, %8.4f] [%8.4f, %8.4f] %2x %8.4f %8.4f %9.4f %7.3f %7.4f\n",
                s->symbol_no,
@@ -229,6 +237,7 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
 #else
                 printf("%3d (%15.5f, %15.5f) -> %15.5f\n", i, coeffs[i].re, coeffs[i].im, powerf(&coeffs[i]));
 #endif
+            /*endfor*/
 #if defined(ENABLE_GUI)
             if (use_gui)
             {
@@ -238,6 +247,7 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
                 qam_monitor_update_equalizer(s->qam_monitor, coeffs, len);
 #endif
             }
+            /*endif*/
 #endif
         }
     }
@@ -294,6 +304,7 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "Invalid bit rate specified\n");
                 exit(2);
             }
+            /*endif*/
             break;
         case 'B':
             bits_per_test = atoi(optarg);
@@ -329,7 +340,9 @@ int main(int argc, char *argv[])
             exit(2);
             break;
         }
+        /*endswitch*/
     }
+    /*endwhile*/
     outhandle = NULL;
 
     if (log_audio)
@@ -339,7 +352,9 @@ int main(int argc, char *argv[])
             fprintf(stderr, "    Cannot create audio file '%s'\n", OUT_FILE_NAME);
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
 
     v32bis_init(&caller, test_bps, true, v32bis_getbit, &caller, v32bis_putbit, &caller);
     v32bis_tx_power(&caller, signal_level);
@@ -373,6 +388,7 @@ int main(int argc, char *argv[])
         qam_caller.qam_monitor = qam_monitor_init(10.0f, V32BIS_CONSTELLATION_SCALING_FACTOR, "Calling modem");
         qam_answerer.qam_monitor = qam_monitor_init(10.0f, V32BIS_CONSTELLATION_SCALING_FACTOR, "Answering modem");
     }
+    /*endif*/
 #endif
     bert_init(&caller_bert, bits_per_test, BERT_PATTERN_ITU_O152_11, test_bps, 20);
     bert_set_report(&caller_bert, 10000, reporter, &caller);
@@ -392,6 +408,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "    Failed to create line model\n");
         exit(2);
     }
+    /*endif*/
     for (;;)
     {
         samples = v32bis_tx(&caller, caller_amp, BLOCK_LEN);
@@ -408,11 +425,13 @@ int main(int argc, char *argv[])
             bert_init(&answerer_bert, bits_per_test, BERT_PATTERN_ITU_O152_11, test_bps, 20);
             bert_set_report(&answerer_bert, 10000, reporter, &answerer);
         }
+        /*endif*/
 
         samples = v32bis_tx(&answerer, answerer_amp, BLOCK_LEN);
 #if defined(ENABLE_GUI)
         if (use_gui)
             qam_monitor_update_audio_level(qam_answerer.qam_monitor, answerer_amp, samples);
+        /*endif*/
 #endif
         if (samples == 0)
         {
@@ -423,6 +442,7 @@ int main(int argc, char *argv[])
             bert_init(&answerer_bert, bits_per_test, BERT_PATTERN_ITU_O152_11, test_bps, 20);
             bert_set_report(&answerer_bert, 10000, reporter, &answerer);
         }
+        /*endif*/
         both_ways_line_model(model,
                              caller_model_amp,
                              caller_amp,
@@ -432,14 +452,18 @@ int main(int argc, char *argv[])
         v32bis_rx(&answerer, caller_model_amp, samples);
         for (i = 0;  i < samples;  i++)
             out_amp[2*i] = caller_model_amp[i];
+        /*endfor*/
         for (  ;  i < BLOCK_LEN;  i++)
             out_amp[2*i] = 0;
+        /*endfor*/
 
         v32bis_rx(&caller, answerer_model_amp, samples);
         for (i = 0;  i < samples;  i++)
             out_amp[2*i + 1] = answerer_model_amp[i];
+        /*endfor*/
         for (  ;  i < BLOCK_LEN;  i++)
             out_amp[2*i + 1] = 0;
+        /*endfor*/
 
         if (log_audio)
         {
@@ -449,8 +473,11 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "    Error writing audio file\n");
                 exit(2);
             }
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endfor*/
     if (!decode_test_file)
     {
         bert_result(&answerer_bert, &bert_results);
@@ -465,9 +492,11 @@ int main(int argc, char *argv[])
             printf("Tests failed.\n");
             exit(2);
         }
+        /*endif*/
 
         printf("Tests passed.\n");
     }
+    /*endif*/
     v32bis_free(&caller);
     v32bis_free(&answerer);
     if (log_audio)
@@ -477,7 +506,9 @@ int main(int argc, char *argv[])
             fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

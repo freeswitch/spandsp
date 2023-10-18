@@ -107,8 +107,8 @@
 #include <spandsp/private/adsi.h>
 #include <spandsp/private/ademco_contactid.h>
 #include <spandsp/private/sprt.h>
-#include <spandsp/private/v150_1.h>
 #include <spandsp/private/v150_1_sse.h>
+#include <spandsp/private/v150_1.h>
 
 #endif
 /*- End of file ------------------------------------------------------------*/

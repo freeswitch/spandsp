@@ -70,6 +70,14 @@
 #define SPRT_MAX_MAX_TRIES                          20
 #define SPRT_DEFAULT_MAX_TRIES                      10
 
+enum sprt_status_e
+{
+    SPRT_STATUS_OK                                  = 0,
+    SPRT_STATUS_EXCESS_RETRIES                      = 1,
+    SPRT_STATUS_SUBSESSION_CHANGED                  = 2,
+    SPRT_STATUS_OUT_OF_SEQUENCE                     = 3
+};
+
 /* This view of the transmission channels divides them into an overall range, and a reliable subset
    range within the overall range. */
 enum sprt_tcid_range_view_e
@@ -190,9 +198,9 @@ SPAN_DECLARE(logging_state_t *) sprt_get_logging_state(sprt_state_t *s);
     \param status_user_data An opaque pointer supplied to status_handler.
     \return A pointer to the SPRT context, or NULL if there was a problem. */
 SPAN_DECLARE(sprt_state_t *) sprt_init(sprt_state_t *s,
-                                       int subsession_id,
-                                       int rx_payload_type,
-                                       int tx_payload_type,
+                                       uint8_t subsession_id,
+                                       uint8_t rx_payload_type,
+                                       uint8_t tx_payload_type,
                                        channel_parms_t parms[SPRT_CHANNELS],
                                        sprt_tx_packet_handler_t tx_packet_handler,
                                        void *tx_user_data,

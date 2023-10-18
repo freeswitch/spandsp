@@ -95,18 +95,23 @@ int main(int argc, char *argv[])
             exit(2);
             break;
         }
+        /*endswitch*/
     }
+    /*endwhile*/
+
     memset(&info, 0, sizeof(info));
     if ((inhandle = sf_open(in_file_name, SFM_READ, &info)) == NULL)
     {
         printf("    Cannot open audio file '%s'\n", in_file_name);
         exit(2);
     }
+    /*endif*/
     if (info.channels != 1)
     {
         printf("    Unexpected number of channels in audio file '%s'\n", in_file_name);
         exit(2);
     }
+    /*endif*/
     sample_rate = info.samplerate;
 
     memset(&info, 0, sizeof(info));
@@ -122,12 +127,14 @@ int main(int argc, char *argv[])
         fprintf(stderr, "    Cannot create audio file '%s'\n", OUT_FILE_NAME);
         exit(2);
     }
+    /*endif*/
 
     if ((time_scale_init(&state, (int) sample_rate, rate)) == NULL)
     {
         fprintf(stderr, "    Cannot start the time scaler\n");
         exit(2);
     }
+    /*endif*/
     max = time_scale_max_output_len(&state, BLOCK_LEN);
     printf("Rate is %f, longest output block is %d\n", rate, max);
     count = 0;
@@ -143,6 +150,7 @@ int main(int argc, char *argv[])
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
         samples_out += new_frames;
         out_frames = sf_writef_short(outhandle, out, new_frames);
         if (out_frames != new_frames)
@@ -150,6 +158,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "    Error writing audio file\n");
             exit(2);
         }
+        /*endif*/
         if (sweep_rate  &&  ++count > 100)
         {
             if (rate > 0.5f)
@@ -161,9 +170,12 @@ int main(int argc, char *argv[])
                 max = time_scale_max_output_len(&state, BLOCK_LEN);
                 printf("Rate is %f, longest output block is %d\n", rate, max);
             }
+            /*endif*/
             count = 0;
         }
+        /*endif*/
     }
+    /*endwhile*/
     new_frames = time_scale_flush(&state, out);
     if (new_frames > max)
     {
@@ -171,6 +183,7 @@ int main(int argc, char *argv[])
         printf("Tests failed\n");
         exit(2);
     }
+    /*endif*/
     samples_out += new_frames;
     out_frames = sf_writef_short(outhandle, out, new_frames);
     if (out_frames != new_frames)
@@ -178,6 +191,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "    Error writing audio file\n");
         exit(2);
     }
+    /*endif*/
     time_scale_release(&state);
     if ((int) (rate*samples_in) < samples_out - 1  ||  (int) (rate*samples_in) > samples_out + 1)
     {
@@ -185,16 +199,19 @@ int main(int argc, char *argv[])
         printf("Tests failed\n");
         exit(2);
     }
+    /*endif*/
     if (sf_close(inhandle))
     {
         printf("    Cannot close audio file '%s'\n", in_file_name);
         exit(2);
     }
+    /*endif*/
     if (sf_close(outhandle))
     {
         printf("    Cannot close audio file '%s'\n", OUT_FILE_NAME);
         exit(2);
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

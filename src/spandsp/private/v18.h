@@ -79,7 +79,7 @@ struct v18_state_s
     bool repeat_shifts;
     bool autobauding;
     /* The stored message is used during probing. See V.18/5.2.12.1 */
-    uint8_t stored_message[81];
+    char stored_message[81];
     int current_mode;
     int tx_state;
     int rx_state;

@@ -75,13 +75,16 @@ static void message_handler(void *user_data, int level, const char *text)
 
     if (ref[msg_step][0] == '\0')
         return;
+    /*endif*/
     if (strcmp(ref[msg_step], text))
     {
         printf(">>>: %s", ref[msg_step]);
         tests_failed = true;
     }
+    /*endif*/
     if (ref[++msg_step][0] == '\0')
         msg_done = true;
+    /*endif*/
     printf("MSG: %s", text);
 }
 /*- End of function --------------------------------------------------------*/
@@ -94,8 +97,10 @@ static void message_handler2(void *user_data, int level, const char *text)
         printf(">>>: %s", text + 23);
         tests_failed = true;
     }
+    /*endif*/
     if (++msg2_step == 10)
         msg2_done = true;
+    /*endif*/
     printf("MSG: %s", text);
 }
 /*- End of function --------------------------------------------------------*/
@@ -113,12 +118,14 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Failed to initialise log.\n");
         exit(2);
     }
+    /*endif*/
     /* Try it */
     span_log_set_level(log, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_FLOW);
     if (span_log(log, SPAN_LOG_FLOW, "Logging to fprintf, as simple as %d %d %d\n", 1, 2, 3))
         fprintf(stderr, "Logged.\n");
     else
         fprintf(stderr, "Not logged.\n");
+    /*endif*/
 
     /* Now set a custom log handler */
     span_log_set_message_handler(log, &message_handler, NULL);
@@ -130,16 +137,21 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Logged.\n");
     else
         fprintf(stderr, "Not logged.\n");
+    /*endif*/
+
     span_log_set_level(log, SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     if (span_log(log, SPAN_LOG_FLOW, "Log with protocol %d %d %d\n", 1, 2, 3))
         fprintf(stderr, "Logged.\n");
     else
         fprintf(stderr, "Not logged.\n");
+    /*endif*/
+
     span_log_set_level(log, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_FLOW);
     if (span_log(log, SPAN_LOG_ERROR, "Log with severity log %d %d %d\n", 1, 2, 3))
         fprintf(stderr, "Logged.\n");
     else
         fprintf(stderr, "Not logged.\n");
+    /*endif*/
 
     span_log_set_level(log, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_FLOW);
     span_log_set_tag(log, "NewTag");
@@ -147,24 +159,29 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Logged.\n");
     else
         fprintf(stderr, "Not logged.\n");
+    /*endif*/
 
     span_log_set_protocol(log, "Protocol");
     if (span_log(log, SPAN_LOG_FLOW, "Log with protocol %d %d %d\n", 1, 2, 3))
         fprintf(stderr, "Logged.\n");
     else
         fprintf(stderr, "Not logged.\n");
+    /*endif*/
 
     /* Test logging of buffer contents */
     for (i = 0;  i < 1000;  i++)
         buf[i] = i;
+    /*endfor*/
     if (span_log_buf(log, SPAN_LOG_FLOW, "Buf", buf, 10))
         fprintf(stderr, "Logged.\n");
     else
         fprintf(stderr, "Not logged.\n");
+    /*endif*/
     if (span_log_buf(log, SPAN_LOG_FLOW, "Buf", buf, 1000))
         fprintf(stderr, "Logged.\n");
     else
         fprintf(stderr, "Not logged.\n");
+    /*endif*/
 
     /* Test the correct severities will be logged */
     for (i = 0;  i < 10;  i++)
@@ -173,9 +190,12 @@ int main(int argc, char *argv[])
         {
             if (i != 6)
                 tests_failed = true;
+            /*endif*/
             break;
         }
+        /*endif*/
     }
+    /*endfor*/
 
     /* Check timestamping by samples */
     span_log_set_level(log, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_FLOW | SPAN_LOG_SHOW_SAMPLE_TIME);
@@ -184,6 +204,7 @@ int main(int argc, char *argv[])
         span_log(log, SPAN_LOG_FLOW, "Time tagged log %d %d %d\n", 1, 2, 3);
         span_log_bump_samples(log, 441*2);
     }
+    /*endfor*/
 
     /* Check timestamping by current date and time */
     span_log_set_message_handler(log, &message_handler2, NULL);
@@ -195,11 +216,13 @@ int main(int argc, char *argv[])
         delay.tv_nsec = 20000000;
         nanosleep(&delay, NULL);
     }
+    /*endfor*/
     if (tests_failed  ||  !msg_done)
     {
         printf("Tests failed - %d %d.\n", tests_failed, msg_done);
         return 2;
     }
+    /*endif*/
 
     span_log_set_message_handler(log, &message_handler, NULL);
 

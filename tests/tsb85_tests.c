@@ -106,12 +106,14 @@ static void exchange(faxtester_state_t *s)
 
     s->far_fax = fax_init(NULL, false);
     s->far_t30 = fax_get_t30_state(s->far_fax);
+
     s->far_tag = 'A';
 
     if (s->far_fax)
         logging = fax_get_logging_state(s->far_fax);
     else
         logging = t38_terminal_get_logging_state(s->far_t38);
+    /*endif*/
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
 
@@ -182,6 +184,7 @@ static void exchange(faxtester_state_t *s)
                     printf("Test failed\n");
                     exit(2);
                 }
+                /*endif*/
                 span_log(faxtester_get_logging_state(s), SPAN_LOG_FLOW, "Clear time OK\n");
                 s->far_end_cleared_call = true;
                 s->test_for_call_clear = false;
@@ -237,11 +240,14 @@ int main(int argc, char *argv[])
             exit(2);
             break;
         }
+        /*endswitch*/
     }
+    /*endwhile*/
     argc -= optind;
     argv += optind;
     if (argc > 0)
         test_name = argv[0];
+    /*endif*/
 
     if ((state = faxtester_init(NULL, xml_file_name, test_name)) == NULL)
     {
@@ -249,6 +255,7 @@ int main(int argc, char *argv[])
         printf("Test failed\n");
         exit(2);
     }
+    /*endif*/
     logging = faxtester_get_logging_state(state);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");

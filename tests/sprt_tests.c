@@ -64,7 +64,7 @@ int max_payloads[SPRT_CHANNELS];
 int pace_no = 0;
 
 span_timestamp_t pace_timer = 0;
-span_timestamp_t app_timer = 0;
+span_timestamp_t sprt_timer = 0;
 
 bool send_messages = false;
 
@@ -326,15 +326,15 @@ static void timer_callback(void *user_data)
         pace_timer += 20000;
     }
     /*endif*/
-    if (app_timer  &&  now >= app_timer)
+    if (sprt_timer  &&  now >= sprt_timer)
     {
         fprintf(stderr, "SPRT timer expired at %lu\n", now);
-        app_timer = 0;
+        sprt_timer = 0;
         sprt_timer_expired((sprt_state_t *) user_data, now);
     }
     /*endif*/
-    if (app_timer  &&  app_timer < pace_timer)
-        socket_dgram_harness_timer = app_timer;
+    if (sprt_timer  &&  sprt_timer < pace_timer)
+        socket_dgram_harness_timer = sprt_timer;
     else
         socket_dgram_harness_timer = pace_timer;
     /*endif*/
@@ -349,7 +349,7 @@ static span_timestamp_t timer_handler(void *user_data, span_timestamp_t timeout)
     if (timeout == 0)
     {
         fprintf(stderr, "SPRT timer stopped at %lu\n", now);
-        app_timer = 0;
+        sprt_timer = 0;
         socket_dgram_harness_timer = pace_timer;
     }
     else if (timeout == ~0)
@@ -363,8 +363,8 @@ static span_timestamp_t timer_handler(void *user_data, span_timestamp_t timeout)
         if (timeout < now)
             timeout = now;
         /*endif*/
-        app_timer = timeout;
-        if (app_timer < pace_timer)
+        sprt_timer = timeout;
+        if (sprt_timer < pace_timer)
             socket_dgram_harness_timer = timeout;
         /*endif*/
     }
@@ -404,7 +404,7 @@ static int sprt_tests(bool calling_party)
                                                  rx_callback,
                                                  tx_callback,
                                                  timer_callback,
-                                                 sprt_state)) == NULL)
+                                                 NULL)) == NULL)
     {
         fprintf(stderr, "    Cannot start the socket harness\n");
         exit(2);
@@ -429,11 +429,12 @@ static int sprt_tests(bool calling_party)
         exit(2);
     }
     /*endif*/
-    socket_dgram_harness_set_user_data(dgram_state, sprt_state);
 
     for (i = SPRT_TCID_MIN;  i <= SPRT_TCID_MAX;  i++) 
         max_payloads[i] = sprt_get_far_tc_payload_bytes(sprt_state, i);
     /*endfor*/
+
+    socket_dgram_harness_set_user_data(dgram_state, sprt_state);
 
     logging = sprt_get_logging_state(sprt_state);
     span_log_set_level(logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_DATE);

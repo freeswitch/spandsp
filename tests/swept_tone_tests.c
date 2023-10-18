@@ -60,6 +60,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "    Cannot create audio file '%s'\n", OUTPUT_FILE_NAME);
         exit(2);
     }
+    /*endif*/
 
     printf("Test with swept tone.\n");
     s = swept_tone_init(NULL, 200.0f, 3900.0f, -10.0f, 60*SAMPLE_RATE, true);
@@ -68,12 +69,14 @@ int main(int argc, char *argv[])
         len = swept_tone(s, buf, BLOCK_LEN);
         for (i = 0;  i < len;  i++)
             power_meter_update(&meter, buf[i]);
+        /*endfor*/
         outframes = sf_writef_short(outhandle, buf, len);
         if (outframes != len)
         {
             fprintf(stderr, "    Error writing audio file\n");
             exit(2);
         }
+        /*endif*/
 #if 0
         printf("Current freq %.1fHz, Level is %fdBOv/%fdBm0\n",
                swept_tone_current_frequency(s),
@@ -85,12 +88,14 @@ int main(int argc, char *argv[])
                power_meter_current_dbm0(&meter));
 #endif
     }
+    /*endfor*/
 
     if (sf_close_telephony(outhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
         exit(2);
     }
+    /*endif*/
 
     swept_tone_free(s);
 

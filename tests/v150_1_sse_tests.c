@@ -61,12 +61,12 @@ typedef struct
     uint32_t ssrc;
 } rtp_t;
 
-rtp_t rtp;
+rtp_t tx_sse_rtp;
 
 #define PACKET_TYPE     118
 
 socket_dgram_harness_state_t *dgram_state;
-v150_1_sse_state_t *v150_1_sse_state;
+v150_1_state_t *v150_1_state;
 
 int pace_no = 0;
 
@@ -87,7 +87,9 @@ static int rtp_fill(rtp_t *rtp, uint8_t *buf, int max_len, int pt, const uint8_t
     put_net_unaligned_uint32(&buf[4], rtp->time_stamp);
     put_net_unaligned_uint32(&buf[8], rtp->ssrc);
     memcpy(&buf[12], signal, signal_len);
-    rtp->seq_no++;
+    if (advance)
+        rtp->seq_no++;
+    /*endif*/
     rtp->time_stamp += advance;
     return 12 + signal_len;
 }
@@ -155,15 +157,7 @@ static void rx_callback(void *user_data, const uint8_t buf[], int len)
     signal_len = rtp_extract(&rtp, signal, 160, buf, len);
     if (rtp.pt == PACKET_TYPE)
     {
-        if (rtp.seq_no != seq - 1)
-        {
-            v150_1_sse_rx_packet((v150_1_sse_state_t *) user_data, rtp.seq_no, rtp.time_stamp, signal, signal_len);
-        }
-        else
-        {
-            fprintf(stderr, "Repeat packet\n");
-        }
-        /*endif*/
+        v150_1_sse_rx_packet((v150_1_state_t *) user_data, rtp.seq_no, rtp.time_stamp, signal, signal_len);
     }
     /*endif*/
     seq = rtp.seq_no + 1;
@@ -175,7 +169,7 @@ static int tx_callback(void *user_data, uint8_t buff[], int len)
 {
     int res;
 
-    res = v150_1_sse_tx_packet((v150_1_sse_state_t *) user_data, V150_1_SSE_MEDIA_STATE_MODEM_RELAY, V150_1_SSE_RIC_V32BIS_AA, 0);
+    res = v150_1_sse_tx_packet((v150_1_state_t *) user_data, V150_1_MEDIA_STATE_MODEM_RELAY, V150_1_SSE_RIC_V32BIS_AA, 0);
     return res;
 }
 /*- End of function --------------------------------------------------------*/
@@ -196,7 +190,7 @@ static int tx_packet_handler(void *user_data, bool repeat, const uint8_t pkt[], 
     /*endfor*/
     fprintf(stderr, "\n");
 
-    len2 = rtp_fill(&rtp, buf, 256, PACKET_TYPE, pkt, len, (repeat)  ?  0  :  160);
+    len2 = rtp_fill(&tx_sse_rtp, buf, 256, PACKET_TYPE, pkt, len, (repeat)  ?  0  :  160);
 
     s = (socket_dgram_harness_state_t *) user_data;
     /* We need a packet loss mechanism here */
@@ -228,12 +222,6 @@ static int tx_packet_handler(void *user_data, bool repeat, const uint8_t pkt[], 
 }
 /*- End of function --------------------------------------------------------*/
 
-static int status_handler(void *user_data, int status)
-{
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
 static void paced_operations(void)
 {
     //fprintf(stderr, "Pace at %lu\n", now_us());
@@ -241,7 +229,7 @@ static void paced_operations(void)
     if (send_messages  &&  (pace_no & 0x3F) == 0)
     {
         fprintf(stderr, "Sending paced message\n");
-        if (v150_1_sse_tx_packet(v150_1_sse_state, V150_1_SSE_MEDIA_STATE_MODEM_RELAY, V150_1_SSE_RIC_V32BIS_AA, 0) != 0)
+        if (v150_1_sse_tx_packet(v150_1_state, V150_1_MEDIA_STATE_MODEM_RELAY, V150_1_SSE_RIC_V32BIS_AA, 0) != 0)
             fprintf(stderr, "ERROR: Failed to send message\n");
         /*endif*/
 
@@ -271,7 +259,7 @@ static void timer_callback(void *user_data)
     {
         //fprintf(stderr, "V.150.1 SSE timer expired at %lu\n", now);
         app_timer = 0;
-        v150_1_sse_timer_expired((v150_1_sse_state_t *) user_data, now);
+        v150_1_sse_timer_expired((v150_1_state_t *) user_data, now);
     }
     /*endif*/
     if (app_timer  &&  app_timer < pace_timer)
@@ -282,45 +270,13 @@ static void timer_callback(void *user_data)
 }
 /*- End of function --------------------------------------------------------*/
 
-static span_timestamp_t timer_handler(void *user_data, span_timestamp_t timeout)
-{
-    span_timestamp_t now;
-
-    now = now_us();
-    if (timeout == 0)
-    {
-        fprintf(stderr, "V.150_1 SSE timer stopped at %lu\n", now);
-        app_timer = 0;
-        //socket_dgram_harness_timer = pace_timer;
-    }
-    else if (timeout == ~0)
-    {
-        fprintf(stderr, "V.150_1 SSE get the time %lu\n", now);
-        /* Just return the current time */
-    }
-    else
-    {
-        fprintf(stderr, "V.150_1 SSE timer set to %lu at %lu\n", timeout, now);
-        if (timeout < now)
-            timeout = now;
-        /*endif*/
-        app_timer = timeout;
-        //if (app_timer < pace_timer)
-        //    socket_dgram_harness_timer = timeout;
-        /*endif*/
-    }
-    /*endif*/
-    return now;
-}
-/*- End of function --------------------------------------------------------*/
-
 static int v150_1_sse_tests(bool calling_party)
 {
     logging_state_t *logging;
 
     send_messages = true; //calling_party;
 
-    memset(&rtp, 0, sizeof(rtp));
+    memset(&tx_sse_rtp, 0, sizeof(tx_sse_rtp));
 
     if ((dgram_state = socket_dgram_harness_init(NULL,
                                                  (calling_party)  ?  "/tmp/sse_socket_a"  :  "/tmp/sse_socket_b",
@@ -334,32 +290,28 @@ static int v150_1_sse_tests(bool calling_party)
                                                  rx_callback,
                                                  tx_callback,
                                                  timer_callback,
-                                                 v150_1_sse_state)) == NULL)
+                                                 v150_1_state)) == NULL)
     {
         fprintf(stderr, "    Cannot start the socket harness\n");
         exit(2);
     }
     /*endif*/
 
-    if ((v150_1_sse_state = v150_1_sse_init(NULL,
-                                            tx_packet_handler,
-                                            dgram_state,
-                                            status_handler,
-                                            dgram_state,
-                                            timer_handler,
-                                            dgram_state)) == NULL)
+    if ((v150_1_state = v150_1_sse_init(NULL,
+                                        tx_packet_handler,
+                                        dgram_state)) == NULL)
     {
         fprintf(stderr, "    Cannot start V.150.1 SSE\n");
         exit(2);
     }
     /*endif*/
-    socket_dgram_harness_set_user_data(dgram_state, v150_1_sse_state);
+    socket_dgram_harness_set_user_data(dgram_state, v150_1_state);
 
-    logging = v150_1_sse_get_logging_state(v150_1_sse_state);
+    logging = v150_1_get_logging_state(v150_1_state);
     span_log_set_level(logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_DATE);
     span_log_set_tag(logging, (calling_party)  ?  "C"  :  "A");
 
-    v150_1_sse_set_reliability_method(v150_1_sse_state, V150_1_SSE_RELIABILITY_BY_REPETITION, 3, 20000, 0);
+    v150_1_sse_set_reliability_method(v150_1_state, V150_1_SSE_RELIABILITY_BY_REPETITION, 3, 20000, 0);
     //v150_1_sse_set_reliability_method(v150_1_sse_state,
     //                                  V150_1_SSE_RELIABILITY_BY_EXPLICIT_ACK,
     //                                  V150_1_SSE_DEFAULT_N0,

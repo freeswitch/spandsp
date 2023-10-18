@@ -67,7 +67,9 @@ int main(int argc, char *argv[])
                    t35_real_country_code(i, 0),
                    (real_country)  ?  real_country  :  "???");
         }
+        /*endif*/
     }
+    /*endfor*/
 
     printf("\nSweep through all the possible vendors within each country\n");
     for (i = 0;  i < 256;  i++)
@@ -88,12 +90,17 @@ int main(int argc, char *argv[])
                         printf("%s\n", real_country);
                     else
                         printf("???\n");
+                    /*endif*/
                     first_hit = false;
                 }
+                /*endif*/
                 printf("    0x%02x 0x%02x 0x%02x '%s'\n", msg[0], msg[1], msg[2], vendor);
             }
+            /*endif*/
         }
+        /*endfor*/
     }
+    /*endfor*/
 
     printf("\nTry a decode of a full NSF string\n");
     t35_decode((uint8_t *) "\x00\x00\x0E\x00\x00\x00\x96\x0F\x01\x02\x00\x10\x05\x02\x95\xC8\x08\x01\x49\x02\x41\x53\x54\x47",

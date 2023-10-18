@@ -98,6 +98,7 @@ static int mitel_cm7291_side_2_and_bellcore_tests(void)
 
     if ((sender = ademco_contactid_sender_init(NULL, talkoff_tx_callback, NULL)) == NULL)
         return -1;
+    /*endif*/
     logging = ademco_contactid_sender_get_logging_state(sender);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "Ademco-tx");
@@ -118,22 +119,27 @@ static int mitel_cm7291_side_2_and_bellcore_tests(void)
             printf("    Cannot open speech file '%s'\n", bellcore_files[j]);
             return -1;
         }
+        /*endif*/
         while ((frames = sf_readf_short(inhandle, amp, SAMPLE_RATE)))
         {
             ademco_contactid_sender_rx(sender, amp, frames);
         }
+        /*endwhile*/
         if (sf_close_telephony(inhandle))
         {
             printf("    Cannot close speech file '%s'\n", bellcore_files[j]);
             return -1;
         }
+        /*endif*/
         printf("    File %d gave %d false hits.\n", j + 1, 0);
     }
+    /*endfor*/
     if (tx_callback_reported)
     {
         printf("    Failed\n");
         return -1;
     }
+    /*endif*/
     printf("    Passed\n");
     ademco_contactid_sender_free(sender);
     return 0;
@@ -154,6 +160,7 @@ static void rx_callback(void *user_data, const ademco_contactid_report_t *report
         printf("Report mismatch\n");
         exit(2);
     }
+    /*endif*/
     rx_callback_reported = true;
 }
 /*- End of function --------------------------------------------------------*/
@@ -176,12 +183,14 @@ static void tx_callback(void *user_data, int tone, int level, int duration)
             ademco_contactid_sender_put(sender, &reports[reports_entry]);
         else
             sending_complete = true;
+        /*endif*/
         break;
     case 0:
         /* Sending failed after retries */
         sending_complete = true;
         break;
     }
+    /*endswitch*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -205,9 +214,11 @@ static int end_to_end_tests(void)
         fprintf(stderr, "    Cannot open audio file '%s'\n", OUTPUT_FILE_NAME);
         exit(2);
     }
+    /*endif*/
 
     if ((receiver = ademco_contactid_receiver_init(NULL, rx_callback, NULL)) == NULL)
         return -1;
+    /*endif*/
     ademco_contactid_receiver_set_realtime_callback(receiver, rx_callback, receiver);
 
     logging = ademco_contactid_receiver_get_logging_state(receiver);
@@ -216,6 +227,7 @@ static int end_to_end_tests(void)
 
     if ((sender = ademco_contactid_sender_init(NULL, tx_callback, NULL)) == NULL)
         return -1;
+    /*endif*/
     ademco_contactid_sender_set_realtime_callback(sender, tx_callback, sender);
     logging = ademco_contactid_sender_get_logging_state(sender);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
@@ -232,8 +244,10 @@ static int end_to_end_tests(void)
         samples = ademco_contactid_sender_tx(sender, amp, SAMPLES_PER_CHUNK);
         for (j = samples;  j < SAMPLES_PER_CHUNK;  j++)
             amp[j] = 0;
+        /*endfor*/
         for (j = 0;  j < SAMPLES_PER_CHUNK;  j++)
             sndfile_buf[2*j] = amp[j];
+        /*endfor*/
         /* There is no point in impairing this signal. It is just DTMF tones, which
            will work as wel as the DTMF detector beign used. */
         ademco_contactid_receiver_rx(receiver, amp, SAMPLES_PER_CHUNK);
@@ -241,6 +255,7 @@ static int end_to_end_tests(void)
         samples = ademco_contactid_receiver_tx(receiver, amp, SAMPLES_PER_CHUNK);
         for (j = samples;  j < SAMPLES_PER_CHUNK;  j++)
             amp[j] = 0;
+        /*endfor*/
 
         /* We add AWGN and codec impairments to the signal, to stress the tone detector. */
         codec_munge(munge, amp, SAMPLES_PER_CHUNK);
@@ -250,23 +265,27 @@ static int end_to_end_tests(void)
             /* Add noise to the tones */
             amp[j] += awgn(&noise_source);
         }
+        /*endfor*/
         codec_munge(munge, amp, SAMPLES_PER_CHUNK);
         ademco_contactid_sender_rx(sender, amp, SAMPLES_PER_CHUNK);
 
         sf_writef_short(outhandle, sndfile_buf, SAMPLES_PER_CHUNK);
     }
+    /*endfor*/
     codec_munge_free(munge);
     if (!rx_callback_reported)
     {
         fprintf(stderr, "    Report not received\n");
         return -1;
     }
+    /*endif*/
 
     if (sf_close_telephony(outhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
         return -1;
     }
+    /*endif*/
     printf("    Passed\n");
     ademco_contactid_sender_free(sender);
     ademco_contactid_receiver_free(receiver);
@@ -287,12 +306,14 @@ static int encode_decode_tests(void)
 
     if ((receiver = ademco_contactid_receiver_init(NULL, NULL, NULL)) == NULL)
         return 2;
+    /*endif*/
     logging = ademco_contactid_receiver_get_logging_state(receiver);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "Ademco-rx");
 
     if ((sender = ademco_contactid_sender_init(NULL, NULL, NULL)) == NULL)
         return 2;
+    /*endif*/
     logging = ademco_contactid_sender_get_logging_state(sender);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "Ademco-tx");
@@ -304,12 +325,14 @@ static int encode_decode_tests(void)
             printf("Bad encode message\n");
             return -1;
         }
+        /*endif*/
         printf("'%s'\n", buf);
         if (decode_msg(&result, buf))
         {
             printf("Bad decode message\n");
             return -1;
         }
+        /*endif*/
         ademco_contactid_receiver_log_msg(receiver, &result);
         printf("\n");
         if (memcmp(&reports[i], &result, sizeof(result)))
@@ -317,13 +340,16 @@ static int encode_decode_tests(void)
             printf("Received message does not match the one sent\n");
             return -1;
         }
+        /*endif*/
     }
+    /*endfor*/
 
     if (encode_msg(buf, &reports[5]) >= 0)
     {
         printf("Incorrectly good message\n");
         return -1;
     }
+    /*endif*/
     printf("'%s'\n", buf);
     printf("\n");
     printf("    Passed\n");
@@ -357,31 +383,37 @@ int main(int argc, char *argv[])
             exit(2);
             break;
         }
+        /*endswitch*/
     }
+    /*endwhile*/
 
     if (decode_test_file)
     {
         decode_file(decode_test_file);
         return 0;
     }
+    /*endif*/
 
     if (encode_decode_tests())
     {
         printf("Tests failed\n");
         return 2;
     }
+    /*endif*/
 
     if (mitel_cm7291_side_2_and_bellcore_tests())
     {
         printf("Tests failed\n");
         return 2;
     }
+    /*endif*/
 
     if (end_to_end_tests())
     {
         printf("Tests failed\n");
         return 2;
     }
+    /*endif*/
 
     printf("Tests passed\n");
     return 0;

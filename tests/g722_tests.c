@@ -157,13 +157,17 @@ static int hex_get(char *s)
         x = *s++ - 0x30;
         if (x > 9)
             x -= 0x07;
+        /*endif*/
         if (x > 15)
             x -= 0x20;
+        /*endif*/
         if (x < 0  ||  x > 15)
             return -1;
+        /*endif*/
         value <<= 4;
         value |= x;
     }
+    /*endfor*/
     return value;
 }
 /*- End of function --------------------------------------------------------*/
@@ -179,6 +183,7 @@ static int get_vector(FILE *file, uint16_t vec[])
     {
         if (buf[0] == '/'  &&  buf[1] == '*')
             continue;
+        /*endif*/
         s = buf;
         i = 0;
         while ((value = hex_get(s)) >= 0)
@@ -186,8 +191,10 @@ static int get_vector(FILE *file, uint16_t vec[])
             vec[i++] = value;
             s += 4;
         }
+        /*endwhile*/
         return i;
     }
+    /*endwhile*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -203,9 +210,11 @@ static int get_test_vector(const char *file, uint16_t buf[], int max_len)
         fprintf(stderr, "    Failed to open '%s'\n", file);
         exit(2);
     }
+    /*endif*/
     octets = 0;
     while ((i = get_vector(infile, buf + octets)) > 0)
         octets += i;
+    /*endwhile*/
     fclose(infile);
     return octets;
 }
@@ -244,18 +253,23 @@ static void itu_compliance_tests(void)
             printf("Test data length mismatch\n");
             exit(2);
         }
+        /*endif*/
         /* Process the input data */
         /* Skip the reset stuff at each end of the data */
         for (i = 0;  i < len_data;  i++)
         {
             if ((itu_data[i] & 1) == 0)
                 break;
+            /*endif*/
         }
+        /*endfor*/
         for (j = i;  j < len_data;  j++)
         {
             if ((itu_data[j] & 1))
                 break;
+            /*endif*/
         }
+        /*endfor*/
         len = j - i;
         enc_state = g722_encode_init(NULL, 64000, 0);
         enc_state->itu_test_mode = true;
@@ -270,16 +284,20 @@ static void itu_compliance_tests(void)
                 printf(">>> %6d %4x %4x\n", k, compressed[k] & 0xFF, itu_ref[k + i] & 0xFFFF);
                 j++;
             }
+            /*endif*/
         }
+        /*endfor*/
         printf("%d bad samples, out of %d/%d samples\n", j, len, len_data);
         if (j)
         {
             printf("Test failed\n");
             exit(2);
         }
+        /*endif*/
         printf("Test passed\n");
         g722_encode_free(enc_state);
     }
+    /*endfor*/
 #endif
 #if 1
     /* ITU G.722 decode tests, using configuration 2. The QMF is bypassed */
@@ -308,21 +326,27 @@ static void itu_compliance_tests(void)
                 printf("Test data length mismatch\n");
                 exit(2);
             }
+            /*endif*/
             /* Process the input data */
             /* Skip the reset stuff at each end of the data */
             for (i = 0;  i < len_data;  i++)
             {
                 if ((itu_data[i] & 1) == 0)
                     break;
+                /*endif*/
             }
+            /*endfor*/
             for (j = i;  j < len_data;  j++)
             {
                 if ((itu_data[j] & 1))
                     break;
+                /*endif*/
             }
+            /*endfor*/
             len = j - i;
             for (k = 0;  k < len;  k++)
                 compressed[k] = itu_data[k + i] >> ((mode == 3)  ?  10  :  (mode == 2)  ?  9  :  8);
+            /*endfor*/
 
             dec_state = g722_decode_init(NULL, (mode == 3)  ?  48000  :  (mode == 2)  ?  56000  :  64000, 0);
             dec_state->itu_test_mode = true;
@@ -339,17 +363,22 @@ static void itu_compliance_tests(void)
                     printf(">>> %6d %4x %4x %4x %4x\n", k >> 1, decompressed[k] & 0xFFFF, decompressed[k + 1] & 0xFFFF, itu_ref[(k >> 1) + i] & 0xFFFF, itu_ref_upper[(k >> 1) + i] & 0xFFFF);
                     j++;
                 }
+                /*endif*/
             }
+            /*endfor*/
             printf("%d bad samples, out of %d/%d samples\n", j, len, len_data);
             if (j)
             {
                 printf("Test failed\n");
                 exit(2);
             }
+            /*endif*/
             printf("Test passed\n");
             g722_decode_free(dec_state);
         }
+        /*endfor*/
     }
+    /*endfor*/
 #endif
     printf("Tests passed.\n");
 }
@@ -384,11 +413,13 @@ static void signal_to_distortion_tests(void)
     memset(original, 0, len*sizeof(original[0]));
     for (i = 0;  i < len;  i++)
         in_level = power_meter_update(in_meter, original[i]);
+    /*endfor*/
     len2 = g722_encode(enc_state, compressed, original, len);
     len3 = g722_decode(dec_state, decompressed, compressed, len2);
     out_level = 0;
     for (i = 0;  i < len3;  i++)
         out_level = power_meter_update(out_meter, decompressed[i]);
+    /*endfor*/
     printf("Silence produces %d at the output\n", out_level);
 
     /* Now a swept tone test */
@@ -398,10 +429,12 @@ static void signal_to_distortion_tests(void)
         len = swept_tone(swept, original, 1024);
         for (i = 0;  i < len;  i++)
             in_level = power_meter_update(in_meter, original[i]);
+        /*endfor*/
         len2 = g722_encode(enc_state, compressed, original, len);
         len3 = g722_decode(dec_state, decompressed, compressed, len2);
         for (i = 0;  i < len3;  i++)
             out_level = power_meter_update(out_meter, decompressed[i]);
+        /*endfor*/
         printf("%10d, %10d, %f\n", in_level, out_level, (float) out_level/in_level);
     }
     while (len > 0);
@@ -463,6 +496,7 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "Invalid bit rate selected. Only 48000, 56000 and 64000 are valid.\n");
                 exit(2);
             }
+            /*endif*/
             itutests = false;
             break;
         case 'd':
@@ -482,9 +516,11 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "Invalid incoming sample rate. Only 8000 and 16000 are valid.\n");
                 exit(2);
             }
+            /*endif*/
             eight_k_in = (i == 8000);
             if (eight_k_in)
                 in_file = EIGHTK_IN_FILE_NAME;
+            /*endif*/
             break;
         case 'l':
             out_file = optarg;
@@ -496,6 +532,7 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "Invalid outgoing sample rate. Only 8000 and 16000 are valid.\n");
                 exit(2);
             }
+            /*endif*/
             eight_k_out = (i == 8000);
             break;
         case 't':
@@ -506,7 +543,9 @@ int main(int argc, char *argv[])
             //usage();
             exit(2);
         }
+        /*endswitch*/
     }
+    /*endwhile*/
 
     if (itutests)
     {
@@ -523,6 +562,7 @@ int main(int argc, char *argv[])
             decode =
             encode = true;
         }
+        /*endif*/
         if (in_file == NULL)
         {
             if (encode)
@@ -531,16 +571,20 @@ int main(int argc, char *argv[])
                     in_file = EIGHTK_IN_FILE_NAME;
                 else
                     in_file = IN_FILE_NAME;
+                /*endif*/
             }
             else
             {
                 in_file = ENCODED_FILE_NAME;
             }
+            /*endif*/
         }
+        /*endif*/
         if (out_file == NULL)
         {
             out_file = (decode)  ?  OUT_FILE_NAME  :  ENCODED_FILE_NAME;
         }
+        /*endif*/
         inhandle = NULL;
         outhandle = NULL;
         file = -1;
@@ -553,16 +597,19 @@ int main(int argc, char *argv[])
                     fprintf(stderr, "    Cannot open audio file '%s'\n", in_file);
                     exit(2);
                 }
+                /*endif*/
                 if (info.samplerate != SAMPLE_RATE)
                 {
                     fprintf(stderr, "    Unexpected sample rate %d in audio file '%s'\n", info.samplerate, in_file);
                     exit(2);
                 }
+                /*endif*/
                 if (info.channels != 1)
                 {
                     fprintf(stderr, "    Unexpected number of channels in audio file '%s'\n", in_file);
                     exit(2);
                 }
+                /*endif*/
                 enc_state = g722_encode_init(NULL, bit_rate, G722_PACKED | G722_SAMPLE_RATE_8000);
             }
             else
@@ -572,18 +619,22 @@ int main(int argc, char *argv[])
                     fprintf(stderr, "    Cannot open audio file '%s'\n", in_file);
                     exit(2);
                 }
+                /*endif*/
                 if (info.samplerate != G722_SAMPLE_RATE)
                 {
                     fprintf(stderr, "    Unexpected sample rate %d in audio file '%s'\n", info.samplerate, in_file);
                     exit(2);
                 }
+                /*endif*/
                 if (info.channels != 1)
                 {
                     fprintf(stderr, "    Unexpected number of channels in audio file '%s'\n", in_file);
                     exit(2);
                 }
+                /*endif*/
                 enc_state = g722_encode_init(NULL, bit_rate, G722_PACKED);
             }
+            /*endif*/
         }
         else
         {
@@ -592,7 +643,9 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "    Failed to open '%s'\n", in_file);
                 exit(2);
             }
+            /*endif*/
         }
+        /*endif*/
         dec_state = NULL;
         if (decode)
         {
@@ -608,10 +661,12 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "    Cannot create audio file '%s'\n", out_file);
                 exit(2);
             }
+            /*endif*/
             if (eight_k_out)
                 dec_state = g722_decode_init(NULL, bit_rate, G722_PACKED | G722_SAMPLE_RATE_8000);
             else
                 dec_state = g722_decode_init(NULL, bit_rate, G722_PACKED);
+            /*endif*/
         }
         else
         {
@@ -620,7 +675,9 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "    Failed to open '%s'\n", out_file);
                 exit(2);
             }
+            /*endif*/
         }
+        /*endif*/
         for (;;)
         {
             if (encode)
@@ -628,11 +685,14 @@ int main(int argc, char *argv[])
                 samples = sf_readf_short(inhandle, indata, BLOCK_LEN);
                 if (samples <= 0)
                     break;
+                /*endif*/
                 if (tone_test)
                 {
                     for (i = 0;  i < samples;  i++)
                         indata[i] = dds_modf(&tone_phase, tone_phase_rate, tone_level, 0);
+                    /*endfor*/
                 }
+                /*endif*/
                 len2 = g722_encode(enc_state, adpcmdata, indata, samples);
             }
             else
@@ -640,7 +700,9 @@ int main(int argc, char *argv[])
                 len2 = read(file, adpcmdata, BLOCK_LEN);
                 if (len2 <= 0)
                     break;
+                /*endif*/
             }
+            /*endif*/
             if (decode)
             {
                 len3 = g722_decode(dec_state, outdata, adpcmdata, len2);
@@ -650,14 +712,18 @@ int main(int argc, char *argv[])
                     fprintf(stderr, "    Error writing audio file\n");
                     exit(2);
                 }
+                /*endif*/
             }
             else
             {
                 len3 = write(file, adpcmdata, len2);
                 if (len3 <= 0)
                     break;
+                /*endif*/
             }
+            /*endif*/
         }
+        /*endfor*/
         if (encode)
         {
             if (sf_close(inhandle))
@@ -665,12 +731,14 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "    Cannot close audio file '%s'\n", IN_FILE_NAME);
                 exit(2);
             }
+            /*endif*/
             g722_encode_free(enc_state);
         }
         else
         {
             close(file);
         }
+        /*endif*/
         if (decode)
         {
             if (sf_close(outhandle))
@@ -678,12 +746,14 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
                 exit(2);
             }
+            /*endif*/
             g722_decode_free(dec_state);
         }
         else
         {
             close(file);
         }
+        /*endif*/
         printf("'%s' translated to '%s' at %dbps.\n", in_file, out_file, bit_rate);
     }
     return 0;

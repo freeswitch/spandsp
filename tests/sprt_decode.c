@@ -71,21 +71,6 @@ static span_timestamp_t sprt_timer_handler(void *user_data, span_timestamp_t tim
 }
 /*- End of function --------------------------------------------------------*/
 
-static int sprt_rx_packet_handler(void *user_data, int chan, int seq_no, const uint8_t msg[], int len)
-{
-    int i;
-
-    printf("%d %s\n", chan, sprt_transmission_channel_to_str(chan));
-    printf("%5d %3d >>> ", seq_no, len);
-    for (i = 0;  i < len;  i++)
-        printf("%02X ", msg[i]);
-    /*endfor*/
-    printf("\n");
-    v150_1_process_rx_msg(v150_1, chan, seq_no, msg, len);
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
 static int sprt_tx_packet_handler(void *user_data, const uint8_t msg[], int len)
 {
     int i;
@@ -120,18 +105,6 @@ static int v150_1_octet_stream_handler(void *user_data, const uint8_t msg[], int
     }
     /*endfor*/
     printf("<<<\n");
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-static int v150_1_rx_packet_handler(void *user_data, int seq_no, const uint8_t msg[], int len)
-{
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-static int v150_1_tx_packet_handler(void *user_data, int seq_no, const uint8_t msg[], int len)
-{
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -347,12 +320,36 @@ static int process_packet(void *user_data, const uint8_t *pkt, int len, bool for
 
     if (sprt == NULL)
     {
-        sprt = sprt_init(NULL, 0, 120, 120, NULL, sprt_tx_packet_handler, NULL, sprt_rx_packet_handler, NULL, sprt_timer_handler, NULL, NULL, NULL);
+        sprt = sprt_init(NULL,
+                         0,
+                         120,
+                         120,
+                         NULL,
+                         sprt_tx_packet_handler,
+                         NULL,
+                         NULL,
+                         NULL,
+                         sprt_timer_handler,
+                         NULL,
+                         NULL,
+                         NULL);
     }
     /*endif*/
     if (v150_1 == NULL)
     {
-        v150_1 = v150_1_init(NULL, v150_1_tx_packet_handler, NULL, v150_1_octet_stream_handler, NULL, v150_1_status_report_handler, NULL);
+        v150_1 = v150_1_init(NULL,
+                             sprt_tx_packet_handler,
+                             NULL,
+                             120,
+                             120,
+                             NULL,
+                             NULL,
+                             NULL,
+                             NULL,
+                             v150_1_octet_stream_handler,
+                             NULL,
+                             v150_1_status_report_handler,
+                             NULL);
     }
     /*endif*/
 

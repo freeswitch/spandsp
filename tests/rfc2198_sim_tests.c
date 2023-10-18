@@ -113,6 +113,7 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "Bad model ID '%s'\n", optarg);
                 exit(2);
             }
+            /*endif*/
             break;
         case 's':
             speed_pattern_no = atoi(optarg);
@@ -121,6 +122,7 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "Bad link speed pattern %s\n", optarg);
                 exit(2);
             }
+            /*endif*/
             break;
         case 't':
             simulation_time = atoi(optarg);
@@ -130,7 +132,9 @@ int main(int argc, char *argv[])
             exit(2);
             break;
         }
+        /*endswitch*/
     }
+    /*endwhile*/
     argc -= optind;
     argv += optind;
 
@@ -139,6 +143,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Can't open %s\n", "rfc2198_sim_tests.txt");
         return 2;
     }
+    /*endif*/
     packets_per_sec = 1000/PACKET_INTERVAL;
     num_packets = packets_per_sec*simulation_time;
 
@@ -147,8 +152,10 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Can't allocate the data buffers\n");
         return 2;
     }
+    /*endif*/
     for (i = 0;  i < num_packets;  i++)
         packet_arrival_times[i] = 0.0;
+    /*endfor*/
 
     /* If we don't initialise this random number generator it gives endless zeros on some systems. */
     /* Use a fixed seed to produce identical results in successive runs of the simulation, for debug purposes. */
@@ -159,6 +166,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Failed to start the G.1050 model\n");
         exit(2);
     }
+    /*endif*/
     //rfc2198_sim_dump_parms(model_no, speed_pattern_no);
 
 #if defined(ENABLE_GUI)
@@ -168,6 +176,7 @@ int main(int argc, char *argv[])
 
     for (i = 0;  i < 256;  i++)
         put_pkt[i] = i;
+    /*endfor*/
     put_pkt_len = 256;
     get_pkt_len = -1;
     get_seq_no = -1;
@@ -182,6 +191,7 @@ int main(int argc, char *argv[])
     {
         if ((len = rfc2198_sim_put(s, put_pkt, put_pkt_len, i, (double) i*0.001*PACKET_INTERVAL)) > 0)
             packets_really_put++;
+        /*endif*/
         packets_put++;
 #if 0
         if (i == 5)
@@ -203,18 +213,24 @@ int main(int argc, char *argv[])
                         oos_packets_got++;
                     else if (get_seq_no > highest_seq_no_got + 1)
                         missing_packets_got += (get_seq_no - highest_seq_no_got - 1);
+                    /*endif*/
                     if (get_seq_no > highest_seq_no_got)
                         highest_seq_no_got = get_seq_no;
+                    /*endif*/
                     fprintf(out_file, "%d, %.3f, %.8f\n", get_seq_no, get_seq_no*0.001*PACKET_INTERVAL, get_arrival_time);
                 }
+                /*endif*/
             }
             while (get_pkt_len >= 0);
         }
+        /*endif*/
 #if defined(ENABLE_GUI)
         if (use_gui)
             media_monitor_update_display();
+        /*endif*/
 #endif
     }
+    /*endfor*/
     /* Clear out anything remaining in the queue, by jumping forwards in time */
     do
     {
@@ -224,6 +240,7 @@ int main(int argc, char *argv[])
             packets_got++;
             fprintf(out_file, "%d, %.3f, %.8f\n", get_seq_no, get_seq_no*0.001*PACKET_INTERVAL, get_arrival_time);
         }
+        /*endif*/
     }
     while (get_pkt_len >= 0);
 

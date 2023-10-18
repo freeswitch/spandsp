@@ -399,35 +399,46 @@ static int at_tx_handler(void *user_data, const uint8_t *buf, size_t len)
                     test_seq_ptr++;
                     if (fax_test_seq[test_seq_ptr].command == NULL  &&  fax_test_seq[test_seq_ptr].command == NULL)
                         sequence_terminated = true;
+                    /*endif*/
                     if (fax_test_seq[test_seq_ptr].command)
                         kick = true;
+                    /*endif*/
                     break;
                 }
+                /*endif*/
                 dled = false;
             }
             else
             {
                 if (buf[i] == DLE)
                     dled = true;
+                /*endif*/
             }
+            /*endif*/
         }
+        /*endfor*/
         i++;
         if (i >= len)
             return 0;
+        /*endif*/
     }
+    /*endif*/
     for (  ;  i < len;  i++)
     {
         response_buf[response_buf_ptr++] = buf[i];
         putchar(buf[i]);
     }
+    /*endfor*/
     response_buf[response_buf_ptr] = '\0';
     printf("Expected ");
     for (i = 0;  i < response_buf_ptr;  i++)
         printf("%02x ", fax_test_seq[test_seq_ptr].response[i] & 0xFF);
+    /*endfor*/
     printf("\n");
     printf("Response ");
     for (i = 0;  i < response_buf_ptr;  i++)
         printf("%02x ", response_buf[i] & 0xFF);
+    /*endfor*/
     printf("\n");
     printf("Match %d against %d\n", response_buf_ptr, fax_test_seq[test_seq_ptr].len_response);
     if (response_buf_ptr >= fax_test_seq[test_seq_ptr].len_response
@@ -438,13 +449,16 @@ static int at_tx_handler(void *user_data, const uint8_t *buf, size_t len)
         test_seq_ptr++;
         if (fax_test_seq[test_seq_ptr].command == NULL  &&  fax_test_seq[test_seq_ptr].command == NULL)
             sequence_terminated = true;
+        /*endif*/
         response_buf_ptr = 0;
         response_buf[response_buf_ptr] = '\0';
         if (fax_test_seq[test_seq_ptr].command)
             kick = true;
         else
             dled = false;
+        /*endif*/
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -460,7 +474,9 @@ static int t38_tx_packet_handler(t38_core_state_t *s, void *user_data, const uin
     {
         if (g1050_put(path_a_to_b, buf, len, s->tx_seq_no, when) < 0)
             printf("Lost packet %d\n", s->tx_seq_no);
+        /*endfor*/
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -476,7 +492,9 @@ static int t31_tx_packet_handler(t38_core_state_t *s, void *user_data, const uin
     {
         if (g1050_put(path_b_to_a, buf, len, s->tx_seq_no, when) < 0)
             printf("Lost packet %d\n", s->tx_seq_no);
+        /*endif*/
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -527,7 +545,9 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
             fprintf(stderr, "    Cannot create audio file '%s'\n", OUTPUT_WAVE_FILE_NAME);
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
 
     in_handle = NULL;
     if (decode_test_file)
@@ -537,7 +557,9 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
             fprintf(stderr, "    Cannot create audio file '%s'\n", decode_test_file);
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
 
     srand48(0x1234567);
     if ((path_a_to_b = g1050_init(g1050_model_no, g1050_speed_pattern_no, 100, 33)) == NULL)
@@ -545,11 +567,13 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
         fprintf(stderr, "Failed to start IP network path model\n");
         exit(2);
     }
+    /*endif*/
     if ((path_b_to_a = g1050_init(g1050_model_no, g1050_speed_pattern_no, 100, 33)) == NULL)
     {
         fprintf(stderr, "Failed to start IP network path model\n");
         exit(2);
     }
+    /*endif*/
 
     t38_state = NULL;
     fax_state = NULL;
@@ -562,6 +586,7 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
                 fprintf(stderr, "Cannot start the T.38 channel\n");
                 exit(2);
             }
+            /*endif*/
             t30 = t38_terminal_get_t30_state(t38_state);
         }
         else
@@ -569,6 +594,7 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
             fax_state = fax_init(NULL, false);
             t30 = fax_get_t30_state(fax_state);
         }
+        /*endif*/
         t30_set_rx_file(t30, OUTPUT_FILE_NAME, -1);
         fax_test_seq = fax_send_test_seq;
         countdown = 0;
@@ -582,6 +608,7 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
                 fprintf(stderr, "Cannot start the T.38 channel\n");
                 exit(2);
             }
+            /*endif*/
             t30 = t38_terminal_get_t30_state(t38_state);
         }
         else
@@ -589,10 +616,12 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
             fax_state = fax_init(NULL, true);
             t30 = fax_get_t30_state(fax_state);
         }
+        /*endif*/
         t30_set_tx_file(t30, INPUT_FILE_NAME, -1, -1);
         fax_test_seq = fax_receive_test_seq;
         countdown = 250;
     }
+    /*endif*/
 
     if (t38_mode)
     {
@@ -601,6 +630,7 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
         t38_terminal_set_config(t38_state, without_pacing);
         t38_terminal_set_tep_mode(t38_state, use_tep);
     }
+    /*endif*/
 
     t30_set_tx_ident(t30, "11111111");
     t30_set_supported_modems(t30, T30_SUPPORT_V27TER | T30_SUPPORT_V29 | T30_SUPPORT_V17);
@@ -613,6 +643,7 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
         logging = t38_terminal_get_logging_state(t38_state);
     else
         logging = t30_get_logging_state(t30);
+    /*endif*/
     span_log_set_level(logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
     span_log_set_tag(logging, (t38_mode)  ?  "T.38"  :  "FAX");
 
@@ -632,6 +663,7 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
         span_log_set_level(logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
         span_log_set_tag(logging, "FAX");
     }
+    /*endif*/
 
     memset(silence, 0, sizeof(silence));
     memset(t30_amp, 0, sizeof(t30_amp));
@@ -642,6 +674,7 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
         fprintf(stderr, "    Cannot start the T.31 modem\n");
         exit(2);
     }
+    /*endif*/
     logging = t31_get_logging_state(t31_state);
     span_log_set_level(logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
     span_log_set_tag(logging, "T.31");
@@ -660,6 +693,7 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
         t31_set_mode(t31_state, true);
         t38_set_t38_version(t38_core, t38_version);
     }
+    /*endif*/
 
     fast_send = false;
     fast_send_tcf = true;
@@ -668,6 +702,7 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
 #if defined(ENABLE_GUI)
     if (use_gui)
         start_media_monitor();
+    /*endif*/
 #endif
     while (!done)
     {
@@ -684,7 +719,9 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
                 t31_call_event(t31_state, AT_CALL_EVENT_ALERTING);
                 countdown = 250;
             }
+            /*endif*/
         }
+        /*endif*/
 
         if (kick)
         {
@@ -697,6 +734,7 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
                     printf("%s\n", fax_test_seq[test_seq_ptr].command);
                     t31_at_rx(t31_state, fax_test_seq[test_seq_ptr].command, fax_test_seq[test_seq_ptr].len_command);
                 }
+                /*endif*/
             }
             else
             {
@@ -714,8 +752,11 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
                     fast_send_tcf = false;
                     fast_blocks = 100;
                 }
+                /*endif*/
             }
+            /*endif*/
         }
+        /*endif*/
         if (fast_send)
         {
             /* Send fast modem data */
@@ -729,6 +770,7 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
                     fast_buf[34] = DLE;
                     fast_buf[35] = ETX;
                 }
+                /*endif*/
             }
             else
             {
@@ -744,6 +786,7 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
                         fast_buf[i + 2] = 0xB2;
                         fast_buf[i + 3] = 0x01;
                     }
+                    /*endfor*/
                 }
                 else
                 {
@@ -754,15 +797,20 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
                         fast_buf[i + 1] = 0x08;
                         fast_buf[i + 2] = 0x80;
                     }
+                    /*endfor*/
                     /* Tell the modem this is the end of the image data. */
                     fast_buf[34] = DLE;
                     fast_buf[35] = ETX;
                 }
+                /*endif*/
             }
+            /*endif*/
             t31_at_rx(t31_state, (char *) fast_buf, 36);
             if (--fast_blocks == 0)
                 fast_send = false;
+            /*endif*/
         }
+        /*endif*/
 
         if (t38_mode)
         {
@@ -775,6 +823,7 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
                 t38_core = t31_get_t38_core_state(t31_state);
                 t38_core_rx_ifp_packet(t38_core, msg, msg_len, seq_no);
             }
+            /*endwhile*/
             while ((msg_len = g1050_get(path_b_to_a, msg, 1024, when, &seq_no, &tx_when, &rx_when)) >= 0)
             {
 #if defined(ENABLE_GUI)
@@ -784,9 +833,11 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
                 t38_core = t38_terminal_get_t38_core_state(t38_state);
                 t38_core_rx_ifp_packet(t38_core, msg, msg_len, seq_no);
             }
+            /*endwhile*/
 #if defined(ENABLE_GUI)
             if (use_gui)
                 media_monitor_update_display();
+            /*endif*/
 #endif
             /* Bump the G.1050 models along */
             when += (float) SAMPLES_PER_CHUNK/(float) SAMPLE_RATE;
@@ -810,37 +861,48 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
                 memset(t30_amp + t30_len, 0, sizeof(int16_t)*(SAMPLES_PER_CHUNK - t30_len));
                 t30_len = SAMPLES_PER_CHUNK;
             }
+            /*endif*/
             if (log_audio)
             {
                 for (k = 0;  k < t30_len;  k++)
                     out_amp[2*k] = t30_amp[k];
+                /*endfor*/
             }
+            /*endif*/
             if (t31_rx(t31_state, t30_amp, t30_len))
                 break;
+            /*endif*/
             t31_len = t31_tx(t31_state, t31_amp, SAMPLES_PER_CHUNK);
             if (t31_len < SAMPLES_PER_CHUNK)
             {
                 memset(t31_amp + t31_len, 0, sizeof(int16_t)*(SAMPLES_PER_CHUNK - t31_len));
                 t31_len = SAMPLES_PER_CHUNK;
             }
+            /*endif*/
             if (log_audio)
             {
                 for (k = 0;  k < t31_len;  k++)
                     out_amp[2*k + 1] = t31_amp[k];
+                /*endfor*/
             }
+            /*endif*/
             if (fax_rx(fax_state, t31_amp, SAMPLES_PER_CHUNK))
                 break;
+            /*endif*/
 
             if (log_audio)
             {
                 outframes = sf_writef_short(wave_handle, out_amp, SAMPLES_PER_CHUNK);
                 if (outframes != SAMPLES_PER_CHUNK)
                     break;
+                /*endif*/
             }
+            /*endif*/
 
             /* Bump things along on the FAX machine side */
             span_log_bump_samples(fax_get_logging_state(fax_state), SAMPLES_PER_CHUNK);
         }
+        /*endif*/
 
         /* Bump things along on the FAX machine side */
         span_log_bump_samples(t30_get_logging_state(t30), SAMPLES_PER_CHUNK);
@@ -851,6 +913,7 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
         span_log_bump_samples(t31_get_logging_state(t31_state), SAMPLES_PER_CHUNK);
         span_log_bump_samples(at_get_logging_state(t31_get_at_state(t31_state)), SAMPLES_PER_CHUNK);
     }
+    /*endwhile*/
 
     g1050_free(path_a_to_b);
     g1050_free(path_b_to_a);
@@ -858,6 +921,7 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
         t38_terminal_free(t38_state);
     else
         fax_free(fax_state);
+    /*endif*/
     t31_free(t31_state);
 
     if (decode_test_file)
@@ -867,7 +931,9 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
             fprintf(stderr, "    Cannot close audio file '%s'\n", decode_test_file);
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
     if (log_audio)
     {
         if (sf_close_telephony(wave_handle))
@@ -875,13 +941,16 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
             fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_WAVE_FILE_NAME);
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
 
     if (!done  ||  !sequence_terminated)
     {
         printf("Tests failed\n");
         return -1;
     }
+    /*endif*/
 
     return 0;
 }
@@ -942,10 +1011,13 @@ int main(int argc, char *argv[])
             exit(2);
             break;
         }
+        /*endswitch*/
     }
+    /*endwhile*/
 
     if (t30_tests(t38_mode, use_gui, log_audio, test_sending, g1050_model_no, g1050_speed_pattern_no) < 0)
         return 2;
+    /*endif*/
     printf("Tests passed\n");
     return 0;
 }

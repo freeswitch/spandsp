@@ -54,6 +54,10 @@
 #include <libxml/xinclude.h>
 #endif
 
+#if defined(HAVE_LIBXML_XMLMEMORY_H)  &&  defined(HAVE_LIBXML_PARSER_H)  &&  defined(HAVE_LIBXML_XINCLUDE_H)
+#define HAVE_LIBXML2 1
+#endif
+
 #include "spandsp.h"
 #include "spandsp-sim.h"
 
@@ -83,6 +87,7 @@ static void play_tones(super_tone_tx_state_t *tone, int max_samples)
             fprintf(stderr, "    Error writing audio file\n");
             exit(2);
         }
+        /*endif*/
         total_length += len;
     }
     while (len > 0  &&  --i > 0);
@@ -125,38 +130,46 @@ static int parse_tone(super_tone_tx_step_t **tree, xmlDocPtr doc, xmlNsPtr ns, x
                 printf("Frequency=%.2f+%.2f [%.2f%%]", f1, f2, f_tol);
                 xmlFree(x);
             }
+            /*endif*/
             if ((x = xmlGetProp(cur, (const xmlChar *) "level")))
             {
                 if (sscanf((char *) x, "%f+%f", &l1, &l2) < 2)
                     l2 = l1;
+                /*endif*/
                 printf("Level=%.2f+%.2f", l1, l2);
                 xmlFree(x);
             }
+            /*endif*/
             if ((x = xmlGetProp(cur, (const xmlChar *) "length")))
             {
                 sscanf((char *) x, "%f [%f%%]", &length, &length_tol);
                 printf("Length=%.2f [%.2f%%]", length, length_tol);
                 xmlFree(x);
             }
+            /*endif*/
             if ((x = xmlGetProp(cur, (const xmlChar *) "recognition-length")))
             {
                 printf("Recognition length='%s'", x);
                 xmlFree(x);
             }
+            /*endif*/
             if ((x = xmlGetProp(cur, (const xmlChar *) "cycles")))
             {
                 if (strcasecmp((char *) x, "endless") == 0)
                     cycles = 0;
                 else
                     cycles = atoi((char *) x);
+                /*endif*/
                 printf("Cycles=%d ", cycles);
                 xmlFree(x);
             }
+            /*endif*/
             if ((x = xmlGetProp(cur, (const xmlChar *) "recorded-announcement")))
             {
                 printf("Recorded announcement='%s'", x);
                 xmlFree(x);
             }
+            /*endif*/
             printf("\n");
             treep = super_tone_tx_make_step(NULL,
                                             f1,
@@ -288,6 +301,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "    Cannot open audio file '%s'\n", OUT_FILE_NAME);
         exit(2);
     }
+    /*endif*/
 #if defined(HAVE_LIBXML2)
     get_tone_set("../spandsp/global-tones.xml", (argc > 1)  ?  argv[1]  :  "hk");
 #endif
@@ -296,6 +310,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
         exit(2);
     }
+    /*endif*/
     printf("Done\n");
     return 0;
 }

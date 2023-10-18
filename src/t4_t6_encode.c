@@ -81,6 +81,7 @@
 #include <tiffio.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/unaligned.h"
 #include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
@@ -469,13 +470,9 @@ static int row_to_run_lengths(uint32_t list[], const uint8_t row[], int width)
     pos = 0;
     for (i = 0;  i < limit;  i += sizeof(uint32_t))
     {
-        x = *((uint32_t *) &row[i]);
+        x = get_net_unaligned_uint32(&row[i]);
         if (x != flip)
         {
-            x = ((uint32_t) row[i] << 24)
-              | ((uint32_t) row[i + 1] << 16)
-              | ((uint32_t) row[i + 2] << 8)
-              | ((uint32_t) row[i + 3]);
             /* We know we are going to find at least one transition. */
             frag = 31 - top_bit(x ^ flip);
             pos += ((i << 3) - span + frag);

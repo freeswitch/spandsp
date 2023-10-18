@@ -77,11 +77,13 @@ static void dynamic_buffer_tests(void)
         fprintf(stderr, "    Failed to open audio file '%s'\n", INPUT_FILE_NAME);
         exit(2);
     }
+    /*endif*/
     if ((outhandle = sf_open_telephony_write(OUTPUT_FILE_NAME, 1)) == NULL)
     {
         fprintf(stderr, "    Failed to create audio file '%s'\n", OUTPUT_FILE_NAME);
         exit(2);
     }
+    /*endif*/
 
     near_far_time_offset = 54321;
     time_stamp = 12345;
@@ -89,9 +91,11 @@ static void dynamic_buffer_tests(void)
     next_scheduled_receive = 0;
     for (i = 0;  i < BLOCK_LEN;  i++)
         fill[i] = 32767;
+    /*endfor*/
 
     if ((s = playout_init(2*BLOCK_LEN, 15*BLOCK_LEN)) == NULL)
         return;
+    /*endif*/
     plc_init(&plc);
     time_scale_init(&ts, SAMPLE_RATE, 1.0);
     for (i = 0;  i < 1000000;  i++)
@@ -102,6 +106,7 @@ static void dynamic_buffer_tests(void)
             inframes = sf_readf_short(inhandle, amp, BLOCK_LEN);
             if (inframes < BLOCK_LEN)
                 break;
+            /*endif*/
             ret = playout_put(s,
                               amp,
                               PLAYOUT_TYPE_SPEECH,
@@ -121,6 +126,7 @@ static void dynamic_buffer_tests(void)
                 printf("<< Eh?\n");
                 break;
             }
+            /*endswitch*/
 #endif
             rng = rand() & 0xFF;
             if (i < 100000)
@@ -131,9 +137,11 @@ static void dynamic_buffer_tests(void)
                 rng = (rng*rng) >> 5;
             else if (i < 400000)
                 rng = (rng*rng) >> 7;
+            /*endif*/
             time_stamp += BLOCK_LEN;
             next_actual_receive = time_stamp + near_far_time_offset + rng;
         }
+        /*endif*/
         if (i >= next_scheduled_receive)
         {
             do
@@ -141,6 +149,7 @@ static void dynamic_buffer_tests(void)
                 ret = playout_get(s, &frame, next_scheduled_receive);
                 if (ret == PLAYOUT_DROP)
                     printf(">> Drop %d\n", next_scheduled_receive);
+                /*endif*/
             }
             while (ret == PLAYOUT_DROP);
             switch (ret)
@@ -155,12 +164,14 @@ printf("len = %d\n", len);
                     buf[2*j] = out[j];
                     buf[2*j + 1] = 10*playout_current_length(s);
                 }
+                /*endfor*/
                 outframes = sf_writef_short(outhandle, buf, len);
                 if (outframes != len)
                 {
                     fprintf(stderr, "    Error writing out sound\n");
                     exit(2);
                 }
+                /*endif*/
                 free(frame.data);
                 next_scheduled_receive += BLOCK_LEN;
                 break;
@@ -176,12 +187,14 @@ printf("len = %d\n", len);
                     buf[2*j] = out[j];
                     buf[2*j + 1] = 10*playout_current_length(s);
                 }
+                /*endfor*/
                 outframes = sf_writef_short(outhandle, buf, len);
                 if (outframes != len)
                 {
                     fprintf(stderr, "    Error writing out sound\n");
                     exit(2);
                 }
+                /*endif*/
                 next_scheduled_receive += BLOCK_LEN;
                 break;
             case PLAYOUT_DROP:
@@ -203,6 +216,7 @@ printf("len = %d\n", len);
                 printf(">> Eh? %d\n", next_scheduled_receive);
                 break;
             }
+            /*endswitch*/
         }
     }
     if (sf_close_telephony(inhandle))
@@ -210,17 +224,20 @@ printf("len = %d\n", len);
         fprintf(stderr, "    Cannot close audio file '%s'\n", INPUT_FILE_NAME);
         exit(2);
     }
+    /*endif*/
     if (sf_close_telephony(outhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
         exit(2);
     }
+    /*endif*/
 
     printf("%10" PRId32 " %10" PRId32 " %10d\n", s->state_just_in_time, s->state_late, playout_current_length(s));
 
     /* Clear everything from the queue */
     while ((p = playout_get_unconditional(s)))
         /*free(p->data)*/;
+    /*endif*/
     /* Now free the context itself */
     playout_free(s);
 }
@@ -252,6 +269,7 @@ static void static_buffer_tests(void)
 
     if ((s = playout_init(2*BLOCK_LEN, 2*BLOCK_LEN)) == NULL)
         return;
+    /*endif*/
     for (i = 0;  i < 1000000;  i++)
     {
         if (i >= next_actual_receive)
@@ -274,12 +292,14 @@ static void static_buffer_tests(void)
                 printf("<< Eh?\n");
                 break;
             }
+            /*endswitch*/
             next_scheduled_send += BLOCK_LEN;
             ret = rand() & 0xFF;
             ret = (ret*ret) >> 7;
             transit_time = 320 + ret;
             next_actual_receive = next_scheduled_send + transit_time;
         }
+        /*endif*/
         if (i >= next_scheduled_receive)
         {
             do
@@ -316,11 +336,15 @@ static void static_buffer_tests(void)
                 printf(">> Eh?\n");
                 break;
             }
+            /*endswitch*/
         }
+        /*endif*/
     }
+    /*endfor*/
     /* Clear everything from the queue */
     while ((p = playout_get_unconditional(s)))
         /*free(p->data)*/;
+    /*endwhile*/
     /* Now free the context itself */
     playout_free(s);
 }

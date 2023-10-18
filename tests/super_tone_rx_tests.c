@@ -39,6 +39,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <strings.h>
+#include <unistd.h>
 #include <ctype.h>
 #include <time.h>
 #include <sndfile.h>
@@ -53,10 +54,12 @@
 #include <libxml/xinclude.h>
 #endif
 
+#if defined(HAVE_LIBXML_XMLMEMORY_H)  &&  defined(HAVE_LIBXML_PARSER_H)  &&  defined(HAVE_LIBXML_XINCLUDE_H)
+#define HAVE_LIBXML2 1
+#endif
+
 #include "spandsp.h"
 #include "spandsp-sim.h"
-
-#define IN_FILE_NAME    "super_tone.wav"
 
 #define MITEL_DIR       "../test-data/mitel/"
 #define BELLCORE_DIR    "../test-data/bellcore/"
@@ -437,14 +440,16 @@ static int detection_range_tests(super_tone_rx_state_t *super)
     int16_t amp[SAMPLES_PER_CHUNK];
     int i;
     int j;
-    uint32_t phase;
-    int32_t phase_inc;
+    uint32_t phase[2];
+    int32_t phase_inc[2];
     int scale;
 
     printf("Detection range tests\n");
     super_tone_rx_tone_callback(super, wakeup, (void *) "test");
-    phase = 0;
-    phase_inc = dds_phase_rate(440.0f);
+    phase[0] = 0;
+    phase_inc[0] = dds_phase_rate(350.0f);
+    phase[1] = 0;
+    phase_inc[1] = dds_phase_rate(440.0f);
     for (level = -80;  level < 0;  level++)
     {
         printf("Testing at %ddBm0\n", level);
@@ -452,7 +457,10 @@ static int detection_range_tests(super_tone_rx_state_t *super)
         for (j = 0;  j < 100;  j++)
         {
             for (i = 0;  i < SAMPLES_PER_CHUNK;  i++)
-                amp[i] = (dds(&phase, phase_inc)*scale) >> 15;
+            {
+                amp[i] = (dds(&phase[0], phase_inc[0])*scale) >> 15;
+                amp[i] += (dds(&phase[1], phase_inc[1])*scale) >> 15;
+            }
             /*endfor*/
             super_tone_rx(super, amp, SAMPLES_PER_CHUNK);
         }
@@ -506,12 +514,31 @@ static int file_decode_tests(super_tone_rx_state_t *super, const char *file_name
 
 int main(int argc, char *argv[])
 {
-    const char *file_name;
+    char *decode_test_file;
     super_tone_rx_state_t *super;
     super_tone_rx_descriptor_t desc;
+    int opt;
+
+    decode_test_file = NULL;
+    while ((opt = getopt(argc, argv, "d:")) != -1)
+    {
+        switch (opt)
+        {
+        case 'd':
+            decode_test_file = optarg;
+            break;
+        default:
+            //usage();
+            exit(2);
+            break;
+        }
+        /*endswitch*/
+    }
+    /*endwhile*/
 
     super_tone_rx_make_descriptor(&desc);
 #if defined(HAVE_LIBXML2)
+    printf("Loading tone set %s\n", (argc > 1)  ?  argv[1]  :  "hk");
     get_tone_set(&desc, "../spandsp/global-tones.xml", (argc > 1)  ?  argv[1]  :  "hk");
 #endif
     super_tone_rx_fill_descriptor(&desc);
@@ -525,8 +552,11 @@ int main(int argc, char *argv[])
 
     detection_range_tests(super);
 
-    file_name = IN_FILE_NAME;
-    file_decode_tests(super, file_name);
+    if (decode_test_file)
+    {
+        file_decode_tests(super, decode_test_file);
+    }
+    /*endif*/
 
     talk_off_tests(super);
 

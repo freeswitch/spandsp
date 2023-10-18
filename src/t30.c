@@ -100,12 +100,12 @@
 #include "t30_local.h"
 
 /*! The maximum permitted number of retries of a single command allowed. */
-#define MAX_COMMAND_TRIES   6
+#define DEFAULT_MAX_COMMAND_TRIES   3
 
 /*! The maximum permitted number of retries of a single response request allowed. This
     is not specified in T.30. However, if you don't apply some limit a messed up FAX
     terminal could keep you retrying all day. Its a backstop protection. */
-#define MAX_RESPONSE_TRIES  6
+#define DEFAULT_MAX_RESPONSE_TRIES  6
 
 /* T.30 defines the following call phases:
    Phase A: Call set-up.
@@ -527,7 +527,7 @@ static void t30_sslfax_real_time_frame_handler(void *user_data, bool incoming, c
     s = (t30_state_t *) user_data;
     if (s->sslfax.server)
     {
-        if (! incoming)
+        if (!incoming)
         {
             memcpy(buf, msg, len);
             len = crc_itu16_append(buf, len);
@@ -1738,6 +1738,7 @@ static int build_dcs(t30_state_t *s)
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T38);
     /*endif*/
 #endif
+
 #if defined(SPANDSP_SUPPORT_SSLFAX)
     /* Check for SSL Fax. */
     if (sslfax_enabled(s)  &&  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T37)  &&  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T38))
@@ -2649,17 +2650,8 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
 
 static void send_dcn(t30_state_t *s)
 {
-    if (s->state == T30_STATE_R)
-    {
-        /* We need to wait until after TCF. */
-        queue_phase(s, T30_PHASE_IDLE);
-    }
-    else
-    {
-        queue_phase(s, T30_PHASE_D_TX);
-        set_state(s, T30_STATE_C);
-    }
-    /*endif*/
+    queue_phase(s, T30_PHASE_D_TX);
+    set_state(s, T30_STATE_C);
     send_simple_frame(s, T30_DCN);
 #if defined(SPANDSP_SUPPORT_SSLFAX)
     if (s->sslfax.server)
@@ -4077,7 +4069,7 @@ static void process_state_d_post_tcf(t30_state_t *s, const uint8_t *msg, int len
         break;
     case T30_DIS:
         /* It appears they didn't see what we sent - retry the TCF */
-        if (++s->retries >= MAX_COMMAND_TRIES)
+        if (++s->retries >= s->max_command_tries)
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Too many retries. Giving up.\n");
             t30_set_status(s, T30_ERR_RETRYDCN);
@@ -5999,7 +5991,7 @@ static void repeat_last_command(t30_state_t *s)
     /* If T0 or T1 are in progress we do not want to apply a limit to the maximum number of retries. We
        let T0 or T1 terminate things if the far end doesn't communicate. */
     s->retries++;
-    if (s->timer_t0_t1 == 0  &&  s->retries >= MAX_COMMAND_TRIES)
+    if (s->timer_t0_t1 == 0  &&  s->retries >= s->max_command_tries)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Too many retries. Giving up.\n");
         switch (s->state)
@@ -6024,7 +6016,7 @@ static void repeat_last_command(t30_state_t *s)
         return;
     }
     /*endif*/
-    span_log(&s->logging, SPAN_LOG_FLOW, "Retry number %d\n", s->retries);
+    span_log(&s->logging, SPAN_LOG_FLOW, "Command reattempt number %d\n", s->retries);
     switch (s->state)
     {
     case T30_STATE_R:
@@ -7630,6 +7622,8 @@ SPAN_DECLARE(t30_state_t *) t30_init(t30_state_t *s,
        get 1D and 2D encoding right. Quite a lot get other things wrong. */
     s->supported_output_compressions = T4_COMPRESSION_T4_2D | T4_COMPRESSION_JPEG;
     s->local_min_scan_time_code = T30_MIN_SCAN_0MS;
+    s->max_command_tries = DEFAULT_MAX_COMMAND_TRIES;
+    s->max_response_tries = DEFAULT_MAX_RESPONSE_TRIES;
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "T.30");
 

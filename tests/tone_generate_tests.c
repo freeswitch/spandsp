@@ -59,6 +59,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "    Cannot open audio file '%s'\n", OUTPUT_FILE_NAME);
         exit(2);
     }
+    /*endif*/
 
     /* Try a tone pair */
     tone_gen_descriptor_init(&tone_desc,
@@ -78,8 +79,10 @@ int main(int argc, char *argv[])
         printf("Generated %d samples\n", len);
         if (len <= 0)
             break;
+        /*endif*/
         sf_writef_short(outhandle, amp, len);
     }
+    /*endfor*/
     tone_gen_release(&tone_state);
 
     /* Try a different tone pair */
@@ -100,8 +103,10 @@ int main(int argc, char *argv[])
         printf("Generated %d samples\n", len);
         if (len <= 0)
             break;
+        /*endif*/
         sf_writef_short(outhandle, amp, len);
     }
+    /*endfor*/
     tone_gen_release(&tone_state);
 
     /* Try a different tone pair */
@@ -122,8 +127,10 @@ int main(int argc, char *argv[])
         printf("Generated %d samples\n", len);
         if (len <= 0)
             break;
+        /*endif*/
         sf_writef_short(outhandle, amp, len);
     }
+    /*endfor*/
     tone_gen_release(&tone_state);
 
     /* Try a single tone */
@@ -144,8 +151,10 @@ int main(int argc, char *argv[])
         printf("Generated %d samples\n", len);
         if (len <= 0)
             break;
+        /*endif*/
         sf_writef_short(outhandle, amp, len);
     }
+    /*endfor*/
     tone_gen_release(&tone_state);
 
     /* Try a single non-repeating tone */
@@ -166,8 +175,10 @@ int main(int argc, char *argv[])
         printf("Generated %d samples\n", len);
         if (len <= 0)
             break;
+        /*endif*/
         sf_writef_short(outhandle, amp, len);
     }
+    /*endfor*/
     tone_gen_release(&tone_state);
 
     /* Try a single non-repeating tone at 0dBm0 */
@@ -188,8 +199,10 @@ int main(int argc, char *argv[])
         printf("Generated %d samples\n", len);
         if (len <= 0)
             break;
+        /*endif*/
         sf_writef_short(outhandle, amp, len);
     }
+    /*endfor*/
     tone_gen_release(&tone_state);
 
     /* Try an AM modulated tone at a modest modulation level (25%) */
@@ -210,8 +223,10 @@ int main(int argc, char *argv[])
         printf("Generated %d samples\n", len);
         if (len <= 0)
             break;
+        /*endif*/
         sf_writef_short(outhandle, amp, len);
     }
+    /*endfor*/
     tone_gen_release(&tone_state);
 
     /* Try an AM modulated tone at maximum modulation level (100%) */
@@ -232,8 +247,10 @@ int main(int argc, char *argv[])
         printf("Generated %d samples\n", len);
         if (len <= 0)
             break;
+        /*endif*/
         sf_writef_short(outhandle, amp, len);
     }
+    /*endfor*/
     tone_gen_release(&tone_state);
 
     if (sf_close_telephony(outhandle))
@@ -241,6 +258,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
         exit (2);
     }
+    /*endif*/
 
     return 0;
 }

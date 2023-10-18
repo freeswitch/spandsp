@@ -187,7 +187,9 @@ static void my_dtmf_gen_init(float low_fudge,
                                      0,
                                      false);
         }
+        /*endfor*/
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -206,8 +208,10 @@ static int my_dtmf_generate(int16_t amp[], const char *digits)
             tone_gen_init(&tone, &my_dtmf_digit_tones[cp - dtmf_positions]);
             len += tone_gen(&tone, amp + len, 1000);
         }
+        /*endif*/
         digits++;
     }
+    /*endwhile*/
     return len;
 }
 /*- End of function --------------------------------------------------------*/
@@ -228,20 +232,24 @@ static void digit_delivery(void *data, const char *digits, int len)
         {
             if (i + seg > len)
                 seg = len - i;
+            /*endif*/
             if (memcmp(digits + i, t, seg))
             {
                 callback_ok = false;
                 printf("Fail at %d %d\n", i, seg);
                 break;
             }
+            /*endif*/
             t = s;
             callback_roll = (callback_roll + seg)%16;
         }
+        /*endfor*/
     }
     else
     {
         callback_ok = false;
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -269,7 +277,9 @@ static void digit_status(void *data, int signal, int level, int delay)
                 printf("Failed for signal %s length %d at %d\n", (callback_roll & 1)  ?  "on"  :  "off", len, step);
                 callback_ok = false;
             }
+            /*endif*/
         }
+        /*endif*/
         if (callback_roll & 1)
         {
             if (signal != 0)
@@ -277,6 +287,7 @@ static void digit_status(void *data, int signal, int level, int delay)
                 printf("Failed for signal 0x%X instead of 0\n", signal);
                 callback_ok = false;
             }
+            /*endif*/
         }
         else
         {
@@ -285,19 +296,24 @@ static void digit_status(void *data, int signal, int level, int delay)
                 printf("Failed for signal 0x%X instead of 0x%X\n", signal, s[callback_roll >> 1]);
                 callback_ok = false;
             }
-            if (level < DEFAULT_DTMF_TX_LEVEL + 3 - 1  ||  level > DEFAULT_DTMF_TX_LEVEL + 3 + 1)
+            /*endif*/
+            if (level < DEFAULT_DTMF_TX_LEVEL - 1  ||  level > DEFAULT_DTMF_TX_LEVEL + 1)
             {
-                printf("Failed for level %d instead of %d\n", level, DEFAULT_DTMF_TX_LEVEL + 3);
+                printf("Failed for level %d instead of %d\n", level, DEFAULT_DTMF_TX_LEVEL);
                 callback_ok = false;
             }
+            /*endif*/
         }
+        /*endif*/
         if (++callback_roll >= 32)
             callback_roll = 0;
+        /*endif*/
     }
     else
     {
         callback_ok = false;
     }
+    /*endif*/
     last_step = step;
 }
 /*- End of function --------------------------------------------------------*/
@@ -323,6 +339,7 @@ static void mitel_cm7291_side_1_tests(void)
     dtmf_state = dtmf_rx_init(NULL, NULL, NULL);
     if (use_dialtone_filter  ||  max_forward_twist >= 0.0f  ||  max_reverse_twist >= 0.0f)
         dtmf_rx_parms(dtmf_state, use_dialtone_filter, max_forward_twist, max_reverse_twist, -99.0f);
+    /*endif*/
     logging = dtmf_rx_get_logging_state(dtmf_state);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "DTMF-rx");
@@ -359,8 +376,11 @@ static void mitel_cm7291_side_1_tests(void)
                 printf("    Failed\n");
                 exit(2);
             }
+            /*endif*/
         }
+        /*endfor*/
     }
+    /*endwhile*/
     printf("    Passed\n");
 
     /* Test 3: Recognition bandwidth and channel centre frequency check.
@@ -405,6 +425,7 @@ static void mitel_cm7291_side_1_tests(void)
             dtmf_rx(dtmf_state, amp, len);
             nplus += dtmf_rx_get(dtmf_state, buf, 128);
         }
+        /*endfor*/
         for (nminus = 0, i = -1;  i >= -60;  i--)
         {
             my_dtmf_gen_init((float) i/1000.0f, -17, 0.0f, -17, 50, 50);
@@ -413,6 +434,7 @@ static void mitel_cm7291_side_1_tests(void)
             dtmf_rx(dtmf_state, amp, len);
             nminus += dtmf_rx_get(dtmf_state, buf, 128);
         }
+        /*endfor*/
         rrb = (float) (nplus + nminus)/10.0f;
         rcfo = (float) (nplus - nminus)/10.0f;
         printf("    %c (low)  rrb = %5.2f%%, rcfo = %5.2f%%, max -ve = %5.2f, max +ve = %5.2f\n",
@@ -426,6 +448,7 @@ static void mitel_cm7291_side_1_tests(void)
             printf("    Failed\n");
             exit(2);
         }
+        /*endif*/
 
         for (nplus = 0, i = 1;  i <= 60;  i++)
         {
@@ -435,6 +458,7 @@ static void mitel_cm7291_side_1_tests(void)
             dtmf_rx(dtmf_state, amp, len);
             nplus += dtmf_rx_get(dtmf_state, buf, 128);
         }
+        /*endfor*/
         for (nminus = 0, i = -1;  i >= -60;  i--)
         {
             my_dtmf_gen_init(0.0f, -17, (float) i/1000.0f, -17, 50, 50);
@@ -443,6 +467,7 @@ static void mitel_cm7291_side_1_tests(void)
             dtmf_rx(dtmf_state, amp, len);
             nminus += dtmf_rx_get(dtmf_state, buf, 128);
         }
+        /*endfor*/
         rrb = (float) (nplus + nminus)/10.0f;
         rcfo = (float) (nplus - nminus)/10.0f;
         printf("    %c (high) rrb = %5.2f%%, rcfo = %5.2f%%, max -ve = %5.2f, max +ve = %5.2f\n",
@@ -456,7 +481,9 @@ static void mitel_cm7291_side_1_tests(void)
             printf("    Failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endwhile*/
     printf("    Passed\n");
 
     /* Test 4: Acceptable amplitude ratio (twist).
@@ -497,12 +524,14 @@ static void mitel_cm7291_side_1_tests(void)
             dtmf_rx(dtmf_state, amp, len);
             nplus += dtmf_rx_get(dtmf_state, buf, 128);
         }
+        /*endfor*/
         printf("    %c normal twist  = %.2fdB\n", digit[0], (float) nplus/10.0);
         if (nplus < 80)
         {
             printf("    Failed\n");
             exit(2);
         }
+        /*endif*/
         for (nminus = 0, i = -30;  i >= -230;  i--)
         {
             my_dtmf_gen_init(0.0f, i/10, 0.0f, -3, 50, 50);
@@ -512,13 +541,16 @@ static void mitel_cm7291_side_1_tests(void)
             dtmf_rx(dtmf_state, amp, len);
             nminus += dtmf_rx_get(dtmf_state, buf, 128);
         }
+        /*endfor*/
         printf("    %c reverse twist = %.2fdB\n", digit[0], (float) nminus/10.0);
         if (nminus < 40)
         {
             printf("    Failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endwhile*/
     printf("    Passed\n");
 
     /* Test 5: Dynamic range
@@ -540,6 +572,7 @@ static void mitel_cm7291_side_1_tests(void)
         dtmf_rx(dtmf_state, amp, len);
         nplus += dtmf_rx_get(dtmf_state, buf, 128);
     }
+    /*endfor*/
     printf("    Dynamic range = %ddB\n", nplus);
     /* We ought to set some pass/fail condition, even if Mitel did not. If
        we don't, regression testing is weakened. */
@@ -548,6 +581,7 @@ static void mitel_cm7291_side_1_tests(void)
         printf("    Failed\n");
         exit(2);
     }
+    /*endif*/
     printf("    Passed\n");
 
     /* Test 6: Guard time
@@ -569,6 +603,7 @@ static void mitel_cm7291_side_1_tests(void)
         dtmf_rx(dtmf_state, amp, len);
         nplus += dtmf_rx_get(dtmf_state, buf, 128);
     }
+    /*endfor*/
     printf("    Guard time = %dms\n", (500 - nplus)/10);
     printf("    Passed\n");
 
@@ -597,22 +632,27 @@ static void mitel_cm7291_side_1_tests(void)
             // TODO: Clip
             for (sample = 0;  sample < len;  sample++)
                 amp[sample] = sat_add16(amp[sample], awgn(&noise_source));
+            /*endfor*/
 
             codec_munge(munge, amp, len);
             dtmf_rx(dtmf_state, amp, len);
 
             if (dtmf_rx_get(dtmf_state, buf, 128) != 1)
                 break;
+            /*endif*/
         }
         if (i == 1000)
             break;
+        /*endif*/
     }
+    /*endfor*/
     printf("    Acceptable S/N ratio is %ddB\n", -4 - j);
     if (-4 - j > 26)
     {
         printf("    Failed\n");
         exit(2);
     }
+    /*endif*/
     dtmf_rx_free(dtmf_state);
     printf("    Passed\n");
 }
@@ -634,6 +674,7 @@ static void mitel_cm7291_side_2_and_bellcore_tests(void)
     dtmf_state = dtmf_rx_init(NULL, NULL, NULL);
     if (use_dialtone_filter  ||  max_forward_twist >= 0.0f  ||  max_reverse_twist >= 0.0f)
         dtmf_rx_parms(dtmf_state, use_dialtone_filter, max_forward_twist, max_reverse_twist, -99.0f);
+    /*endif*/
     logging = dtmf_rx_get_logging_state(dtmf_state);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "DTMF-rx");
@@ -653,6 +694,7 @@ static void mitel_cm7291_side_2_and_bellcore_tests(void)
             printf("    Cannot open speech file '%s'\n", bellcore_files[j]);
             exit(2);
         }
+        /*endif*/
         hits = 0;
         while ((frames = sf_readf_short(inhandle, amp, SAMPLE_RATE)))
         {
@@ -662,16 +704,21 @@ static void mitel_cm7291_side_2_and_bellcore_tests(void)
             {
                 for (i = 0;  i < len;  i++)
                     hit_types[(int) buf[i]]++;
+                /*endfor*/
                 hits += len;
             }
+            /*endif*/
         }
+        /*endwhile*/
         if (sf_close_telephony(inhandle))
         {
             printf("    Cannot close speech file '%s'\n", bellcore_files[j]);
             exit(2);
         }
+        /*endif*/
         printf("    File %d gave %d false hits.\n", j + 1, hits);
     }
+    /*endfor*/
     for (i = 0, j = 0;  i < 256;  i++)
     {
         if (hit_types[i])
@@ -679,13 +726,16 @@ static void mitel_cm7291_side_2_and_bellcore_tests(void)
             printf("    Digit %c had %d false hits.\n", i, hit_types[i]);
             j += hit_types[i];
         }
+        /*endif*/
     }
+    /*endfor*/
     printf("    %d false hits in total.\n", j);
     if (j > 470)
     {
         printf("    Failed\n");
         exit(2);
     }
+    /*endif*/
     printf("    Passed\n");
     dtmf_rx_free(dtmf_state);
 }
@@ -706,6 +756,7 @@ static void dial_tone_tolerance_tests(void)
     dtmf_state = dtmf_rx_init(NULL, NULL, NULL);
     if (use_dialtone_filter  ||  max_forward_twist >= 0.0f  ||  max_reverse_twist >= 0.0f)
         dtmf_rx_parms(dtmf_state, use_dialtone_filter, max_forward_twist, max_reverse_twist, -99.0f);
+    /*endif*/
     logging = dtmf_rx_get_logging_state(dtmf_state);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "DTMF-rx");
@@ -725,15 +776,20 @@ static void dial_tone_tolerance_tests(void)
 
             for (sample = 0;  sample < len;  sample++)
                 amp[sample] = sat_add16(amp[sample], amp2[sample]);
+            /*endfor*/
             codec_munge(munge, amp, len);
             dtmf_rx(dtmf_state, amp, len);
 
             if (dtmf_rx_get(dtmf_state, buf, 128) != strlen(ALL_POSSIBLE_DIGITS))
                 break;
+            /*endif*/
         }
+        /*endfor*/
         if (i != 10)
             break;
+        /*endif*/
     }
+    /*endfor*/
     printf("    Acceptable signal to dial tone ratio is %ddB\n", -15 - j);
     if ((use_dialtone_filter  &&  (-15 - j) > -12)
         ||
@@ -742,6 +798,7 @@ static void dial_tone_tolerance_tests(void)
         printf("    Failed\n");
         exit(2);
     }
+    /*endif*/
     printf("    Passed\n");
     dtmf_rx_free(dtmf_state);
 }
@@ -764,6 +821,7 @@ static void callback_function_tests(void)
     dtmf_state = dtmf_rx_init(NULL, digit_delivery, (void *) 0x12345678);
     if (use_dialtone_filter  ||  max_forward_twist >= 0.0f  ||  max_reverse_twist >= 0.0f)
         dtmf_rx_parms(dtmf_state, use_dialtone_filter, max_forward_twist, max_reverse_twist, -99.0f);
+    /*endif*/
     logging = dtmf_rx_get_logging_state(dtmf_state);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "DTMF-rx");
@@ -774,15 +832,19 @@ static void callback_function_tests(void)
         len = 0;
         for (j = 0;  j < i;  j++)
             len += my_dtmf_generate(amp + len, ALL_POSSIBLE_DIGITS);
+        /*endfor*/
         dtmf_rx(dtmf_state, amp, len);
         if (!callback_hit  ||  !callback_ok)
             break;
+        /*endif*/
     }
+    /*endfor*/
     if (!callback_hit  ||  !callback_ok)
     {
         printf("    Failed\n");
         exit(2);
     }
+    /*endif*/
     printf("    Passed\n");
 
     /* Test the realtime callback mode for reporting detected digits */
@@ -794,6 +856,7 @@ static void callback_function_tests(void)
     dtmf_rx_set_realtime_callback(dtmf_state, digit_status, (void *) 0x12345678);
     if (use_dialtone_filter  ||  max_forward_twist >= 0.0f  ||  max_reverse_twist >= 0.0f)
         dtmf_rx_parms(dtmf_state, use_dialtone_filter, max_forward_twist, max_reverse_twist, -99.0f);
+    /*endif*/
     logging = dtmf_rx_get_logging_state(dtmf_state);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "DTMF-rx");
@@ -805,21 +868,27 @@ static void callback_function_tests(void)
         len = 0;
         for (j = 0;  j < i;  j++)
             len += my_dtmf_generate(amp + len, ALL_POSSIBLE_DIGITS);
+        /*endfor*/
         for (sample = 0, j = SAMPLES_PER_CHUNK;  sample < len;  sample += SAMPLES_PER_CHUNK, j = ((len - sample) >= SAMPLES_PER_CHUNK)  ?  SAMPLES_PER_CHUNK  :  (len - sample))
         {
             dtmf_rx(dtmf_state, &amp[sample], j);
             if (!callback_ok)
                 break;
+            /*endif*/
             step += j;
         }
+        /*endfor*/
         if (!callback_hit  ||  !callback_ok)
             break;
+        /*endif*/
     }
+    /*endfor*/
     if (!callback_hit  ||  !callback_ok)
     {
         printf("    Failed\n");
         exit(2);
     }
+    /*endif*/
     dtmf_rx_free(dtmf_state);
 }
 /*- End of function --------------------------------------------------------*/
@@ -838,6 +907,7 @@ static void decode_test(const char *test_file)
     dtmf_state = dtmf_rx_init(NULL, NULL, NULL);
     if (use_dialtone_filter  ||  max_forward_twist >= 0.0f  ||  max_reverse_twist >= 0.0f)
         dtmf_rx_parms(dtmf_state, use_dialtone_filter, max_forward_twist, max_reverse_twist, -99.0f);
+    /*endif*/
     logging = dtmf_rx_get_logging_state(dtmf_state);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "DTMF-rx");
@@ -849,6 +919,7 @@ static void decode_test(const char *test_file)
         fprintf(stderr, "    Cannot open audio file '%s'\n", decode_test_file);
         exit(2);
     }
+    /*endif*/
 
     total = 0;
     while ((samples = sf_readf_short(inhandle, amp, SAMPLES_PER_CHUNK)) > 0)
@@ -858,8 +929,10 @@ static void decode_test(const char *test_file)
         //printf("Status 0x%X\n", dtmf_rx_status(dtmf_state));
         if ((actual = dtmf_rx_get(dtmf_state, buf, 128)) > 0)
             printf("Received '%s'\n", buf);
+        /*endif*/
         total += actual;
     }
+    /*endwhile*/
     printf("%d digits received\n", total);
 }
 /*- End of function --------------------------------------------------------*/
@@ -900,7 +973,9 @@ int main(int argc, char *argv[])
             exit(2);
             break;
         }
+        /*endswitch*/
     }
+    /*endwhile*/
     munge = codec_munge_init(channel_codec, 0);
 
     if (decode_test_file)
@@ -918,6 +993,7 @@ int main(int argc, char *argv[])
         duration = time(NULL) - now;
         printf("Tests passed in %ds\n", duration);
     }
+    /*endif*/
 
     codec_munge_free(munge);
     return 0;

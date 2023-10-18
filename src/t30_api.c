@@ -797,6 +797,18 @@ SPAN_DECLARE(void) t30_set_retransmit_capable(t30_state_t *s, bool enabled)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(void) t30_set_max_command_tries(t30_state_t *s, int tries)
+{
+    s->max_command_tries = tries;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) t30_set_max_response_tries(t30_state_t *s, int tries)
+{
+    s->max_response_tries = tries;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(void) t30_set_keep_bad_quality_pages(t30_state_t *s, bool keep_bad_pages)
 {
     s->keep_bad_pages = keep_bad_pages;

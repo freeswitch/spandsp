@@ -60,6 +60,7 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    /*endif*/
     printf("Testing 15 bit saturation\n");
     if (saturate15(10000) != 10000
         ||
@@ -76,6 +77,7 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    /*endif*/
     printf("Testing 16 bit unsigned saturation\n");
     if (saturateu16(10000) != 10000
         ||
@@ -88,6 +90,7 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    /*endif*/
     printf("Testing 8 bit unsigned saturation\n");
     if (saturateu8(100) != 100
         ||
@@ -100,6 +103,7 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    /*endif*/
     printf("Testing 16 bit saturation from float\n");
     if (fsaturatef(10000.0f) != 10000
         ||
@@ -116,6 +120,7 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    /*endif*/
     printf("Testing 16 bit saturation from double\n");
     if (fsaturate(10000.0) != 10000
         ||
@@ -132,6 +137,7 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    /*endif*/
     printf("Testing 16 bit fast saturation from float\n");
     if (ffastsaturatef(10000.0f) != 10000
         ||
@@ -148,6 +154,7 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    /*endif*/
     printf("Testing 16 bit fast saturation from double\n");
     if (ffastsaturate(10000.0) != 10000
         ||
@@ -164,6 +171,7 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    /*endif*/
     printf("Testing 16 bit float saturation from float\n");
     if (ffsaturatef(10000.0f) != 10000.0f
         ||
@@ -180,6 +188,7 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    /*endif*/
     printf("Testing 16 bit double saturation from double\n");
     if (ffsaturate(10000.0) != 10000.0
         ||
@@ -196,6 +205,7 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    /*endif*/
     printf("Testing 16 bit add\n");
     if (sat_add16(10000, 10000) != 20000
         ||
@@ -216,6 +226,7 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    /*endif*/
     printf("Testing 32 bit add\n");
     if (sat_add32(10000, 10000) != 20000
         ||
@@ -232,6 +243,7 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    /*endif*/
     printf("Testing 16 bit subtract\n");
     if (sat_sub16(10000, 10000) != 0
         ||
@@ -252,6 +264,7 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    /*endif*/
     printf("Testing 32 bit subtract\n");
     if (sat_sub32(10000, 10000) != 0
         ||
@@ -268,6 +281,7 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    /*endif*/
     printf("Testing 16 x 16 => 16 bit multiply\n");
     if (sat_mul16(100, 100) != 0
         ||
@@ -284,6 +298,7 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    /*endif*/
     printf("Testing 16 x 16 => 32 bit multiply\n");
     if (sat_mul32_16(100, 100) != 20000
         ||
@@ -300,6 +315,7 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    /*endif*/
     printf("Testing 32 + 16 x 16 => 32 bit MAC\n");
     if (sat_mac32_16(123, 100, 100) != 123 + 20000
         ||
@@ -316,6 +332,7 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    /*endif*/
     printf("Testing 32 - 16 x 16 => 32 bit MSU\n");
     if (sat_msu32_16(123, 100, 100) != 123 - 20000
         ||
@@ -332,6 +349,7 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    /*endif*/
     printf("Testing 16 bit absolute\n");
     if (sat_abs16(10000) != 10000
         ||
@@ -344,6 +362,7 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    /*endif*/
     printf("Tests passed.\n");
     return 0;
 }

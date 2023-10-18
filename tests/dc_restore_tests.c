@@ -38,7 +38,7 @@
 
 #include "spandsp.h"
 
-int main (int argc, char *argv[])
+int main(int argc, char *argv[])
 {
     awgn_state_t *noise_source;
     dc_restore_state_t dc_state;
@@ -64,7 +64,9 @@ int main (int argc, char *argv[])
                    dc_restore_estimate(&dc_state),
                    dc_offset);
         }
+        /*endif*/
     }
+    /*endfor*/
     /* We should have settled by now. Look at the variation we get */
     min = 99999;
     max = -99999;
@@ -75,15 +77,19 @@ int main (int argc, char *argv[])
         estimate = dc_restore_estimate(&dc_state);
         if (estimate < min)
             min = estimate;
+        /*endif*/
         if (estimate > max)
             max = estimate;
+        /*endif*/
     }
+    /*endfor*/
     printf("Spread of DC estimate for an offset of %d was %d to %d\n", dc_offset, min, max);
     if (min < dc_offset - 50  ||  max > dc_offset + 50)
     {
         printf("Test failed.\n");
         exit(2);
     }
+    /*endif*/
     awgn_free(noise_source);
     printf("Test passed.\n");
     return 0;

@@ -180,9 +180,16 @@ static char *ssl_err_string(void)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) sslfax_setup(sslfax_state_t *s, void *msg_user_data, put_msg_func_t put_msg, get_msg_func_t get_msg, hdlc_frame_handler_t hdlc_accept, hdlc_underflow_handler_t hdlc_tx_underflow, bool tx_use_hdlc, bool rx_use_hdlc, get_byte_func_t get_phase)
+SPAN_DECLARE(void) sslfax_setup(sslfax_state_t *s,
+                                span_put_msg_func_t put_msg,
+                                span_get_msg_func_t get_msg,
+                                hdlc_frame_handler_t hdlc_accept,
+                                hdlc_underflow_handler_t hdlc_tx_underflow,
+                                bool tx_use_hdlc,
+                                bool rx_use_hdlc,
+                                span_get_byte_func_t get_phase,
+                                void *user_data)
 {
-    s->msg_user_data = msg_user_data;
     s->put_msg = put_msg;
     s->get_msg = get_msg;
     s->hdlc_accept = hdlc_accept;
@@ -190,6 +197,7 @@ SPAN_DECLARE(void) sslfax_setup(sslfax_state_t *s, void *msg_user_data, put_msg_
     s->tx_use_hdlc = tx_use_hdlc;
     s->rx_use_hdlc = rx_use_hdlc;
     s->get_phase = get_phase;
+    s->user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -216,7 +224,7 @@ SPAN_DECLARE(int) sslfax_tx(sslfax_state_t *s, int16_t amp[], int len)
     {
         s->do_underflow = false; /* hdlc_tx_underflow may trigger another, so set it to false before. */
         if (s->hdlc_tx_underflow)
-            s->hdlc_tx_underflow(s->msg_user_data);
+            s->hdlc_tx_underflow(s->user_data);
     }
     if (s->signal)
     {
@@ -237,7 +245,7 @@ SPAN_DECLARE(int) sslfax_tx(sslfax_state_t *s, int16_t amp[], int len)
     {
         if (! s->tx_use_hdlc)
         {
-            while (s->get_msg  &&  s->get_msg(s->msg_user_data, buf, 1) == 1)
+            while (s->get_msg  &&  s->get_msg(s->user_data, buf, 1) == 1)
             {
                 sent = true;
                 sslfax_write(s, buf, 1, 0, 60000, true, false);
@@ -279,7 +287,7 @@ SPAN_DECLARE(int) sslfax_rx(sslfax_state_t *s, const int16_t amp[], int len)
     int pos = 0;
     int r;
 
-    if (s->get_phase(s->msg_user_data) == 7) /* T30_PHASE_C_ECM_RX */
+    if (s->get_phase(s->user_data) == 7) /* T30_PHASE_C_ECM_RX */
     {
         /* We need to read the data stream, unstuff the zero bits, and break into frames on flags. */
         skipbit = false;
@@ -299,7 +307,7 @@ SPAN_DECLARE(int) sslfax_rx(sslfax_state_t *s, const int16_t amp[], int len)
                 if (rbuf[0] == 0x03)
                 {
                     if (s->hdlc_accept)
-                        s->hdlc_accept(s->msg_user_data, NULL, SIG_STATUS_CARRIER_DOWN, true);
+                        s->hdlc_accept(s->user_data, NULL, SIG_STATUS_CARRIER_DOWN, true);
                     /*endif*/
                     break;
                 }
@@ -341,7 +349,7 @@ SPAN_DECLARE(int) sslfax_rx(sslfax_state_t *s, const int16_t amp[], int len)
                     j++;
 
                     if (s->hdlc_accept  &&  pos > 2)
-                        s->hdlc_accept(s->msg_user_data, buf, pos-2, crc_itu16_check(buf, pos));
+                        s->hdlc_accept(s->user_data, buf, pos-2, crc_itu16_check(buf, pos));
                     /*endif*/
                     ones = 0;
                     pos = 0;
@@ -378,7 +386,7 @@ SPAN_DECLARE(int) sslfax_rx(sslfax_state_t *s, const int16_t amp[], int len)
                 if (! s->rx_use_hdlc)
                 {
                     if (s->put_msg)
-                        s->put_msg(s->msg_user_data, NULL, SIG_STATUS_CARRIER_DOWN);
+                        s->put_msg(s->user_data, NULL, SIG_STATUS_CARRIER_DOWN);
                     /*endif*/
                     return 0;
                 }
@@ -391,12 +399,12 @@ SPAN_DECLARE(int) sslfax_rx(sslfax_state_t *s, const int16_t amp[], int len)
                     }
                     /*endif*/
                     if (s->hdlc_accept  &&  pos > 2)
-                        s->hdlc_accept(s->msg_user_data, buf, pos-2, crc_itu16_check(buf, pos));
+                        s->hdlc_accept(s->user_data, buf, pos-2, crc_itu16_check(buf, pos));
                     /*endif*/
                     if ((pos > 0)  &&  (buf[1] != 0x03))  /* 0x03 == CONTROL_FIELD_NON_FINAL_FRAME */
                     {
                         if (s->hdlc_accept)
-                            s->hdlc_accept(s->msg_user_data, NULL, SIG_STATUS_CARRIER_DOWN, true);
+                            s->hdlc_accept(s->user_data, NULL, SIG_STATUS_CARRIER_DOWN, true);
                         /*endif*/
                         return 0;
                     }
@@ -410,7 +418,7 @@ SPAN_DECLARE(int) sslfax_rx(sslfax_state_t *s, const int16_t amp[], int len)
         if (! s->rx_use_hdlc)
         {
             if (s->put_msg)
-                s->put_msg(s->msg_user_data, &buf[pos], 1);
+                s->put_msg(s->user_data, &buf[pos], 1);
             /*endif*/
             pos--;
         }
@@ -427,7 +435,7 @@ SPAN_DECLARE(int) sslfax_rx(sslfax_state_t *s, const int16_t amp[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) sslfax_read(sslfax_state_t *s, void *buf, size_t count, int modemFd, long ms, bool sustain, bool carryon)
+SPAN_DECLARE(int) sslfax_read(sslfax_state_t *s, void *buf, size_t count, int modem_fd, long ms, bool sustain, bool carryon)
 {
     /*
      * We cannot just use select() on the socket to see if there is data waiting
@@ -450,7 +458,7 @@ SPAN_DECLARE(int) sslfax_read(sslfax_state_t *s, void *buf, size_t count, int mo
      * modem for activity, since that would indicate failure of the SSL Fax
      * communication.
      *
-     * The special modemFd value of "0" tells us to not monitor the modem.
+     * The special modem_fd value of "0" tells us to not monitor the modem.
      * This is necessary because we can't select() a modem file descriptor if
      * it's at an EOF (it will always be readable).  The modem file descriptor
      * will be at an EOF if it is in command mode after an "OK" after a command
@@ -480,7 +488,9 @@ SPAN_DECLARE(int) sslfax_read(sslfax_state_t *s, void *buf, size_t count, int mo
                 int selret;
                 fd_set rfds;
                 FD_ZERO(&rfds);
-                if (modemFd) FD_SET(modemFd, &rfds);
+                if (modem_fd)
+                    FD_SET(modem_fd, &rfds);
+                /*endif*/
                 struct timeval curTime;
                 struct timeval tv;
                 gettimeofday(&curTime, 0);
@@ -492,7 +502,7 @@ SPAN_DECLARE(int) sslfax_read(sslfax_state_t *s, void *buf, size_t count, int mo
                 {
                     /*  wait for the socket to be readable  */
                     FD_SET(sslfd, &rfds);
-                    selret = select((modemFd > sslfd) ? modemFd+1 : sslfd+1, &rfds, NULL, NULL, &tv);
+                    selret = select((modem_fd > sslfd)  ?  modem_fd + 1  :  sslfd + 1, &rfds, NULL, NULL, &tv);
                 }
                 else
                 {
@@ -500,7 +510,7 @@ SPAN_DECLARE(int) sslfax_read(sslfax_state_t *s, void *buf, size_t count, int mo
                     fd_set wfds;
                     FD_ZERO(&wfds);
                     FD_SET(sslfd, &wfds);
-                    selret = select((modemFd > sslfd) ? modemFd+1 : sslfd+1, &rfds, &wfds, NULL, &tv);
+                    selret = select((modem_fd > sslfd)  ?  modem_fd + 1 : sslfd + 1, &rfds, &wfds, NULL, &tv);
                 }
                 /*endif*/
                 if (!selret)
@@ -516,7 +526,7 @@ SPAN_DECLARE(int) sslfax_read(sslfax_state_t *s, void *buf, size_t count, int mo
                     return (0);
                 }
                 /*endif*/
-                if (modemFd  &&  FD_ISSET(modemFd, &rfds))
+                if (modem_fd  &&  FD_ISSET(modem_fd, &rfds))
                 {
                     /*  The modem got a signal.  This probably means that SSL Fax is not happening.  */
                     if (!carryon)
@@ -553,7 +563,7 @@ SPAN_DECLARE(int) sslfax_read(sslfax_state_t *s, void *buf, size_t count, int mo
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) sslfax_write(sslfax_state_t *s, const uint8_t *buf, unsigned int count, int modemFd, long ms, bool filter, bool sustain)
+SPAN_DECLARE(int) sslfax_write(sslfax_state_t *s, const uint8_t *buf, unsigned int count, int modem_fd, long ms, bool filter, bool sustain)
 {
     /*
      * Similar approach here as with read() above; however...
@@ -587,7 +597,9 @@ SPAN_DECLARE(int) sslfax_write(sslfax_state_t *s, const uint8_t *buf, unsigned i
                     int selret;
                     fd_set rfds;
                     FD_ZERO(&rfds);
-                    if (modemFd) FD_SET(modemFd, &rfds);
+                    if (modem_fd)
+                        FD_SET(modem_fd, &rfds);
+                    /*endif*/
                     struct timeval curTime;
                     struct timeval tv;
 
@@ -600,7 +612,7 @@ SPAN_DECLARE(int) sslfax_write(sslfax_state_t *s, const uint8_t *buf, unsigned i
                     {
                         /*  wait for the socket to be readable */
                         FD_SET(sslfd, &rfds);
-                        selret = select((modemFd > sslfd) ? modemFd+1 : sslfd+1, &rfds, NULL, NULL, &tv);
+                        selret = select((modem_fd > sslfd)  ?  modem_fd + 1  :  sslfd + 1, &rfds, NULL, NULL, &tv);
                     }
                     else
                     {
@@ -608,7 +620,7 @@ SPAN_DECLARE(int) sslfax_write(sslfax_state_t *s, const uint8_t *buf, unsigned i
                         fd_set wfds;
                         FD_ZERO(&wfds);
                         FD_SET(sslfd, &wfds);
-                        selret = select((modemFd > sslfd) ? modemFd+1 : sslfd+1, &rfds, &wfds, NULL, &tv);
+                        selret = select((modem_fd > sslfd)  ?  modem_fd + 1  :  sslfd + 1, &rfds, &wfds, NULL, &tv);
                     }
                     /*endif*/
                     if (selret == 0)
@@ -625,7 +637,7 @@ SPAN_DECLARE(int) sslfax_write(sslfax_state_t *s, const uint8_t *buf, unsigned i
                         return (0);
                     }
                     /*endif*/
-                    if (modemFd  &&  FD_ISSET(modemFd, &rfds))
+                    if (modem_fd  &&  FD_ISSET(modem_fd, &rfds))
                     {
                         /*  The modem got a signal.  This probably means that SSL Fax is not happening.  */
                         span_log(&s->logging, SPAN_LOG_FLOW, "Modem has data when waiting for SSL Fax write.  Terminating SSL Fax.\n");
@@ -837,7 +849,7 @@ SPAN_DECLARE(sslfax_state_t *) sslfax_init(sslfax_state_t *s)
     s->ecm_ones = 0;
     s->ecm_bitpos = 0;
     s->ecm_byte = 0;
-    s->msg_user_data = NULL;
+    s->user_data = NULL;
     s->get_msg = NULL;
     s->put_msg = NULL;
     s->hdlc_accept = NULL;
@@ -873,18 +885,18 @@ SPAN_DECLARE(void) sslfax_cleanup(sslfax_state_t *s, bool sustain)
     }
 
 //    int times = 3;
-//    while (times--  &&  s->hdlc_tx_underflow  &&  s->msg_user_data  &&  s->do_underflow)
+//    while (times--  &&  s->hdlc_tx_underflow  &&  s->user_data  &&  s->do_underflow)
 //    {
 //        s->do_underflow = false; /* hdlc_tx_underflow may trigger another, so set it to false before. */
 //        if (s->hdlc_tx_underflow)
-//            s->hdlc_tx_underflow(s->msg_user_data);
+//            s->hdlc_tx_underflow(s->user_data);
 //    }
 
     s->rcp_count = 0;
     s->ecm_ones = 0;
     s->ecm_bitpos = 0;
     s->ecm_byte = 0;
-    s->msg_user_data = NULL;
+    s->user_data = NULL;
     s->get_msg = NULL;
     s->put_msg = NULL;
     s->hdlc_accept = NULL;

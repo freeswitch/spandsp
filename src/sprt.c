@@ -40,6 +40,7 @@
 #endif
 
 #define SPANDSP_FULLY_DEFINE_SPRT_STATE_T
+
 #include "spandsp/telephony.h"
 #include "spandsp/alloc.h"
 #include "spandsp/unaligned.h"
@@ -419,7 +420,7 @@ static bool retransmit_the_unacknowledged(sprt_state_t *s, int channel, span_tim
             {
                 /* TODO: take action on too many retries */
                 if (s->status_handler)
-                    s->status_handler(s->status_user_data, /* TODO: */ 1235);
+                    s->status_handler(s->status_user_data, SPRT_STATUS_EXCESS_RETRIES);
                 /*endif*/
             }
             else
@@ -655,9 +656,9 @@ SPAN_DECLARE(int) sprt_rx_packet(sprt_state_t *s, const uint8_t pkt[], int len)
 {
     int i;
     int header_extension_bit;
-    int subsession_id;
     int reserved_bit;
-    int payload_type;
+    uint8_t subsession_id;
+    uint8_t payload_type;
     int channel;
     uint16_t base_sequence_no;
     uint16_t sequence_no;
@@ -703,7 +704,7 @@ SPAN_DECLARE(int) sprt_rx_packet(sprt_state_t *s, const uint8_t pkt[], int len)
         return -1;
     }
     /*endif*/
-    if (s->rx.subsession_id < 0)
+    if (s->rx.subsession_id == 0xFF)
     {
         /* This is the first subsession ID we have seen, so accept it going forwards as the
            subsession ID to be expected for future packets. The spec says the IDs start at zero,
@@ -721,7 +722,7 @@ SPAN_DECLARE(int) sprt_rx_packet(sprt_state_t *s, const uint8_t pkt[], int len)
                a new subsession ID, rather than garbage? */
             span_log(&s->logging, SPAN_LOG_FLOW, "Rx subsession ID %d, expected %d\n", subsession_id, s->rx.subsession_id);
             if (s->status_handler)
-                s->status_handler(s->status_user_data, /* TODO: */ 1234);
+                s->status_handler(s->status_user_data, SPRT_STATUS_SUBSESSION_CHANGED);
             /*endif*/
             sprt_rx_reinit(s);
             return -1;
@@ -768,16 +769,16 @@ SPAN_DECLARE(int) sprt_rx_packet(sprt_state_t *s, const uint8_t pkt[], int len)
         process_acknowledgements(s, noa, tcn, sqn);
     }
     /*endif*/
-    span_log(&s->logging, SPAN_LOG_FLOW, "Rx ch %d seq %d len %d  header len %d - noa %d\n", channel, sequence_no, len, header_len, noa);
-
-    /* Deal with the payload, if any, in the packet */
     payload_len = len - header_len;
+    span_log(&s->logging, SPAN_LOG_FLOW, "Rx ch %d seq %d noa %d len %d\n", channel, sequence_no, noa, payload_len);
+    /* Deal with the payload, if any, in the packet */
     /* V.150.1 says SPRT_TCID_UNRELIABLE_UNSEQUENCED should be used for ACK only packets, but in the real
        world you should expect any of the transport channel IDs. These ACK only packets have the sequence
        number set to zero, regardless of where the sequence number for that channel currently stands.
        (figure B.3/V.150.1) */
     if (payload_len > 0)
     {
+        /* There is a payload to process */
         if (payload_len > chan->max_payload_bytes)
         {
             span_log(&s->logging, SPAN_LOG_ERROR, "Payload too long %d (%d)\n", payload_len, chan->max_payload_bytes);
@@ -860,7 +861,7 @@ SPAN_DECLARE(int) sprt_rx_packet(sprt_state_t *s, const uint8_t pkt[], int len)
                            its probably a repeat for a packet where the far end missed the previous ACK we sent. */
                         queue_acknowledgement(s, channel, sequence_no);
                         if (s->status_handler)
-                            s->status_handler(s->status_user_data, /* TODO: */ 1236);
+                            s->status_handler(s->status_user_data, SPRT_STATUS_OUT_OF_SEQUENCE);
                         /*endif*/
                     }
                     else
@@ -1202,9 +1203,9 @@ SPAN_DECLARE(logging_state_t *) sprt_get_logging_state(sprt_state_t *s)
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(sprt_state_t *) sprt_init(sprt_state_t *s,
-                                       int subsession_id,
-                                       int rx_payload_type,
-                                       int tx_payload_type,
+                                       uint8_t subsession_id,
+                                       uint8_t rx_payload_type,
+                                       uint8_t tx_payload_type,
                                        channel_parms_t parms[SPRT_CHANNELS],
                                        sprt_tx_packet_handler_t tx_packet_handler,
                                        void *tx_user_data,
@@ -1272,7 +1273,7 @@ SPAN_DECLARE(sprt_state_t *) sprt_init(sprt_state_t *s,
     s->rx.chan[SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED].buff = s->tc2_rx_buff;
     s->rx.chan[SPRT_TCID_EXPEDITED_RELIABLE_SEQUENCED].buff_len = s->tc2_rx_buff_len;
 
-    s->rx.subsession_id = -1;
+    s->rx.subsession_id = 0xFF;
     s->tx.subsession_id = subsession_id;
     s->rx.payload_type = rx_payload_type;
     s->tx.payload_type = tx_payload_type;

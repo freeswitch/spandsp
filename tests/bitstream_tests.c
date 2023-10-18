@@ -114,14 +114,17 @@ int main(int argc, char *argv[])
         bitstream_put(s, &w, i*PATTERN, i + 1);
         total_bits += (i + 1);
     }
+    /*endfor*/
     bitstream_flush(s, &w);
     printf("%d bits written\n", total_bits);
 
     for (cc = buffer;  cc < w;  cc++)
         printf("%02X ", *cc);
+    /*endfor*/
     printf("\n");
     for (cc = right;  cc < right + sizeof(right);  cc++)
         printf("%02X ", *cc);
+    /*endfor*/
     printf("\n");
 
     if ((w - buffer) != sizeof(right)  ||  memcmp(buffer, right, sizeof(right)))
@@ -129,6 +132,7 @@ int main(int argc, char *argv[])
         printf("Test failed\n");
         exit(2);
     }
+    /*endif*/
 
     s = bitstream_init(&state, true);
     r = buffer;
@@ -141,7 +145,9 @@ int main(int argc, char *argv[])
             printf("Test failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
 
     s = bitstream_init(&state, false);
     w = buffer;
@@ -151,14 +157,17 @@ int main(int argc, char *argv[])
         bitstream_put(s, &w, PATTERN*i, i + 1);
         total_bits += (i + 1);
     }
+    /*endfor*/
     bitstream_flush(s, &w);
     printf("%d bits written\n", total_bits);
 
     for (cc = buffer;  cc < w;  cc++)
         printf("%02X ", *cc);
+    /*endfor*/
     printf("\n");
     for (cc = left;  cc < left + sizeof(left);  cc++)
         printf("%02X ", *cc);
+    /*endfor*/
     printf("\n");
 
     if ((w - buffer) != sizeof(left)  ||  memcmp(buffer, left, sizeof(left)))
@@ -166,6 +175,7 @@ int main(int argc, char *argv[])
         printf("Test failed\n");
         exit(2);
     }
+    /*endif*/
 
     s = bitstream_init(&state, false);
     r = buffer;
@@ -178,7 +188,9 @@ int main(int argc, char *argv[])
             printf("Test failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
 
     printf("Tests passed.\n");
     return 0;

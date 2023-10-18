@@ -99,19 +99,19 @@ struct sslfax_state_s
     bool do_underflow;
     bool cleanup;
 
-    get_byte_func_t get_phase;
+    span_get_byte_func_t get_phase;
 
-    /*! \brief A user specified opaque pointer passed to the put, get, and hdlc routines. */
-    void *msg_user_data;
     /*! \brief The callback function used to get bytes to be transmitted. */
-    get_msg_func_t get_msg;
+    span_get_msg_func_t get_msg;
     /*! \brief The callback function used to put bytes received. */
-    put_msg_func_t put_msg;
+    span_put_msg_func_t put_msg;
     /*! \brief The callback function used to accept HDLC frames. */
     hdlc_frame_handler_t hdlc_accept;
     /*! \brief The callback function used for HDLC underflow indication. */
     hdlc_underflow_handler_t hdlc_tx_underflow;
     /*! \brief Whether or not the data represents HDLC or not. */
+    /*! \brief A user specified opaque pointer passed to the put, get, and hdlc routines. */
+    void *user_data;
     bool tx_use_hdlc;
     bool rx_use_hdlc;
 

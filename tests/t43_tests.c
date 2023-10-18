@@ -152,6 +152,7 @@ static int t85_comment_handler(void *user_data, const uint8_t buf[], size_t len)
         printf("Comment (%lu): %s\n", (unsigned long int) len, buf);
     else
         printf("Comment (%lu): ---\n", (unsigned long int) len);
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -231,6 +232,7 @@ int write_file(meta_t *meta, int page, const uint8_t buf[])
     {
         if (TIFFWriteRawStrip(tif, 0, (tdata_t) buf, meta->compressed_image_len) < 0)
             printf("Error writing TIFF strip.\n");
+        /*endif*/
     }
     else
     {
@@ -254,16 +256,20 @@ int write_file(meta_t *meta, int page, const uint8_t buf[])
                     {
                         if (out_buf)
                             free(out_buf);
+                        /*endif*/
                         return -1;
                     }
+                    /*endif*/
                     out_buf = out_buf2;
                 }
+                /*endif*/
                 chunk_len = t85_encode_get(&t85, &out_buf[out_len], 50000);
                 out_len += chunk_len;
             }
             while (chunk_len > 0);
             if (TIFFWriteRawStrip(tif, 0, out_buf, out_len) < 0)
                 printf("Error writing TIFF strip.\n");
+            /*endif*/
             t85_encode_release(&t85);
             free(out_buf);
             break;
@@ -283,16 +289,20 @@ int write_file(meta_t *meta, int page, const uint8_t buf[])
                     {
                         if (out_buf)
                             free(out_buf);
+                        /*endif*/
                         return -1;
                     }
+                    /*endif*/
                     out_buf = out_buf2;
                 }
+                /*endif*/
                 chunk_len = t43_encode_get(&t43, &out_buf[out_len], 50000);
                 out_len += chunk_len;
             }
             while (chunk_len > 0);
             if (TIFFWriteRawStrip(tif, 0, out_buf, out_len) < 0)
                 printf("Error writing TIFF strip.\n");
+            /*endif*/
             t43_encode_release(&t43);
             free(out_buf);
             break;
@@ -302,13 +312,18 @@ int write_file(meta_t *meta, int page, const uint8_t buf[])
             {
                 if (TIFFWriteScanline(tif, (tdata_t) &buf[off], i, 0) < 0)
                     printf("Error writing TIFF scan line.\n");
+                /*endif*/
             }
+            /*endfor*/
             break;
         }
+        /*endswitch*/
     }
+    /*endif*/
 
     if (!TIFFWriteDirectory(tif))
         printf("Failed to write directory.\n");
+    /*endif*/
 
 #if defined(SPANDSP_SUPPORT_TIFF_FX)  &&  defined(HAVE_TIF_DIR_H)
     if (!TIFFCreateCustomDirectory(tif, &tiff_fx_field_array))
@@ -325,11 +340,15 @@ int write_file(meta_t *meta, int page, const uint8_t buf[])
 
         if (!TIFFSetDirectory(tif, (tdir_t) page))
             printf("Failed to set directory.\n");
+        /*endif*/
         if (!TIFFSetField(tif, TIFFTAG_GLOBALPARAMETERSIFD, diroff))
             printf("Failed to set global parameters IFD.\n");
+        /*endif*/
         if (!TIFFWriteDirectory(tif))
             printf("Failed to write directory.\n");
+        /*endif*/
     }
+    /*endif*/
 #endif
     return 0;
 }
@@ -372,6 +391,7 @@ int read_file(meta_t *meta, int page)
         printf("Unable to set TIFF directory %d!\n", page);
         return -1;
     }
+    /*endif*/
     meta->image_width = 0;
     TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &meta->image_width);
     meta->image_length = 0;
@@ -419,6 +439,7 @@ int read_file(meta_t *meta, int page)
         meta->bmax = 0.0f;
         break;
     }
+    /*endswitch*/
 #if defined(SPANDSP_SUPPORT_TIFF_FX)  &&  defined(HAVE_TIF_DIR_H)
     if (TIFFGetField(tif, TIFFTAG_DECODE, &parm16, &fl_parms))
     {
@@ -430,6 +451,7 @@ int read_file(meta_t *meta, int page)
         meta->bmax = fl_parms[5];
         printf("Got decode tag %f %f %f %f %f %f\n", meta->lmin, meta->lmax, meta->amin, meta->amax, meta->bmin, meta->bmax);
     }
+    /*endif*/
 #endif
 
 #if defined(SPANDSP_SUPPORT_TIFF_FX)  &&  defined(HAVE_TIF_DIR_H)
@@ -445,38 +467,51 @@ int read_file(meta_t *meta, int page)
         {
             if (TIFFGetField(tif, TIFFTAG_PROFILETYPE, &parm32))
                 printf("  Profile type %u\n", parm32);
+            /*endif*/
             if (TIFFGetField(tif, TIFFTAG_FAXPROFILE, &parm8))
                 printf("  FAX profile %s (%u)\n", tiff_fx_fax_profiles[parm8], parm8);
+            /*endif*/
             if (TIFFGetField(tif, TIFFTAG_CODINGMETHODS, &parm32))
                 printf("  Coding methods 0x%x\n", parm32);
+            /*endif*/
             if (TIFFGetField(tif, TIFFTAG_VERSIONYEAR, &u))
             {
                 memcpy(uu, u, 4);
                 uu[4] = '\0';
                 printf("  Version year \"%s\"\n", uu);
             }
+            /*endif*/
             if (TIFFGetField(tif, TIFFTAG_MODENUMBER, &parm8))
                 printf("  Mode number %u\n", parm8);
+            /*endif*/
         }
+        /*endif*/
         TIFFSetDirectory(tif, (tdir_t) page);
     }
+    /*endif*/
 
     if (TIFFGetField(tif, TIFFTAG_PROFILETYPE, &parm32))
         printf("Profile type %u\n", parm32);
+    /*endif*/
     if (TIFFGetField(tif, TIFFTAG_FAXPROFILE, &parm8))
         printf("FAX profile %s (%u)\n", tiff_fx_fax_profiles[parm8], parm8);
+    /*endif*/
     if (TIFFGetField(tif, TIFFTAG_CODINGMETHODS, &parm32))
         printf("Coding methods 0x%x\n", parm32);
+    /*endif*/
     if (TIFFGetField(tif, TIFFTAG_VERSIONYEAR, &u))
     {
         memcpy(uu, u, 4);
         uu[4] = '\0';
         printf("Version year \"%s\"\n", uu);
     }
+    /*endif*/
     if (TIFFGetField(tif, TIFFTAG_MODENUMBER, &parm8))
         printf("Mode number %u\n", parm8);
+    /*endif*/
     if (TIFFGetField(tif, TIFFTAG_T82OPTIONS, &parm32))
         printf("T.82 options 0x%x\n", parm32);
+    /*endif*/
 #endif
 
     map_L = NULL;
@@ -497,6 +532,7 @@ int read_file(meta_t *meta, int page)
                 meta->colour_map[3*i + 2] = (map_b[i] >> 8) & 0xFF;
                 printf("Map %3d - %5d %5d %5d\n", i, meta->colour_map[3*i], meta->colour_map[3*i + 1], meta->colour_map[3*i + 2]);
             }
+            /*endfor*/
 #else
             /* Sweep the colormap in the order that seems to work for l04x_02x.tif */
             for (i = 0;  i < entries;  i++)
@@ -505,6 +541,7 @@ int read_file(meta_t *meta, int page)
                 meta->colour_map[256 + i] = (map_a[i] >> 8) & 0xFF;
                 meta->colour_map[2*256 + i] = (map_b[i] >> 8) & 0xFF;
             }
+            /*endfor*/
 #endif
             /* The default luminant is D50 */
             set_lab_illuminant(&lab_param, 96.422f, 100.000f,  82.521f);
@@ -512,8 +549,11 @@ int read_file(meta_t *meta, int page)
             lab_to_srgb(&lab, meta->colour_map, meta->colour_map, 256);
             for (i = 0;  i < entries;  i++)
                 printf("Map %3d - %5d %5d %5d\n", i, meta->colour_map[3*i], meta->colour_map[3*i + 1], meta->colour_map[3*i + 2]);
+            /*endfor*/
         }
+        /*endif*/
     }
+    /*endif*/
     meta->tif = tif;
     return 0;
 }
@@ -533,8 +573,10 @@ int read_compressed_image(meta_t *meta, uint8_t **buf)
     {
         total_len += TIFFRawStripSize(meta->tif, i);
     }
+    /*endfor*/
     if ((data = malloc(total_len)) == NULL)
         return -1;
+    /*endif*/
     for (i = 0, read_len = 0;  i < num_strips;  i++, read_len += len)
     {
         if ((len = TIFFReadRawStrip(meta->tif, i, &data[read_len], total_len - read_len)) < 0)
@@ -543,7 +585,9 @@ int read_compressed_image(meta_t *meta, uint8_t **buf)
             free(data);
             return -1;
         }
+        /*endif*/
     }
+    /*endfor*/
     *buf = data;
     return total_len;
 }
@@ -594,6 +638,7 @@ int read_decompressed_image(meta_t *meta, uint8_t **buf)
             printf("Failed to allocated image buffer\n");
             return -1;
         }
+        /*endif*/
         total_raw = read_compressed_image(meta, &raw_buf);
         t85_decode_init(&t85, row_write_handler, &pack);
         t85_decode_set_comment_handler(&t85, 1000, t85_comment_handler, NULL);
@@ -606,6 +651,7 @@ int read_decompressed_image(meta_t *meta, uint8_t **buf)
         result = t85_decode_put(&t85, raw_buf, total_raw);
         if (result == T4_DECODE_MORE_DATA)
             result = t85_decode_put(&t85, NULL, 0);
+        /*endif*/
         total_data = t85_decode_get_compressed_image_size(&t85);
         printf("Compressed image is %d/%d bytes, %d rows\n", total_raw, total_data/8, write_row);
         t85_decode_release(&t85);
@@ -616,10 +662,11 @@ int read_decompressed_image(meta_t *meta, uint8_t **buf)
         total_data = meta->image_length*bytes_per_row;
         printf("Total decompressed data %d, %d per row\n", total_data, bytes_per_row);
 
-total_data *= 8;
+        total_data *= 8;
         /* Read the image into memory. */
         if ((image_buf = malloc(total_data)) == NULL)
             printf("Failed to allocated image buffer\n");
+        /*endif*/
 
         total_raw = read_compressed_image(meta, &raw_buf);
         t43_decode_init(&t43, row_write_handler, &pack);
@@ -633,6 +680,7 @@ total_data *= 8;
         result = t43_decode_put(&t43, raw_buf, total_raw);
         if (result == T4_DECODE_MORE_DATA)
             result = t43_decode_put(&t43, NULL, 0);
+        /*endif*/
         t43_decode_release(&t43);
         free(raw_buf);
 
@@ -653,7 +701,7 @@ total_data *= 8;
             /* Read the image into memory. */
             if ((image_buf = malloc(total_data)) == NULL)
                 printf("Failed to allocated image buffer\n");
-
+            /*endif*/
 #if 0
             jpeg_table_len = 0;
             if (TIFFGetField(meta->tif, TIFFTAG_JPEGTABLES, &jpeg_table_len, &jpeg_table))
@@ -668,6 +716,7 @@ for (ii = 0;  ii < jpeg_table_len;  ii++)
 printf("\n");
 }
             }
+            /*endif*/
 #endif
             total_raw = read_compressed_image(meta, &raw_buf);
             //if (!t42_itulab_jpeg_to_srgb(&logging2, &lab_param, (tdata_t) image_buf, &off, raw_buf, total_raw, &w, &h, &samples_per_pixel))
@@ -676,12 +725,14 @@ printf("\n");
                 free(image_buf);
                 return -1;
             }
+            /*endif*/
             meta->photometric = PHOTOMETRIC_RGB;
 
 #if 0
             total_len = 0;
             if (jpeg_table_len > 0)
                 total_len += jpeg_table_len - 4;
+            /*endif*/
 
 printf("nstrips %d\n", nstrips);
             data2 = NULL;
@@ -690,17 +741,20 @@ printf("nstrips %d\n", nstrips);
                 total_len = 0;
                 if (jpeg_table_len > 0)
                     total_len += jpeg_table_len - 4;
+                /*endif*/
                 if ((len = TIFFReadRawStrip(tif, i, &data[total_len], total_image_len - total_len)) < 0)
                 {
                     printf("TIFF read error.\n");
                     free(image_buf);
                     return -1;
                 }
+                /*endif*/
                 if (jpeg_table_len > 0)
                 {
                     memcpy(data, jpeg_table, jpeg_table_len - 2);
 printf("%02x %02x %02x %02x\n", data[total_len], data[total_len + 1], data[total_len + 2], data[total_len + 3]);
                 }
+                /*endif*/
                 totdata = meta->image_width*3000*meta->samples_per_pixel;
                 data2 = realloc(data2, totdata);
                 off = total_len;
@@ -710,15 +764,20 @@ printf("%02x %02x %02x %02x\n", data[total_len], data[total_len + 1], data[total
                     free(image_buf);
                     return -1;
                 }
+                /*endif*/
             }
+            /*endfor*/
             if (data2)
                 free(data2);
+            /*endif*/
             //exit(2);
             if (jpeg_table_len > 0)
                 memcpy(data, jpeg_table, jpeg_table_len - 2);
+            /*endif*/
 
             if (total_len != total_image_len)
                 printf("Size mismatch %d %d\n", (int) total_len, (int) total_image_len);
+            /*endif*/
 {
 int ii;
 
@@ -747,6 +806,7 @@ printf("\n");
                 /* Read the image into memory. */
                 if ((image_buf = malloc(total_data)) == NULL)
                     printf("Failed to allocated image buffer\n");
+                /*endif*/
 
                 for (y = 0;  y < meta->image_length;  y += meta->tile_length)
                 {
@@ -758,19 +818,26 @@ printf("\n");
                         yyy = meta->tile_length;
                         if (y + meta->tile_length > meta->image_length)
                             yyy = meta->image_length - y;
+                        /*endif*/
                         xxx = meta->tile_width;
                         if (x + meta->tile_width > meta->image_width)
                             xxx = meta->image_width - x;
+                        /*endif*/
                         for (yy = 0;  yy < yyy;  yy++)
                         {
                             for (xx = 0;  xx < xxx;  xx++)
                             {
                                 for (j = 0;  j < meta->samples_per_pixel;  j++)
                                     image_buf[meta->samples_per_pixel*((y + yy)*meta->image_width + x + xx) + j] = data[meta->samples_per_pixel*(yy*meta->tile_width + xx) + j];
+                                /*endfor*/
                             }
+                            /*endfor*/
                         }
+                        /*endfor*/
                     }
+                    /*endfor*/
                 }
+                /*endfor*/
                 break;
             case PLANARCONFIG_SEPARATE:
                 bytes_per_row = TIFFScanlineSize(meta->tif);
@@ -780,6 +847,7 @@ printf("\n");
                 /* Read the image into memory. */
                 if ((image_buf = malloc(total_data)) == NULL)
                     printf("Failed to allocated image buffer\n");
+                /*endif*/
 
                 for (j = 0;  j < meta->samples_per_pixel;  j++)
                 {
@@ -793,21 +861,29 @@ printf("\n");
                             yyy = meta->tile_length;
                             if (y + meta->tile_length > meta->image_length)
                                 yyy = meta->image_length - y;
+                            /*endif*/
                             xxx = meta->tile_width;
                             if (x + meta->tile_width > meta->image_width)
                                 xxx = meta->image_width - x;
+                            /*endif*/
                             for (yy = 0;  yy < yyy;  yy++)
                             {
                                 for (xx = 0;  xx < xxx;  xx++)
                                 {
                                     image_buf[meta->samples_per_pixel*((y + yy)*meta->image_width + x + xx) + j] = data[yy*meta->tile_width + xx];
                                 }
+                                /*endfor*/
                             }
+                            /*endfor*/
                         }
+                        /*endfor*/
                     }
+                    /*endfor*/
                 }
+                /*endfor*/
                 break;
             }
+            /*endswitch*/
         }
         else
         {
@@ -822,6 +898,7 @@ printf("\n");
                 /* Read the image into memory. */
                 if ((image_buf = malloc(total_data)) == NULL)
                     printf("Failed to allocated image buffer\n");
+                /*endif*/
 
                 for (y = 0;  y < meta->image_length;  y++)
                 {
@@ -830,7 +907,9 @@ printf("\n");
                         free(image_buf);
                         return -1;
                     }
+                    /*endif*/
                 }
+                /*endfor*/
                 break;
             case PLANARCONFIG_SEPARATE:
                 bytes_per_row = TIFFScanlineSize(meta->tif);
@@ -840,6 +919,7 @@ printf("\n");
                 /* Read the image into memory. */
                 if ((image_buf = malloc(total_data)) == NULL)
                     printf("Failed to allocated image buffer\n");
+                /*endif*/
 
                 for (j = 0;  j < meta->samples_per_pixel;  j++)
                 {
@@ -852,13 +932,19 @@ printf("\n");
                             free(image_buf);
                             return -1;
                         }
+                        /*endif*/
                         for (x = 0;  x < meta->image_width;  x++)
                             image_buf[meta->samples_per_pixel*(y*bytes_per_row + x) + j] = data[x];
+                        /*endfor*/
                     }
+                    /*endfor*/
                 }
+                /*endfor*/
                 break;
             }
+            /*endswitch*/
         }
+        /*endif*/
         break;
     }
     /* Normalise bi-level images, so they are always in PHOTOMETRIC_MINISWHITE form */
@@ -868,9 +954,12 @@ printf("\n");
         {
             for (i = 0;  i < total_data;  i++)
                 image_buf[i] = ~image_buf[i];
+            /*endfor*/
             meta->photometric = PHOTOMETRIC_MINISWHITE;
         }
+        /*endif*/
     }
+    /*endif*/
 
     *buf = image_buf;
     return total_data;
@@ -909,7 +998,7 @@ int main(int argc, char *argv[])
     source_file = (argc > 1)  ?  argv[1]  :  IN_FILE_NAME;
     printf("Processing '%s'\n", source_file);
     destination_file = OUT_FILE_NAME;
-    output_compression = (argc > 2)  ?  atoi(argv[2]) : COMPRESSION_CCITT_T6;
+    output_compression = (argc > 2)  ?  atoi(argv[2])  :  COMPRESSION_CCITT_T6;
 
 #if defined(SPANDSP_SUPPORT_TIFF_FX)  &&  defined(HAVE_TIF_DIR_H)
     TIFF_FX_init();
@@ -920,12 +1009,14 @@ int main(int argc, char *argv[])
         printf("Unable to open '%s'!\n", source_file);
         return 1;
     }
+    /*endif*/
 
     if ((meta.tif = TIFFOpen(destination_file, "w")) == NULL)
     {
         printf("Unable to open '%s'!\n", destination_file);
         return 1;
     }
+    /*endif*/
     span_log_init(&logging2, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW, "lab");
 
     /* The default luminant is D50 */
@@ -942,6 +1033,7 @@ int main(int argc, char *argv[])
             TIFFClose(meta.tif);
             exit(2);
         }
+        /*endif*/
 
         tif = in_meta.tif;
 
@@ -954,6 +1046,7 @@ int main(int argc, char *argv[])
         {
             /* It looks like we need to decompress and recompress the image */
         }
+        /*endif*/
 
         printf("Width %d, height %d, bits %d, samples %d\n", in_meta.image_width, in_meta.image_length, in_meta.bits_per_sample, in_meta.samples_per_pixel);
 
@@ -999,8 +1092,10 @@ int main(int argc, char *argv[])
                 {
                     if ((outptr = malloc(in_meta.image_width*in_meta.image_length)) == NULL)
                         printf("Failed to allocate buffer\n");
+                    /*endif*/
                     for (i = 0;  i < in_meta.image_width*in_meta.image_length;  i++)
                         outptr[i] = data[2*i];
+                    /*endfor*/
                     free(data);
                     data = (uint8_t *) outptr;
                 }
@@ -1014,6 +1109,7 @@ int main(int argc, char *argv[])
                        number of bytes. */                
                     if ((outptr = malloc(in_meta.image_width*in_meta.image_length)) == NULL)
                         printf("Failed to allocate buffer\n");
+                    /*endif*/
                     bitstream = 0;
                     bits = 0;
                     j = 0;
@@ -1024,12 +1120,15 @@ int main(int argc, char *argv[])
                             bitstream = (bitstream << 8) | data[j++];
                             bits += 8;
                         }
+                        /*endwhile*/
                         outptr[i] = bitstream >> (bits - 8);
                         bits -= in_meta.bits_per_sample;
                     }
+                    /*endfor*/
                     free(data);
                     data = (uint8_t *) outptr;
                 }
+                /*endif*/
                 off = in_meta.samples_per_pixel*in_meta.image_width*in_meta.image_length;
 
                 /* We have finished acquiring the image. Now we need to push it out */
@@ -1046,6 +1145,7 @@ int main(int argc, char *argv[])
 
                 write_file(&meta, page_no, data);
             }
+            /*endif*/
             break;
         case 3:
             printf("Photometric is %d\n", in_meta.photometric);
@@ -1058,6 +1158,7 @@ int main(int argc, char *argv[])
                 /* We are already in the ITULAB color space */
                 if ((outptr = malloc(totdata)) == NULL)
                     printf("Failed to allocate buffer\n");
+                /*endif*/
                 lab_to_srgb(&lab_param, (tdata_t) outptr, data, totdata/3);
                 free(data);
                 data = (uint8_t *) outptr;
@@ -1097,12 +1198,14 @@ int main(int argc, char *argv[])
                         printf("Pack %d to %d\n", totdata, in_meta.samples_per_pixel*in_meta.image_width*in_meta.image_length);
                         if ((outptr = malloc(in_meta.samples_per_pixel*in_meta.image_width*in_meta.image_length)) == NULL)
                             printf("Failed to allocate buffer\n");
+                        /*endif*/
                         for (i = 0;  i < in_meta.image_width*in_meta.image_length;  i++)
                         {
                             outptr[in_meta.samples_per_pixel*i + 0] = (data[in_meta.samples_per_pixel*2*i + 1] << 4) | (data[in_meta.samples_per_pixel*2*i + 0] >> 4);
                             outptr[in_meta.samples_per_pixel*i + 1] = (data[in_meta.samples_per_pixel*2*i + 3] << 4) | (data[in_meta.samples_per_pixel*2*i + 2] >> 4);
                             outptr[in_meta.samples_per_pixel*i + 2] = (data[in_meta.samples_per_pixel*2*i + 5] << 4) | (data[in_meta.samples_per_pixel*2*i + 4] >> 4);
                         }
+                        /*endfor*/
                         free(data);
                         data = (uint8_t *) outptr;
                         off = in_meta.samples_per_pixel*in_meta.image_width*in_meta.image_length;
@@ -1118,6 +1221,7 @@ int main(int argc, char *argv[])
                         printf("Pack %d to %d\n", totdata, in_meta.samples_per_pixel*in_meta.image_width*in_meta.image_length);
                         if ((outptr = malloc(in_meta.samples_per_pixel*in_meta.image_width*in_meta.image_length)) == NULL)
                             printf("Failed to allocate buffer\n");
+                        /*endif*/
                         bitstream = 0;
                         bits = 0;
                         j = 0;
@@ -1130,17 +1234,22 @@ int main(int argc, char *argv[])
                                     bitstream = (bitstream << 8) | data[j++];
                                     bits += 8;
                                 }
+                                /*endwhile*/
                                 outptr[in_meta.samples_per_pixel*i + k] = bitstream >> (bits - 8);
                                 bits -= in_meta.bits_per_sample;
                             }
+                            /*endfor*/
                         }
+                        /*endfor*/
                         free(data);
                         data = (uint8_t *) outptr;
                         off = in_meta.samples_per_pixel*in_meta.image_width*in_meta.image_length;
                         in_meta.bits_per_sample = 8;
                     }
+                    /*endif*/
                     break;
                 }
+                /*endswitch*/
 #if 0
                 /* The default luminant is D50 */
                 set_lab_illuminant(&lab_param, 96.422f, 100.000f,  82.521f);
@@ -1150,6 +1259,7 @@ int main(int argc, char *argv[])
                     printf("Failed to convert to ITULAB (B).\n");
                     return 1;
                 }
+                /*endif*/
                 end = rdtscll();
                 printf("Duration %" PRIu64 "\n", end - start);
                 free(data);
@@ -1168,6 +1278,7 @@ int main(int argc, char *argv[])
                 meta.compression = COMPRESSION_JPEG;
                 meta.photometric = PHOTOMETRIC_RGB;
             }
+            /*endif*/
             write_file(&meta, page_no, data);
             break;
         case 4:
@@ -1184,6 +1295,7 @@ int main(int argc, char *argv[])
                     printf("Failed to convert to ITULAB (C).\n");
                     return 1;
                 }
+                /*endif*/
 #else
                 outsize = 0;
 #endif
@@ -1213,21 +1325,27 @@ int main(int argc, char *argv[])
                             k = data[(y*in_meta.image_width + x)*4 + 0] + data[(y*in_meta.image_width + x)*4 + 3];
                             if (k > 255)
                                 k = 255;
+                            /*endif*/
                             data[(y*in_meta.image_width + x)*3 + 0] = 255 - k;
                             k = data[(y*in_meta.image_width + x)*4 + 1] + data[(y*in_meta.image_width + x)*4 + 3];
                             if (k > 255)
                                 k = 255;
+                            /*endif*/
                             data[(y*in_meta.image_width + x)*3 + 1] = 255 - k;
                             k = data[(y*in_meta.image_width + x)*4 + 2] + data[(y*in_meta.image_width + x)*4 + 3];
                             if (k > 255)
                                 k = 255;
+                            /*endif*/
                             data[(y*in_meta.image_width + x)*3 + 2] = 255 - k;
                         }
+                        /*endfor*/
                     }
+                    /*endfor*/
                     off = 3*in_meta.image_width*in_meta.image_length;
                     in_meta.bits_per_sample = 8;
                     break;
                 }
+                /*endswitch*/
 
                 /* The default luminant is D50 */
                 set_lab_illuminant(&lab_param, 96.422f, 100.000f,  82.521f);
@@ -1237,11 +1355,13 @@ int main(int argc, char *argv[])
                     printf("Failed to convert to ITULAB (D).\n");
                     return 1;
                 }
+                /*endif*/
                 end = rdtscll();
                 printf("Duration %" PRIu64 "\n", end - start);
                 off = outsize;
                 in_meta.bits_per_sample = 8;
             }
+            /*endif*/
             meta.pre_compressed = false;
             meta.image_width = in_meta.image_width;
             meta.image_length = in_meta.image_length;
@@ -1256,9 +1376,9 @@ int main(int argc, char *argv[])
             write_file(&meta, page_no, data);
             break;
         }
+        /*endswitch*/
     }
-
-
+    /*endfor*/
 
     printf("XXX - image is %d by %d, %d bytes\n", in_meta.image_width, in_meta.image_length, (int) off);
 
@@ -1293,6 +1413,7 @@ int main(int argc, char *argv[])
         printf("Unable to open '%s'!\n", destination_file);
         return 1;
     }
+    /*endif*/
     TIFFSetField(tif, TIFFTAG_SUBFILETYPE, FILETYPE_PAGE);
     TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, meta.image_width);
     /* libtiff requires IMAGELENGTH to be set before SAMPLESPERPIXEL,
@@ -1328,6 +1449,7 @@ int main(int argc, char *argv[])
             printf("Write error to TIFF file\n");
             return 1;
         }
+        /*endif*/
         free(data);
     }
     else
@@ -1348,6 +1470,7 @@ int main(int argc, char *argv[])
                 printf("Failed to convert from ITULAB (A).\n");
                 return 1;
             }
+            /*endif*/
             end = rdtscll();
             printf("Duration %" PRIu64 "\n", end - start);
             printf("Compressed length %d (%p)\n", totdata, data2);
@@ -1356,6 +1479,7 @@ int main(int argc, char *argv[])
                 printf("Failed to convert from ITULAB (B).\n");
                 return 1;
             }
+            /*endif*/
             free(data);
             data = data2;
 #elif 1
@@ -1364,6 +1488,7 @@ int main(int argc, char *argv[])
                 printf("Failed to allocate buffer\n");
                 exit(2);
             }
+            /*endif*/
             start = rdtscll();
             //if (!t42_itulab_jpeg_to_srgb(&logging2, &lab_param, data2, &off, data, off, &meta.image_width, &meta.image_length, &meta.samples_per_pixel))
             {
@@ -1376,19 +1501,24 @@ int main(int argc, char *argv[])
             data = data2;
 #endif
         }
+        /*endif*/
         off = 0;
         bytes_per_row = ((meta.bits_per_sample + 7)/8)*meta.image_width*meta.samples_per_pixel;
         for (row = 0;  row < meta.image_length;  row++)
         {
             if (TIFFWriteScanline(tif, &data[off], row, 0) < 0)
                 return 1;
+            /*endif*/
             off += bytes_per_row;
         }
+        /*endfor*/
         free(data);
     }
+    /*endif*/
 
     if (!TIFFWriteDirectory(tif))
         printf("Failed to write directory.\n");
+    /*endif*/
 
 #if defined(SPANDSP_SUPPORT_TIFF_FX)  &&  defined(HAVE_TIF_DIR_H)
     if (!TIFFCreateCustomDirectory(tif, &tiff_fx_field_array))
@@ -1402,14 +1532,19 @@ int main(int argc, char *argv[])
         diroff = 0;
         if (!TIFFWriteCustomDirectory(tif, &diroff))
             printf("Failed to write custom directory.\n");
+        /*endif*/
 
         if (!TIFFSetDirectory(tif, (tdir_t) page_no))
             printf("Failed to set directory.\n");
+        /*endif*/
         if (!TIFFSetField(tif, TIFFTAG_GLOBALPARAMETERSIFD, diroff))
             printf("Failed to set global parameters IFD.\n");
+        /*endif*/
         if (!TIFFWriteDirectory(tif))
             printf("Failed to write directory.\n");
+        /*endif*/
     }
+    /*endif*/
 #endif
     TIFFClose(tif);
     printf("Done!\n");

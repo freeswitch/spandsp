@@ -174,22 +174,22 @@ When answering the DCE should prepare to detect:
     DTMF tones
 */
 
+#define GOERTZEL_SAMPLES_PER_BLOCK  102
+
 #if defined(SPANDSP_USE_FIXED_POINTx)
 /* The fixed point version scales the 16 bit signal down by 7 bits, so the Goertzels will fit in a 32 bit word */
-#define FP_SCALE(x)                 ((int16_t) (x/128.0 + ((x >= 0.0)  ?  0.5  :  -0.5)))
-#define TONE_TO_TOTAL_ENERGY        83.868f         /* -0.85dB [GOERTZEL_SAMPLES_PER_BLOCK*10^(-0.85/10.0)] */
+#define FP_SCALE(x)                         ((int16_t) (x/128.0 + ((x >= 0.0)  ?  0.5  :  -0.5)))
+static const float tone_to_total_energy     = GOERTZEL_SAMPLES_PER_BLOCK*db_to_power_ratio(-0.85f);
 #else
-#define FP_SCALE(x)                 (x)
-#define TONE_TO_TOTAL_ENERGY        83.868f         /* -0.85dB [GOERTZEL_SAMPLES_PER_BLOCK*10^(-0.85/10.0)] */
+#define FP_SCALE(x)                         (x)
+static const float tone_to_total_energy     = GOERTZEL_SAMPLES_PER_BLOCK*db_to_power_ratio(-0.85f);
 #endif
-
-#define GOERTZEL_SAMPLES_PER_BLOCK  102
 
 static void v18_set_modem(v18_state_t *s, int mode);
 
 static goertzel_descriptor_t tone_set_desc[GOERTZEL_TONE_SET_ENTRIES];
 static bool goertzel_descriptors_inited = false;
-static float tone_set_frequency[GOERTZEL_TONE_SET_ENTRIES] =
+static const float tone_set_frequency[GOERTZEL_TONE_SET_ENTRIES] =
 {
     390.0f,     // V.23 low channel
     980.0f,
@@ -201,7 +201,7 @@ static float tone_set_frequency[GOERTZEL_TONE_SET_ENTRIES] =
     1800.0f,
     2225.0f     // Bell 103 answer tone
 };
-static span_sample_timer_t tone_set_target_duration[GOERTZEL_TONE_SET_ENTRIES] =
+static const span_sample_timer_t tone_set_target_duration[GOERTZEL_TONE_SET_ENTRIES] =
 {
     milliseconds_to_samples(3000),      /* 390Hz */
     milliseconds_to_samples(1500),      /* 980Hz */
@@ -214,7 +214,7 @@ static span_sample_timer_t tone_set_target_duration[GOERTZEL_TONE_SET_ENTRIES] =
     milliseconds_to_samples(460)        /* 2225Hz */
 };
 
-static bool tone_set_enabled[2][GOERTZEL_TONE_SET_ENTRIES] =
+static const bool tone_set_enabled[2][GOERTZEL_TONE_SET_ENTRIES] =
 {
     {
         true,                           /* 390Hz */
@@ -1586,7 +1586,7 @@ static int caller_tone_scan(v18_state_t *s, const int16_t amp[], int samples)
         /* Fraction of total energy test */
         if (max_energy < s->threshold
             ||
-            max_energy <= TONE_TO_TOTAL_ENERGY*s->energy)
+            max_energy <= tone_to_total_energy*s->energy)
         {
             tone_is = 0;
         }
@@ -1727,7 +1727,7 @@ static int answerer_tone_scan(v18_state_t *s, const int16_t amp[], int samples)
         /* Fraction of total energy test */
         if (max_energy < s->threshold
             ||
-            max_energy <= TONE_TO_TOTAL_ENERGY*s->energy)
+            max_energy <= tone_to_total_energy*s->energy)
         {
             tone_is = 0;
         }
@@ -2036,7 +2036,7 @@ static void init_v18_descriptors(void)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) v18_set_stored_message(v18_state_t *s, uint8_t *msg)
+SPAN_DECLARE(int) v18_set_stored_message(v18_state_t *s, const char *msg)
 {
     strncpy(s->stored_message, msg, 80);
     return 0;

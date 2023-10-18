@@ -109,6 +109,7 @@ static void reporter(void *user_data, int reason, bert_results_t *results)
         fprintf(stderr, "BERT report %s\n", bert_event_to_str(reason));
         break;
     }
+    /*endswitch*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -133,14 +134,19 @@ static void v17_rx_status(void *user_data, int status)
         {
             printf("Equalizer:\n");
             for (i = 0;  i < len;  i++)
+            {
 #if defined(SPANDSP_USE_FIXED_POINT)
                 printf("%3d (%15.5f, %15.5f)\n", i, coeffs[i].re/V17_CONSTELLATION_SCALING_FACTOR, coeffs[i].im/V17_CONSTELLATION_SCALING_FACTOR);
 #else
                 printf("%3d (%15.5f, %15.5f) -> %15.5f\n", i, coeffs[i].re, coeffs[i].im, powerf(&coeffs[i]));
 #endif
+            }
+            /*endfor*/
         }
+        /*endif*/
         break;
     }
+    /*endswitch*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -151,11 +157,13 @@ static void v17putbit(void *user_data, int bit)
         v17_rx_status(user_data, bit);
         return;
     }
+    /*endif*/
 
     if (decode_test_file)
         printf("Rx bit %d - %d\n", rx_bits++, bit);
     else
         bert_put_bit(&bert, bit);
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -208,6 +216,7 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
             qam_monitor_update_carrier_tracking(qam_monitor, v17_rx_carrier_frequency(rx));
             qam_monitor_update_symbol_tracking(qam_monitor, v17_rx_symbol_timing_correction(rx));
         }
+        /*endif*/
 #endif
         printf("%8d [%8.4f, %8.4f] [%8.4f, %8.4f] %2x %8.4f %8.4f %9.4f %7.3f %7.4f\n",
                symbol_no,
@@ -242,11 +251,15 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
                     qam_monitor_update_equalizer(qam_monitor, coeffs, len);
 #endif
                 }
+                /*endif*/
 #endif
             }
+            /*endif*/
             update_interval = 100;
         }
+        /*endif*/
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -283,11 +296,13 @@ static void sigfpe_handler(int sig_num, siginfo_t *info, void *data)
             fprintf(stderr, "subscript out of range at %p\n", info->si_addr);
             break;
         }
+        /*endswitch*/
         break;
     default:
         fprintf(stderr, "Unexpected signal %d\n", sig_num);
         break;
     }
+    /*endswitch*/
     exit(2);
 }
 /*- End of function --------------------------------------------------------*/
@@ -362,6 +377,7 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "Invalid bit rate specified\n");
                 exit(2);
             }
+            /*endif*/
             break;
         case 'B':
             bits_per_test = atoi(optarg);
@@ -403,7 +419,9 @@ int main(int argc, char *argv[])
             exit(2);
             break;
         }
+        /*endswitch*/
     }
+    /*endwhile*/
     inhandle = NULL;
     outhandle = NULL;
 
@@ -418,7 +436,9 @@ int main(int argc, char *argv[])
             fprintf(stderr, "    Cannot create audio file '%s'\n", OUT_FILE_NAME);
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
 
     if (decode_test_file)
     {
@@ -429,6 +449,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "    Cannot open audio file '%s'\n", decode_test_file);
             exit(2);
         }
+        /*endif*/
     }
     else
     {
@@ -453,11 +474,13 @@ int main(int argc, char *argv[])
             fprintf(stderr, "    Failed to create line model\n");
             exit(2);
         }
+        /*endif*/
         one_way_line_model_set_dc(line_model, 0.0f);
 #if defined(ADD_MAINS_INTERFERENCE)
         one_way_line_model_set_mains_pickup(line_model, 50, -40.0f);
 #endif
     }
+    /*endif*/
 
     rx = v17_rx_init(NULL, test_bps, v17putbit, NULL);
     logging = v17_rx_get_logging_state(rx);
@@ -475,7 +498,9 @@ int main(int argc, char *argv[])
             start_line_model_monitor(129);
             line_model_monitor_line_model_update(line_model->near_filter, line_model->near_filter_len);
         }
+        /*endif*/
     }
+    /*endif*/
 #endif
 
     memset(&latest_results, 0, sizeof(latest_results));
@@ -487,9 +512,11 @@ int main(int argc, char *argv[])
 #if defined(ENABLE_GUI)
             if (use_gui)
                 qam_monitor_update_audio_level(qam_monitor, amp, samples);
+            /*endif*/
 #endif
             if (samples == 0)
                 break;
+            /*endif*/
         }
         else
         {
@@ -523,6 +550,7 @@ int main(int argc, char *argv[])
                 {
                     break;
                 }
+                /*endif*/
                 memset(&latest_results, 0, sizeof(latest_results));
 #if defined(SPANDSP_EXPOSE_INTERNAL_STRUCTURES)
                 signal_level--;
@@ -541,7 +569,9 @@ int main(int argc, char *argv[])
                     fprintf(stderr, "    Failed to create line model\n");
                     exit(2);
                 }
+                /*endif*/
             }
+            /*endif*/
             if (log_audio)
             {
                 outframes = sf_writef_short(outhandle, gen_amp, samples);
@@ -550,12 +580,16 @@ int main(int argc, char *argv[])
                     fprintf(stderr, "    Error writing audio file\n");
                     exit(2);
                 }
+                /*endif*/
             }
+            /*endif*/
             one_way_line_model(line_model, amp, gen_amp, samples);
         }
+        /*endif*/
 #if defined(ENABLE_GUI)
         if (use_gui  &&  !decode_test_file)
             line_model_monitor_line_spectrum_update(amp, samples);
+        /*endif*/
 #endif
         v17_rx(rx, amp, samples);
     }
@@ -572,15 +606,19 @@ int main(int argc, char *argv[])
             printf("Tests failed.\n");
             exit(2);
         }
+        /*endif*/
 
         printf("Tests passed.\n");
     }
+    /*endif*/
     v17_rx_free(rx);
     if (tx)
         v17_tx_free(tx);
+    /*endif*/
 #if defined(ENABLE_GUI)
     if (use_gui)
         qam_wait_to_end(qam_monitor);
+    /*endif*/
 #endif
     if (decode_test_file)
     {
@@ -589,7 +627,9 @@ int main(int argc, char *argv[])
             fprintf(stderr, "    Cannot close audio file '%s'\n", decode_test_file);
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
     if (log_audio)
     {
         if (sf_close_telephony(outhandle))
@@ -597,7 +637,9 @@ int main(int argc, char *argv[])
             fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

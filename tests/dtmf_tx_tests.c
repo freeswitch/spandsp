@@ -62,6 +62,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "    Cannot open audio file '%s'\n", OUTPUT_FILE_NAME);
         exit(2);
     }
+    /*endif*/
 
     gen = dtmf_tx_init(NULL, NULL, NULL);
     len = dtmf_tx(gen, amp, 16384);
@@ -72,6 +73,7 @@ int main(int argc, char *argv[])
         printf("Ooops\n");
         exit(2);
     }
+    /*endif*/
     len = dtmf_tx(gen, amp, 16384);
     printf("Generated %d samples\n", len);
     sf_writef_short(outhandle, amp, len);
@@ -80,6 +82,7 @@ int main(int argc, char *argv[])
         printf("Ooops\n");
         exit(2);
     }
+    /*endif*/
     len = dtmf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     sf_writef_short(outhandle, amp, len);
@@ -88,6 +91,7 @@ int main(int argc, char *argv[])
         printf("Ooops\n");
         exit(2);
     }
+    /*endif*/
     len = dtmf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     sf_writef_short(outhandle, amp, len);
@@ -96,6 +100,7 @@ int main(int argc, char *argv[])
         printf("Ooops\n");
         exit(2);
     }
+    /*endif*/
     len = dtmf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     sf_writef_short(outhandle, amp, len);
@@ -106,6 +111,7 @@ int main(int argc, char *argv[])
         printf("Generated %d samples\n", len);
         if (len > 0)
             sf_writef_short(outhandle, amp, len);
+        /*endif*/
         if (add_digits)
         {
             if (dtmf_tx_put(gen, "1234567890", -1))
@@ -113,7 +119,9 @@ int main(int argc, char *argv[])
                 printf("Digit buffer full\n");
                 add_digits = 0;
             }
+            /*endif*/
         }
+        /*endif*/
     }
     while (len > 0);
 
@@ -126,6 +134,7 @@ int main(int argc, char *argv[])
         printf("Ooops\n");
         exit(2);
     }
+    /*endif*/
     len = dtmf_tx(gen, amp, 16384);
     printf("Generated %d samples\n", len);
     sf_writef_short(outhandle, amp, len);
@@ -134,6 +143,7 @@ int main(int argc, char *argv[])
         printf("Ooops\n");
         exit(2);
     }
+    /*endif*/
     len = dtmf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     sf_writef_short(outhandle, amp, len);
@@ -142,6 +152,7 @@ int main(int argc, char *argv[])
         printf("Ooops\n");
         exit(2);
     }
+    /*endif*/
     len = dtmf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     sf_writef_short(outhandle, amp, len);
@@ -150,6 +161,7 @@ int main(int argc, char *argv[])
         printf("Ooops\n");
         exit(2);
     }
+    /*endif*/
     len = dtmf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     sf_writef_short(outhandle, amp, len);
@@ -158,6 +170,7 @@ int main(int argc, char *argv[])
         printf("Ooops\n");
         exit(2);
     }
+    /*endif*/
     len = dtmf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     sf_writef_short(outhandle, amp, len);
@@ -171,12 +184,14 @@ int main(int argc, char *argv[])
         printf("Ooops\n");
         exit(2);
     }
+    /*endif*/
     do
     {
         len = dtmf_tx(gen, amp, 160);
         printf("Generated %d samples\n", len);
         if (len > 0)
             sf_writef_short(outhandle, amp, len);
+        /*endif*/
     }
     while (len > 0);
     printf("Restore normal levels and timing\n");
@@ -187,6 +202,7 @@ int main(int argc, char *argv[])
         printf("Ooops\n");
         exit(2);
     }
+    /*endif*/
 
     add_digits = true;
     do
@@ -195,6 +211,7 @@ int main(int argc, char *argv[])
         printf("Generated %d samples\n", len);
         if (len > 0)
             sf_writef_short(outhandle, amp, len);
+        /*endif*/
         if (add_digits)
         {
             if (dtmf_tx_put(gen, "1234567890", -1))
@@ -202,7 +219,9 @@ int main(int argc, char *argv[])
                 printf("Digit buffer full\n");
                 add_digits = false;
             }
+            /*endif*/
         }
+        /*endif*/
     }
     while (len > 0);
 
@@ -211,6 +230,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
         exit(2);
     }
+    /*endif*/
     dtmf_tx_free(gen);
 
     return 0;

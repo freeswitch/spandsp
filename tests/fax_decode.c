@@ -147,9 +147,7 @@ static void print_frame(const char *io, const uint8_t *fr, int frlen)
     const char *model;
 
     if (frlen == 0)
-    {
         return;
-    }
     /*endif*/
     fprintf(stderr, "%s %s:", io, t30_frametype(fr[2]));
     for (i = 2;  i < frlen;  i++)

@@ -198,7 +198,7 @@ SPAN_DECLARE(int) v18_put(v18_state_t *s, const char msg[], int len);
     \param s The V.18 context.
     \param msg The string to be set.
 */
-SPAN_DECLARE(int) v18_set_stored_message(v18_state_t *s, uint8_t *msg);
+SPAN_DECLARE(int) v18_set_stored_message(v18_state_t *s, const char *msg);
 
 /*! \brief Get the current mode of a V.18 connection.
     \param s The V.18 context.

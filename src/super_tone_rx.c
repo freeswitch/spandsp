@@ -57,13 +57,13 @@
 #include "spandsp/private/super_tone_rx.h"
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-#define DETECTION_THRESHOLD         16439           /* -42dBm0 [((SUPER_TONE_BINS*SUPER_TONE_BINS*32768.0/(1.4142*128.0))*10^((-42 - DBM0_MAX_SINE_POWER)/20.0))^2] */
-#define TONE_TWIST                  4               /* 6dB */
-#define TONE_TO_TOTAL_ENERGY        64              /* -3dB */
+static const int detection_threshold        = energy_threshold_dbm0(SUPER_TONE_BINS, -42);
+static const int tone_twist                 = 4;
+static const int tone_to_total_energy       = SUPER_TONE_BINS*64;
 #else
-#define DETECTION_THRESHOLD         2104205.6f      /* -42dBm0 [((SUPER_TONE_BINS*SUPER_TONE_BINS*32768.0/1.4142)*10^((-42 - DBM0_MAX_SINE_POWER)/20.0))^2] */
-#define TONE_TWIST                  3.981f          /* 6dB */
-#define TONE_TO_TOTAL_ENERGY        1.995f          /* 3dB */
+static const float detection_threshold      = energy_threshold_dbm0(SUPER_TONE_BINS, -42);
+static const float tone_twist               = db_to_power_ratio(6.0f);
+static const float tone_to_total_energy     = SUPER_TONE_BINS*db_to_power_ratio(-3.0f);
 #endif
 
 static int add_super_tone_freq(super_tone_rx_descriptor_t *desc, int freq)
@@ -286,8 +286,9 @@ static void super_tone_chunk(super_tone_rx_state_t *s)
     float res[SUPER_TONE_BINS/2];
 #endif
 
-    if (s->energy < DETECTION_THRESHOLD)
+    if (s->energy < detection_threshold)
     {
+        /* The total energy is too low to be considered a tone detection. */
         k1 = -1;
         k2 = -1;
         for (i = 0;  i < s->desc->monitored_frequencies;  i++)
@@ -327,18 +328,17 @@ static void super_tone_chunk(super_tone_rx_state_t *s)
                 }
                 else if (res[j] >= res[k2])
                 {
-                    k1 =
                     k2 = j;
                 }
                 /*endif*/
             }
             /*endfor*/
-            if ((res[k1] + res[k2]) < TONE_TO_TOTAL_ENERGY*s->energy)
+            if ((res[k1] + res[k2]) < tone_to_total_energy*s->energy)
             {
                 k1 = -1;
                 k2 = -1;
             }
-            else if (res[k1] > TONE_TWIST*res[k2])
+            else if (res[k1] > tone_twist*res[k2])
             {
                 k2 = -1;
             }
@@ -454,7 +454,7 @@ SPAN_DECLARE(int) super_tone_rx(super_tone_rx_state_t *s, const int16_t amp[], i
     for (sample = 0;  sample < samples;  sample += x)
     {
         for (i = 0;  i < s->desc->monitored_frequencies;  i++)
-            x = goertzel_update(&s->state[i], amp + sample, samples - sample);
+            x = goertzel_update(&s->state[i], &amp[sample], samples - sample);
         /*endfor*/
         for (i = 0;  i < x;  i++)
         {
@@ -470,11 +470,6 @@ SPAN_DECLARE(int) super_tone_rx(super_tone_rx_state_t *s, const int16_t amp[], i
         {
             /* We have finished a Goertzel block. */
             super_tone_chunk(s);
-#if defined(SPANDSP_USE_FIXED_POINT)
-            s->energy = 0;
-#else
-            s->energy = 0.0f;
-#endif
         }
         /*endif*/
     }

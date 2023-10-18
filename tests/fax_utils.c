@@ -44,16 +44,22 @@ void fax_log_tx_parameters(t30_state_t *s, const char *tag)
 
     if ((u = t30_get_tx_ident(s)))
         printf("%s: Local ident '%s'\n", tag, u);
+    /*endif*/
     if ((u = t30_get_tx_sub_address(s)))
         printf("%s: Local sub-address '%s'\n", tag, u);
+    /*endif*/
     if ((u = t30_get_tx_polled_sub_address(s)))
         printf("%s: Local polled sub-address '%s'\n", tag, u);
+    /*endif*/
     if ((u = t30_get_tx_selective_polling_address(s)))
         printf("%s: Local selective polling address '%s'\n", tag, u);
+    /*endif*/
     if ((u = t30_get_tx_sender_ident(s)))
         printf("%s: Local sender ident '%s'\n", tag, u);
+    /*endif*/
     if ((u = t30_get_tx_password(s)))
         printf("%s: Local password '%s'\n", tag, u);
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -63,22 +69,31 @@ void fax_log_rx_parameters(t30_state_t *s, const char *tag)
 
     if ((u = t30_get_rx_ident(s)))
         printf("%s: Remote ident '%s'\n", tag, u);
+    /*endif*/
     if ((u = t30_get_rx_sub_address(s)))
         printf("%s: Remote sub-address '%s'\n", tag, u);
+    /*endif*/
     if ((u = t30_get_rx_polled_sub_address(s)))
         printf("%s: Remote polled sub-address '%s'\n", tag, u);
+    /*endif*/
     if ((u = t30_get_rx_selective_polling_address(s)))
         printf("%s: Remote selective polling address '%s'\n", tag, u);
+    /*endif*/
     if ((u = t30_get_rx_sender_ident(s)))
         printf("%s: Remote sender ident '%s'\n", tag, u);
+    /*endif*/
     if ((u = t30_get_rx_password(s)))
         printf("%s: Remote password '%s'\n", tag, u);
+    /*endif*/
     if ((u = t30_get_rx_country(s)))
         printf("%s: Remote was made in '%s'\n", tag, u);
+    /*endif*/
     if ((u = t30_get_rx_vendor(s)))
         printf("%s: Remote was made by '%s'\n", tag, u);
+    /*endif*/
     if ((u = t30_get_rx_model(s)))
         printf("%s: Remote is model '%s'\n", tag, u);
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -123,12 +138,14 @@ int get_tiff_total_pages(const char *file)
 
     if ((tiff_file = TIFFOpen(file, "r")) == NULL)
         return -1;
+    /*endif*/
     /* Each page *should* contain the total number of pages, but can this be
        trusted? Some files say 0. Actually searching for the last page is
        more reliable. */
     max = 0;
     while (TIFFSetDirectory(tiff_file, (tdir_t) max))
         max++;
+    /*endwhile*/
     TIFFClose(tiff_file);
     return max;
 }

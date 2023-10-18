@@ -118,6 +118,7 @@ static void reporter(void *user_data, int reason, bert_results_t *results)
         fprintf(stderr, "%d: BERT report reason %d\n", channel, reason);
         break;
     }
+    /*endswitch*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -131,6 +132,7 @@ static void put_msg(void *user_data, const uint8_t msg[], int len)
 {
     if (len < 0)
         printf("Status %s\n", signal_status_to_str(len));
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -164,7 +166,9 @@ static int modem_tests(int use_gui, int log_audio, int test_sending)
             fprintf(stderr, "    Cannot create audio file '%s'\n", OUTPUT_WAVE_FILE_NAME);
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
 
     in_handle = NULL;
     if (decode_test_file)
@@ -174,7 +178,9 @@ static int modem_tests(int use_gui, int log_audio, int test_sending)
             fprintf(stderr, "    Cannot create audio file '%s'\n", decode_test_file);
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
 
     memset(silence, 0, sizeof(silence));
     memset(mdm_amp, 0, sizeof(mdm_amp));
@@ -199,15 +205,18 @@ static int modem_tests(int use_gui, int log_audio, int test_sending)
             fprintf(stderr, "    Cannot start the data modem\n");
             exit(2);
         }
+        /*endif*/
         logging = data_modems_get_logging_state(data_modems_state[i]);
         span_log_set_level(logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
         span_log_set_tag(logging, "Modem");
         calling_party = false;
     }
+    /*endfor*/
 
 #if defined(ENABLE_GUI)
     if (use_gui)
         start_media_monitor();
+    /*endif*/
 #endif
     while (!done)
     {
@@ -222,22 +231,30 @@ static int modem_tests(int use_gui, int log_audio, int test_sending)
                 vec_zeroi16(mdm_amp + mdm_len, SAMPLES_PER_CHUNK - mdm_len);
                 mdm_len = SAMPLES_PER_CHUNK;
             }
+            /*endif*/
             if (log_audio)
             {
                 for (k = 0;  k < mdm_len;  k++)
                     out_amp[2*k + i] = mdm_amp[k];
+                /*endfor*/
             }
+            /*endif*/
             if (data_modems_rx(data_modems_state[i ^ 1], mdm_amp, mdm_len))
                 break;
+            /*endif*/
         }
+        /*endif*/
 
         if (log_audio)
         {
             outframes = sf_writef_short(wave_handle, out_amp, SAMPLES_PER_CHUNK);
             if (outframes != SAMPLES_PER_CHUNK)
                 break;
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endif*/
 
     if (decode_test_file)
     {
@@ -246,7 +263,9 @@ static int modem_tests(int use_gui, int log_audio, int test_sending)
             fprintf(stderr, "    Cannot close audio file '%s'\n", decode_test_file);
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
     if (log_audio)
     {
         if (sf_close_telephony(wave_handle))
@@ -254,13 +273,16 @@ static int modem_tests(int use_gui, int log_audio, int test_sending)
             fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_WAVE_FILE_NAME);
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
 
     if (!done  ||  !sequence_terminated)
     {
         printf("Tests failed\n");
         return 2;
     }
+    /*endif*/
 
     return 0;
 }
@@ -306,7 +328,9 @@ int main(int argc, char *argv[])
             exit(2);
             break;
         }
+        /*endswitch*/
     }
+    /*endwhile*/
 
     modem_tests(use_gui, log_audio, test_sending);
     printf("Tests passed\n");

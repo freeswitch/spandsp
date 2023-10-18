@@ -42,6 +42,7 @@ static int32_t vec_dot_prodi16_dumb(const int16_t x[], const int16_t y[], int n)
     z = 0;
     for (i = 0;  i < n;  i++)
         z += (int32_t) x[i]*(int32_t) y[i];
+    /*endfor*/
     return z;
 }
 /*- End of function --------------------------------------------------------*/
@@ -59,6 +60,7 @@ static int test_vec_dot_prodi16(void)
         x[i] = rand();
         y[i] = rand();
     }
+    /*endfor*/
 
     for (i = 1;  i < 99;  i++)
     {
@@ -69,7 +71,9 @@ static int test_vec_dot_prodi16(void)
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -100,6 +104,7 @@ static int32_t vec_min_maxi16_dumb(const int16_t x[], int n, int16_t out[])
     z = abs(min);
     if (z > max)
         return z;
+    /*endif*/
     return max;
 }
 /*- End of function --------------------------------------------------------*/
@@ -115,6 +120,7 @@ static int test_vec_min_maxi16(void)
 
     for (i = 0;  i < 99;  i++)
         x[i] = rand();
+    /*endfor*/
 
     x[42] = -32768;
     za = vec_min_maxi16_dumb(x, 99, outa);
@@ -128,6 +134,7 @@ static int test_vec_min_maxi16(void)
         printf("Tests failed\n");
         exit(2);
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -150,6 +157,7 @@ static int test_vec_circular_dot_prodi16(void)
         x[i] = rand();
         y[i] = rand();
     }
+    /*endfor*/
 
     len = 95;
     for (pos = 0;  pos < len;  pos++)
@@ -161,13 +169,16 @@ static int test_vec_circular_dot_prodi16(void)
             j = (pos + i) % len;
             zb += (int32_t) x[j]*(int32_t) y[i];
         }
+        /*endfor*/
 
         if (za != zb)
         {
             printf("Tests failed\n");
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

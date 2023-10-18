@@ -74,6 +74,7 @@ static int power_surge_detector_tests(void)
         fprintf(stderr, "    Cannot create audio file '%s'\n", OUT_FILE_NAME);
         exit(2);
     }
+    /*endif*/
     sig = power_surge_detector_init(NULL, -50.0f, 5.0f);
     prev_signal_present = false;
 
@@ -95,6 +96,7 @@ static int power_surge_detector_tests(void)
             amp[i] = awgn(awgnx);
             if (i < 4000)
                 amp[i] += dds_mod(&phase_acc, phase_rate, phase_scale, 0);
+            /*endif*/
 
             signal_level = power_surge_detector(sig, amp[i]);
             signal_present = (signal_level != 0);
@@ -105,27 +107,36 @@ static int power_surge_detector_tests(void)
                 {
                     if (ok == 0  &&  i >= 0  &&  i < 25)
                         ok = 1;
+                    /*endif*/
                     if (extremes[0] > i)
                         extremes[0] = i;
+                    /*endif*/
                     if (extremes[1] < i)
                         extremes[1] = i;
+                    /*endif*/
                     printf("On at %f (%fdBm0)\n", (sample + i)/8000.0, signal_power);
                 }
                 else
                 {
                     if (ok == 1  &&  i >= 4000 + 0  &&  i < 4000 + 35)
                         ok = 2;
+                    /*endif*/
                     if (extremes[2] > i)
                         extremes[2] = i;
+                    /*endif*/
                     if (extremes[3] < i)
                         extremes[3] = i;
+                    /*endif*/
                     printf("Off at %f (%fdBm0)\n", (sample + i)/8000.0, signal_power);
                 }
+                /*endif*/
                 prev_signal_present = signal_present;
             }
+            /*endif*/
             amp_out[2*i] = amp[i];
             amp_out[2*i + 1] = signal_present*5000;
         }
+        /*endfor*/
         sf_writef_short(outhandle, amp_out, 8000);
         if (ok != 2
             ||
@@ -140,12 +151,15 @@ static int power_surge_detector_tests(void)
             printf("    Surge not detected correctly (%d)\n", ok);
             exit(2);
         }
+        /*endif*/
     }
+    /*endfor*/
     if (sf_close_telephony(outhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
         exit(2);
     }
+    /*endif*/
     printf("Min on %d, max on %d, min off %d, max off %d\n", extremes[0], extremes[1], extremes[2], extremes[3]);
     power_surge_detector_free(sig);
     awgn_free(awgnx);
@@ -173,12 +187,14 @@ static int power_surge_detector_file_test(const char *file)
         fprintf(stderr, "    Cannot open audio file '%s'\n", file);
         exit(2);
     }
+    /*endif*/
 
     if ((outhandle = sf_open_telephony_write(OUT_FILE_NAME, 1)) == NULL)
     {
         fprintf(stderr, "    Cannot create audio file '%s'\n", OUT_FILE_NAME);
         exit(2);
     }
+    /*endif*/
     sig = power_surge_detector_init(NULL, -50.0f, 6.0f);
     prev_signal_present = false;
 
@@ -196,24 +212,30 @@ static int power_surge_detector_file_test(const char *file)
                     printf("On at %f (%fdBm0)\n", (sample + i)/8000.0, signal_power);
                 else
                     printf("Off at %f (%fdBm0)\n", (sample + i)/8000.0, signal_power);
+                /*endif*/
                 prev_signal_present = signal_present;
             }
+            /*endif*/
             amp_out[2*i] = amp[i];
             amp_out[2*i + 1] = signal_present*5000;
         }
+        /*endfor*/
         sf_writef_short(outhandle, amp_out, inframes);
         sample += inframes;
     }
+    /*endwhile*/
     if (sf_close_telephony(inhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", file);
         exit(2);
     }
+    /*endif*/
     if (sf_close_telephony(outhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
         exit(2);
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -242,6 +264,7 @@ static int power_meter_tests(void)
         level = power_meter_update(&meter, amp[i]);
         //printf("%12d %fdBm0 %fdBov\n", level, power_meter_current_dbm0(&meter), power_meter_current_dbov(&meter));
     }
+    /*endfor*/
     printf("Level: expected %" PRId32 "/%" PRId32 ", got %" PRId32 "\n", power_meter_level_dbov(-10.0f), power_meter_level_dbm0(-10.0f + DBM0_MAX_POWER), level);
     printf("Power: expected %fdBm0, got %fdBm0\n", -10.0f + DBM0_MAX_POWER, power_meter_current_dbm0(&meter));
     printf("Power: expected %fdBOv, got %fdBOv\n", -10.0f, power_meter_current_dbov(&meter));
@@ -252,16 +275,19 @@ static int power_meter_tests(void)
         printf("Test failed (level)\n");
         exit(2);
     }
+    /*endif*/
     if (0.1f < fabsf(power_meter_current_dbm0(&meter) + 10.0f - DBM0_MAX_POWER))
     {
         printf("Test failed (dBm0)\n");
         exit(2);
     }
+    /*endif*/
     if (0.1f < fabsf(power_meter_current_dbov(&meter) + 10.0))
     {
         printf("Test failed (dBOv)\n");
         exit(2);
     }
+    /*endif*/
 
     printf("Testing with a sine wave tone 10dB from maximum\n");
     tone_gen_descriptor_init(&tone_desc,
@@ -281,6 +307,7 @@ static int power_meter_tests(void)
         level = power_meter_update(&meter, amp[i]);
         //printf("%12d %fdBm0 %fdBov\n", level, power_meter_current_dbm0(&meter), power_meter_current_dbov(&meter));
     }
+    /*endfor*/
     printf("Level: expected %" PRId32 "/%" PRId32 ", got %" PRId32 "\n", power_meter_level_dbov(-10.0f), power_meter_level_dbm0(-10.0f + DBM0_MAX_POWER), level);
     printf("Power: expected %fdBm0, got %fdBm0\n", -10.0f + DBM0_MAX_POWER, power_meter_current_dbm0(&meter));
     printf("Power: expected %fdBOv, got %fdBOv\n", -10.0f, power_meter_current_dbov(&meter));
@@ -291,26 +318,31 @@ static int power_meter_tests(void)
         printf("Test failed (level)\n");
         exit(2);
     }
+    /*endif*/
     if (0.2f < fabsf(power_meter_current_dbm0(&meter) + 10.0f - DBM0_MAX_POWER))
     {
         printf("Test failed (dBm0)\n");
         exit(2);
     }
+    /*endif*/
     if (0.2f < fabsf(power_meter_current_dbov(&meter) + 10.0))
     {
         printf("Test failed (dBOv)\n");
         exit(2);
     }
+    /*endif*/
 
     printf("Testing with AWGN 10dB from maximum\n");
     awgn_init_dbov(&noise_source, idum, -10.0f);
     for (i = 0;  i < 1000;  i++)
         amp[i] = awgn(&noise_source);
+    /*endfor*/
     for (i = 0;  i < 1000;  i++)
     {
         level = power_meter_update(&meter, amp[i]);
         //printf("%12d %fdBm0 %fdBov\n", level, power_meter_current_dbm0(&meter), power_meter_current_dbov(&meter));
     }
+    /*endfor*/
     printf("Level: expected %" PRId32 "/%" PRId32 ", got %" PRId32 "\n", power_meter_level_dbov(-10.0f), power_meter_level_dbm0(-10.0f + DBM0_MAX_POWER), level);
     printf("Power: expected %fdBm0, got %fdBm0\n", -10.0f + DBM0_MAX_POWER, power_meter_current_dbm0(&meter));
     printf("Power: expected %fdBOv, got %fdBOv\n", -10.0f, power_meter_current_dbov(&meter));
@@ -321,16 +353,19 @@ static int power_meter_tests(void)
         printf("Test failed (level)\n");
         exit(2);
     }
+    /*endif*/
     if (0.2f < fabsf(power_meter_current_dbm0(&meter) + 10.0f - DBM0_MAX_POWER))
     {
         printf("Test failed (dBm0)\n");
         exit(2);
     }
+    /*endif*/
     if (0.2f < fabsf(power_meter_current_dbov(&meter) + 10.0f))
     {
         printf("Test failed (dBOv)\n");
         exit(2);
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -358,17 +393,21 @@ int main(int argc, char *argv[])
             //usage();
             exit(2);
         }
+        /*endswitch*/
     }
+    /*endwhile*/
 
     if (basic_tests)
     {
         power_meter_tests();
         power_surge_detector_tests();
     }
+    /*endif*/
     if (decode)
     {
         power_surge_detector_file_test(in_file);
     }
+    /*endif*/
     printf("Tests passed\n");
     return 0;
 }

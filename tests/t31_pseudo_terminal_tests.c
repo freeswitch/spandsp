@@ -167,6 +167,7 @@ printf("\n");
     assert(o.hEvent);
     if (!WriteFile(modem->master_fd, buf, (DWORD) len, &res, &o))
         GetOverlappedResult(modem->master_fd, &o, &res, true);
+    /*endif*/
     CloseHandle(o.hEvent);
 #else
     res = write(pty->master_fd, buf, len);
@@ -184,8 +185,10 @@ printf("\n");
             printf("Unable to flush pty slave buffer: %s\n", strerror(errno));
         else
             printf("Successfully flushed pty buffer\n");
+        /*endif*/
 #endif
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -269,7 +272,9 @@ static int t38_tx_packet_handler(t38_core_state_t *s, void *user_data, const uin
     {
         if (g1050_put(path_a_to_b, buf, len, s->tx_seq_no, when) < 0)
             printf("Lost packet %d\n", s->tx_seq_no);
+        /*endif*/
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -285,7 +290,9 @@ static int t31_tx_packet_handler(t38_core_state_t *s, void *user_data, const uin
     {
         if (g1050_put(path_b_to_a, buf, len, s->tx_seq_no, when) < 0)
             printf("Lost packet %d\n", s->tx_seq_no);
+        /*endif*/
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -329,13 +336,17 @@ static int modem_wait_sock(pseudo_terminal_state_t *pty, int ms, modem_poll_t fl
             dwWait = WaitForMultipleObjects(2, arHandles, false, INFINITE);
             if (dwWait == WAIT_OBJECT_0 + 1  &&  !pty->block_read)
                 ret = MODEM_POLL_READ;
+            /*endif*/
         }
+        /*endif*/
     }
     else
     {
         if (!pty->block_read)
             ret = MODEM_POLL_READ;
+        /*endif*/
     }
+    /*endif*/
 
     CloseHandle (o.hEvent);
     return ret;
@@ -352,10 +363,13 @@ static int modem_wait_sock(int sock, uint32_t ms, modem_poll_t flags)
 
     if ((flags & MODEM_POLL_READ))
         pfds[0].events |= POLLIN;
+    /*endif*/
     if ((flags & MODEM_POLL_WRITE))
         pfds[0].events |= POLLOUT;
+    /*endif*/
     if ((flags & MODEM_POLL_ERROR))
         pfds[0].events |= POLLERR;
+    /*endif*/
 
     s = poll(pfds, (pty->block_read)  ?  0  :  1, ms);
 
@@ -368,11 +382,15 @@ static int modem_wait_sock(int sock, uint32_t ms, modem_poll_t flags)
     {
         if ((pfds[0].revents & POLLIN))
             ret |= MODEM_POLL_READ;
+        /*endif*/
         if ((pfds[0].revents & POLLOUT))
             ret |= MODEM_POLL_WRITE;
+        /*endif*/
         if ((pfds[0].revents & POLLERR))
             ret |= MODEM_POLL_ERROR;
+        /*endif*/
     }
+    /*endif*/
 
     return ret;
 
@@ -429,7 +447,9 @@ static int t30_tests(int t38_mode, int use_ecm, int use_gui, int log_audio, int 
             fprintf(stderr, "    Cannot create audio file '%s'\n", OUTPUT_WAVE_FILE_NAME);
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
 
     in_handle = NULL;
     if (decode_test_file)
@@ -439,7 +459,9 @@ static int t30_tests(int t38_mode, int use_ecm, int use_gui, int log_audio, int 
             fprintf(stderr, "    Cannot create audio file '%s'\n", decode_test_file);
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
 
     srand48(0x1234567);
     if ((path_a_to_b = g1050_init(g1050_model_no, g1050_speed_pattern_no, 100, 33)) == NULL)
@@ -447,11 +469,13 @@ static int t30_tests(int t38_mode, int use_ecm, int use_gui, int log_audio, int 
         fprintf(stderr, "Failed to start IP network path model\n");
         exit(2);
     }
+    /*endif*/
     if ((path_b_to_a = g1050_init(g1050_model_no, g1050_speed_pattern_no, 100, 33)) == NULL)
     {
         fprintf(stderr, "Failed to start IP network path model\n");
         exit(2);
     }
+    /*endif*/
 
     t38_state = NULL;
     fax_state = NULL;
@@ -464,6 +488,7 @@ static int t30_tests(int t38_mode, int use_ecm, int use_gui, int log_audio, int 
                 fprintf(stderr, "Cannot start the T.38 channel\n");
                 exit(2);
             }
+            /*endif*/
             t30 = t38_terminal_get_t30_state(t38_state);
         }
         else
@@ -471,6 +496,7 @@ static int t30_tests(int t38_mode, int use_ecm, int use_gui, int log_audio, int 
             fax_state = fax_init(NULL, false);
             t30 = fax_get_t30_state(fax_state);
         }
+        /*endif*/
         t30_set_rx_file(t30, OUTPUT_FILE_NAME, -1);
         countdown = 0;
     }
@@ -483,6 +509,7 @@ static int t30_tests(int t38_mode, int use_ecm, int use_gui, int log_audio, int 
                 fprintf(stderr, "Cannot start the T.38 channel\n");
                 exit(2);
             }
+            /*endif*/
             t30 = t38_terminal_get_t30_state(t38_state);
         }
         else
@@ -490,9 +517,11 @@ static int t30_tests(int t38_mode, int use_ecm, int use_gui, int log_audio, int 
             fax_state = fax_init(NULL, true);
             t30 = fax_get_t30_state(fax_state);
         }
+        /*endif*/
         t30_set_tx_file(t30, INPUT_FILE_NAME, -1, -1);
         countdown = 250;
     }
+    /*endif*/
 
     t30_set_ecm_capability(t30, use_ecm);
 
@@ -503,6 +532,7 @@ static int t30_tests(int t38_mode, int use_ecm, int use_gui, int log_audio, int 
         t38_terminal_set_config(t38_state, without_pacing);
         t38_terminal_set_tep_mode(t38_state, use_tep);
     }
+    /*endif*/
 
     t30_set_tx_ident(t30, "11111111");
     t30_set_supported_modems(t30, T30_SUPPORT_V27TER | T30_SUPPORT_V29 | T30_SUPPORT_V17);
@@ -515,6 +545,7 @@ static int t30_tests(int t38_mode, int use_ecm, int use_gui, int log_audio, int 
         logging = t38_terminal_get_logging_state(t38_state);
     else
         logging = t30_get_logging_state(t30);
+    /*endif*/
     span_log_set_level(logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
     span_log_set_tag(logging, (t38_mode)  ?  "T.38"  :  "FAX");
 
@@ -535,6 +566,7 @@ static int t30_tests(int t38_mode, int use_ecm, int use_gui, int log_audio, int 
         span_log_set_level(logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
         span_log_set_tag(logging, "FAX");
     }
+    /*endif*/
 
     memset(silence, 0, sizeof(silence));
     memset(t30_amp, 0, sizeof(t30_amp));
@@ -545,6 +577,7 @@ static int t30_tests(int t38_mode, int use_ecm, int use_gui, int log_audio, int 
         fprintf(stderr, "    Cannot start the T.31 modem\n");
         exit(2);
     }
+    /*endif*/
     at_state = t31_get_at_state(t31_state);
 
     logging = t31_get_logging_state(t31_state);
@@ -565,6 +598,7 @@ static int t30_tests(int t38_mode, int use_ecm, int use_gui, int log_audio, int 
         t31_set_mode(t31_state, true);
         t38_set_t38_version(t38_core, t38_version);
     }
+    /*endif*/
 
     at_reset_call_info(at_state);
     at_set_call_info(at_state, "DATE", "1231");
@@ -596,6 +630,7 @@ static int t30_tests(int t38_mode, int use_ecm, int use_gui, int log_audio, int 
                     t31_call_event(t31_state, AT_CALL_EVENT_ALERTING);
                     countdown = 250;
                 }
+                /*endif*/
             }
             else if (answered == 1)
             {
@@ -603,7 +638,9 @@ printf("ZZZ\n");
                 answered = 2;
                 t31_call_event(t31_state, AT_CALL_EVENT_ANSWERED);
             }
+            /*endif*/
         }
+        /*endif*/
 
         ret = modem_wait_sock(pty[0].master_fd, 20, MODEM_POLL_READ);
         if ((ret & MODEM_POLL_READ))
@@ -619,6 +656,7 @@ printf("ZZZ\n");
             assert(o.hEvent);
             if (!ReadFile(pty[0].master_fd, buf, avail, &read_bytes, &o))
                 GetOverlappedResult(pty[0].master_fd, &o, &read_bytes, true);
+            /*endif*/
             CloseHandle (o.hEvent);
             if ((len = read_bytes))
 #else
@@ -633,7 +671,9 @@ for (i = 0;  i < len;  i++)
 printf("\n");
                 t31_at_rx(t31_state, buf, len);
 }
+            /*endif*/
         }
+        /*endif*/
 
         if (answered == 2)
         {
@@ -648,6 +688,7 @@ printf("\n");
                     t38_core = t31_get_t38_core_state(t31_state);
                     t38_core_rx_ifp_packet(t38_core, msg, msg_len, seq_no);
                 }
+                /*endwhile*/
                 while ((msg_len = g1050_get(path_b_to_a, msg, 1024, when, &seq_no, &tx_when, &rx_when)) >= 0)
                 {
 #if defined(ENABLE_GUI)
@@ -657,9 +698,11 @@ printf("\n");
                     t38_core = t38_terminal_get_t38_core_state(t38_state);
                     t38_core_rx_ifp_packet(t38_core, msg, msg_len, seq_no);
                 }
+                /*endwhile*/
 #if defined(ENABLE_GUI)
                 if (use_gui)
                     media_monitor_update_display();
+                /*endif*/
 #endif
                 /* Bump the G.1050 models along */
                 when += (float) SAMPLES_PER_CHUNK/(float) SAMPLE_RATE;
@@ -683,37 +726,48 @@ printf("\n");
                     memset(t30_amp + t30_len, 0, sizeof(int16_t)*(SAMPLES_PER_CHUNK - t30_len));
                     t30_len = SAMPLES_PER_CHUNK;
                 }
+                /*endif*/
                 if (log_audio)
                 {
                     for (k = 0;  k < t30_len;  k++)
                         out_amp[2*k] = t30_amp[k];
+                    /*endfor*/
                 }
+                /*endif*/
                 if (t31_rx(t31_state, t30_amp, t30_len))
                     break;
+                /*endif*/
                 t31_len = t31_tx(t31_state, t31_amp, SAMPLES_PER_CHUNK);
                 if (t31_len < SAMPLES_PER_CHUNK)
                 {
                     memset(t31_amp + t31_len, 0, sizeof(int16_t)*(SAMPLES_PER_CHUNK - t31_len));
                     t31_len = SAMPLES_PER_CHUNK;
                 }
+                /*endif*/
                 if (log_audio)
                 {
                     for (k = 0;  k < t31_len;  k++)
                         out_amp[2*k + 1] = t31_amp[k];
+                    /*endfor*/
                 }
+                /*endif*/
                 if (fax_rx(fax_state, t31_amp, SAMPLES_PER_CHUNK))
                     break;
+                /*endif*/
 
                 if (log_audio)
                 {
                     outframes = sf_writef_short(wave_handle, out_amp, SAMPLES_PER_CHUNK);
                     if (outframes != SAMPLES_PER_CHUNK)
                         break;
+                    /*endif*/
                 }
+                /*endif*/
 
                 /* Bump things along on the FAX machine side */
                 span_log_bump_samples(fax_get_logging_state(fax_state), SAMPLES_PER_CHUNK);
             }
+            /*endif*/
             /* Bump things along on the FAX machine side */
             span_log_bump_samples(t30_get_logging_state(t30), SAMPLES_PER_CHUNK);
 
@@ -723,10 +777,13 @@ printf("\n");
             span_log_bump_samples(t31_get_logging_state(t31_state), SAMPLES_PER_CHUNK);
             span_log_bump_samples(at_get_logging_state(t31_get_at_state(t31_state)), SAMPLES_PER_CHUNK);
         }
+        /*endif*/
     }
+    /*endwhile*/
 
     if (t38_mode)
         t38_terminal_release(t38_state);
+    /*endif*/
 
     if (decode_test_file)
     {
@@ -735,7 +792,9 @@ printf("\n");
             fprintf(stderr, "    Cannot close audio file '%s'\n", decode_test_file);
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
     if (log_audio)
     {
         if (sf_close_telephony(wave_handle))
@@ -743,13 +802,16 @@ printf("\n");
             fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_WAVE_FILE_NAME);
             exit(2);
         }
+        /*endif*/
     }
+    /*endif*/
 
     if (!done)
     {
         printf("Tests failed\n");
         return 2;
     }
+    /*endif*/
 
     return 0;
 }
@@ -815,14 +877,18 @@ int main(int argc, char *argv[])
             exit(2);
             break;
         }
+        /*endswitch*/
     }
+    /*endwhile*/
 
     if (pseudo_terminal_init(&pty[0]))
         printf("Failure\n");
+    /*endif*/
 
     t30_tests(t38_mode, use_ecm, use_gui, log_audio, test_sending, g1050_model_no, g1050_speed_pattern_no);
     if (pseudo_terminal_release(&pty[0]))
         printf("Failure\n");
+    /*endif*/
     printf("Tests passed\n");
     return 0;
 }
