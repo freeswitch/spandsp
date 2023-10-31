@@ -2686,7 +2686,7 @@ printf("V.34 baud %10.5f %10.5f - %10.5f\n", s->tx.rrc_filter_re[s->tx.rrc_filte
             x.re += (int32_t) shaper[num - 1 - s->tx.baud_phase][i]*(int32_t) s->tx.rrc_filter[i + s->tx.rrc_filter_step].re;
             x.im += (int32_t) shaper[num - 1 - s->tx.baud_phase][i]*(int32_t) s->tx.rrc_filter[i + s->tx.rrc_filter_step].im;
         }
-        /*endif*/
+        /*endfor*/
         /* Now create and modulate the carrier */
         x.re >>= 4;
         x.im >>= 4;
@@ -2701,7 +2701,7 @@ printf("V.34 baud %10.5f %10.5f - %10.5f\n", s->tx.rrc_filter_re[s->tx.rrc_filte
             x.re += shaper[num - 1 - s->tx.baud_phase][i]*s->tx.rrc_filter_re[i + s->tx.rrc_filter_step];
             x.im += shaper[num - 1 - s->tx.baud_phase][i]*s->tx.rrc_filter_im[i + s->tx.rrc_filter_step];
         }
-        /*endif*/
+        /*endfor*/
         /* Now create and modulate the carrier */
         z = dds_complexf(&(s->tx.carrier_phase), s->tx.v34_carrier_phase_rate);
         /* Don't bother saturating. We should never clip. */
@@ -2709,6 +2709,7 @@ printf("V.34 baud %10.5f %10.5f - %10.5f\n", s->tx.rrc_filter_re[s->tx.rrc_filte
 #endif
 printf("V.34 sample %d\n", amp[sample]);
     }
+    /*endfor*/
     return sample;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3164,6 +3165,7 @@ SPAN_DECLARE(v34_state_t *) v34_init(v34_state_t *s,
         s->tx.scrambler_tap = 4;
         s->rx.scrambler_tap = 17;
     }
+    /*endif*/
     return s;
 }
 /*- End of function --------------------------------------------------------*/

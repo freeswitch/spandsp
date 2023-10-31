@@ -33,19 +33,19 @@ extern "C"
 {
 #endif
 
+/*! Decode a DIS, DTC or DCS frame, and log the contents.
+    \brief Decode a DIS, DTC or DCS frame, and log the contents.
+    \param s The spandsp logging context.
+    \param dis A pointer to the frame to be decoded.
+    \param len The length of the frame. */
+SPAN_DECLARE(void) t30_log_dis_dtc_dcs(logging_state_t *s, const uint8_t *dis, int len);
+
 /*! Return a text name for a T.30 frame type.
     \brief Return a text name for a T.30 frame type.
     \param x The frametype octet.
     \return A pointer to the text name for the frame type. If the frame type is
             not value, the string "???" is returned. */
 SPAN_DECLARE(const char *) t30_frametype(uint8_t x);
-
-/*! Decode a DIS, DTC or DCS frame, and log the contents.
-    \brief Decode a DIS, DTC or DCS frame, and log the contents.
-    \param s The T.30 context.
-    \param dis A pointer to the frame to be decoded.
-    \param len The length of the frame. */
-SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *dis, int len);
 
 /*! Convert a phase E completion code to a short text description.
     \brief Convert a phase E completion code to a short text description.

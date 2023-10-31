@@ -60,7 +60,9 @@ SPAN_DECLARE(void) vec_copyf(float z[], const float x[], int n)
             n1 = _mm_loadu_ps(x + i);
             _mm_storeu_ps(z + i, n1);
         }
+        /*endfor*/
     }
+    /*endif*/
     /* Now deal with the last 1 to 3 elements, which don't fill an SSE2 register */
     switch (n & 3)
     {
@@ -71,6 +73,7 @@ SPAN_DECLARE(void) vec_copyf(float z[], const float x[], int n)
     case 1:
         z[n - 1] = x[n - 1];
     }
+    /*endswitch*/
 }
 #else
 SPAN_DECLARE(void) vec_copyf(float z[], const float x[], int n)
@@ -79,6 +82,7 @@ SPAN_DECLARE(void) vec_copyf(float z[], const float x[], int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i];
+    /*endfor*/
 }
 #endif
 /*- End of function --------------------------------------------------------*/
@@ -89,6 +93,7 @@ SPAN_DECLARE(void) vec_copy(double z[], const double x[], int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i];
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -99,6 +104,7 @@ SPAN_DECLARE(void) vec_copyl(long double z[], const long double x[], int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i];
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 #endif
@@ -121,7 +127,9 @@ SPAN_DECLARE(void) vec_negatef(float z[], const float x[], int n)
             n1 = _mm_xor_ps(n1, n2);
             _mm_storeu_ps(z + i, n1);
         }
+        /*endfor*/
     }
+    /*endif*/
     /* Now deal with the last 1 to 3 elements, which don't fill an SSE2 register */
     switch (n & 3)
     {
@@ -132,6 +140,7 @@ SPAN_DECLARE(void) vec_negatef(float z[], const float x[], int n)
     case 1:
         z[n - 1] = -x[n - 1];
     }
+    /*endswitch*/
 }
 #else
 SPAN_DECLARE(void) vec_negatef(float z[], const float x[], int n)
@@ -140,6 +149,7 @@ SPAN_DECLARE(void) vec_negatef(float z[], const float x[], int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = -x[i];
+    /*endfor*/
 }
 #endif
 /*- End of function --------------------------------------------------------*/
@@ -150,6 +160,7 @@ SPAN_DECLARE(void) vec_negate(double z[], const double x[], int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = -x[i];
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -160,6 +171,7 @@ SPAN_DECLARE(void) vec_negatel(long double z[], const long double x[], int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = -x[i];
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 #endif
@@ -175,7 +187,9 @@ SPAN_DECLARE(void) vec_zerof(float z[], int n)
         n1 = _mm_setzero_ps();
         for (i -= 4;  i >= 0;  i -= 4)
             _mm_storeu_ps(z + i, n1);
+        /*endfor*/
     }
+    /*endif*/
     /* Now deal with the last 1 to 3 elements, which don't fill an SSE2 register */
     switch (n & 3)
     {
@@ -186,6 +200,7 @@ SPAN_DECLARE(void) vec_zerof(float z[], int n)
     case 1:
         z[n - 1] = 0;
     }
+    /*endswitch*/
 }
 #else
 SPAN_DECLARE(void) vec_zerof(float z[], int n)
@@ -194,6 +209,7 @@ SPAN_DECLARE(void) vec_zerof(float z[], int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = 0.0f;
+    /*endfor*/
 }
 #endif
 /*- End of function --------------------------------------------------------*/
@@ -204,6 +220,7 @@ SPAN_DECLARE(void) vec_zero(double z[], int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = 0.0;
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -214,6 +231,7 @@ SPAN_DECLARE(void) vec_zerol(long double z[], int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = 0.0L;
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 #endif
@@ -229,7 +247,9 @@ SPAN_DECLARE(void) vec_setf(float z[], float x, int n)
         n1 = _mm_set1_ps(x);
         for (i -= 4;  i >= 0;  i -= 4)
             _mm_storeu_ps(z + i, n1);
+        /*endfor*/
     }
+    /*endif*/
     /* Now deal with the last 1 to 3 elements, which don't fill an SSE2 register */
     switch (n & 3)
     {
@@ -240,6 +260,7 @@ SPAN_DECLARE(void) vec_setf(float z[], float x, int n)
     case 1:
         z[n - 1] = x;
     }
+    /*endswitch*/
 }
 #else
 SPAN_DECLARE(void) vec_setf(float z[], float x, int n)
@@ -248,6 +269,7 @@ SPAN_DECLARE(void) vec_setf(float z[], float x, int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = x;
+    /*endfor*/
 }
 #endif
 /*- End of function --------------------------------------------------------*/
@@ -258,6 +280,7 @@ SPAN_DECLARE(void) vec_set(double z[], double x, int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = x;
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -268,6 +291,7 @@ SPAN_DECLARE(void) vec_setl(long double z[], long double x, int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = x;
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 #endif
@@ -288,7 +312,9 @@ SPAN_DECLARE(void) vec_addf(float z[], const float x[], const float y[], int n)
             n2 = _mm_add_ps(n1, n2);
             _mm_storeu_ps(z + i, n2);
         }
+        /*endfor*/
     }
+    /*endif*/
     /* Now deal with the last 1 to 3 elements, which don't fill an SSE2 register */
     switch (n & 3)
     {
@@ -299,6 +325,7 @@ SPAN_DECLARE(void) vec_addf(float z[], const float x[], const float y[], int n)
     case 1:
         z[n - 1] = x[n - 1] + y[n - 1];
     }
+    /*endswitch*/
 }
 #else
 SPAN_DECLARE(void) vec_addf(float z[], const float x[], const float y[], int n)
@@ -307,6 +334,7 @@ SPAN_DECLARE(void) vec_addf(float z[], const float x[], const float y[], int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i] + y[i];
+    /*endfor*/
 }
 #endif
 /*- End of function --------------------------------------------------------*/
@@ -317,6 +345,7 @@ SPAN_DECLARE(void) vec_add(double z[], const double x[], const double y[], int n
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i] + y[i];
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -327,6 +356,7 @@ SPAN_DECLARE(void) vec_addl(long double z[], const long double x[], const long d
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i] + y[i];
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 #endif
@@ -353,7 +383,9 @@ SPAN_DECLARE(void) vec_scaledxy_addf(float z[], const float x[], float x_scale, 
             n2 = _mm_add_ps(n1, n2);
             _mm_storeu_ps(z + i, n2);
         }
+        /*endfor*/
     }
+    /*endif*/
     /* Now deal with the last 1 to 3 elements, which don't fill an SSE2 register */
     switch (n & 3)
     {
@@ -364,6 +396,7 @@ SPAN_DECLARE(void) vec_scaledxy_addf(float z[], const float x[], float x_scale, 
     case 1:
         z[n - 1] = x[n - 1]*x_scale + y[n - 1]*y_scale;
     }
+    /*endswitch*/
 }
 #else
 SPAN_DECLARE(void) vec_scaledxy_addf(float z[], const float x[], float x_scale, const float y[], float y_scale, int n)
@@ -372,6 +405,7 @@ SPAN_DECLARE(void) vec_scaledxy_addf(float z[], const float x[], float x_scale, 
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i]*x_scale + y[i]*y_scale;
+    /*endfor*/
 }
 #endif
 /*- End of function --------------------------------------------------------*/
@@ -382,6 +416,7 @@ SPAN_DECLARE(void) vec_scaledxy_add(double z[], const double x[], double x_scale
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i]*x_scale + y[i]*y_scale;
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -392,6 +427,7 @@ SPAN_DECLARE(void) vec_scaledxy_addl(long double z[], const long double x[], lon
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i]*x_scale + y[i]*y_scale;
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 #endif
@@ -415,7 +451,9 @@ SPAN_DECLARE(void) vec_scaledy_addf(float z[], const float x[], const float y[],
             n2 = _mm_add_ps(n1, n2);
             _mm_storeu_ps(z + i, n2);
         }
+        /*endfor*/
     }
+    /*endif*/
     /* Now deal with the last 1 to 3 elements, which don't fill an SSE2 register */
     switch (n & 3)
     {
@@ -426,6 +464,7 @@ SPAN_DECLARE(void) vec_scaledy_addf(float z[], const float x[], const float y[],
     case 1:
         z[n - 1] = x[n - 1] + y[n - 1]*y_scale;
     }
+    /*endswitch*/
 }
 #else
 SPAN_DECLARE(void) vec_scaledy_addf(float z[], const float x[], const float y[], float y_scale, int n)
@@ -434,6 +473,7 @@ SPAN_DECLARE(void) vec_scaledy_addf(float z[], const float x[], const float y[],
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i] + y[i]*y_scale;
+    /*endfor*/
 }
 #endif
 /*- End of function --------------------------------------------------------*/
@@ -444,6 +484,7 @@ SPAN_DECLARE(void) vec_scaledy_add(double z[], const double x[], const double y[
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i] + y[i]*y_scale;
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -454,6 +495,7 @@ SPAN_DECLARE(void) vec_scaledy_addl(long double z[], const long double x[], cons
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i] + y[i]*y_scale;
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 #endif
@@ -474,7 +516,9 @@ SPAN_DECLARE(void) vec_subf(float z[], const float x[], const float y[], int n)
             n2 = _mm_sub_ps(n1, n2);
             _mm_storeu_ps(z + i, n2);
         }
+        /*endfor*/
     }
+    /*endif*/
     /* Now deal with the last 1 to 3 elements, which don't fill an SSE2 register */
     switch (n & 3)
     {
@@ -485,6 +529,7 @@ SPAN_DECLARE(void) vec_subf(float z[], const float x[], const float y[], int n)
     case 1:
         z[n - 1] = x[n - 1] - y[n - 1];
     }
+    /*endswitch*/
 }
 #else
 SPAN_DECLARE(void) vec_subf(float z[], const float x[], const float y[], int n)
@@ -493,6 +538,7 @@ SPAN_DECLARE(void) vec_subf(float z[], const float x[], const float y[], int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i] - y[i];
+    /*endfor*/
 }
 #endif
 /*- End of function --------------------------------------------------------*/
@@ -503,6 +549,7 @@ SPAN_DECLARE(void) vec_sub(double z[], const double x[], const double y[], int n
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i] - y[i];
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -513,6 +560,7 @@ SPAN_DECLARE(void) vec_subl(long double z[], const long double x[], const long d
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i] - y[i];
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 #endif
@@ -523,6 +571,7 @@ SPAN_DECLARE(void) vec_scaledxy_subf(float z[], const float x[], float x_scale, 
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i]*x_scale - y[i]*y_scale;
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -532,6 +581,7 @@ SPAN_DECLARE(void) vec_scaledxy_sub(double z[], const double x[], double x_scale
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i]*x_scale - y[i]*y_scale;
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -542,6 +592,7 @@ SPAN_DECLARE(void) vec_scaledxy_subl(long double z[], const long double x[], lon
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i]*x_scale - y[i]*y_scale;
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 #endif
@@ -562,7 +613,9 @@ SPAN_DECLARE(void) vec_scalar_mulf(float z[], const float x[], float y, int n)
             n1 = _mm_mul_ps(n1, n2);
             _mm_storeu_ps(z + i, n1);
         }
+        /*endfor*/
     }
+    /*endif*/
     /* Now deal with the last 1 to 3 elements, which don't fill an SSE2 register */
     switch (n & 3)
     {
@@ -573,6 +626,7 @@ SPAN_DECLARE(void) vec_scalar_mulf(float z[], const float x[], float y, int n)
     case 1:
         z[n - 1] = x[n - 1]*y;
     }
+    /*endswitch*/
 }
 #else
 SPAN_DECLARE(void) vec_scalar_mulf(float z[], const float x[], float y, int n)
@@ -581,6 +635,7 @@ SPAN_DECLARE(void) vec_scalar_mulf(float z[], const float x[], float y, int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i]*y;
+    /*endfor*/
 }
 #endif
 /*- End of function --------------------------------------------------------*/
@@ -591,6 +646,7 @@ SPAN_DECLARE(void) vec_scalar_mul(double z[], const double x[], double y, int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i]*y;
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -610,7 +666,9 @@ SPAN_DECLARE(void) vec_scalar_addf(float z[], const float x[], float y, int n)
             n1 = _mm_add_ps(n1, n2);
             _mm_storeu_ps(z + i, n1);
         }
+        /*endfor*/
     }
+    /*endif*/
     /* Now deal with the last 1 to 3 elements, which don't fill an SSE2 register */
     switch (n & 3)
     {
@@ -621,6 +679,7 @@ SPAN_DECLARE(void) vec_scalar_addf(float z[], const float x[], float y, int n)
     case 1:
         z[n - 1] = x[n - 1] + y;
     }
+    /*endswitch*/
 }
 #else
 SPAN_DECLARE(void) vec_scalar_addf(float z[], const float x[], float y, int n)
@@ -629,6 +688,7 @@ SPAN_DECLARE(void) vec_scalar_addf(float z[], const float x[], float y, int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i] + y;
+    /*endfor*/
 }
 #endif
 /*- End of function --------------------------------------------------------*/
@@ -639,6 +699,7 @@ SPAN_DECLARE(void) vec_scalar_add(double z[], const double x[], double y, int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i] + y;
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -649,6 +710,7 @@ SPAN_DECLARE(void) vec_scalar_addl(long double z[], const long double x[], long 
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i] + y;
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 #endif
@@ -669,7 +731,9 @@ SPAN_DECLARE(void) vec_scalar_subf(float z[], const float x[], float y, int n)
             n1 = _mm_sub_ps(n1, n2);
             _mm_storeu_ps(z + i, n1);
         }
+        /*endfor*/
     }
+    /*endif*/
     /* Now deal with the last 1 to 3 elements, which don't fill an SSE2 register */
     switch (n & 3)
     {
@@ -680,6 +744,7 @@ SPAN_DECLARE(void) vec_scalar_subf(float z[], const float x[], float y, int n)
     case 1:
         z[n - 1] = x[n - 1] - y;
     }
+    /*endswitch*/
 }
 #else
 SPAN_DECLARE(void) vec_scalar_subf(float z[], const float x[], float y, int n)
@@ -688,6 +753,7 @@ SPAN_DECLARE(void) vec_scalar_subf(float z[], const float x[], float y, int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i] - y;
+    /*endfor*/
 }
 #endif
 /*- End of function --------------------------------------------------------*/
@@ -698,6 +764,7 @@ SPAN_DECLARE(void) vec_scalar_sub(double z[], const double x[], double y, int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i] - y;
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -708,6 +775,7 @@ SPAN_DECLARE(void) vec_scalar_subl(long double z[], const long double x[], long 
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i] - y;
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 #endif
@@ -729,7 +797,9 @@ SPAN_DECLARE(void) vec_mulf(float z[], const float x[], const float y[], int n)
             n3 = _mm_mul_ps(n1, n2);
             _mm_storeu_ps(z + i, n3);
         }
+        /*endfor*/
     }
+    /*endif*/
     /* Now deal with the last 1 to 3 elements, which don't fill an SSE2 register */
     switch (n & 3)
     {
@@ -740,6 +810,7 @@ SPAN_DECLARE(void) vec_mulf(float z[], const float x[], const float y[], int n)
     case 1:
         z[n - 1] = x[n - 1]*y[n - 1];
     }
+    /*endswitch*/
 }
 #else
 SPAN_DECLARE(void) vec_mulf(float z[], const float x[], const float y[], int n)
@@ -748,6 +819,7 @@ SPAN_DECLARE(void) vec_mulf(float z[], const float x[], const float y[], int n)
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i]*y[i];
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 #endif
@@ -758,6 +830,7 @@ SPAN_DECLARE(void) vec_mul(double z[], const double x[], const double y[], int n
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i]*y[i];
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -768,6 +841,7 @@ SPAN_DECLARE(void) vec_mull(long double z[], const long double x[], const long d
 
     for (i = 0;  i < n;  i++)
         z[i] = x[i]*y[i];
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 #endif
@@ -793,10 +867,12 @@ SPAN_DECLARE(float) vec_dot_prodf(const float x[], const float y[], int n)
             n3 = _mm_mul_ps(n1, n2);
             n4 = _mm_add_ps(n4, n3);
         }
+        /*endfor*/
         n4 = _mm_add_ps(_mm_movehl_ps(n4, n4), n4);
         n4 = _mm_add_ss(_mm_shuffle_ps(n4, n4, 1), n4);
         _mm_store_ss(&z, n4);
     }
+    /*endif*/
     /* Now deal with the last 1 to 3 elements, which don't fill an SSE2 register */
     switch (n & 3)
     {
@@ -807,6 +883,7 @@ SPAN_DECLARE(float) vec_dot_prodf(const float x[], const float y[], int n)
     case 1:
         z += x[n - 1]*y[n - 1];
     }
+    /*endswitch*/
     return z;
 }
 #else
@@ -818,6 +895,7 @@ SPAN_DECLARE(float) vec_dot_prodf(const float x[], const float y[], int n)
     z = 0.0f;
     for (i = 0;  i < n;  i++)
         z += x[i]*y[i];
+    /*endfor*/
     return z;
 }
 /*- End of function --------------------------------------------------------*/
@@ -831,6 +909,7 @@ SPAN_DECLARE(double) vec_dot_prod(const double x[], const double y[], int n)
     z = 0.0;
     for (i = 0;  i < n;  i++)
         z += x[i]*y[i];
+    /*endfor*/
     return z;
 }
 /*- End of function --------------------------------------------------------*/
@@ -844,6 +923,7 @@ SPAN_DECLARE(long double) vec_dot_prodl(const long double x[], const long double
     z = 0.0L;
     for (i = 0;  i < n;  i++)
         z += x[i]*y[i];
+    /*endfor*/
     return z;
 }
 /*- End of function --------------------------------------------------------*/
@@ -883,7 +963,9 @@ SPAN_DECLARE(void) vec_lmsf(const float x[], float y[], int n, float error)
             n1 = _mm_add_ps(n1, n2);
             _mm_storeu_ps(y + i, n1);
         }
+        /*endfor*/
     }
+    /*endif*/
     /* Now deal with the last 1 to 3 elements, which don't fill an SSE2 register */
     switch (n & 3)
     {
@@ -894,6 +976,7 @@ SPAN_DECLARE(void) vec_lmsf(const float x[], float y[], int n, float error)
     case 1:
         y[n - 1] = y[n - 1]*LMS_LEAK_RATE + x[n - 1]*error;
     }
+    /*endswitch*/
 }
 #else
 SPAN_DECLARE(void) vec_lmsf(const float x[], float y[], int n, float error)
@@ -905,6 +988,7 @@ SPAN_DECLARE(void) vec_lmsf(const float x[], float y[], int n, float error)
         /* Leak a little to tame uncontrolled wandering */
         y[i] = y[i]*LMS_LEAK_RATE + x[i]*error;
     }
+    /*endfor*/
 }
 #endif
 /*- End of function --------------------------------------------------------*/

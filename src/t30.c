@@ -1684,7 +1684,7 @@ static int prune_dis_dtc(t30_state_t *s)
     /* Find the last octet that is really needed, set the extension bits, and trim the message length */
     for (i = T30_MAX_DIS_DTC_DCS_LEN - 1;  i >= 6;  i--)
     {
-        /* Strip the top bit */
+        /* Strip the extension bit */
         s->local_dis_dtc_frame[i] &= (DISBIT1 | DISBIT2 | DISBIT3 | DISBIT4 | DISBIT5 | DISBIT6 | DISBIT7);
         /* Check if there is some real message content here */
         if (s->local_dis_dtc_frame[i])
@@ -1698,7 +1698,8 @@ static int prune_dis_dtc(t30_state_t *s)
     for (i--;  i > 4;  i--)
         s->local_dis_dtc_frame[i] |= DISBIT8;
     /*endfor*/
-    t30_decode_dis_dtc_dcs(s, s->local_dis_dtc_frame, s->local_dis_dtc_len);
+    t30_log_dis_dtc_dcs(&s->logging, s->local_dis_dtc_frame, s->local_dis_dtc_len);
+
     return s->local_dis_dtc_len;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1972,14 +1973,14 @@ static int prune_dcs(t30_state_t *s)
     for (i--  ;  i > 4;  i--)
         s->dcs_frame[i] |= DISBIT8;
     /*endfor*/
-    t30_decode_dis_dtc_dcs(s, s->dcs_frame, s->dcs_len);
+    t30_log_dis_dtc_dcs(&s->logging, s->dcs_frame, s->dcs_len);
     return s->dcs_len;
 }
 /*- End of function --------------------------------------------------------*/
 
 static int analyze_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
 {
-    t30_decode_dis_dtc_dcs(s, msg, len);
+    t30_log_dis_dtc_dcs(&s->logging, msg, len);
     if (len < 6)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Short DIS/DTC frame\n");
@@ -2232,7 +2233,7 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
     int i;
     int x;
 
-    t30_decode_dis_dtc_dcs(s, msg, len);
+    t30_log_dis_dtc_dcs(&s->logging, msg, len);
     if (len < 6)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Short DCS frame\n");

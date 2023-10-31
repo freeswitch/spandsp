@@ -98,7 +98,7 @@ static void ran_init(awgn_state_t *s, int idum)
         s->ix2 = (IA2*s->ix2 + IC2)%M2;
         s->r[j] = (s->ix1 + s->ix2*RM2)*RM1;
     }
-    /*endif*/
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 

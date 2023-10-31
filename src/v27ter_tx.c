@@ -117,7 +117,9 @@ static __inline__ int scramble(v27ter_tx_state_t *s, int in_bit)
             s->scrambler_pattern_count = 0;
         else
             s->scrambler_pattern_count++;
+        /*endif*/
     }
+    /*endif*/
     s->scramble_reg = (s->scramble_reg << 1) | out_bit;
     return out_bit;
 }
@@ -133,10 +135,12 @@ static __inline__ int get_scrambled_bit(v27ter_tx_state_t *s)
            have shut down completely. */
         if (s->status_handler)
             s->status_handler(s->status_user_data, SIG_STATUS_END_OF_DATA);
+        /*endif*/
         s->current_get_bit = fake_get_bit;
         s->in_training = true;
         bit = 1;
     }
+    /*endif*/
     return scramble(s, bit);
 }
 /*- End of function --------------------------------------------------------*/
@@ -186,15 +190,18 @@ static complexf_t getbaud(v27ter_tx_state_t *s)
                     /* Segment 1: Unmodulated carrier (talker echo protection) */
                     return constellation[0];
                 }
+                /*endif*/
                 if (s->training_step <= V27TER_TRAINING_SEG_3)
                 {
                     /* Segment 2: Silence */
                     return zero;
                 }
+                /*endif*/
                 /* Segment 3: Regular reversals... */
                 s->constellation_state = (s->constellation_state + 4) & 7;
                 return constellation[s->constellation_state];
             }
+            /*endif*/
             /* Segment 4: Scrambled reversals... */
             /* Apply the 1 + x^-6 + x^-7 scrambler. We want every third
                bit from the scrambler. */
@@ -204,6 +211,7 @@ static complexf_t getbaud(v27ter_tx_state_t *s)
             s->constellation_state = (s->constellation_state + bits) & 7;
             return constellation[s->constellation_state];
         }
+        /*endif*/
         /* We should be in the block of test ones, or shutdown ones, if we get here. */
         /* There is no graceful shutdown procedure defined for V.27ter. Just
            send some ones, to ensure we get the real data bits through, even
@@ -216,12 +224,16 @@ static complexf_t getbaud(v27ter_tx_state_t *s)
             s->current_get_bit = s->get_bit;
             s->in_training = false;
         }
+        /*endif*/
         if (s->training_step == V27TER_TRAINING_SHUTDOWN_END)
         {
             if (s->status_handler)
                 s->status_handler(s->status_user_data, SIG_STATUS_SHUTDOWN_COMPLETE);
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endif*/
     /* 4800bps uses 8 phases. 2400bps uses 4 phases. */
     if (s->bit_rate == 4800)
     {
@@ -236,6 +248,7 @@ static complexf_t getbaud(v27ter_tx_state_t *s)
         bits = (bits << 1) | get_scrambled_bit(s);
         bits = phase_steps_2400[bits];
     }
+    /*endif*/
     s->constellation_state = (s->constellation_state + bits) & 7;
     return constellation[s->constellation_state];
 }
@@ -261,6 +274,7 @@ SPAN_DECLARE(int) v27ter_tx(v27ter_tx_state_t *s, int16_t amp[], int len)
         /* Once we have sent the shutdown symbols, we stop sending completely. */
         return 0;
     }
+    /*endif*/
     /* The symbol rates for the two bit rates are different. This makes it difficult to
        merge both generation procedures into a single efficient loop. We do not bother
        trying. We use two independent loops, filter coefficients, etc. */
@@ -276,7 +290,9 @@ SPAN_DECLARE(int) v27ter_tx(v27ter_tx_state_t *s, int16_t amp[], int len)
                 s->rrc_filter_im[s->rrc_filter_step] = v.im;
                 if (++s->rrc_filter_step >= V27TER_TX_FILTER_STEPS)
                     s->rrc_filter_step = 0;
+                /*endif*/
             }
+            /*endif*/
 #if defined(SPANDSP_USE_FIXED_POINT)
             /* Root raised cosine pulse shaping at baseband */
             x.re = vec_circular_dot_prodi16(s->rrc_filter_re, tx_pulseshaper_4800[TX_PULSESHAPER_4800_COEFF_SETS - 1 - s->baud_phase], V27TER_TX_FILTER_STEPS, s->rrc_filter_step) >> (10 + 4);
@@ -297,6 +313,7 @@ SPAN_DECLARE(int) v27ter_tx(v27ter_tx_state_t *s, int16_t amp[], int len)
             amp[sample] = (int16_t) lfastrintf(famp*s->gain_4800);
 #endif
         }
+        /*endfor*/
     }
     else
     {
@@ -310,7 +327,9 @@ SPAN_DECLARE(int) v27ter_tx(v27ter_tx_state_t *s, int16_t amp[], int len)
                 s->rrc_filter_im[s->rrc_filter_step] = v.im;
                 if (++s->rrc_filter_step >= V27TER_TX_FILTER_STEPS)
                     s->rrc_filter_step = 0;
+                /*endif*/
             }
+            /*endif*/
 #if defined(SPANDSP_USE_FIXED_POINT)
             /* Root raised cosine pulse shaping at baseband */
             x.re = vec_circular_dot_prodi16(s->rrc_filter_re, tx_pulseshaper_2400[TX_PULSESHAPER_2400_COEFF_SETS - 1 - s->baud_phase], V27TER_TX_FILTER_STEPS, s->rrc_filter_step) >> (10 + 4);
@@ -331,7 +350,9 @@ SPAN_DECLARE(int) v27ter_tx(v27ter_tx_state_t *s, int16_t amp[], int len)
             amp[sample] = (int16_t) lfastrintf(famp*s->gain_2400);
 #endif
         }
+        /*endfor*/
     }
+    /*endif*/
     return sample;
 }
 /*- End of function --------------------------------------------------------*/
@@ -355,6 +376,7 @@ SPAN_DECLARE(void) v27ter_tx_set_get_bit(v27ter_tx_state_t *s, span_get_bit_func
 {
     if (s->get_bit == s->current_get_bit)
         s->current_get_bit = get_bit;
+    /*endif*/
     s->get_bit = get_bit;
     s->get_bit_user_data = user_data;
 }
@@ -377,6 +399,7 @@ SPAN_DECLARE(int) v27ter_tx_restart(v27ter_tx_state_t *s, int bit_rate, bool tep
 {
     if (bit_rate != 4800  &&  bit_rate != 2400)
         return -1;
+    /*endif*/
     s->bit_rate = bit_rate;
 #if defined(SPANDSP_USE_FIXED_POINT)
     vec_zeroi16(s->rrc_filter_re, sizeof(s->rrc_filter_re)/sizeof(s->rrc_filter_re[0]));
@@ -408,11 +431,14 @@ SPAN_DECLARE(v27ter_tx_state_t *) v27ter_tx_init(v27ter_tx_state_t *s, int bit_r
     default:
         return NULL;
     }
+    /*endswitch*/
     if (s == NULL)
     {
         if ((s = (v27ter_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "V.27ter TX");

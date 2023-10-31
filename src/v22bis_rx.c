@@ -167,6 +167,7 @@ void v22bis_report_status_change(v22bis_state_t *s, int status)
         s->status_handler(s->status_user_data, status);
     else if (s->put_bit)
         s->put_bit(s->put_bit_user_data, status);
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -314,10 +315,12 @@ static __inline__ int descramble(v22bis_state_t *s, int bit)
         out_bit ^= 1;
         s->rx.scrambler_pattern_count = 0;
     }
+    /*endif*/
     if (bit)
         s->rx.scrambler_pattern_count++;
     else
         s->rx.scrambler_pattern_count = 0;
+    /*endif*/
     return out_bit;
 }
 /*- End of function --------------------------------------------------------*/
@@ -347,6 +350,7 @@ static void decode_baud(v22bis_state_t *s, int nearest)
         put_bit(s, nearest >> 1);
         put_bit(s, nearest);
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -366,6 +370,7 @@ static int decode_baudx(v22bis_state_t *s, int nearest)
         out_bits = (out_bits << 1) | descramble(s, nearest >> 1);
         out_bits = (out_bits << 1) | descramble(s, nearest);
     }
+    /*endif*/
     return out_bits;
 }
 /*- End of function --------------------------------------------------------*/
@@ -398,8 +403,10 @@ static __inline__ void symbol_sync(v22bis_state_t *s)
     {
         if (--j < 0)
             j = V22BIS_EQUALIZER_LEN - 1;
+        /*endif*/
         aa[i] = j;
     }
+    /*endfor*/
     if (s->rx.sixteen_way_decisions)
     {
         p = s->rx.eq_buf[aa[2]].re - s->rx.eq_buf[aa[0]].re;
@@ -425,6 +432,7 @@ static __inline__ void symbol_sync(v22bis_state_t *s)
         p = (a.re - c.re)*b.re;
         q = (a.im - c.im)*b.im;
     }
+    /*endif*/
 
     s->rx.gardner_integrate += (p + q > 0)  ?  s->rx.gardner_step  :  -s->rx.gardner_step;
 
@@ -438,8 +446,10 @@ static __inline__ void symbol_sync(v22bis_state_t *s)
         //span_log(&s->logging, SPAN_LOG_FLOW, "Gardner kick %d [total %d]\n", s->rx.gardner_integrate, s->rx.total_baud_timing_correction);
         if (s->rx.qam_report)
             s->rx.qam_report(s->rx.qam_user_data, NULL, NULL, s->rx.gardner_integrate);
+        /*endif*/
         s->rx.gardner_integrate = 0;
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -474,10 +484,12 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
     s->rx.eq_buf[s->rx.eq_step] = z;
     if (++s->rx.eq_step >= V22BIS_EQUALIZER_LEN)
         s->rx.eq_step = 0;
+    /*endif*/
 
     /* On alternate insertions we have a whole baud and must process it. */
     if ((s->rx.baud_phase ^= 1))
         return;
+    /*endif*/
 
     symbol_sync(s);
 
@@ -497,10 +509,12 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
             re = 5;
         else if (re < 0)
             re = 0;
+        /*endif*/
         if (im > 5)
             im = 5;
         else if (im < 0)
             im = 0;
+        /*endif*/
         nearest = space_map_v22bis[re][im];
     }
     else
@@ -514,12 +528,15 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
         nearest = 0x01;
         if (zz.re < 0)
             nearest |= 0x04;
+        /*endif*/
         if (zz.im < 0)
         {
             nearest ^= 0x04;
             nearest |= 0x08;
         }
+        /*endif*/
     }
+    /*endif*/
     raw_bits = 0;
 
     switch (s->rx.training)
@@ -552,8 +569,10 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
                 v22bis_equalizer_coefficient_reset(s);
                 v22bis_report_status_change(s, SIG_STATUS_MODEM_RETRAIN_OCCURRED);
             }
+            /*endif*/
             s->rx.pattern_repeats = 0;
         }
+        /*endif*/
         decode_baud(s, nearest);
         break;
     case V22BIS_RX_TRAINING_STAGE_SYMBOL_ACQUISITION:
@@ -573,10 +592,12 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
             s->negotiated_bit_rate = 1200;
             break;
         }
+        /*endif*/
         /* Once we have pulled in the symbol timing in a coarse way, use finer
            steps to fine tune the timing. */
         if (s->rx.training_count == 30)
             s->rx.gardner_step = 32;
+        /*endif*/
         break;
     case V22BIS_RX_TRAINING_STAGE_UNSCRAMBLED_ONES:
         /* Calling modem only. */
@@ -589,6 +610,7 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
             s->rx.pattern_repeats = 0;
         else
             s->rx.pattern_repeats++;
+        /*endif*/
         if (++s->rx.training_count == ms_to_symbols(155 + 456))
         {
             /* After the first 155ms things should have been steady, so check if the last 456ms was
@@ -614,11 +636,14 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
                     s->tx.training = V22BIS_TX_TRAINING_STAGE_S11;
                     s->tx.training_count = 0;
                 }
+                /*endif*/
             }
+            /*endif*/
             s->rx.pattern_repeats = 0;
             s->rx.training_count = 0;
             s->rx.training = V22BIS_RX_TRAINING_STAGE_UNSCRAMBLED_ONES_SUSTAINING;
         }
+        /*endif*/
         break;
     case V22BIS_RX_TRAINING_STAGE_UNSCRAMBLED_ONES_SUSTAINING:
         /* Calling modem only. */
@@ -636,6 +661,7 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
             s->rx.training = V22BIS_RX_TRAINING_STAGE_SCRAMBLED_ONES_AT_1200;
             s->rx.pattern_repeats = 0;
         }
+        /*endif*/
         break;
     case V22BIS_RX_TRAINING_STAGE_SCRAMBLED_ONES_AT_1200:
         target = &v22bis_constellation[nearest];
@@ -669,11 +695,15 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
                             s->tx.training = V22BIS_TX_TRAINING_STAGE_U0011;
                             s->tx.training_count = 0;
                         }
+                        /*endif*/
                         s->negotiated_bit_rate = 2400;
                     }
+                    /*endif*/
                 }
+                /*endif*/
                 s->rx.pattern_repeats = 0;
             }
+            /*endif*/
             if (s->rx.training_count >= ms_to_symbols(270))
             {
                 /* If we haven't seen the S1 signal by now, we are committed to be in 1200bps mode. */
@@ -701,7 +731,9 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
                        before entering normal operation. */
                     s->rx.training = V22BIS_RX_TRAINING_STAGE_SCRAMBLED_ONES_AT_1200_SUSTAINING;
                 }
+                /*endif*/
             }
+            /*endif*/
         }
         else
         {
@@ -719,6 +751,7 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
                     s->rx.carrier_track_i = 8000.0f;
 #endif
                 }
+                /*endif*/
             }
             else
             {
@@ -729,8 +762,11 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
                     s->rx.training = V22BIS_RX_TRAINING_STAGE_WAIT_FOR_SCRAMBLED_ONES_AT_2400;
                     s->rx.pattern_repeats = 0;
                 }
+                /*endif*/
             }
+            /*endif*/
         }
+        /*endif*/
         break;
     case V22BIS_RX_TRAINING_STAGE_SCRAMBLED_ONES_AT_1200_SUSTAINING:
         target = &v22bis_constellation[nearest];
@@ -743,6 +779,7 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
             span_log(&s->logging, SPAN_LOG_FLOW, "+++ Rx normal operation (1200)\n");
             s->rx.training = V22BIS_RX_TRAINING_STAGE_NORMAL_OPERATION;
         }
+        /*endif*/
         break;
     case V22BIS_RX_TRAINING_STAGE_WAIT_FOR_SCRAMBLED_ONES_AT_2400:
         target = &v22bis_constellation[nearest];
@@ -757,11 +794,13 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
                 span_log(&s->logging, SPAN_LOG_FLOW, "+++ Rx normal operation (2400)\n");
                 s->rx.training = V22BIS_RX_TRAINING_STAGE_NORMAL_OPERATION;
             }
+            /*endif*/
         }
         else
         {
             s->rx.pattern_repeats = 0;
         }
+        /*endif*/
         break;
     case V22BIS_RX_TRAINING_STAGE_PARKED:
     default:
@@ -770,9 +809,11 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
         target = &z;
         break;
     }
+    /*endswitch*/
     s->rx.last_raw_bits = raw_bits;
     if (s->rx.qam_report)
         s->rx.qam_report(s->rx.qam_user_data, &z, target, s->rx.constellation_state);
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -804,6 +845,7 @@ SPAN_DECLARE(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int len)
         s->rx.rrc_filter[s->rx.rrc_filter_step] = amp[i];
         if (++s->rx.rrc_filter_step >= V22BIS_RX_FILTER_STEPS)
             s->rx.rrc_filter_step = 0;
+        /*endif*/
 
         /* Calculate the I filter, with an arbitrary phase step, just so we can calculate
            the signal power of the required carrier, with any guard tone or spillback of our
@@ -824,6 +866,7 @@ SPAN_DECLARE(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int len)
             ii = vec_circular_dot_prodf(s->rx.rrc_filter, rx_pulseshaper_1200_re[6], V22BIS_RX_FILTER_STEPS, s->rx.rrc_filter_step);
 #endif
         }
+        /*endif*/
         power = power_meter_update(&s->rx.rx_power, (int16_t) ii);
         if (s->rx.signal_present)
         {
@@ -834,19 +877,23 @@ SPAN_DECLARE(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int len)
                 v22bis_report_status_change(s, SIG_STATUS_CARRIER_DOWN);
                 continue;
             }
+            /*endif*/
         }
         else
         {
             /* Look for power exceeding the carrier on point */
             if (power < s->rx.carrier_on_power)
                 continue;
+            /*endif*/
             s->rx.signal_present = true;
             v22bis_report_status_change(s, SIG_STATUS_CARRIER_UP);
         }
+        /*endif*/
         /* Only spend effort processing this data if the modem is not parked, after
            a training failure. */
         if (s->rx.training == V22BIS_RX_TRAINING_STAGE_PARKED)
             continue;
+        /*endif*/
 
         /* Put things into the equalization buffer at T/2 rate. The Gardner algorithm
            will fiddle the step to align this with the symbols. */
@@ -857,12 +904,14 @@ SPAN_DECLARE(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int len)
                 /* Only AGC during the initial symbol acquisition, and then lock the gain. */
                 if ((root_power = fixed_sqrt32(power)) == 0)
                     root_power = 1;
+                /*endif*/
 #if defined(SPANDSP_USE_FIXED_POINT)
                 s->rx.agc_scaling = saturate16(((int32_t) (FP_SCALE(0.18f)*FP_SCALE(3.60f)))/root_power);
 #else
                 s->rx.agc_scaling = FP_SCALE(0.18f)*FP_SCALE(3.60f)/root_power;
 #endif
             }
+            /*endif*/
             /* Pulse shape while still at the carrier frequency, using a quadrature
                pair of filters. This results in a properly bandpass filtered complex
                signal, which can be brought directly to bandband by complex mixing.
@@ -870,6 +919,7 @@ SPAN_DECLARE(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int len)
             step = -s->rx.eq_put_step;
             if (step > PULSESHAPER_COEFF_SETS - 1)
                 step = PULSESHAPER_COEFF_SETS - 1;
+            /*endif*/
             if (s->calling_party)
             {
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -890,6 +940,7 @@ SPAN_DECLARE(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int len)
                 qq = vec_circular_dot_prodf(s->rx.rrc_filter, rx_pulseshaper_1200_im[step], V22BIS_RX_FILTER_STEPS, s->rx.rrc_filter_step);
 #endif
             }
+            /*endif*/
             /* Shift to baseband - since this is done in a full complex form, the
                result is clean, and requires no further filtering apart from the
                equalizer. */
@@ -909,12 +960,14 @@ SPAN_DECLARE(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int len)
             s->rx.eq_put_step += PULSESHAPER_COEFF_SETS*40/(3*2);
             process_half_baud(s, &zz);
         }
+        /*endif*/
 #if defined(SPANDSP_USE_FIXED_POINT)
         dds_advance(&s->rx.carrier_phase, s->rx.carrier_phase_rate);
 #else
         dds_advancef(&s->rx.carrier_phase, s->rx.carrier_phase_rate);
 #endif
     }
+    /*endfor*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -928,6 +981,7 @@ SPAN_DECLARE(int) v22bis_rx_fillin(v22bis_state_t *s, int len)
     span_log(&s->logging, SPAN_LOG_FLOW, "Fill-in %d samples\n", len);
     if (!s->rx.signal_present)
         return 0;
+    /*endif*/
     for (i = 0;  i < len;  i++)
     {
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -936,6 +990,7 @@ SPAN_DECLARE(int) v22bis_rx_fillin(v22bis_state_t *s, int len)
         dds_advancef(&s->rx.carrier_phase, s->rx.carrier_phase_rate);
 #endif
     }
+    /*endfor*/
     /* TODO: Advance the symbol phase the appropriate amount */
     return 0;
 }

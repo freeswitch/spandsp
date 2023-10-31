@@ -217,6 +217,7 @@ static void adsi_rx_put_bit(void *user_data, int bit)
         /*endswitch*/
         return;
     }
+    /*endif*/
     bit &= 1;
     if (s->bit_pos == 0)
     {

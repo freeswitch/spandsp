@@ -85,6 +85,7 @@ SPAN_DECLARE(tone_gen_descriptor_t *) tone_gen_descriptor_init(tone_gen_descript
         s->tone[0].phase_rate = dds_phase_rate((float) f1);
         if (f2 < 0)
             s->tone[0].phase_rate = -s->tone[0].phase_rate;
+        /*endif*/
         s->tone[0].gain = dds_scaling_dbm0((float) l1);
 #else
         s->tone[0].phase_rate = dds_phase_ratef((float) f1);

@@ -553,9 +553,8 @@ static void octet_field(logging_state_t *log,
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, int len)
+SPAN_DECLARE(void) t30_log_dis_dtc_dcs(logging_state_t *log, const uint8_t *pkt, int len)
 {
-    logging_state_t *log;
     uint8_t frame_type;
     static const value_string_t available_signalling_rate_tags[] =
     {
@@ -676,25 +675,41 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
         { 0x00, NULL }
     };
 
-    if (!span_log_test(&s->logging, SPAN_LOG_FLOW))
+    if (!span_log_test(log, SPAN_LOG_FLOW))
         return;
     /*endif*/
-    frame_type = pkt[2] & 0xFE;
-    log = &s->logging;
     if (len <= 2)
     {
         span_log(log, SPAN_LOG_FLOW, "  Frame is short\n");
         return;
     }
     /*endif*/
-
-    span_log(log, SPAN_LOG_FLOW, "%s:\n", t30_frametype(pkt[2]));
+    if (pkt[0] != 0xFF  ||  pkt[1] != 0x13)
+    {
+        span_log(log, SPAN_LOG_FLOW, "  Frame header is not 0xFF 0x13\n");
+        return;
+    }
+    /*endif*/
     if (len <= 3)
     {
         span_log(log, SPAN_LOG_FLOW, "  Frame is short\n");
         return;
     }
     /*endif*/
+    frame_type = pkt[2] & 0xFE;
+
+    switch (frame_type)
+    {
+    case T30_DIS:
+    case T30_DTC:
+    case T30_DCS:
+        break;
+    default:
+        span_log(log, SPAN_LOG_FLOW, "Bad frame type %s\n", t30_frametype(pkt[2]));
+        return;
+    }
+    /*endswitch*/
+    span_log(log, SPAN_LOG_FLOW, "%s:\n", t30_frametype(pkt[2]));
     octet_bit_field(log, pkt, 1, "Store and forward Internet fax (T.37)", NULL, NULL);
     octet_reserved_bit(log, pkt, 2, 0);
     octet_bit_field(log, pkt, 3, "Real-time Internet fax (T.38)", NULL, NULL);

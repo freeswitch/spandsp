@@ -91,6 +91,10 @@ int t38_mode = false;
 #define FAST_SEND_TCF(b) {(const char *) 2, -2, b, sizeof(b) - 1}
 #define END_OF_SEQUENCE {NULL, -1, NULL, -1}
 
+/* Note that the HDLC packets in AT commands are entire packets ready for flag framming. So, they start with
+   0xFF 0x13 and end with two bytes of CRC. Any change of the contents of the packet requires recalculation of
+   the CRC value in this script. */
+
 static const struct command_response_s fax_send_test_seq[] =
 {
     EXCHANGE("ATE0\r", "ATE0\r\r\nOK\r\n"),
@@ -106,7 +110,7 @@ static const struct command_response_s fax_send_test_seq[] =
     EXCHANGE("AT+FRH=3\r", "\r\nCONNECT\r\n"),
     //<DIS frame data>
 #if 1
-    RESPONSE("\xFF\x13\x80\x00\xEE\xF8\x80\x80\x99\x80\x80\x80\x18\x58\x0D\x10\x03"),   // For audio FAXing
+    RESPONSE("\xFF\x13\x80\x05\xEE\xF8\x80\x80\x99\x80\x80\x80\x18\xe3\x91\x10\x03"),   // For audio FAXing
 #else
     RESPONSE("\xFF\x13\x80\x04\xEE\xF8\x80\x80\x99\x80\x80\x80\x18\xC4\xBD\x10\x03"),   // For T.38 FAXing
 #endif
@@ -499,7 +503,7 @@ static int t31_tx_packet_handler(t38_core_state_t *s, void *user_data, const uin
 }
 /*- End of function --------------------------------------------------------*/
 
-static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending, int g1050_model_no, int g1050_speed_pattern_no)
+static int t30_tests(int t38_mode, int use_gui, int log_audio, bool test_sending, int g1050_model_no, int g1050_speed_pattern_no)
 {
     t38_terminal_state_t *t38_state;
     fax_state_t *fax_state;
@@ -960,7 +964,7 @@ int main(int argc, char *argv[])
 {
     int log_audio;
     int t38_mode;
-    int test_sending;
+    bool test_sending;
     int use_gui;
     int g1050_model_no;
     int g1050_speed_pattern_no;

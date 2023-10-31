@@ -89,7 +89,7 @@ static const struct
 bool decode_test = false;
 int rx_bits = 0;
 
-t30_state_t t30_dummy;
+logging_state_t *t30_log;
 t4_rx_state_t t4_rx_state;
 bool t4_up = false;
 
@@ -159,7 +159,7 @@ static void print_frame(const char *io, const uint8_t *fr, int frlen)
     type = fr[2] & 0xFE;
     if (type == T30_DIS  ||  type == T30_DTC  ||  type == T30_DCS)
     {
-        t30_decode_dis_dtc_dcs(&t30_dummy, fr, frlen);
+        t30_log_dis_dtc_dcs(t30_log, fr, frlen);
     }
     /*endif*/
     if (type == T30_CSI  ||  type == T30_TSI  ||  type == T30_PWD  ||  type == T30_SEP  ||  type == T30_SUB  ||  type == T30_SID)
@@ -713,11 +713,9 @@ int main(int argc, char *argv[])
         filename = argv[0];
     /*endif*/
 
-    memset(&t30_dummy, 0, sizeof(t30_dummy));
-    logging = t30_get_logging_state(&t30_dummy);
-    span_log_init(logging, SPAN_LOG_NONE, NULL);
-    span_log_set_protocol(logging, "T.30");
-    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
+    t30_log = span_log_init(NULL, SPAN_LOG_NONE, NULL);
+    span_log_set_protocol(t30_log, "T.30");
+    span_log_set_level(t30_log, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
 
     if (t30_decode)
     {
@@ -797,8 +795,7 @@ int main(int argc, char *argv[])
         v27ter_rx(v27ter_4800, amp, len);
         v27ter_rx(v27ter_2400, amp, len);
 
-        logging = t30_get_logging_state(&t30_dummy);
-        span_log_bump_samples(logging, len);
+        span_log_bump_samples(t30_log, len);
         logging = v17_rx_get_logging_state(v17);
         span_log_bump_samples(logging, len);
         logging = v29_rx_get_logging_state(v29);

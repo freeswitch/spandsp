@@ -294,6 +294,7 @@ static __inline__ int scramble(v22bis_state_t *s, int bit)
         bit ^= 1;
         s->tx.scrambler_pattern_count = 0;
     }
+    /*endif*/
     out_bit = (bit ^ (s->tx.scramble_reg >> 13) ^ (s->tx.scramble_reg >> 16)) & 1;
     s->tx.scramble_reg = (s->tx.scramble_reg << 1) | out_bit;
 
@@ -301,6 +302,7 @@ static __inline__ int scramble(v22bis_state_t *s, int bit)
         s->tx.scrambler_pattern_count++;
     else
         s->tx.scrambler_pattern_count = 0;
+    /*endif*/
     return out_bit;
 }
 /*- End of function --------------------------------------------------------*/
@@ -317,6 +319,7 @@ static __inline__ int get_scrambled_bit(v22bis_state_t *s)
         s->tx.shutdown = 1;
         bit = 1;
     }
+    /*endif*/
     return scramble(s, bit);
 }
 /*- End of function --------------------------------------------------------*/
@@ -346,6 +349,7 @@ static complexf_t training_get(v22bis_state_t *s)
             s->tx.training_count = 0;
             s->tx.training = V22BIS_TX_TRAINING_STAGE_U11;
         }
+        /*endif*/
         /* Fall through */
     case V22BIS_TX_TRAINING_STAGE_INITIAL_SILENCE:
         /* Silence */
@@ -374,7 +378,9 @@ static complexf_t training_get(v22bis_state_t *s)
                 s->tx.training_count = ms_to_symbols(756 - (600 - 100));
                 s->tx.training = V22BIS_TX_TRAINING_STAGE_TIMED_S11;
             }
+            /*endif*/
         }
+        /*endif*/
         return v22bis_constellation[(s->tx.constellation_state << 2) | 0x01];
     case V22BIS_TX_TRAINING_STAGE_TIMED_S11:
         /* A timed period of scrambled ones at 1200bps. */
@@ -394,7 +400,9 @@ static complexf_t training_get(v22bis_state_t *s)
                 v22bis_report_status_change(s, SIG_STATUS_TRAINING_SUCCEEDED);
                 s->tx.current_get_bit = s->get_bit;
             }
+            /*endif*/
         }
+        /*endif*/
         /* Fall through */
     case V22BIS_TX_TRAINING_STAGE_S11:
         /* Scrambled ones at 1200bps. */
@@ -418,8 +426,10 @@ static complexf_t training_get(v22bis_state_t *s)
             v22bis_report_status_change(s, SIG_STATUS_TRAINING_SUCCEEDED);
             s->tx.current_get_bit = s->get_bit;
         }
+        /*endif*/
         return v22bis_constellation[(s->tx.constellation_state << 2) | bits];
     }
+    /*endswitch*/
     return zero;
 }
 /*- End of function --------------------------------------------------------*/
@@ -442,6 +452,7 @@ static complexf_t getbaud(v22bis_state_t *s)
         /* Send the training sequence */
         return training_get(s);
     }
+    /*endif*/
 
     /* There is no graceful shutdown procedure defined for V.22bis. Just
        send some ones, to ensure we get the real data bits through, even
@@ -450,7 +461,9 @@ static complexf_t getbaud(v22bis_state_t *s)
     {
         if (++s->tx.shutdown > 10)
             return zero;
+        /*endif*/
     }
+    /*endif*/
     /* The first two bits define the quadrant */
     bits = get_scrambled_bit(s);
     bits = (bits << 1) | get_scrambled_bit(s);
@@ -465,6 +478,7 @@ static complexf_t getbaud(v22bis_state_t *s)
         bits = get_scrambled_bit(s);
         bits = (bits << 1) | get_scrambled_bit(s);
     }
+    /*endif*/
     return v22bis_constellation[(s->tx.constellation_state << 2) | bits];
 }
 /*- End of function --------------------------------------------------------*/
@@ -486,6 +500,7 @@ SPAN_DECLARE(int) v22bis_tx(v22bis_state_t *s, int16_t amp[], int len)
 
     if (s->tx.shutdown > 10)
         return 0;
+    /*endif*/
     for (sample = 0;  sample < len;  sample++)
     {
         if ((s->tx.baud_phase += 3) >= 40)
@@ -496,7 +511,9 @@ SPAN_DECLARE(int) v22bis_tx(v22bis_state_t *s, int16_t amp[], int len)
             s->tx.rrc_filter_im[s->tx.rrc_filter_step] = v.im;
             if (++s->tx.rrc_filter_step >= V22BIS_TX_FILTER_STEPS)
                 s->tx.rrc_filter_step = 0;
+            /*endif*/
         }
+        /*endif*/
 #if defined(SPANDSP_USE_FIXED_POINT)
         /* Root raised cosine pulse shaping at baseband */
         x.re = vec_circular_dot_prodi16(s->tx.rrc_filter_re, tx_pulseshaper[TX_PULSESHAPER_COEFF_SETS - 1 - s->tx.baud_phase], V22BIS_TX_FILTER_STEPS, s->tx.rrc_filter_step) >> 14;
@@ -510,6 +527,7 @@ SPAN_DECLARE(int) v22bis_tx(v22bis_state_t *s, int16_t amp[], int len)
             /* Add the guard tone */
             iamp += dds_mod(&s->tx.guard_tone_phase, s->tx.guard_tone_phase_rate, s->tx.guard_tone_gain, 0);
         }
+        /*endif*/
         /* Don't bother saturating. We should never clip. */
         amp[sample] = iamp;
 #else
@@ -524,10 +542,12 @@ SPAN_DECLARE(int) v22bis_tx(v22bis_state_t *s, int16_t amp[], int len)
             /* Add the guard tone */
             famp += dds_modf(&s->tx.guard_tone_phase, s->tx.guard_tone_phase_rate, s->tx.guard_tone_gain, 0);
         }
+        /*endif*/
         /* Don't bother saturating. We should never clip. */
         amp[sample] = (int16_t) lfastrintf(famp);
 #endif
     }
+    /*endfor*/
     return sample;
 }
 /*- End of function --------------------------------------------------------*/
@@ -556,6 +576,7 @@ SPAN_DECLARE(void) v22bis_tx_power(v22bis_state_t *s, float power)
         sig_power = power;
         guard_tone_power = -9999.0f;
     }
+    /*endif*/
     sig_gain = 0.4490f*powf(10.0f, (sig_power - DBM0_MAX_POWER)/20.0f)*32768.0f/TX_PULSESHAPER_GAIN;
     guard_tone_gain = powf(10.0f, (guard_tone_power - DBM0_MAX_POWER)/20.0f)*32768.0f;
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -584,6 +605,7 @@ static int v22bis_tx_restart(v22bis_state_t *s)
         s->tx.training = V22BIS_TX_TRAINING_STAGE_INITIAL_SILENCE;
     else
         s->tx.training = V22BIS_TX_TRAINING_STAGE_INITIAL_TIMED_SILENCE;
+    /*endif*/
     s->tx.training_count = 0;
     s->tx.carrier_phase = 0;
     s->tx.guard_tone_phase = 0;
@@ -632,10 +654,12 @@ SPAN_DECLARE(int) v22bis_restart(v22bis_state_t *s, int bit_rate)
     default:
         return -1;
     }
+    /*endswitch*/
     s->bit_rate = bit_rate;
     s->negotiated_bit_rate = 1200;
     if (v22bis_tx_restart(s))
         return -1;
+    /*endif*/
     return v22bis_rx_restart(s);
 }
 /*- End of function --------------------------------------------------------*/
@@ -651,6 +675,7 @@ SPAN_DECLARE(int) v22bis_request_retrain(v22bis_state_t *s, int bit_rate)
     default:
         return -1;
     }
+    /*endswitch*/
     /* TODO: support bit rate changes */
     /* Retrain is only valid when we are normal operation at 2400bps */
     if (s->rx.training != V22BIS_RX_TRAINING_STAGE_NORMAL_OPERATION
@@ -661,6 +686,7 @@ SPAN_DECLARE(int) v22bis_request_retrain(v22bis_state_t *s, int bit_rate)
     {
         return -1;
     }
+    /*endif*/
     /* Send things back into the training process at the appropriate point.
        The far end should detect the S1 signal, and reciprocate. */
     span_log(&s->logging, SPAN_LOG_FLOW, "+++ Initiating a retrain\n");
@@ -705,11 +731,14 @@ SPAN_DECLARE(v22bis_state_t *) v22bis_init(v22bis_state_t *s,
     default:
         return NULL;
     }
+    /*endswitch*/
     if (s == NULL)
     {
         if ((s = (v22bis_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "V.22bis");
@@ -740,7 +769,9 @@ SPAN_DECLARE(v22bis_state_t *) v22bis_init(v22bis_state_t *s,
             s->tx.guard_tone_phase_rate = 0;
             break;
         }
+        /*endswitch*/
     }
+    /*endif*/
     v22bis_tx_power(s, -14.0f);
     v22bis_restart(s, s->bit_rate);
     return s;

@@ -201,9 +201,9 @@ static const mf_digit_tones_t socotel_tones[] =
 static char socotel_mf_tone_codes[] = "1234567890ABCDEFG";
 #endif
 
-#define BELL_MF_SAMPLES_PER_BLOCK   120
+#define BELL_MF_SAMPLES_PER_BLOCK               120
 
-#define R2_MF_SAMPLES_PER_BLOCK     133
+#define R2_MF_SAMPLES_PER_BLOCK                 133
 
 #if defined(SPANDSP_USE_FIXED_POINT)
 static const int bell_mf_threshold              = goertzel_threshold_dbm0(BELL_MF_SAMPLES_PER_BLOCK, -30.5f);

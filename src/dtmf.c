@@ -568,7 +568,7 @@ SPAN_DECLARE(int) dtmf_tx(dtmf_tx_state_t *s, int16_t amp[], int max_samples)
         s->tones.tone[1].gain = s->high_level;
         s->tones.duration[0] = s->on_time;
         s->tones.duration[1] = s->off_time;
-        len += tone_gen(&s->tones, amp + len, max_samples - len);
+        len += tone_gen(&s->tones, &amp[len], max_samples - len);
     }
     /*endwhile*/
     return len;
