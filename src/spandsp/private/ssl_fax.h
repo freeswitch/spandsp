@@ -27,57 +27,13 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-//#ifndef __sslfax_H
-//#define __sslfax_H
-//
-//#include <errno.h>
-//#include <unistd.h>
-//#include <string.h>
-//#include <arpa/inet.h>
-//#include <sys/socket.h>
-//#include <sys/types.h>
-//#include <netinet/in.h>
-//#include <resolv.h>
-//#include <stdio.h>
-//#include <netdb.h>
-//#include <openssl/ssl.h>
-//#include <openssl/err.h>
-//
-//#include "Str.h"
-//
-//struct SSLFaxProcess {
-//    SSL_CTX *ctx;
-//    SSL *ssl;
-//    int server;
-//    int client;
-//    fxStr emsg;		// error message
-//};
-//
-//struct SSLFax {
-//public:
-//    int getAddressFamily(fxStr& address);
-//    SSLFaxProcess null();
-//    SSLFaxProcess startServer(fxStr info, fxStr pemFile);
-//    SSLFaxProcess startClient(fxStr info, fxStr passcode, const uint8_t *bitrev, long ms);
-//    void acceptClient(SSLFaxProcess& sfp, fxStr passcode, int modemFd, long ms);
-//    bool acceptClient1(SSLFaxProcess& sfp, long ms, bool sustain = false);
-//    void acceptClient2(SSLFaxProcess& sfp, fxStr passcode, int modemFd, long ms, bool sustain = false);
-//    void cleanup(SSLFaxProcess& sfp, bool sustain = false);
-//    int pending(SSLFaxProcess& sfp);
-//    int read(SSLFaxProcess& sfp, void *buf, size_t count, int modemFd, long ms, bool sustain = false, bool carryon = false);
-//    int write(SSLFaxProcess& sfp, const uint8_t *buf, unsigned int count, const uint8_t *bitrev, int modemFd, long ms, bool eod, bool sustain = false);
-//};
-//
-//#endif
 
 /*! \file */
 
 #if !defined(_SPANDSP_PRIVATE_SSLFAX_H_)
 #define _SPANDSP_PRIVATE_SSLFAX_H_
 
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-
+#if defined(SPANDSP_SUPPORT_SSLFAX)
 /*!
     SSL Fax connection descriptor. This defines the state of a single
     instance of an SSL Fax connection.
@@ -85,7 +41,7 @@
 struct sslfax_state_s
 {
     /*! \brief The remote SSL Fax URL, if known, else NULL. */
-    char* url;
+    char *url;
     SSL_CTX *ctx;
     SSL *ssl;
     int server;
@@ -118,6 +74,7 @@ struct sslfax_state_s
     /*! \brief Error and flow logging control */
     logging_state_t logging;
 };
+#endif
 
 #endif
 /*- End of file ------------------------------------------------------------*/

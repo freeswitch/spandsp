@@ -563,7 +563,7 @@ AC_CHECK_LIB([jpeg], [jpeg_start_compress], [JPEG_LIBS="-ljpeg"], AC_MSG_ERROR("
 AC_CHECK_LIB([ssl], [TLS_client_method], [
     AC_DEFINE([SPANDSP_SUPPORT_FLEXSSL], [1], [Support flexible OpenSSL methods])
     SPANDSP_SUPPORT_FLEXSSL="#define SPANDSP_SUPPORT_FLEXSSL 1"
-], [SPANDSP_SUPPORT_TIFF_FX="#undef SPANDSP_SUPPORT_FLEXSSL"], -lm)
+], [SPANDSP_SUPPORT_FLEXSSL="#undef SPANDSP_SUPPORT_FLEXSSL"], -lm)
 
 LIBS="$LIBS $TIFF_LIBS $JPEG_LIBS"
 

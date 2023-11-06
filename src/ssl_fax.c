@@ -45,19 +45,20 @@
 #else
 #include "spandsp/stdbool.h"
 #endif
-#include <openssl/ssl.h>
-#include <openssl/err.h>
 
 #include "spandsp/telephony.h"
 #include "spandsp/async.h"
 #include "spandsp/alloc.h"
 #include "spandsp/logging.h"
-#include "spandsp/ssl_fax.h"
 #include "spandsp/crc.h"
+#include "spandsp/async.h"
+#include "spandsp/hdlc.h"
+#include "spandsp/ssl_fax.h"
 
 #include "spandsp/private/logging.h"
 #include "spandsp/private/ssl_fax.h"
 
+#if defined(SPANDSP_SUPPORT_SSLFAX)
 static void ShowCerts(sslfax_state_t *s)
 {
     X509 *cert = SSL_get_peer_certificate(s->ssl);    /* get the server's certificate */
@@ -973,4 +974,5 @@ SPAN_DECLARE(void) sslfax_cleanup(sslfax_state_t *s, bool sustain)
     return;
 }
 /*- End of function --------------------------------------------------------*/
+#endif
 /*- End of file ------------------------------------------------------------*/

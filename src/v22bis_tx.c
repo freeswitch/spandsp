@@ -183,22 +183,24 @@ Note - Manufacturers may wish to note that in certain countries, for national pu
 V.22bis to V.22bis
 ------------------
 Calling party
-                                                           S1       scrambled 1's                  scrambled 1's  data
+                                                           S1       Scrambled 1's                  Scrambled 1's  Data
                                                                     at 1200bps                     at 2400bps
-|---------------------------------------------------------|XXXXXXXX|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX|XXXXXXXXXXXXXX|XXXXXXXXXXXXX
-                                      |<155+-10>|<456+-10>|<100+-3>|        |<------600+-10------>|<---200+-10-->|
-                                      ^                            |        ^<----450+-100---->|[16 way decisions begin]
+|---------------------------------------------------------|XXXXXXXX|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXX|XXXXXXXXXXXXX
+                                      |<155+-10>|<456+-10>|<100+-3>|        |<------600+-10------>|<---200+-10--->|
+                                      |         |                  |        |<----450+-100---->|[16 way decisions begin]
                                       |                            |        |
-                                      |                            v        |
+                                      ^                            v        ^
                                       |                            |<------450+-100----->|[16 way decisions begin]
                                       |                            |<----------600+-10-------->|
   |<2150+-350>|<--3300+-700->|<75+-20>|                            |<100+-3>|                  |<---200+-10-->
-  |-----------|XXXXXXXXXXXXXX|--------|XXXXXXXXXXXXXXXXXXXXXXXXXXXX|XXXXXXXX|XXXXXXXXXXXXXXXXXX|XXXXXXXXXXXXXX|XXXXXXXXXXXXX
-   silence    2100Hz                   unscrambled 1's              S1       scrambled 1's      scrambled 1's  data
+  |-----------|XXXXXXXXXXXXXX|--------|XXXXXXXXXXXXXXXXXXXXXXXXXXXX|XXXXXXXX|XXXXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXX
+   silence    2100Hz                   Unscrambled 1's              S1       Scrambled 1's      Scrambled 1's   Data
                                        at 1200bps                            at 1200bps         at 2400bps
 Answering party
 
 S1 = Unscrambled double dibit 00 and 11 at 1200bps
+155+-10ms to qualify the answer tone. A further 456+-10ms wait before beginning to transmit
+Both ends should accept unscrambled binary 1 or binary 0 as the preamble.
 When the 2400bps section starts, both sides should look for 32 bits of continuous ones, as a test of integrity.
 
 
@@ -207,21 +209,22 @@ When the 2400bps section starts, both sides should look for 32 bits of continuou
 V.22 to V.22bis
 ---------------
 Calling party
-                                                           scrambled 1's                                 data
-                                                           at 1200bps
-|---------------------------------------------------------|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX|XXXXXXXXXXXXX
+                                                          Scrambled 1's       Data rx enabled           Data tx enabled
+                                                          at 1200bps
+|---------------------------------------------------------|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX|XXXXXXXXXXXXXX
                                       |<155+-10>|<456+-10>|         |<270+-40>|<--------765+-10-------->|
-                                      ^                   |         ^
                                       |                   |         |
                                       |                   |         |
+                                      ^                   v         ^
                                       |                   |         |
-                                      |                   v         |
+                                      |                   |         |
   |<2150+-350>|<--3300+-700->|<75+-20>|                   |<270+-40>|<---------765+-10-------->|
-  |-----------|XXXXXXXXXXXXXX|--------|XXXXXXXXXXXXXXXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXXXXXXXXXXXX|XXXXXXXXXXXXX
-   silence    2100Hz                   unscrambled 1's                scrambled 1's             data
-                                       at 1200bps                     at 1200bps
+  |-----------|XXXXXXXXXXXXXX|--------|XXXXXXXXXXXXXXXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXXXXXXXXX
+   silence    2100Hz                  Unscrambled 1's               Scrambled 1's              Data
+                                      at 1200bps                    at 1200bps
 Answering party
 
+155+-10ms to qualify the answer tone. A further 456+-10ms wait before beginning to transmit
 Both ends should accept unscrambled binary 1 or binary 0 as the preamble.
 
 
@@ -230,25 +233,117 @@ Both ends should accept unscrambled binary 1 or binary 0 as the preamble.
 V.22bis to V.22
 ---------------
 Calling party
-                                                           S1      scrambled 1's                                 data
+                                                          S1       Scrambled 1's           Data rx enabled      Data tx enabled
                                                                    at 1200bps
-|---------------------------------------------------------|XXXXXXXX|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX|XXXXXXXXXXXXX
+|---------------------------------------------------------|XXXXXXXX|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX|XXXXXXXXXXXXXX
                                       |<155+-10>|<456+-10>|<100+-3>|           |<-270+-40-><------765+-10------>|
-                                      ^                            |           ^
+                                      |         |                  |           |
                                       |                            |           |
-                                      |                            v           |
-                                      |                            |
-                                      |                            |
+                                      ^                            v           ^
+                                      |                            |           |
+                                      |                            |           |
   |<2150+-350>|<--3300+-700->|<75+-20>|                            |<-270+-40->|<------765+-10----->|
-  |-----------|XXXXXXXXXXXXXX|--------|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXXXXXX|XXXXXXXXXXXXX
-   silence    2100Hz                   unscrambled 1's                          scrambled 1's        data
-                                       at 1200bps                               at 1200bps
+  |-----------|XXXXXXXXXXXXXX|--------|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXXXXXXXXXXXX
+   silence    2100Hz                  Unscrambled 1's                          Scrambled 1's        Data
+                                      at 1200bps                               at 1200bps
 Answering party
 
+S1 = Unscrambled double dibit 00 and 11 at 1200bps
+155+-10ms to qualify the answer tone. A further 456+-10ms wait before beginning to transmit
 Both ends should accept unscrambled binary 1 or binary 0 as the preamble.
+
+
+
+
+V.22 to V.22 (1200bps to 1200bps)
+---------------------------------
+Calling party
+                                                          Scrambled 1's           Data rx enabled      Data tx enabled
+|---------------------------------------------------------|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX|XXXXXXXXXXXXXX
+                                      |<155+-10>|<456+-10>|           |<-270+-40->|<-----765+-10------>|
+                                      |         |         |           |
+                                      |                   |           |
+                                      ^                   v           ^
+                                      |                   |           |
+                                      |                   |           |
+  |<2150+-350>|<--3300+-700->|<75+-20>|                   |<-270+-40->|<------765+-10----->|
+  |-----------|XXXXXXXXXXXXXX|--------|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXXXXXXXXXXXX
+  Silence     2100Hz                  Unscrambled 1's                 Scrambled 1's        Data
+Answering party
+
+155+-10ms to qualify the answer tone. A further 456+-10ms wait before beginning to transmit
+Both ends should accept unscrambled binary 1 or binary 0 as the preamble.
+
+
+
+
+V.22 to V.22 (1200bps to 1200bps) without V.25 auto-answer sequence
+-------------------------------------------------------------------
+Calling party
+                        Scrambled 1's           Data rx enabled           Data tx enabled
+|-----------------------|XXXXXXXXXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXXXXXXXXXXX|XXXXXXXXXXXXXX
+|<155+-10>|<--456+-10-->|           |<-270+-40->|<--------765+-10-------->|
+|         |             |           |
+|                       |           |
+^                       v           ^
+|                       |           |
+|                       |           |
+|                       |<-270+-40->|<---------765+-10-------->|
+|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXXXXXXXXXXXX
+Unscrambled 1's                     Scrambled 1's              Data
+Answering party
+
+155+-10ms to qualify the answer tone. A further 456+-10ms wait before beginning to transmit
+Both ends should accept unscrambled binary 1 or binary 0 as the preamble.
+
+
+
+
+Bell212A to Bell212A (1200bps to 1200bps)
+-----------------------------------------
+Calling party
+                                      Scrambled 1's           Data rx enabled           Data tx enabled
+|-------------------------------------|XXXXXXXXXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXXXXXXXXXXX|XXXXXXXXXXXXXX
+              |<155+-50>|<--456+-10-->|           |<-270+-40->|<--------765+-10-------->|
+              |         |    ----     |           |
+              |     ----              |           |
+              ^         ----          v           ^
+              |             ----      |           |
+              |        ----           |           |
+|<----2000--->|            ----       |<-270+-40->|<---------765+-10-------->|
+|-------------|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXXXXXXXXX
+Silence       2225Hz                              Scrambled 1's              Data rx and tx enabled
+Answering party
+
+155+-10ms to qualify the answer tone. A further 456+-10ms wait before beginning to transmit
+Initial 2s delay by the answering party is termed the billing delay.
+Both ends should accept unscrambled binary 1 or binary 0 as the preamble.
+
+V.22 defines some alternatives modem configurations.
+
+Alternative A - synchronous only
+    The modem can be configured for the following modes of operation:
+        Mode i)     1200 bit/s synchronous
+        Mode iii)   600 bit/s synchronous (optional).
+        
+Alternative B - mixed synchronous and asynchronous
+    The modem can be configured for the following modes of operation:
+        Mode i)     1200 bit/s ± 0.01% synchronous
+        Mode ii)    1200 bit/s start-stop 8, 9, 10 or 11 bits per character
+        Mode iii)   600 bit/s ± 0.01% synchronous optional (optional)
+        Mode iv)    600 bit/s start-stop 8, 9, 10 or 11 bits per character (optional)
+
+Alternative C - mixed synchronous and asynchronous, with an extra low speed mode
+    The modem can be configured for the following modes of operation.
+        Mode i)     1200 bit/s ± 0.01% synchronous
+        Mode ii)    1200 bit/s start-stop 8, 9, 10 or 11 bits per character
+        Mode iii)   600 bit/s ± 0.01% synchronous optional (optional)
+        Mode iv)    600 bit/s start-stop 8, 9, 10 or 11 bits per character (optional)
+        Mode v)     An asynchronous mode having capability of handling 1200 bit/s start-stop and
+                    anisochronous data at up to 300 bps.
 */
 
-#define ms_to_symbols(t)    (((t)*600)/1000)
+#define ms_to_symbols(t)                (((t)*600)/1000)
 
 static const int phase_steps[4] =
 {

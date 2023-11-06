@@ -32,12 +32,10 @@
 #if !defined(_SPANDSP_SSLFAX_H_)
 #define _SPANDSP_SSLFAX_H_
 
+#if defined(SPANDSP_SUPPORT_SSLFAX)
 #include <openssl/ssl.h>
 #include <openssl/err.h>
-
-#include "spandsp/telephony.h"
-#include "spandsp/async.h"
-#include "spandsp/hdlc.h"
+#endif
 
 typedef struct sslfax_state_s sslfax_state_t;
 
