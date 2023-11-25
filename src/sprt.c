@@ -1250,7 +1250,7 @@ SPAN_DECLARE(sprt_state_t *) sprt_init(sprt_state_t *s,
     /*endif*/
     if (s == NULL)
     {
-        if ((s = (sprt_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (sprt_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
         /*endif*/
     }

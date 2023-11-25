@@ -70,7 +70,7 @@ step following the non-ECM data.
 */
 
 /*! T.38 indicator types */
-enum t30_indicator_types_e
+typedef enum t30_indicator_types_e
 {
     T38_IND_NO_SIGNAL = 0,
     T38_IND_CNG,
@@ -95,10 +95,10 @@ enum t30_indicator_types_e
     T38_IND_V34_CC_RETRAIN,
     T38_IND_V33_12000_TRAINING,
     T38_IND_V33_14400_TRAINING
-};
+} t30_indicator_types_t;
 
 /*! T.38 data types */
-enum t38_data_types_e
+typedef enum t38_data_types_e
 {
     T38_DATA_NONE = -1,
     T38_DATA_V21 = 0,
@@ -116,10 +116,10 @@ enum t38_data_types_e
     T38_DATA_V34_PRI_CH,
     T38_DATA_V33_12000,
     T38_DATA_V33_14400
-};
+} t38_data_types_t;
 
 /*! T.38 data field types */
-enum t38_field_types_e
+typedef enum t38_field_types_e
 {
     T38_FIELD_HDLC_DATA = 0,
     T38_FIELD_HDLC_SIG_END,
@@ -133,42 +133,42 @@ enum t38_field_types_e
     T38_FIELD_JM_MESSAGE,
     T38_FIELD_CI_MESSAGE,
     T38_FIELD_V34RATE
-};
+} t38_field_types_t;
 
 /*! T.38 field classes */
-enum t38_field_classes_e
+typedef enum t38_field_classes_e
 {
     T38_FIELD_CLASS_NONE = 0,
     T38_FIELD_CLASS_HDLC,
     T38_FIELD_CLASS_NON_ECM
-};
+} t38_field_classes_t;
 
 /*! T.38 message types */
-enum t38_message_types_e
+typedef enum t38_message_types_e
 {
     T38_TYPE_OF_MSG_T30_INDICATOR = 0,
     T38_TYPE_OF_MSG_T30_DATA
-};
+} t38_message_types_t;
 
 /*! T.38 transport types */
-enum t38_transport_types_e
+typedef enum t38_transport_types_e
 {
     T38_TRANSPORT_UDPTL = 0,
     T38_TRANSPORT_RTP,
     T38_TRANSPORT_TCP,
     T38_TRANSPORT_TCP_TPKT
-};
+} t38_transport_types_t;
 
 /*! T.38 TCF management types */
-enum t38_data_rate_management_types_e
+typedef enum t38_data_rate_management_types_e
 {
     T38_DATA_RATE_MANAGEMENT_LOCAL_TCF = 1,
     T38_DATA_RATE_MANAGEMENT_TRANSFERRED_TCF = 2
-};
+} t38_data_rate_management_types_t;
 
 /*! T.38 Packet categories used for setting the redundancy level and packet repeat
     counts on a packet by packet basis. */
-enum t38_packet_categories_e
+typedef enum t38_packet_categories_e
 {
     /*! \brief Indicator packet */
     T38_PACKET_CATEGORY_INDICATOR = 0,
@@ -180,7 +180,21 @@ enum t38_packet_categories_e
     T38_PACKET_CATEGORY_IMAGE_DATA = 3,
     /*! \brief Terminating image data packet */
     T38_PACKET_CATEGORY_IMAGE_DATA_END = 4
-};
+} t38_packet_categories_t;
+
+typedef enum t38_chunking_mode_e
+{
+    /*! \brief The FCS at the end of an HDLC block can be send with the last chunk of the packet, or as a separate packet */
+    T38_CHUNKING_MERGE_FCS_WITH_DATA = 0x0001,
+    /*! \brief Send whole HDLC frames, rather than break them into mant packets for smooth analogue playout */
+    T38_CHUNKING_WHOLE_FRAMES = 0x0002,
+    /*! \brief Allow for the time TEP takes when playing out the data */
+    T38_CHUNKING_ALLOW_TEP_TIME = 0x0004,
+    /*! \brief Send regular indicators when idle, rather than a single shot as the idle period begins */
+    T38_CHUNKING_SEND_REGULAR_INDICATORS = 0x0008,
+    /*! \brief Send an indicator every 2s when idle */
+    T38_CHUNKING_SEND_2S_REGULAR_INDICATORS = 0x0010
+} t38_chunking_mode_t;
 
 #define T38_RX_BUF_LEN  2048
 #define T38_TX_BUF_LEN  16384
@@ -373,6 +387,17 @@ SPAN_DECLARE(void) t38_set_sequence_number_handling(t38_core_state_t *s, bool ch
     \param allow_for_tep True to allow for TEP playout.
 */
 SPAN_DECLARE(void) t38_set_tep_handling(t38_core_state_t *s, bool allow_for_tep);
+
+/*! Set the time between packet transmissions.
+    \param s The T.38 context.
+    \param microseconds The time between packets in microseconds.
+*/
+SPAN_DECLARE(void) t38_set_tx_packet_interval(t38_core_state_t *s, int microseconds);
+
+/*! Get the time between packet transmissions.
+    \param s The T.38 context.
+*/
+SPAN_DECLARE(int) t38_get_tx_packet_interval(t38_core_state_t *s);
 
 /*! Get a pointer to the logging context associated with a T.38 context.
     \brief Get a pointer to the logging context associated with a T.38 context.

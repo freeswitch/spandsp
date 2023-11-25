@@ -42,11 +42,11 @@
   Signal list 1 |           | Signal list 2
                 |           |
                 v           |
-    +-----------------------------------+   Signal list 5   +-----------------------------------+
-    |                                   | ----------------->|                                   |
-    |   SSE protocol state machine (P)  |                   |    Gateway state machine (s,s')   |
-    |                                   |<------------------|                                   |
-    +-----------------------------------+   Signal list 6   +-----------------------------------+
+    +-----------------------------------+      Signal list 5      +-----------------------------------+
+    |                                   | ----------------------->|                                   |
+    |   SSE protocol state machine (P)  |                         |    Gateway state machine (s,s')   |
+    |                                   |<------------------------|                                   |
+    +-----------------------------------+      Signal list 6      +-----------------------------------+
                 |           ^
                 |           |
   Signal list 3 |           | Signal list 4
@@ -206,6 +206,7 @@ enum V150_1_SIGNAL_e
 typedef struct
 {
     v150_1_cdscselect_t cdscselect;
+    v150_1_modem_relay_gateway_type_t modem_relay_gateway_type;
 
     bool v42_lapm_supported;
     /* Annex A was removed from the V.42 spec. in 2002, so it won't be supported. */
@@ -302,6 +303,8 @@ struct v150_1_state_s
     void *rx_data_handler_user_data;
     v150_1_rx_status_report_handler_t rx_status_report_handler;
     void *rx_status_report_user_data;
+    v150_1_spe_signal_handler_t spe_signal_handler;
+    void *spe_signal_handler_user_data;
     v150_1_timer_handler_t timer_handler;
     void *timer_user_data;
 

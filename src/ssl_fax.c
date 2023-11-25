@@ -47,11 +47,10 @@
 #endif
 
 #include "spandsp/telephony.h"
-#include "spandsp/async.h"
 #include "spandsp/alloc.h"
+#include "spandsp/async.h"
 #include "spandsp/logging.h"
 #include "spandsp/crc.h"
-#include "spandsp/async.h"
 #include "spandsp/hdlc.h"
 #include "spandsp/ssl_fax.h"
 

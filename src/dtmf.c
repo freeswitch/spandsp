@@ -65,8 +65,8 @@
 #include "spandsp/private/dtmf.h"
 
 #define DEFAULT_DTMF_TX_LEVEL                   -10     /* In dBm0 */
-#define DEFAULT_DTMF_TX_ON_TIME                 50      /* in ms */
-#define DEFAULT_DTMF_TX_OFF_TIME                55      /* in ms */
+#define DEFAULT_DTMF_TX_ON_TIME                 50      /* In ms */
+#define DEFAULT_DTMF_TX_OFF_TIME                55      /* In ms */
 
 #define DTMF_SAMPLES_PER_BLOCK                  102
 

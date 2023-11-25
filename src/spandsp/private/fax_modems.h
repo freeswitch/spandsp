@@ -33,7 +33,7 @@
 */
 struct fax_modems_state_s
 {
-    /*! True is talker echo protection should be sent for the image modems */
+    /*! \brief True if talker echo protection should be sent for the image modems */
     bool use_tep;
     /*! \brief The callback function used to report detected tones. */
     span_tone_report_func_t tone_callback;
@@ -149,7 +149,7 @@ struct fax_modems_state_s
     /*! \brief The current bit rate of the receiver. */
     int rx_bit_rate;
 
-    /*! \brief If True, transmission is in progress */
+    /*! \brief If true, transmission is in progress */
     bool transmit;
     /*! \brief Audio logging file handle for received audio. */
     int audio_rx_log;

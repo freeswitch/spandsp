@@ -30,13 +30,6 @@
 
 typedef struct
 {
-    /*! \brief Internet Aware FAX mode bit mask. */
-    int iaf;
-    /*! \brief Required time between T.38 transmissions, in microseconds. */
-    int microseconds_per_tx_chunk;
-    /*! \brief Bit fields controlling the way data is packed into chunked for transmission. */
-    int chunking_modes;
-
     /*! \brief Core T.38 IFP support */
     t38_core_state_t t38;
 

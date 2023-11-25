@@ -133,15 +133,23 @@ typedef struct sprt_state_s sprt_state_t;
 extern "C" {
 #endif
 
+/*! \brief Find the name of an SPRT channel.
+    \param channel The number of the SPRT channel (0 to 3).
+    \return A pointer to a short string name for the channel, or NULL for an invalid channel. */
 SPAN_DECLARE(const char *) sprt_transmission_channel_to_str(int channel);
 
 SPAN_DECLARE(int) sprt_timer_expired(sprt_state_t *s, span_timestamp_t now);
 
-/*! \brief Process an SPRT packet arriving from the far end.
+/*! \brief Process a packet arriving from the far end. If the packet validates as an SPRT
+           packet 0 is returned. If the packet does not follow the structure of an SPRT
+           packet, or its packet type field does not contain the expected value, -1 is
+           returned. In a mixed packet environment, where things like RTP, T.38 and SPRT
+           packets are mixed in the same stream, -1 should indicate than one of the other
+           packet sinks should be tried.
     \param s The SPRT context.
     \param pkt The SPRT packet buffer.
     \param len The length of the packet.
-    \return 0 for OK. */
+    \return 0 for accepted as a valid SPRT packet. -1 for rejected as an SPRT packet.*/
 SPAN_DECLARE(int) sprt_rx_packet(sprt_state_t *s, const uint8_t pkt[], int len);
 
 /*! \brief Send a message to a SPRT channel.
@@ -176,10 +184,25 @@ SPAN_DECLARE(int) sprt_set_tc_timeout(sprt_state_t *s, int channel, int timer, i
 
 SPAN_DECLARE(int) sprt_get_tc_timeout(sprt_state_t *s, int channel, int timer);
 
+/*! Set whether the local end of the specified channel of the SPRT context is currently busy.
+    \brief Test if local end of SPRT context is busy.
+    \param s The SPRT context.
+    \param channel The SPRT channel number.
+    \param busy true for busy.
+    \return true for previously busy */
 SPAN_DECLARE(int) sprt_set_local_busy(sprt_state_t *s, int channel, bool busy);
 
+/*! Test whether the far end of the specified channel of the SPRT context is currently busy.
+    \brief Test if far end of SPRT context is busy.
+    \param s The SPRT context.
+    \param channel The SPRT channel number.
+    \return true for busy */
 SPAN_DECLARE(bool) sprt_get_far_busy_status(sprt_state_t *s, int channel);
 
+/*! Get the logging context associated with an SPRT context.
+    \brief Get the logging context associated with an SPRT context.
+    \param s The SPRT context.
+    \return A pointer to the logging context */
 SPAN_DECLARE(logging_state_t *) sprt_get_logging_state(sprt_state_t *s);
 
 /*! \brief Initialise an SPRT context.

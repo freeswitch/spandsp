@@ -518,7 +518,7 @@ static int rx_modem_relay_packet(v150_1_state_t *s, const uint8_t pkt[], int len
     if (s->remote_media_state != V150_1_MEDIA_STATE_MODEM_RELAY)
     {
         /* Whether we change to modem relay, VBD or plain audio is our choice. C.5.3.2. */
-        if (s->cdscselect == V150_1_CDSCSELECT_VBD_SELECT
+        if (s->cdscselect == V150_1_CDSCSELECT_VBD_PREFERRED
             ||
             s->cdscselect == V150_1_CDSCSELECT_MIXED)
         {

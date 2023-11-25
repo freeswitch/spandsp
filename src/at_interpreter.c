@@ -210,6 +210,7 @@ SPAN_DECLARE(void) at_set_at_rx_mode(at_state_t *s, int new_mode)
         at_modem_control(s, AT_MODEM_CONTROL_DTE_TIMEOUT, NULL);
         break;
     }
+    /*endswitch*/
     s->at_rx_mode = new_mode;
 }
 /*- End of function --------------------------------------------------------*/

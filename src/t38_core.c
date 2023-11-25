@@ -61,7 +61,12 @@
 #include "spandsp/private/logging.h"
 #include "spandsp/private/t38_core.h"
 
-#define ACCEPTABLE_SEQ_NO_OFFSET    2000
+#define ACCEPTABLE_SEQ_NO_OFFSET                2000
+
+/* This is the target time per transmission chunk. The actual
+   packet timing will sync to the data octets. */
+/*! The default number of microseconds per transmitted IFP when sending bulk T.38 data */
+#define DEFAULT_MICROSECONDS_PER_TX_CHUNK       30000
 
 /* The times for training, the optional TEP, and the HDLC preamble, for all the modem options, in ms.
    Note that the preamble for V.21 is 1s+-15%, and for the other modems is 200ms+100ms. */
@@ -1170,6 +1175,18 @@ SPAN_DECLARE(int) t38_get_fastest_image_data_rate(t38_core_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(void) t38_set_tx_packet_interval(t38_core_state_t *s, int microseconds)
+{
+    s->microseconds_per_tx_chunk = microseconds;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) t38_get_tx_packet_interval(t38_core_state_t *s)
+{
+    return s->microseconds_per_tx_chunk;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(logging_state_t *) t38_core_get_logging_state(t38_core_state_t *s)
 {
     return &s->logging;
@@ -1227,6 +1244,7 @@ SPAN_DECLARE(t38_core_state_t *) t38_core_init(t38_core_state_t *s,
     s->t38_version = 0;
     s->check_sequence_numbers = true;
     s->pace_transmission = true;
+    s->microseconds_per_tx_chunk = DEFAULT_MICROSECONDS_PER_TX_CHUNK;
 
     /* Set some defaults */
     s->category_control[T38_PACKET_CATEGORY_INDICATOR] = 1;

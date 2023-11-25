@@ -349,6 +349,8 @@ static int process_packet(void *user_data, const uint8_t *pkt, int len, bool for
                              v150_1_octet_stream_handler,
                              NULL,
                              v150_1_status_report_handler,
+                             NULL,
+                             NULL,
                              NULL);
     }
     /*endif*/

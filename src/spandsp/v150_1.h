@@ -100,6 +100,8 @@ typedef struct
     };
 } v150_1_status_t;
 
+typedef int (*v150_1_spe_signal_handler_t) (void *user_data, int signal);
+
 typedef int (*v150_1_tx_packet_handler_t) (void *user_data, int channel, const uint8_t msg[], int len);
 
 typedef int (*v150_1_rx_data_handler_t) (void *user_data, const uint8_t msg[], int len, int fill);
@@ -152,42 +154,47 @@ typedef struct v150_1_state_s v150_1_state_t;
 #define V150_1_CALL_DISCRIMINATION_DEFAULT_TIMEOUT              60000000
 
 /* Indeterminate is the initial state before the correct value has been determined. The other values are from
-   Table 32/V.150.1 */
+   Table 32/V.150.1 and E.1.5, although the names don't quite match. VBD_SELECT seems to equate to VBD_PREFERRED. */
 typedef enum v150_1_cdscselect_e
 {
     V150_1_CDSCSELECT_INDETERMINATE                             = 0,
-    V150_1_CDSCSELECT_AUDIO                                     = 1,
-    V150_1_CDSCSELECT_AUDIO_RFC4733                             = 2,
-    V150_1_CDSCSELECT_VBD_SELECT                                = 3,
-    V150_1_CDSCSELECT_MIXED                                     = 4
+    V150_1_CDSCSELECT_AUDIO_RFC4733                             = 1,
+    V150_1_CDSCSELECT_VBD_PREFERRED                             = 2,
+    V150_1_CDSCSELECT_MIXED                                     = 3
 } v150_1_cdscselect_t;
+
+typedef enum v150_1_modem_relay_gateway_type_e
+{
+    V150_1_MODEM_RELAY_GATEWAY_V8                               = 0,            /*  V-MR */
+    V150_1_MODEM_RELAY_GATEWAY_UNIVERSAL                        = 1             /*  U-MR */
+} v150_1_modem_relay_gateway_type_t;
 
 enum v150_1_msgid_e
 {
-    V150_1_MSGID_NULL                                           = 0,           /* Transport channel N/A */
-    V150_1_MSGID_INIT                                           = 1,           /* Transport channel 2 */
-    V150_1_MSGID_XID_XCHG                                       = 2,           /* Transport channel 2 */
-    V150_1_MSGID_JM_INFO                                        = 3,           /* Transport channel 2 */
-    V150_1_MSGID_START_JM                                       = 4,           /* Transport channel 2 */
-    V150_1_MSGID_CONNECT                                        = 5,           /* Transport channel 2 */
-    V150_1_MSGID_BREAK                                          = 6,           /* Transport channel N/A */
-    V150_1_MSGID_BREAKACK                                       = 7,           /* Transport channel N/A */
-    V150_1_MSGID_MR_EVENT                                       = 8,           /* Transport channel 2 */
-    V150_1_MSGID_CLEARDOWN                                      = 9,           /* Transport channel 2 */
-    V150_1_MSGID_PROF_XCHG                                      = 10,          /* Transport channel 2 */
+    V150_1_MSGID_NULL                                           = 0,            /* Transport channel N/A */
+    V150_1_MSGID_INIT                                           = 1,            /* Transport channel 2 */
+    V150_1_MSGID_XID_XCHG                                       = 2,            /* Transport channel 2 */
+    V150_1_MSGID_JM_INFO                                        = 3,            /* Transport channel 2 */
+    V150_1_MSGID_START_JM                                       = 4,            /* Transport channel 2 */
+    V150_1_MSGID_CONNECT                                        = 5,            /* Transport channel 2 */
+    V150_1_MSGID_BREAK                                          = 6,            /* Transport channel N/A */
+    V150_1_MSGID_BREAKACK                                       = 7,            /* Transport channel N/A */
+    V150_1_MSGID_MR_EVENT                                       = 8,            /* Transport channel 2 */
+    V150_1_MSGID_CLEARDOWN                                      = 9,            /* Transport channel 2 */
+    V150_1_MSGID_PROF_XCHG                                      = 10,           /* Transport channel 2 */
     /* Reserved     11-15 */
-    V150_1_MSGID_I_RAW_OCTET                                    = 16,          /* Transport channel 1 or 3 */
-    V150_1_MSGID_I_RAW_BIT                                      = 17,          /* Transport channel 1 or 3 */
-    V150_1_MSGID_I_OCTET                                        = 18,          /* Transport channel 1 or 3 */
-    V150_1_MSGID_I_CHAR_STAT                                    = 19,          /* Transport channel 1 or 3 */
-    V150_1_MSGID_I_CHAR_DYN                                     = 20,          /* Transport channel 1 or 3 */
-    V150_1_MSGID_I_FRAME                                        = 21,          /* Transport channel 1 or 3 */
-    V150_1_MSGID_I_OCTET_CS                                     = 22,          /* Transport channel 1 or 3 (only makes sense for 3) */
-    V150_1_MSGID_I_CHAR_STAT_CS                                 = 23,          /* Transport channel 1 or 3 (only makes sense for 3) */
-    V150_1_MSGID_I_CHAR_DYN_CS                                  = 24,          /* Transport channel 1 or 3 (only makes sense for 3) */
+    V150_1_MSGID_I_RAW_OCTET                                    = 16,           /* Transport channel 1 or 3 */
+    V150_1_MSGID_I_RAW_BIT                                      = 17,           /* Transport channel 1 or 3 */
+    V150_1_MSGID_I_OCTET                                        = 18,           /* Transport channel 1 or 3 */
+    V150_1_MSGID_I_CHAR_STAT                                    = 19,           /* Transport channel 1 or 3 */
+    V150_1_MSGID_I_CHAR_DYN                                     = 20,           /* Transport channel 1 or 3 */
+    V150_1_MSGID_I_FRAME                                        = 21,           /* Transport channel 1 or 3 */
+    V150_1_MSGID_I_OCTET_CS                                     = 22,           /* Transport channel 1 or 3 (only makes sense for 3) */
+    V150_1_MSGID_I_CHAR_STAT_CS                                 = 23,           /* Transport channel 1 or 3 (only makes sense for 3) */
+    V150_1_MSGID_I_CHAR_DYN_CS                                  = 24,           /* Transport channel 1 or 3 (only makes sense for 3) */
     /* Reserved     25-99 */
-    V150_1_MSGID_VENDOR_MIN                                     = 100,         /* N/A */
-    V150_1_MSGID_VENDOR_MAX                                     = 127          /* N/A */
+    V150_1_MSGID_VENDOR_MIN                                     = 100,          /* N/A */
+    V150_1_MSGID_VENDOR_MAX                                     = 127           /* N/A */
 };
 
 enum v150_1_support_e
@@ -196,9 +203,9 @@ enum v150_1_support_e
     V150_1_SUPPORT_I_FRAME                                      = 0x0400,
     V150_1_SUPPORT_I_CHAR_STAT                                  = 0x0200,
     V150_1_SUPPORT_I_CHAR_DYN                                   = 0x0100,
-    V150_1_SUPPORT_I_OCTET_CS                                   = 0x0080,     /* See V.150.1 Amendment 2 */
-    V150_1_SUPPORT_I_CHAR_STAT_CS                               = 0x0040,     /* See V.150.1 Amendment 2 */
-    V150_1_SUPPORT_I_CHAR_DYN_CS                                = 0x0020      /* See V.150.1 Amendment 2 */
+    V150_1_SUPPORT_I_OCTET_CS                                   = 0x0080,       /* See V.150.1 Amendment 2 */
+    V150_1_SUPPORT_I_CHAR_STAT_CS                               = 0x0040,       /* See V.150.1 Amendment 2 */
+    V150_1_SUPPORT_I_CHAR_DYN_CS                                = 0x0020        /* See V.150.1 Amendment 2 */
 };
 
 enum v150_1_jm_category_id_e
@@ -572,6 +579,12 @@ SPAN_DECLARE(void) v150_1_set_near_cdscselect(v150_1_state_t *s, v150_1_cdscsele
 
 SPAN_DECLARE(void) v150_1_set_far_cdscselect(v150_1_state_t *s, v150_1_cdscselect_t select);
 
+SPAN_DECLARE(void) v150_1_set_near_modem_relay_gateway_type(v150_1_state_t *s, v150_1_modem_relay_gateway_type_t type);
+
+SPAN_DECLARE(void) v150_1_set_far_modem_relay_gateway_type(v150_1_state_t *s, v150_1_modem_relay_gateway_type_t type);
+
+SPAN_DECLARE(void) v150_1_set_rfc4733_mode(v150_1_state_t *s, bool rfc4733_preferred);
+
 SPAN_DECLARE(void) v150_1_set_call_discrimination_timeout(v150_1_state_t *s, int timeout);
 
 SPAN_DECLARE(int) v150_1_timer_expired(v150_1_state_t *s, span_timestamp_t now);
@@ -596,6 +609,8 @@ SPAN_DECLARE(int) v150_1_test_rx_sprt_msg(v150_1_state_t *s, int chan, int seq_n
     \param rx_data_handler_user_data An opaque pointer, passed in calls to the rx octet handler.
     \param rx_status_report_handler Callback routine for V.150.1 protocol status reports
     \param rx_status_report_user_data An opaque pointer, passed in calls to the rx status report handler
+    \param spe_signal_handler
+    \param spe_signal_handler_user_data
     \return A pointer to the V.150.1 context, or NULL if there was a problem. */
 SPAN_DECLARE(v150_1_state_t *) v150_1_init(v150_1_state_t *s,
                                            sprt_tx_packet_handler_t sprt_tx_packet_handler,
@@ -609,7 +624,9 @@ SPAN_DECLARE(v150_1_state_t *) v150_1_init(v150_1_state_t *s,
                                            v150_1_rx_data_handler_t rx_data_handler,
                                            void *rx_data_handler_user_data,
                                            v150_1_rx_status_report_handler_t rx_status_report_handler,
-                                           void *rx_status_report_user_data);
+                                           void *rx_status_report_user_data,
+                                           v150_1_spe_signal_handler_t spe_signal_handler,
+                                           void *spe_signal_handler_user_data);
 
 SPAN_DECLARE(int) v150_1_release(v150_1_state_t *s);
 

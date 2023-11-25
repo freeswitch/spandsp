@@ -150,10 +150,10 @@ There are two defined versions of a modem relay gateway:
 
 U-MR:   A Universal Modem Relay
 
-    A UMR needs to support V.92 digital, V.90 digital, V.34, V.32bis, V.32, V.22bis, V.22, V.23 and V.21
+    A U-MR needs to support V.92 digital, V.90 digital, V.34, V.32bis, V.32, V.22bis, V.22, V.23 and V.21
 
 V-MR:   A V.8 Modem Relay
-    A VMR doesn't have to support any specific set of modulations. Instead, V.8 is used to negotiate a
+    A V-MR doesn't have to support any specific set of modulations. Instead, V.8 is used to negotiate a
     common one. Inter-gateway messages exchanged during call setup can be used for each end to inform the
     other which modulations are supported.
 
@@ -1562,7 +1562,7 @@ static int v150_1_figures_26_to_31(v150_1_state_t *s, int signal, const uint8_t 
     switch (signal)
     {
     case V150_1_SIGNAL_TONE_2100HZ:
-        if (s->cdscselect == V150_1_CDSCSELECT_VBD_SELECT
+        if (s->cdscselect == V150_1_CDSCSELECT_VBD_PREFERRED
             ||
             s->cdscselect == V150_1_CDSCSELECT_MIXED)
         {
@@ -1577,7 +1577,7 @@ static int v150_1_figures_26_to_31(v150_1_state_t *s, int signal, const uint8_t 
         /*endif*/
         break;
     case V150_1_SIGNAL_ANS:
-        if (s->cdscselect == V150_1_CDSCSELECT_VBD_SELECT
+        if (s->cdscselect == V150_1_CDSCSELECT_VBD_PREFERRED
             ||
             s->cdscselect == V150_1_CDSCSELECT_MIXED)
         {
@@ -1592,7 +1592,7 @@ static int v150_1_figures_26_to_31(v150_1_state_t *s, int signal, const uint8_t 
         /*endif*/
         break;
     case V150_1_SIGNAL_ANSAM:
-        if (s->cdscselect == V150_1_CDSCSELECT_VBD_SELECT
+        if (s->cdscselect == V150_1_CDSCSELECT_VBD_PREFERRED
             ||
             s->cdscselect == V150_1_CDSCSELECT_MIXED)
         {
@@ -1628,7 +1628,7 @@ static int v150_1_figures_26_to_31(v150_1_state_t *s, int signal, const uint8_t 
         break;
     case V150_1_SIGNAL_UNKNOWN:
     case V150_1_SIGNAL_CALL_DISCRIMINATION_TIMEOUT:
-        if (s->cdscselect == V150_1_CDSCSELECT_VBD_SELECT
+        if (s->cdscselect == V150_1_CDSCSELECT_VBD_PREFERRED
             ||
             s->cdscselect == V150_1_CDSCSELECT_MIXED)
         {
@@ -1638,7 +1638,7 @@ static int v150_1_figures_26_to_31(v150_1_state_t *s, int signal, const uint8_t 
         /*endif*/
         break;
     case V150_1_SIGNAL_VBD:
-        if (s->cdscselect == V150_1_CDSCSELECT_VBD_SELECT
+        if (s->cdscselect == V150_1_CDSCSELECT_VBD_PREFERRED
             ||
             s->cdscselect == V150_1_CDSCSELECT_MIXED)
         {
@@ -1657,7 +1657,7 @@ static int v150_1_figures_26_to_31(v150_1_state_t *s, int signal, const uint8_t 
         break;
     case V150_1_SIGNAL_CM:
         span_log(&s->logging, SPAN_LOG_FLOW, "SPE signal %s\n", v150_1_signal_to_str(signal));
-        if (s->cdscselect == V150_1_CDSCSELECT_VBD_SELECT
+        if (s->cdscselect == V150_1_CDSCSELECT_VBD_PREFERRED
             ||
             s->cdscselect == V150_1_CDSCSELECT_MIXED)
         {
@@ -1748,7 +1748,7 @@ static int v150_1_figure_35(v150_1_state_t *s, int signal, const uint8_t *msg, i
     switch (signal)
     {
     case V150_1_SIGNAL_JM:
-        if (s->cdscselect == V150_1_CDSCSELECT_VBD_SELECT
+        if (s->cdscselect == V150_1_CDSCSELECT_VBD_PREFERRED
             ||
             s->cdscselect == V150_1_CDSCSELECT_MIXED)
         {
@@ -4115,11 +4115,11 @@ static void set_joint_cdscselect(v150_1_state_t *s)
     {
         s->cdscselect = V150_1_CDSCSELECT_AUDIO_RFC4733;
     }
-    else if (s->near.parms.cdscselect == V150_1_CDSCSELECT_VBD_SELECT
+    else if (s->near.parms.cdscselect == V150_1_CDSCSELECT_VBD_PREFERRED
              ||
-             s->far.parms.cdscselect == V150_1_CDSCSELECT_VBD_SELECT)
+             s->far.parms.cdscselect == V150_1_CDSCSELECT_VBD_PREFERRED)
     {
-        s->cdscselect = V150_1_CDSCSELECT_VBD_SELECT;
+        s->cdscselect = V150_1_CDSCSELECT_VBD_PREFERRED;
     }
     else
     {
@@ -4322,14 +4322,16 @@ SPAN_DECLARE(v150_1_state_t *) v150_1_init(v150_1_state_t *s,
                                            v150_1_rx_data_handler_t rx_data_handler,
                                            void *rx_data_handler_user_data,
                                            v150_1_rx_status_report_handler_t rx_status_report_handler,
-                                           void *rx_status_report_user_data)
+                                           void *rx_status_report_user_data,
+                                           v150_1_spe_signal_handler_t spe_signal_handler,
+                                           void *spe_signal_handler_user_data)
 {
     if (sprt_tx_packet_handler == NULL  ||  rx_data_handler == NULL  ||  rx_status_report_handler == NULL)
         return NULL;
     /*endif*/
     if (s == NULL)
     {
-        if ((s = (v150_1_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (v150_1_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
         /*endif*/
     }

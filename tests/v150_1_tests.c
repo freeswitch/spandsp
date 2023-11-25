@@ -779,6 +779,8 @@ static int v150_1_tests(void)
                               v150_1_data_stream_handler,
                               NULL,
                               v150_1_status_report_handler,
+                              NULL,
+                              NULL,
                               NULL)) == NULL)
     {
         fprintf(stderr, "    Cannot start V.150.1\n");

@@ -90,6 +90,9 @@
 
 #define ms_to_symbols(t)                (((t)*600)/1000)
 
+#define LOW_CARRIER_FREQUENCY           1200.0f
+#define HIGH_CARRIER_FREQUENCY          2400.0f
+
 /*! The adaption rate coefficient for the equalizer */
 #define EQUALIZER_DELTA                 0.25f
 /*! The number of phase shifted coefficient set for the pulse shaping/bandpass filter */
@@ -1012,7 +1015,7 @@ int v22bis_rx_restart(v22bis_state_t *s)
     s->rx.training_count = 0;
     s->rx.signal_present = false;
 
-    s->rx.carrier_phase_rate = (s->calling_party)  ?  DDS_PHASE_RATE(2400.0f)  :  DDS_PHASE_RATE(1200.0f);
+    s->rx.carrier_phase_rate = (s->calling_party)  ?  DDS_PHASE_RATE(HIGH_CARRIER_FREQUENCY)  :  DDS_PHASE_RATE(LOW_CARRIER_FREQUENCY);
     s->rx.carrier_phase = 0;
     power_meter_init(&s->rx.rx_power, 5);
     v22bis_rx_set_signal_cutoff(s, -45.5f);

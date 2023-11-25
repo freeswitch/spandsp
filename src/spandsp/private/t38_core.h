@@ -27,7 +27,9 @@
 #define _SPANDSP_PRIVATE_T38_CORE_H_
 
 /*!
-    Core T.38 state, common to all modes of T.38.
+    Core T.38 state, common to all modes of T.38. Higher layers should support the specifics
+    of a gateway, terminal, T.31 interface, etc and incorporate an instance of this structure
+    to handle the basics of T.38, mostly IFP.
 */
 struct t38_core_state_s
 {
@@ -44,6 +46,13 @@ struct t38_core_state_s
     t38_rx_missing_handler_t rx_missing_handler;
     /*! \brief An opaque pointer passed to any of the above receive handling routines */
     void *rx_user_data;
+
+    /*! \brief Required time between T.38 transmissions, in us. */
+    int microseconds_per_tx_chunk;
+    /*! \brief Bit fields controlling the way data is packed into chunks for transmission. */
+    int chunking_modes;
+    /*! \brief Internet Aware FAX mode bit mask. */
+    int iaf;
 
     /*! NOTE - Bandwidth reduction shall only be done on suitable Phase C data, i.e., MH, MR
         and - in the case of transcoding to JBIG - MMR. MMR and JBIG require reliable data

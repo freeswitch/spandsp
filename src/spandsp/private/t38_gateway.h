@@ -140,8 +140,6 @@ typedef struct
     int supported_modems;
     /*! \brief True if ECM FAX mode is allowed through the gateway. */
     bool ecm_allowed;
-    /*! \brief Required time between T.38 transmissions, in us. */
-    int microseconds_per_tx_chunk;
 
     /*! \brief True if in image data modem is to use short training. This usually
                follows image_data_mode, but in ECM mode T.30 defines recovery

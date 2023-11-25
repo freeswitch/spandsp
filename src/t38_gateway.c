@@ -135,11 +135,6 @@
 #include "spandsp/private/t38_non_ecm_buffer.h"
 #include "spandsp/private/t38_gateway.h"
 
-/* This is the target time per transmission chunk. The actual
-   packet timing will sync to the data octets. */
-/*! The default number of microseconds per transmitted IFP when sending bulk T.38 data */
-#define DEFAULT_MICROSECONDS_PER_TX_CHUNK       30000
-
 /*! The number of bytes which must be in the audio to T.38 HDLC buffer before we start
     outputting them as IFP messages. */
 #define HDLC_START_BUFFER_LEVEL                 8
@@ -1441,7 +1436,7 @@ static void set_octets_per_data_packet(t38_gateway_state_t *s, int bit_rate)
 {
     int octets;
 
-    octets = s->core.microseconds_per_tx_chunk*bit_rate/(8*1000*1000);
+    octets = s->t38x.t38.microseconds_per_tx_chunk*bit_rate/(8*1000*1000);
     if (octets < 1)
         octets = 1;
     /*endif*/
@@ -2424,7 +2419,6 @@ SPAN_DECLARE(t38_gateway_state_t *) t38_gateway_init(t38_gateway_state_t *s,
 
     s->core.to_t38.octets_per_data_packet = 1;
     s->core.ecm_allowed = true;
-    s->core.microseconds_per_tx_chunk = DEFAULT_MICROSECONDS_PER_TX_CHUNK;
     t38_non_ecm_buffer_init(&s->core.non_ecm_to_modem, false, 0);
     restart_rx_modem(s);
     s->core.timed_mode = TIMED_MODE_STARTUP;
