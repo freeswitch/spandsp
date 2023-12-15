@@ -28,10 +28,6 @@
 #if !defined(_SPANDSP_V150_1_SSE_H_)
 #define _SPANDSP_V150_1_SSE_H_
 
-typedef int (*v150_1_sse_tx_packet_handler_t) (void *user_data, bool repeat, const uint8_t pkt[], int len);
-
-typedef int (*v150_1_sse_status_handler_t) (void *user_data, int status);
-
 /* V.150.1 C.4.1 */
 #define V150_1_SSE_DEFAULT_REPETITIONS              3
 #define V150_1_SSE_DEFAULT_REPETITION_INTERVAL      20000
