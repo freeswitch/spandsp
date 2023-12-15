@@ -1415,71 +1415,71 @@ static int status_report(v150_1_state_t *s, int reason)
     switch (reason)
     {
     case V150_1_STATUS_REASON_MEDIA_STATE_CHANGED:
-        report.media_state_change.local_state = s->local_media_state;
-        report.media_state_change.remote_state = s->remote_media_state;
+        report.payload.media_state_change.local_state = s->local_media_state;
+        report.payload.media_state_change.remote_state = s->remote_media_state;
         break;
     case V150_1_STATUS_REASON_CONNECTION_STATE_CHANGED:
-        report.connection_state_change.state = s->far.parms.connection_state;
-        report.connection_state_change.cleardown_reason = s->far.parms.cleardown_reason;
+        report.payload.connection_state_change.state = s->far.parms.connection_state;
+        report.payload.connection_state_change.cleardown_reason = s->far.parms.cleardown_reason;
         break;
     case V150_1_STATUS_REASON_CONNECTION_STATE_PHYSUP:
-        report.physup_parameters.selmod = s->far.parms.selmod;
-        report.physup_parameters.tdsr = s->far.parms.tdsr;
-        report.physup_parameters.rdsr = s->far.parms.rdsr;
+        report.payload.physup_parameters.selmod = s->far.parms.selmod;
+        report.payload.physup_parameters.tdsr = s->far.parms.tdsr;
+        report.payload.physup_parameters.rdsr = s->far.parms.rdsr;
 
-        report.physup_parameters.txsen = s->far.parms.txsen;
-        report.physup_parameters.txsr = s->far.parms.txsr;
-        report.physup_parameters.rxsen = s->far.parms.rxsen;
-        report.physup_parameters.rxsr = s->far.parms.rxsr;
+        report.payload.physup_parameters.txsen = s->far.parms.txsen;
+        report.payload.physup_parameters.txsr = s->far.parms.txsr;
+        report.payload.physup_parameters.rxsen = s->far.parms.rxsen;
+        report.payload.physup_parameters.rxsr = s->far.parms.rxsr;
         break;
     case V150_1_STATUS_REASON_CONNECTION_STATE_CONNECTED:
-        report.connect_parameters.selmod = s->far.parms.selmod;
-        report.connect_parameters.tdsr = s->far.parms.tdsr;
-        report.connect_parameters.rdsr = s->far.parms.rdsr;
+        report.payload.connect_parameters.selmod = s->far.parms.selmod;
+        report.payload.connect_parameters.tdsr = s->far.parms.tdsr;
+        report.payload.connect_parameters.rdsr = s->far.parms.rdsr;
 
-        report.connect_parameters.selected_compression_direction = s->far.parms.selected_compression_direction;
-        report.connect_parameters.selected_compression = s->far.parms.selected_compression;
-        report.connect_parameters.selected_error_correction = s->far.parms.selected_error_correction;
+        report.payload.connect_parameters.selected_compression_direction = s->far.parms.selected_compression_direction;
+        report.payload.connect_parameters.selected_compression = s->far.parms.selected_compression;
+        report.payload.connect_parameters.selected_error_correction = s->far.parms.selected_error_correction;
 
-        report.connect_parameters.compression_tx_dictionary_size = s->far.parms.compression_tx_dictionary_size;
-        report.connect_parameters.compression_rx_dictionary_size = s->far.parms.compression_rx_dictionary_size;
-        report.connect_parameters.compression_tx_string_length = s->far.parms.compression_tx_string_length;
-        report.connect_parameters.compression_rx_string_length = s->far.parms.compression_rx_string_length;
-        report.connect_parameters.compression_tx_history_size = s->far.parms.compression_tx_history_size;
-        report.connect_parameters.compression_rx_history_size = s->far.parms.compression_rx_history_size;
+        report.payload.connect_parameters.compression_tx_dictionary_size = s->far.parms.compression_tx_dictionary_size;
+        report.payload.connect_parameters.compression_rx_dictionary_size = s->far.parms.compression_rx_dictionary_size;
+        report.payload.connect_parameters.compression_tx_string_length = s->far.parms.compression_tx_string_length;
+        report.payload.connect_parameters.compression_rx_string_length = s->far.parms.compression_rx_string_length;
+        report.payload.connect_parameters.compression_tx_history_size = s->far.parms.compression_tx_history_size;
+        report.payload.connect_parameters.compression_rx_history_size = s->far.parms.compression_rx_history_size;
 
         /* I_RAW-OCTET is always available. There is no selection flag for it. */
-        report.connect_parameters.i_raw_octet_available = true;
-        report.connect_parameters.i_raw_bit_available = s->far.parms.i_raw_bit_available;
-        report.connect_parameters.i_frame_available = s->far.parms.i_frame_available;
+        report.payload.connect_parameters.i_raw_octet_available = true;
+        report.payload.connect_parameters.i_raw_bit_available = s->far.parms.i_raw_bit_available;
+        report.payload.connect_parameters.i_frame_available = s->far.parms.i_frame_available;
         /* I_OCTET is an oddity, as you need to know in advance whether there will be a DLCI field
            present. So, functionally its really like 2 different types of message. */
-        report.connect_parameters.i_octet_with_dlci_available = s->far.parms.i_octet_with_dlci_available;
-        report.connect_parameters.i_octet_without_dlci_available = s->far.parms.i_octet_without_dlci_available;
-        report.connect_parameters.i_char_stat_available = s->far.parms.i_char_stat_available;
-        report.connect_parameters.i_char_dyn_available = s->far.parms.i_char_dyn_available;
+        report.payload.connect_parameters.i_octet_with_dlci_available = s->far.parms.i_octet_with_dlci_available;
+        report.payload.connect_parameters.i_octet_without_dlci_available = s->far.parms.i_octet_without_dlci_available;
+        report.payload.connect_parameters.i_char_stat_available = s->far.parms.i_char_stat_available;
+        report.payload.connect_parameters.i_char_dyn_available = s->far.parms.i_char_dyn_available;
         /* Unlike I_OCTET, I_OCTET-CS is only defined without a DLCI field. */
-        report.connect_parameters.i_octet_cs_available = s->far.parms.i_octet_cs_available;
-        report.connect_parameters.i_char_stat_cs_available = s->far.parms.i_char_stat_cs_available;
-        report.connect_parameters.i_char_dyn_cs_available = s->far.parms.i_char_dyn_cs_available;
+        report.payload.connect_parameters.i_octet_cs_available = s->far.parms.i_octet_cs_available;
+        report.payload.connect_parameters.i_char_stat_cs_available = s->far.parms.i_char_stat_cs_available;
+        report.payload.connect_parameters.i_char_dyn_cs_available = s->far.parms.i_char_dyn_cs_available;
         break;
     case V150_1_STATUS_REASON_DATA_FORMAT_CHANGED:
-        report.data_format_change.bits = 5 + ((s->far.parms.data_format_code >> 5) & 0x03);
-        report.data_format_change.parity_code = (s->far.parms.data_format_code >> 2) & 0x07;
-        report.data_format_change.stop_bits = 1 + (s->far.parms.data_format_code & 0x03);
+        report.payload.data_format_change.bits = 5 + ((s->far.parms.data_format_code >> 5) & 0x03);
+        report.payload.data_format_change.parity_code = (s->far.parms.data_format_code >> 2) & 0x07;
+        report.payload.data_format_change.stop_bits = 1 + (s->far.parms.data_format_code & 0x03);
         break;
     case V150_1_STATUS_REASON_BREAK_RECEIVED:
-        report.break_received.source = s->far.break_source;
-        report.break_received.type = s->far.break_type;
-        report.break_received.duration = s->far.break_duration*10;
+        report.payload.break_received.source = s->far.break_source;
+        report.payload.break_received.type = s->far.break_type;
+        report.payload.break_received.duration = s->far.break_duration*10;
         break;
     case V150_1_STATUS_REASON_RATE_RETRAIN_RECEIVED:
         break;
     case V150_1_STATUS_REASON_RATE_RENEGOTIATION_RECEIVED:
         break;
     case V150_1_STATUS_REASON_BUSY_CHANGED:
-        report.busy_change.local_busy = s->near.parms.busy;
-        report.busy_change.far_busy = s->far.parms.busy;
+        report.payload.busy_change.local_busy = s->near.parms.busy;
+        report.payload.busy_change.far_busy = s->far.parms.busy;
         break;
     }
     /*endswitch*/
