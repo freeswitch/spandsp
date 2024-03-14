@@ -55,54 +55,7 @@ AC_LANG([C])
 
 AX_COMPILER_VENDOR
 
-if test "${build}" != "${host}"
-then
-    # If we are doing a Canadian Cross, in which the host and build systems
-    # are not the same, we set reasonable default values for the tools.
-
-    CC_FOR_BUILD=${CC_FOR_BUILD-gcc}
-    CPPFLAGS_FOR_BUILD="\$(CPPFLAGS)"
-    CC=${CC-${host_alias}-gcc}
-    CFLAGS=${CFLAGS-"-g -O2"}
-    CXX=${CXX-${host_alias}-c++}
-    CXXFLAGS=${CXXFLAGS-"-g -O2"}
-else
-    # Set reasonable default values for some tools even if not Canadian.
-    # Of course, these are different reasonable default values, originally
-    # specified directly in the Makefile.
-    # We don't export, so that autoconf can do its job.
-    # Note that all these settings are above the fragment inclusion point
-    # in Makefile.in, so can still be overridden by fragments.
-    # This is all going to change when we autoconfiscate...
-    CC_FOR_BUILD="\$(CC)"
-    CPPFLAGS_FOR_BUILD="\$(CPPFLAGS)"
-    AC_PROG_CC
-
-    # We must set the default linker to the linker used by gcc for the correct
-    # operation of libtool.  If LD is not defined and we are using gcc, try to
-    # set the LD default to the ld used by gcc.
-    if test -z "$LD"
-    then
-        if test "$GCC" = yes
-        then
-            case $build in
-            *-*-mingw*)
-                gcc_prog_ld=`$CC -print-prog-name=ld 2>&1 | tr -d '\015'` ;;
-            *)
-                gcc_prog_ld=`$CC -print-prog-name=ld 2>&1` ;;
-            esac
-            case $gcc_prog_ld in
-            # Accept absolute paths.
-            [[\\/]* | [A-Za-z]:[\\/]*)]
-                LD="$gcc_prog_ld" ;;
-            esac
-        fi
-    fi
-
-    CXX=${CXX-"c++"}
-    CFLAGS=${CFLAGS-"-g -O2"}
-    CXXFLAGS=${CXXFLAGS-"-g -O2"}
-fi
+AX_PROG_CC_FOR_BUILD
 
 AC_DEFUN([REMOVE_FROM_VAR],[
     new_val=""
