@@ -185,23 +185,11 @@ then
 fi
 
 # Determine XML2 include path
-AC_MSG_CHECKING(for libxml/xmlmemory.h)
-
-# Can we include headers using system include dirs?
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <libxml/xmlmemory.h>]], [[int a = 1;]])],[XML2_INCLUDE=" "],[XML2_INCLUDE=])
-
-# Hunt through several possible directories to find the includes for libxml2
-if test "x$XML2_INCLUDE" = "x"; then
-    old_CPPFLAGS="$CPPFLAGS"
-    for i in $xml2_include_dir /usr/include /usr/local/include /usr/include/libxml2 /usr/local/include/libxml2 ; do
-        CPPFLAGS="$old_CPPFLAGS -I$i"
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <libxml/xmlmemory.h>]], [[int a = 1;]])],[XML2_INCLUDE="-I$i"],[XML2_INCLUDE=
-        ])
-        if test "x$XML2_INCLUDE" != "x"; then
-            break;
-        fi
-    done
-    CPPFLAGS="$old_CPPFLAGS $XML2_INCLUDE"
+AC_CHECK_LIB([xml2], [xmlParseFile], [libxml2_found=yes])
+if test "$libxml2_found" = "yes" ; then
+    AC_DEFINE(HAVE_LIBXML2,1,[defined when libxml2 is available])
+else
+    AC_MSG_WARN([libxml2 not found. Disabling cache.])
 fi
 
 AC_CHECK_HEADERS([libxml/xmlmemory.h])
