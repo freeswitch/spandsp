@@ -1415,71 +1415,71 @@ static int status_report(v150_1_state_t *s, int reason)
     switch (reason)
     {
     case V150_1_STATUS_REASON_MEDIA_STATE_CHANGED:
-        report.media_state_change.local_state = s->local_media_state;
-        report.media_state_change.remote_state = s->remote_media_state;
+        report.types.media_state_change.local_state = s->local_media_state;
+        report.types.media_state_change.remote_state = s->remote_media_state;
         break;
     case V150_1_STATUS_REASON_CONNECTION_STATE_CHANGED:
-        report.connection_state_change.state = s->far.parms.connection_state;
-        report.connection_state_change.cleardown_reason = s->far.parms.cleardown_reason;
+        report.types.connection_state_change.state = s->far.parms.connection_state;
+        report.types.connection_state_change.cleardown_reason = s->far.parms.cleardown_reason;
         break;
     case V150_1_STATUS_REASON_CONNECTION_STATE_PHYSUP:
-        report.physup_parameters.selmod = s->far.parms.selmod;
-        report.physup_parameters.tdsr = s->far.parms.tdsr;
-        report.physup_parameters.rdsr = s->far.parms.rdsr;
+        report.types.physup_parameters.selmod = s->far.parms.selmod;
+        report.types.physup_parameters.tdsr = s->far.parms.tdsr;
+        report.types.physup_parameters.rdsr = s->far.parms.rdsr;
 
-        report.physup_parameters.txsen = s->far.parms.txsen;
-        report.physup_parameters.txsr = s->far.parms.txsr;
-        report.physup_parameters.rxsen = s->far.parms.rxsen;
-        report.physup_parameters.rxsr = s->far.parms.rxsr;
+        report.types.physup_parameters.txsen = s->far.parms.txsen;
+        report.types.physup_parameters.txsr = s->far.parms.txsr;
+        report.types.physup_parameters.rxsen = s->far.parms.rxsen;
+        report.types.physup_parameters.rxsr = s->far.parms.rxsr;
         break;
     case V150_1_STATUS_REASON_CONNECTION_STATE_CONNECTED:
-        report.connect_parameters.selmod = s->far.parms.selmod;
-        report.connect_parameters.tdsr = s->far.parms.tdsr;
-        report.connect_parameters.rdsr = s->far.parms.rdsr;
+        report.types.connect_parameters.selmod = s->far.parms.selmod;
+        report.types.connect_parameters.tdsr = s->far.parms.tdsr;
+        report.types.connect_parameters.rdsr = s->far.parms.rdsr;
 
-        report.connect_parameters.selected_compression_direction = s->far.parms.selected_compression_direction;
-        report.connect_parameters.selected_compression = s->far.parms.selected_compression;
-        report.connect_parameters.selected_error_correction = s->far.parms.selected_error_correction;
+        report.types.connect_parameters.selected_compression_direction = s->far.parms.selected_compression_direction;
+        report.types.connect_parameters.selected_compression = s->far.parms.selected_compression;
+        report.types.connect_parameters.selected_error_correction = s->far.parms.selected_error_correction;
 
-        report.connect_parameters.compression_tx_dictionary_size = s->far.parms.compression_tx_dictionary_size;
-        report.connect_parameters.compression_rx_dictionary_size = s->far.parms.compression_rx_dictionary_size;
-        report.connect_parameters.compression_tx_string_length = s->far.parms.compression_tx_string_length;
-        report.connect_parameters.compression_rx_string_length = s->far.parms.compression_rx_string_length;
-        report.connect_parameters.compression_tx_history_size = s->far.parms.compression_tx_history_size;
-        report.connect_parameters.compression_rx_history_size = s->far.parms.compression_rx_history_size;
+        report.types.connect_parameters.compression_tx_dictionary_size = s->far.parms.compression_tx_dictionary_size;
+        report.types.connect_parameters.compression_rx_dictionary_size = s->far.parms.compression_rx_dictionary_size;
+        report.types.connect_parameters.compression_tx_string_length = s->far.parms.compression_tx_string_length;
+        report.types.connect_parameters.compression_rx_string_length = s->far.parms.compression_rx_string_length;
+        report.types.connect_parameters.compression_tx_history_size = s->far.parms.compression_tx_history_size;
+        report.types.connect_parameters.compression_rx_history_size = s->far.parms.compression_rx_history_size;
 
         /* I_RAW-OCTET is always available. There is no selection flag for it. */
-        report.connect_parameters.i_raw_octet_available = true;
-        report.connect_parameters.i_raw_bit_available = s->far.parms.i_raw_bit_available;
-        report.connect_parameters.i_frame_available = s->far.parms.i_frame_available;
+        report.types.connect_parameters.i_raw_octet_available = true;
+        report.types.connect_parameters.i_raw_bit_available = s->far.parms.i_raw_bit_available;
+        report.types.connect_parameters.i_frame_available = s->far.parms.i_frame_available;
         /* I_OCTET is an oddity, as you need to know in advance whether there will be a DLCI field
            present. So, functionally its really like 2 different types of message. */
-        report.connect_parameters.i_octet_with_dlci_available = s->far.parms.i_octet_with_dlci_available;
-        report.connect_parameters.i_octet_without_dlci_available = s->far.parms.i_octet_without_dlci_available;
-        report.connect_parameters.i_char_stat_available = s->far.parms.i_char_stat_available;
-        report.connect_parameters.i_char_dyn_available = s->far.parms.i_char_dyn_available;
+        report.types.connect_parameters.i_octet_with_dlci_available = s->far.parms.i_octet_with_dlci_available;
+        report.types.connect_parameters.i_octet_without_dlci_available = s->far.parms.i_octet_without_dlci_available;
+        report.types.connect_parameters.i_char_stat_available = s->far.parms.i_char_stat_available;
+        report.types.connect_parameters.i_char_dyn_available = s->far.parms.i_char_dyn_available;
         /* Unlike I_OCTET, I_OCTET-CS is only defined without a DLCI field. */
-        report.connect_parameters.i_octet_cs_available = s->far.parms.i_octet_cs_available;
-        report.connect_parameters.i_char_stat_cs_available = s->far.parms.i_char_stat_cs_available;
-        report.connect_parameters.i_char_dyn_cs_available = s->far.parms.i_char_dyn_cs_available;
+        report.types.connect_parameters.i_octet_cs_available = s->far.parms.i_octet_cs_available;
+        report.types.connect_parameters.i_char_stat_cs_available = s->far.parms.i_char_stat_cs_available;
+        report.types.connect_parameters.i_char_dyn_cs_available = s->far.parms.i_char_dyn_cs_available;
         break;
     case V150_1_STATUS_REASON_DATA_FORMAT_CHANGED:
-        report.data_format_change.bits = 5 + ((s->far.parms.data_format_code >> 5) & 0x03);
-        report.data_format_change.parity_code = (s->far.parms.data_format_code >> 2) & 0x07;
-        report.data_format_change.stop_bits = 1 + (s->far.parms.data_format_code & 0x03);
+        report.types.data_format_change.bits = 5 + ((s->far.parms.data_format_code >> 5) & 0x03);
+        report.types.data_format_change.parity_code = (s->far.parms.data_format_code >> 2) & 0x07;
+        report.types.data_format_change.stop_bits = 1 + (s->far.parms.data_format_code & 0x03);
         break;
     case V150_1_STATUS_REASON_BREAK_RECEIVED:
-        report.break_received.source = s->far.break_source;
-        report.break_received.type = s->far.break_type;
-        report.break_received.duration = s->far.break_duration*10;
+        report.types.break_received.source = s->far.break_source;
+        report.types.break_received.type = s->far.break_type;
+        report.types.break_received.duration = s->far.break_duration*10;
         break;
     case V150_1_STATUS_REASON_RATE_RETRAIN_RECEIVED:
         break;
     case V150_1_STATUS_REASON_RATE_RENEGOTIATION_RECEIVED:
         break;
     case V150_1_STATUS_REASON_BUSY_CHANGED:
-        report.busy_change.local_busy = s->near.parms.busy;
-        report.busy_change.far_busy = s->far.parms.busy;
+        report.types.busy_change.local_busy = s->near.parms.busy;
+        report.types.busy_change.far_busy = s->far.parms.busy;
         break;
     }
     /*endswitch*/

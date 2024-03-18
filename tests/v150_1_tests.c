@@ -219,15 +219,15 @@ static int v150_1_status_report_handler(void *user_data, v150_1_status_t *report
     case V150_1_STATUS_REASON_MEDIA_STATE_CHANGED:
         fprintf(stderr,
                 "Media state changed to %s %s\n",
-                v150_1_media_state_to_str(report->media_state_change.local_state),
-                v150_1_media_state_to_str(report->media_state_change.remote_state));
+                v150_1_media_state_to_str(report->types.media_state_change.local_state),
+                v150_1_media_state_to_str(report->types.media_state_change.remote_state));
         break;
     case V150_1_STATUS_REASON_CONNECTION_STATE_CHANGED:
-        fprintf(stderr, "Connection state changed to %s\n", v150_1_state_to_str(report->connection_state_change.state));
-        switch (report->connection_state_change.state)
+        fprintf(stderr, "Connection state changed to %s\n", v150_1_state_to_str(report->types.connection_state_change.state));
+        switch (report->types.connection_state_change.state)
         {
         case V150_1_STATE_IDLE:
-            fprintf(stderr, "    Cleardown reason %s\n", v150_1_cleardown_reason_to_str(report->connection_state_change.cleardown_reason));
+            fprintf(stderr, "    Cleardown reason %s\n", v150_1_cleardown_reason_to_str(report->types.connection_state_change.cleardown_reason));
             break;
         case V150_1_STATE_INITED:
             if (calling_party)
@@ -250,15 +250,15 @@ static int v150_1_status_report_handler(void *user_data, v150_1_status_t *report
     case V150_1_STATUS_REASON_DATA_FORMAT_CHANGED:
         fprintf(stderr, "Data format changed\n");
         fprintf(stderr, "    Format is %d data bits, %d stop bits, %s parity\n",
-               report->data_format_change.bits,
-               report->data_format_change.stop_bits,
-               v150_1_parity_to_str(report->data_format_change.parity_code));
+               report->types.data_format_change.bits,
+               report->types.data_format_change.stop_bits,
+               v150_1_parity_to_str(report->types.data_format_change.parity_code));
         break;
     case V150_1_STATUS_REASON_BREAK_RECEIVED:
         fprintf(stderr, "Break received\n");
-        fprintf(stderr, "    Break source %s\n", v150_1_break_source_to_str(report->break_received.source));
-        fprintf(stderr, "    Break type %s\n", v150_1_break_type_to_str(report->break_received.type));
-        fprintf(stderr, "    Break duration %d ms\n", report->break_received.duration);
+        fprintf(stderr, "    Break source %s\n", v150_1_break_source_to_str(report->types.break_received.source));
+        fprintf(stderr, "    Break type %s\n", v150_1_break_type_to_str(report->types.break_received.type));
+        fprintf(stderr, "    Break duration %d ms\n", report->types.break_received.duration);
         break;
     case V150_1_STATUS_REASON_RATE_RETRAIN_RECEIVED:
         fprintf(stderr, "Retrain received\n");
@@ -268,8 +268,8 @@ static int v150_1_status_report_handler(void *user_data, v150_1_status_t *report
         break;
     case V150_1_STATUS_REASON_BUSY_CHANGED:
         fprintf(stderr, "Busy status change received\n");
-        fprintf(stderr, "Near side now %sbusy\n", (report->busy_change.local_busy)  ?  ""  :  "not ");
-        fprintf(stderr, "Far side now %sbusy\n", (report->busy_change.far_busy)  ?  ""  :  "not ");
+        fprintf(stderr, "Near side now %sbusy\n", (report->types.busy_change.local_busy)  ?  ""  :  "not ");
+        fprintf(stderr, "Far side now %sbusy\n", (report->types.busy_change.far_busy)  ?  ""  :  "not ");
         break;
     default:
         fprintf(stderr, "Unknown status report reason %d received\n", report->reason);
