@@ -97,7 +97,7 @@ typedef struct
             bool i_char_stat_cs_available;
             bool i_char_dyn_cs_available;
         } connect_parameters;
-    };
+    } types;
 } v150_1_status_t;
 
 typedef int (*v150_1_spe_signal_handler_t) (void *user_data, int signal);
