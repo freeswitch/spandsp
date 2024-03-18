@@ -69,6 +69,16 @@ SPAN_DECLARE(int32_t) power_meter_update(power_meter_t *s, int16_t amp)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(int32_t) power_meter_rx(power_meter_t *s, int16_t amp[], int len)
+{
+    int i;
+
+    for (i = 0;  i < len;  i++)
+        s->reading += ((amp[i]*amp[i] - s->reading) >> s->shift);
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int32_t) power_meter_level_dbm0(float level)
 {
     float l;
@@ -77,7 +87,7 @@ SPAN_DECLARE(int32_t) power_meter_level_dbm0(float level)
     if (level > 0.0)
         level = 0.0;
     /*endif*/
-    l = powf(10.0f, level/10.0f)*(32767.0f*32767.0f);
+    l = db_to_power_ratio(level)*(32767.0f*32767.0f);
     return (int32_t) l;
 }
 /*- End of function --------------------------------------------------------*/
@@ -86,10 +96,11 @@ SPAN_DECLARE(int32_t) power_meter_level_dbov(float level)
 {
     float l;
 
+    level -= DBOV_MAX_POWER;
     if (level > 0.0)
         level = 0.0;
     /*endif*/
-    l = powf(10.0f, level/10.0f)*(32767.0f*32767.0f);
+    l = db_to_power_ratio(level)*(32767.0f*32767.0f);
     return (int32_t) l;
 }
 /*- End of function --------------------------------------------------------*/
@@ -114,7 +125,7 @@ SPAN_DECLARE(float) power_meter_current_dbov(power_meter_t *s)
 {
     if (s->reading <= 0)
         return -96.329f;
-    return 10.0f*log10f((float) s->reading/(32767.0f*32767.0f) + 1.0e-10f);
+    return 10.0f*log10f((float) s->reading/(32767.0f*32767.0f) + 1.0e-10f) + DBOV_MAX_POWER;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -207,7 +218,7 @@ SPAN_DECLARE(power_surge_detector_state_t *) power_surge_detector_init(power_sur
     memset(s, 0, sizeof(*s));
     power_meter_init(&s->short_term, 4);
     power_meter_init(&s->medium_term, 7);
-    ratio = powf(10.0f, surge/10.0f);
+    ratio = db_to_power_ratio(surge);
     s->surge = 1024.0f*ratio;
     s->sag = 1024.0f/ratio;
     s->min = power_meter_level_dbm0(min);

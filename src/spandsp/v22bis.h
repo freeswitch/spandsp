@@ -54,12 +54,27 @@ or 1200bps if one or both ends to not acknowledge that 2400bps is OK.
 #define V22BIS_CONSTELLATION_SCALING_FACTOR     1.0
 #endif
 
-enum
+/* The bottom bits of the option field define which guard tone to use. Guard tones were a compatibility
+   mechanism to prevent a high band modem signal from interferring with billing systems. Only the
+   answering modem sends them.
+   
+   Other options can be OR'ed with the guard tone option. */
+typedef enum
 {
-    V22BIS_GUARD_TONE_NONE,
-    V22BIS_GUARD_TONE_550HZ,
-    V22BIS_GUARD_TONE_1800HZ
-};
+    /* No guard tone is the norm is some areas, such a North America */
+    V22BIS_GUARD_TONE_NONE = 0,
+    /* 550Hz guard tone is the norm is some areas, such as Scandinavia */
+    V22BIS_GUARD_TONE_550HZ = 1,
+    /* 1800Hz guard tone is the norm is some areas, such as the UK and much of the Commonwealth */
+    V22BIS_GUARD_TONE_1800HZ = 2,
+    /* Change the operation of the modem to follow the original Bell212A spec, from which V.22bis was
+       developed. This is basically for old systems in North America. */
+    V22BIS_BELL212A_COMPATIBILITY_MODE = 0x100,
+    /* Use unscrambled 00 instead of unscrambled 11 during the handshake. This is not something you
+       should use day to day. Its here to allow testing that receivers will function correctly with
+       either 11 or 00, as V.22bis says they should. */
+    V22BIS_USE_U00 = 0x200
+} v22bis_options_t;
 
 /*!
     V.22bis modem descriptor. This defines the working state for a single instance
@@ -169,7 +184,7 @@ SPAN_DECLARE(int) v22bis_get_current_bit_rate(v22bis_state_t *s);
     \brief Initialise a V.22bis modem context.
     \param s The modem context.
     \param bit_rate The bit rate of the modem. Valid values are 1200 and 2400.
-    \param guard The guard tone option. 0 = none, 1 = 550Hz, 2 = 1800Hz.
+    \param options Guard tone and other options.
     \param calling_party True if this is the calling modem.
     \param get_bit The callback routine used to get the data to be transmitted.
     \param get_bit_user_data An opaque pointer, passed in calls to the get_bit routine.
@@ -178,7 +193,7 @@ SPAN_DECLARE(int) v22bis_get_current_bit_rate(v22bis_state_t *s);
     \return A pointer to the modem context, or NULL if there was a problem. */
 SPAN_DECLARE(v22bis_state_t *) v22bis_init(v22bis_state_t *s,
                                            int bit_rate,
-                                           int guard,
+                                           int options,
                                            bool calling_party,
                                            span_get_bit_func_t get_bit,
                                            void *get_bit_user_data,

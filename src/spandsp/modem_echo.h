@@ -84,6 +84,8 @@ minor burden.
 */
 typedef struct modem_echo_can_state_s modem_echo_can_state_t;
 
+typedef struct modem_echo_can_segment_state_s modem_echo_can_segment_state_t;
+
 #if defined(__cplusplus)
 extern "C"
 {
@@ -93,23 +95,23 @@ extern "C"
     \param len The length of the canceller, in samples.
     eturn The new canceller context, or NULL if the canceller could not be created.
 */
-SPAN_DECLARE(modem_echo_can_state_t *) modem_echo_can_init(int len);
+SPAN_DECLARE(modem_echo_can_segment_state_t *) modem_echo_can_segment_init(int len);
 
 /*! Free a modem echo canceller context.
     \param ec The echo canceller context.
 */
-SPAN_DECLARE(void) modem_echo_can_free(modem_echo_can_state_t *ec);
+SPAN_DECLARE(void) modem_echo_can_segment_free(modem_echo_can_segment_state_t *ec);
 
 /*! Flush (reinitialise) a modem echo canceller context.
     \param ec The echo canceller context.
 */
-SPAN_DECLARE(void) modem_echo_can_flush(modem_echo_can_state_t *ec);
+SPAN_DECLARE(void) modem_echo_can_flush(modem_echo_can_segment_state_t *ec);
 
 /*! Set the adaption mode of a modem echo canceller context.
     \param ec The echo canceller context.
     \param adapt The mode.
 */
-SPAN_DECLARE(void) modem_echo_can_adaption_mode(modem_echo_can_state_t *ec, int adapt);
+SPAN_DECLARE(void) modem_echo_can_adaption_mode(modem_echo_can_segment_state_t *ec, int adapt);
 
 /*! Process a sample through a modem echo canceller.
     \param ec The echo canceller context.
@@ -117,7 +119,7 @@ SPAN_DECLARE(void) modem_echo_can_adaption_mode(modem_echo_can_state_t *ec, int 
     \param rx The received audio sample.
     eturn The clean (echo cancelled) received sample.
 */
-SPAN_DECLARE(int16_t) modem_echo_can_update(modem_echo_can_state_t *ec, int16_t tx, int16_t rx);
+SPAN_DECLARE(int16_t) modem_echo_can_update(modem_echo_can_segment_state_t *ec, int16_t tx, int16_t rx);
 
 #if defined(__cplusplus)
 }

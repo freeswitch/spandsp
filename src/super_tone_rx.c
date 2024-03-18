@@ -57,13 +57,19 @@
 #include "spandsp/private/super_tone_rx.h"
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-static const int detection_threshold        = energy_threshold_dbm0(SUPER_TONE_BINS, -42);
-static const int tone_twist                 = 4;
-static const int tone_to_total_energy       = SUPER_TONE_BINS*64;
+//static const int detection_threshold        = energy_threshold_dbm0(SUPER_TONE_BINS, -42);
+static const int detection_threshold        = 16439             /* -42dBm0 
+//static const int tone_twist                 = 4;
+static const int tone_twist                 = 4;                /* 6dB &/
+//static const int tone_to_total_energy       = SUPER_TONE_BINS*64;
+static const int tone_to_total_energy       = 64;               /* -3dB */
 #else
-static const float detection_threshold      = energy_threshold_dbm0(SUPER_TONE_BINS, -42);
-static const float tone_twist               = db_to_power_ratio(6.0f);
-static const float tone_to_total_energy     = SUPER_TONE_BINS*db_to_power_ratio(-3.0f);
+//static const float detection_threshold      = energy_threshold_dbm0(SUPER_TONE_BINS, -42);
+static const float detection_threshold      = 2104205.6f;       /* -42dBm0 */
+//static const float tone_twist               = db_to_power_ratio(6.0f);
+static const float tone_twist               = 3.981f;           /* 6dB */
+//static const float tone_to_total_energy     = SUPER_TONE_BINS*db_to_power_ratio(-3.0f);
+static const float tone_to_total_energy     = 1.995f;           /* 3dB */
 #endif
 
 static int add_super_tone_freq(super_tone_rx_descriptor_t *desc, int freq)

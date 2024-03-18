@@ -276,6 +276,7 @@ int main(int argc, char *argv[])
     int samples2;
     int i;
     int j;
+    int retrain_count;
     int test_bps;
     int line_model_no;
     int channel_codec;
@@ -283,21 +284,23 @@ int main(int argc, char *argv[])
     int bits_per_test;
     int noise_level;
     int signal_level;
-    int guard_tone_option;
+    int options;
+    int retrain_time;
     int opt;
     bool log_audio;
 
     channel_codec = MUNGE_CODEC_NONE;
     rbs_pattern = 0;
+    retrain_time = 0;
     test_bps = 2400;
     line_model_no = 0;
     decode_test_file = NULL;
     noise_level = -70;
     signal_level = -13;
     bits_per_test = 50000;
-    guard_tone_option = V22BIS_GUARD_TONE_1800HZ;
+    options = V22BIS_GUARD_TONE_1800HZ;
     log_audio = false;
-    while ((opt = getopt(argc, argv, "b:B:c:d:gG:lm:n:r:s:")) != -1)
+    while ((opt = getopt(argc, argv, "b:B:c:d:gG:lm:n:r:R:s:")) != -1)
     {
         switch (opt)
         {
@@ -328,7 +331,7 @@ int main(int argc, char *argv[])
 #endif
             break;
         case 'G':
-            guard_tone_option = atoi(optarg);
+            options = atoi(optarg);
             break;
         case 'l':
             log_audio = true;
@@ -341,6 +344,9 @@ int main(int argc, char *argv[])
             break;
         case 'r':
             rbs_pattern = atoi(optarg);
+            break;
+        case 'R':
+            retrain_time = atoi(optarg);
             break;
         case 's':
             signal_level = atoi(optarg);
@@ -381,7 +387,7 @@ int main(int argc, char *argv[])
 
     for (i = 0;  i < 2;  i++)
     {
-        endpoint[i].v22bis = v22bis_init(NULL, test_bps, guard_tone_option, (i == 0), v22bis_getbit, &endpoint[i], v22bis_putbit, &endpoint[i]);
+        endpoint[i].v22bis = v22bis_init(NULL, test_bps, options, (i == 0), v22bis_getbit, &endpoint[i], v22bis_putbit, &endpoint[i]);
         v22bis_tx_power(endpoint[i].v22bis, signal_level);
         /* Move the carrier off a bit */
         endpoint[i].v22bis->tx.carrier_phase_rate = dds_phase_ratef((i == 0)  ?  1207.0f  :  2407.0f);
@@ -420,6 +426,7 @@ int main(int argc, char *argv[])
     }
     /*endif*/
     samples = 0;
+    retrain_count = 0;
     for (;;)
     {
         for (i = 0;  i < 2;  i++)
@@ -428,6 +435,7 @@ int main(int argc, char *argv[])
 #if defined(ENABLE_GUI)
             if (use_gui)
                 qam_monitor_update_audio_level(endpoint[i].qam_monitor, amp[i], samples);
+            /*endif*/
 #endif
             if (samples == 0)
             {
@@ -484,6 +492,17 @@ int main(int argc, char *argv[])
             {
                 fprintf(stderr, "    Error writing audio file\n");
                 exit(2);
+            }
+            /*endif*/
+        }
+        /*endif*/
+        if (retrain_time)
+        {
+            retrain_count++;
+            if (retrain_count >= retrain_time)
+            {
+                v22bis_request_retrain(endpoint[0].v22bis, test_bps);
+                retrain_count = 0;
             }
             /*endif*/
         }

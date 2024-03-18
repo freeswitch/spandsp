@@ -470,20 +470,35 @@ static complexf_t training_get(v22bis_state_t *s)
         if (++s->tx.training_count >= ms_to_symbols(75))
         {
             /* Initial 75ms of silence is over */
-            span_log(&s->logging, SPAN_LOG_FLOW, "+++ starting U11 1200\n");
             s->tx.training_count = 0;
-            s->tx.training = V22BIS_TX_TRAINING_STAGE_U11;
+            if ((s->options & V22BIS_USE_U00))
+            {
+                span_log(&s->logging, SPAN_LOG_FLOW, "+++ starting U00 1200\n");
+                s->tx.training = V22BIS_TX_TRAINING_STAGE_U00;
+            }
+            else
+            {
+                span_log(&s->logging, SPAN_LOG_FLOW, "+++ starting U11 1200\n");
+                s->tx.training = V22BIS_TX_TRAINING_STAGE_U11;
+            }
+            /*endif*/
         }
         /*endif*/
-        /* Fall through */
+        s->tx.constellation_state = 0;
+        return zero;
     case V22BIS_TX_TRAINING_STAGE_INITIAL_SILENCE:
-        /* Silence */
         s->tx.constellation_state = 0;
         return zero;
     case V22BIS_TX_TRAINING_STAGE_U11:
         /* Send continuous unscrambled ones at 1200bps (i.e. 270 degree phase steps). */
         /* Only the answering modem sends unscrambled ones. It is the first thing exchanged between the modems. */
         s->tx.constellation_state = (s->tx.constellation_state + phase_steps[3]) & 3;
+        return v22bis_constellation[(s->tx.constellation_state << 2) | 0x01];
+    case V22BIS_TX_TRAINING_STAGE_U00:
+        /* Send continuous unscrambled zeroes at 1200bps (i.e. 90 degree phase steps). */
+        /* This is not part of V.22bis. It exists only for testing that the receiving modem functions
+           correctly with both unscrambled zeroes and unscarmbled ones. */
+        s->tx.constellation_state = (s->tx.constellation_state + phase_steps[0]) & 3;
         return v22bis_constellation[(s->tx.constellation_state << 2) | 0x01];
     case V22BIS_TX_TRAINING_STAGE_U0011:
         /* Continuous unscrambled double dibit 00 11 at 1200bps. This is termed the S1 segment in
@@ -691,7 +706,7 @@ SPAN_DECLARE(void) v22bis_tx_power(v22bis_state_t *s, float power)
         sig_power = power - 1.0f;
         guard_tone_power = sig_power - 3.0f;
     }
-    else if(s->tx.guard_tone_phase_rate == dds_phase_ratef(1800.0f))
+    else if (s->tx.guard_tone_phase_rate == dds_phase_ratef(1800.0f))
     {
         sig_power = power - 0.55f;
         guard_tone_power = sig_power - 6.0f;
@@ -702,8 +717,8 @@ SPAN_DECLARE(void) v22bis_tx_power(v22bis_state_t *s, float power)
         guard_tone_power = -9999.0f;
     }
     /*endif*/
-    sig_gain = 0.4490f*powf(10.0f, (sig_power - DBM0_MAX_POWER)/20.0f)*32768.0f/TX_PULSESHAPER_GAIN;
-    guard_tone_gain = powf(10.0f, (guard_tone_power - DBM0_MAX_POWER)/20.0f)*32768.0f;
+    sig_gain = 0.4490f*db_to_amplitude_ratio(sig_power - DBM0_MAX_SINE_POWER)*32768.0f/TX_PULSESHAPER_GAIN;
+    guard_tone_gain = db_to_amplitude_ratio(guard_tone_power - DBM0_MAX_SINE_POWER)*32768.0f;
 #if defined(SPANDSP_USE_FIXED_POINT)
     s->tx.gain = (int16_t) sig_gain;
     s->tx.guard_tone_gain = (int16_t) guard_tone_gain;
@@ -841,7 +856,7 @@ SPAN_DECLARE(int) v22bis_get_current_bit_rate(v22bis_state_t *s)
 
 SPAN_DECLARE(v22bis_state_t *) v22bis_init(v22bis_state_t *s,
                                            int bit_rate,
-                                           int guard,
+                                           int options,
                                            bool calling_party,
                                            span_get_bit_func_t get_bit,
                                            void *get_bit_user_data,
@@ -882,7 +897,8 @@ SPAN_DECLARE(v22bis_state_t *) v22bis_init(v22bis_state_t *s,
     else
     {
         s->tx.carrier_phase_rate = dds_phase_ratef(HIGH_CARRIER_FREQUENCY);
-        switch (guard)
+        s->options = options;
+        switch ((options & 0xFF))
         {
         case V22BIS_GUARD_TONE_550HZ:
             s->tx.guard_tone_phase_rate = dds_phase_ratef(550.0f);

@@ -94,7 +94,7 @@ SPAN_DECLARE(noise_state_t *) noise_init_dbov(noise_state_t *s, int seed, float 
     /*endif*/
     memset(s, 0, sizeof(*s));
     s->rndnum = (uint32_t) seed;
-    rms = 32768.0f*powf(10.0f, level/20.0f);
+    rms = db_to_amplitude_ratio(level)*32768.0f;
     if (quality < 4)
         s->quality = 4;
     else if (quality > 20)

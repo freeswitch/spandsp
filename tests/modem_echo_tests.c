@@ -248,7 +248,7 @@ static int16_t channel_model(int16_t local, int16_t far)
 
 int main(int argc, char *argv[])
 {
-    modem_echo_can_state_t *ctx;
+    modem_echo_can_segment_state_t *ctx;
     //awgn_state_t local_noise_source;
     awgn_state_t far_noise_source;
     int i;
@@ -279,7 +279,7 @@ int main(int argc, char *argv[])
         line_model_no = atoi(argv[1]);
     }
     time(&now);
-    ctx = modem_echo_can_init(256);
+    ctx = modem_echo_can_segment_init(256);
     awgn_init_dbm0(&far_noise_source, 7162534, -50.0f);
 
     signal_load(&local_css, "sound_c1_8k.wav");
@@ -373,7 +373,7 @@ int main(int argc, char *argv[])
         exit(2);
     }
 
-    modem_echo_can_free(ctx);
+    modem_echo_can_segment_free(ctx);
     signal_free(&local_css);
 
     if (sf_close_telephony(resulthandle))

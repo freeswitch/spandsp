@@ -139,13 +139,13 @@ SPAN_DECLARE(void) v32bis_tx_power(v32bis_state_t *s, float power)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) v32bis_set_get_bit(v32bis_state_t *s, get_bit_func_t get_bit, void *user_data)
+SPAN_DECLARE(void) v32bis_set_get_bit(v32bis_state_t *s, span_get_bit_func_t get_bit, void *user_data)
 {
     v17_tx_set_get_bit(&s->tx, get_bit, user_data);
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) v32bis_set_put_bit(v32bis_state_t *s, put_bit_func_t put_bit, void *user_data)
+SPAN_DECLARE(void) v32bis_set_put_bit(v32bis_state_t *s, span_put_bit_func_t put_bit, void *user_data)
 {
     v17_rx_set_put_bit(&s->rx, put_bit, user_data);
 }
@@ -184,9 +184,9 @@ SPAN_DECLARE(int) v32bis_restart(v32bis_state_t *s, int bit_rate)
 SPAN_DECLARE(v32bis_state_t *) v32bis_init(v32bis_state_t *s,
                                            int bit_rate,
                                            bool calling_party,
-                                           get_bit_func_t get_bit,
+                                           span_get_bit_func_t get_bit,
                                            void *get_bit_user_data,
-                                           put_bit_func_t put_bit,
+                                           span_put_bit_func_t put_bit,
                                            void *put_bit_user_data)
 {
     if (s == NULL)

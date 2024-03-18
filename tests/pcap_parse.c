@@ -31,11 +31,14 @@
 #include "config.h"
 #endif
 
+#define _DEFAULT_SOURCE
+
 #include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 #if defined(HAVE_PCAP_H)
+#include <sys/types.h>
 #include <pcap.h>
 #include <pcap/sll.h>
 #endif

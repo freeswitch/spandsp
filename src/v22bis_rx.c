@@ -593,18 +593,22 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
             s->rx.training = (s->calling_party)  ?  V22BIS_RX_TRAINING_STAGE_UNSCRAMBLED_ONES  :  V22BIS_RX_TRAINING_STAGE_SCRAMBLED_ONES_AT_1200;
             /* Be pessimistic and see what the handshake brings */
             s->negotiated_bit_rate = 1200;
-            break;
         }
-        /*endif*/
-        /* Once we have pulled in the symbol timing in a coarse way, use finer
-           steps to fine tune the timing. */
-        if (s->rx.training_count == 30)
-            s->rx.gardner_step = 32;
+        else
+        {
+            /* Once we have pulled in the symbol timing in a coarse way, use finer
+               steps to fine tune the timing. */
+            if (s->rx.training_count == 30)
+                s->rx.gardner_step = 32;
+            /*endif*/
+        }
         /*endif*/
         break;
     case V22BIS_RX_TRAINING_STAGE_UNSCRAMBLED_ONES:
         /* Calling modem only. */
-        /* The calling modem should initially receive unscrambled ones at 1200bps */
+        /* The calling modem should initially receive unscrambled ones at 1200bps. As per
+           V.22bis, we have to allow for the possibility of this being unscrambled zeroes
+           at 1200bps. */
         target = &v22bis_constellation[nearest];
         track_carrier(s, &z, target);
         raw_bits = phase_steps[((nearest >> 2) - (s->rx.constellation_state >> 2)) & 3];

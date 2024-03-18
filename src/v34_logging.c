@@ -49,6 +49,7 @@
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
@@ -58,6 +59,7 @@
 #include "spandsp/complex_vector_float.h"
 #include "spandsp/vector_int.h"
 #include "spandsp/complex_vector_int.h"
+#include "spandsp/modem_echo.h"
 #include "spandsp/async.h"
 #include "spandsp/power_meter.h"
 #include "spandsp/arctan2.h"
@@ -71,6 +73,7 @@
 #include "spandsp/private/bitstream.h"
 #include "spandsp/private/logging.h"
 #include "spandsp/private/power_meter.h"
+#include "spandsp/private/modem_echo.h"
 #include "spandsp/private/v34.h"
 
 #include "v34_local.h"
@@ -139,7 +142,7 @@ void log_info1c(logging_state_t *log, bool tx, const info1c_t *info1c)
     {
         span_log(log, SPAN_LOG_FLOW, "  Baud rate %d use %s carrier\n", baud_rate_parameters[i].baud_rate, (info1c->rate_data[i].use_high_carrier)  ?  "high"  :  "low");
         span_log(log, SPAN_LOG_FLOW, "  Baud rate %d pre-emphasis index = %d\n", baud_rate_parameters[i].baud_rate, info1c->rate_data[i].pre_emphasis);
-        span_log(log, SPAN_LOG_FLOW, "  Baud rate %d max data rate = %dbps\n", baud_rate_parameters[i].baud_rate, info1c->rate_data[i].max_data_rate*2400);
+        span_log(log, SPAN_LOG_FLOW, "  Baud rate %d max data rate = %dbps\n", baud_rate_parameters[i].baud_rate, info1c->rate_data[i].max_bit_rate*2400);
     }
     /*endfor*/
     if (info1c->freq_offset == -512)
@@ -187,8 +190,8 @@ void log_mp(logging_state_t *log, bool tx, const mp_t *mp)
 
     span_log(log, SPAN_LOG_FLOW, "%s MP:\n", (tx)  ?  "Tx"  :  "Rx");
     span_log(log, SPAN_LOG_FLOW, "  Type = %d\n", mp->type);
-    span_log(log, SPAN_LOG_FLOW, "  Max data rate A to C = %dbps\n", mp->baud_rate_a_to_c*2400);
-    span_log(log, SPAN_LOG_FLOW, "  Max data rate C to A = %dbps\n", mp->baud_rate_c_to_a*2400);
+    span_log(log, SPAN_LOG_FLOW, "  Max data rate A to C = %dbps\n", mp->bit_rate_a_to_c*2400);
+    span_log(log, SPAN_LOG_FLOW, "  Max data rate C to A = %dbps\n", mp->bit_rate_c_to_a*2400);
     span_log(log, SPAN_LOG_FLOW, "  Aux channel supported = %d\n", mp->aux_channel_supported);
     span_log(log, SPAN_LOG_FLOW, "  Trellis size = %s\n", trellis_size_code_to_str(mp->trellis_size));
     span_log(log, SPAN_LOG_FLOW, "  Use non-linear encoder = %d\n", mp->use_non_linear_encoder);
@@ -226,6 +229,37 @@ void log_mph(logging_state_t *log, bool tx, const mph_t *mph)
         /*endfor*/
     }
     /*endif*/
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) log_parameters(logging_state_t *log, bool tx, v34_parameters_t *parms)
+{
+    span_log(log, SPAN_LOG_FLOW, "%s V.34 parameters:\n", (tx)  ?  "Tx"  :  "Rx");
+    span_log(log, SPAN_LOG_FLOW,
+             "  Max bit rate:       %dbps%s\n",
+             ((parms->max_bit_rate_code >> 1) + 1)*2400,
+             (parms->max_bit_rate_code & 1)  ?   "+ 200bps"  :  "");
+    /*! \brief Parameters for the current bit rate and baud rate */
+    span_log(log, SPAN_LOG_FLOW, "  Bit rate:           %dbps\n", parms->bit_rate);
+    /*! \brief Bits per high mapping frame. A low mapping frame is one bit less. */
+    span_log(log, SPAN_LOG_FLOW, "  b:                  %d\n", parms->b);
+    span_log(log, SPAN_LOG_FLOW, "  j:                  %d\n", parms->j);
+    /*! \brief The number of shell mapped bits */
+    span_log(log, SPAN_LOG_FLOW, "  k:                  %d\n", parms->k);
+    span_log(log, SPAN_LOG_FLOW, "  l:                  %d points\n", parms->l);
+    span_log(log, SPAN_LOG_FLOW, "  m:                  %d\n", parms->m);
+    span_log(log, SPAN_LOG_FLOW, "  p:                  %d\n", parms->p);
+    /*! \brief The number of uncoded Q bits per 2D symbol */
+    span_log(log, SPAN_LOG_FLOW, "  q:                  %d (mask %d)\n", parms->q, parms->q_mask);
+    /*! \brief Mapping frame switching parameter */
+    span_log(log, SPAN_LOG_FLOW, "  r:                  %d\n", parms->r);
+    span_log(log, SPAN_LOG_FLOW, "  w:                  %d\n", parms->w);
+    /*! The numerator and dnominator of the number of samples per symbol ratio. */
+    span_log(log,
+             SPAN_LOG_FLOW,
+             "  Samples per symbol: %d/%d\n",
+             parms->samples_per_symbol_numerator,
+             parms->samples_per_symbol_denominator);
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

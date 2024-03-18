@@ -66,6 +66,7 @@
 #include "spandsp/complex.h"
 #include "spandsp/tone_detect.h"
 #include "spandsp/tone_generate.h"
+#include "spandsp/modem_echo.h"
 #include "spandsp/async.h"
 #include "spandsp/crc.h"
 #include "spandsp/hdlc.h"
@@ -98,6 +99,7 @@
 
 #include "spandsp/private/logging.h"
 #include "spandsp/private/bitstream.h"
+#include "spandsp/private/modem_echo.h"
 #include "spandsp/private/t38_core.h"
 #include "spandsp/private/silence_gen.h"
 #include "spandsp/private/power_meter.h"

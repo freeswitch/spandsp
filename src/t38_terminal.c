@@ -633,7 +633,7 @@ static void send_hdlc(void *user_data, const uint8_t *msg, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int bits_to_us(t38_terminal_state_t *s, int bits)
+static __inline__ int bits_to_microseconds(t38_terminal_state_t *s, int bits)
 {
     if (!s->t38_fe.t38.pace_transmission  ||  s->t38_fe.tx_bit_rate == 0)
         return 0;
@@ -801,7 +801,7 @@ static int stream_non_ecm(t38_terminal_state_t *s)
                 return res;
             /*endif*/
             if (fe->t38.pace_transmission)
-                delay = bits_to_us(s, 8*len);
+                delay = bits_to_microseconds(s, 8*len);
             /*endif*/
             break;
         case T38_TIMED_STEP_NON_ECM_MODEM_4:
@@ -819,7 +819,7 @@ static int stream_non_ecm(t38_terminal_state_t *s)
                 /* Allow a bit more time than the data will take to play out, to ensure the far ATA does not
                    cut things short. */
                 if (fe->t38.pace_transmission)
-                    delay = bits_to_us(s, 8*len) + 60000;
+                    delay = bits_to_microseconds(s, 8*len) + 60000;
                 /*endif*/
                 if (front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE) < 0)
                     return -1;
@@ -832,7 +832,7 @@ static int stream_non_ecm(t38_terminal_state_t *s)
                 return res;
             /*endif*/
             if (fe->t38.pace_transmission)
-                delay = bits_to_us(s, 8*len);
+                delay = bits_to_microseconds(s, 8*len);
             /*endif*/
             break;
         case T38_TIMED_STEP_NON_ECM_MODEM_5:
@@ -946,7 +946,7 @@ static int stream_hdlc(t38_terminal_state_t *s)
                             return res;
                         /*endif*/
                         fe->timed_step = T38_TIMED_STEP_HDLC_MODEM_3;
-                        delay = bits_to_us(s, i*8 + fe->hdlc_tx.extra_bits);
+                        delay = bits_to_microseconds(s, i*8 + fe->hdlc_tx.extra_bits);
                     }
                     else
                     {
@@ -960,7 +960,7 @@ static int stream_hdlc(t38_terminal_state_t *s)
                         fe->timed_step = T38_TIMED_STEP_HDLC_MODEM_5;
                         /* We add a bit of extra time here, as with some implementations
                            the carrier falling too abruptly causes data loss. */
-                        delay = bits_to_us(s, i*8 + fe->hdlc_tx.extra_bits);
+                        delay = bits_to_microseconds(s, i*8 + fe->hdlc_tx.extra_bits);
                         if (fe->t38.pace_transmission)
                             delay += 100000;
                         /*endif*/
@@ -988,7 +988,7 @@ static int stream_hdlc(t38_terminal_state_t *s)
                 fe->hdlc_tx.ptr += i;
             }
             /*endif*/
-            delay = bits_to_us(s, i*8);
+            delay = bits_to_microseconds(s, i*8);
             break;
         case T38_TIMED_STEP_HDLC_MODEM_4:
             /* End of HDLC frame */
@@ -1015,7 +1015,7 @@ static int stream_hdlc(t38_terminal_state_t *s)
                 /*endif*/
                 fe->timed_step = T38_TIMED_STEP_HDLC_MODEM_3;
                 /* We should now wait enough time for everything to clear through an analogue modem at the far end. */
-                delay = bits_to_us(s, fe->hdlc_tx.extra_bits);
+                delay = bits_to_microseconds(s, fe->hdlc_tx.extra_bits);
             }
             else
             {
@@ -1027,7 +1027,7 @@ static int stream_hdlc(t38_terminal_state_t *s)
                 fe->timed_step = T38_TIMED_STEP_HDLC_MODEM_5;
                 /* We add a bit of extra time here, as with some implementations
                    the carrier falling too abruptly causes data loss. */
-                delay = bits_to_us(s, fe->hdlc_tx.extra_bits);
+                delay = bits_to_microseconds(s, fe->hdlc_tx.extra_bits);
                 if (fe->t38.pace_transmission)
                     delay += 100000;
                 /*endif*/

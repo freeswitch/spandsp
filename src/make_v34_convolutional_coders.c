@@ -108,14 +108,14 @@ static void make_v34_16_state_convolutional_encoder(void)
 
 static void make_v34_16_state_convolutional_decoder(void)
 {
-#if 0
+#if 1
     int state;
     int y;
     int previous_state;
     int branch;
     int i;
 
-    printf("static const int8_t v34_conv16_decode_table[16][4] =\n");
+    printf("static const uint8_t v34_conv16_decode_table[16][4] =\n");
     printf("{\n");
     for (state = 0;  state < 16;  state++)
     {
@@ -132,15 +132,12 @@ static void make_v34_16_state_convolutional_decoder(void)
             /*endfor*/
             branch = (y << 1) | (previous_state & 1);
             printf("0x%02X", (previous_state << 3) | branch);
+            //printf("(0x%02X << 3) | 0x%02x", previous_state, branch);
             if (y < 3)
                 printf(", ");
             /*endif*/
         }
-        if (state < 15)
-            printf("},\n");
-        else
-            printf("}\n");
-        /*endif*/
+        printf("}%s\n", (state < 15)  ?  ","  :  "");
     }
     /*endfor*/
     printf("};\n");

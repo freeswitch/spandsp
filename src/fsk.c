@@ -270,9 +270,10 @@ SPAN_DECLARE(int) fsk_tx_free(fsk_tx_state_t *s)
 
 SPAN_DECLARE(void) fsk_rx_set_signal_cutoff(fsk_rx_state_t *s, float cutoff)
 {
-    /* The 6.04 allows for the gain of the DC blocker */
-    s->carrier_on_power = (int32_t) (power_meter_level_dbm0(cutoff + 2.5f - 6.04f));
-    s->carrier_off_power = (int32_t) (power_meter_level_dbm0(cutoff - 2.5f - 6.04f));
+    /* The 5.3 allows for the gain of the DC blocker - a shift (6.04dB) and a little
+       little change in gain from differencing. */
+    s->carrier_on_power = (int32_t) (power_meter_level_dbm0(cutoff + 2.5f - 5.3f));
+    s->carrier_off_power = (int32_t) (power_meter_level_dbm0(cutoff - 2.5f - 5.3f));
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -436,6 +437,7 @@ SPAN_DECLARE(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
         x = amp[i] >> 1;
         power = power_meter_update(&s->power, x - s->last_sample);
         s->last_sample = x;
+
         if (s->signal_present)
         {
             /* Look for power below turn-off threshold to turn the carrier off */

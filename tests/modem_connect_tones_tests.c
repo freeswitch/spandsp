@@ -37,6 +37,7 @@ These tests...
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
+#include <strings.h>
 #include <sndfile.h>
 
 #include "spandsp.h"

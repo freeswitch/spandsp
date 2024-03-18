@@ -39,6 +39,7 @@
 #include <pty.h>
 #endif
 #include <sys/ioctl.h>
+#include <sys/time.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>

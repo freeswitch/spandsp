@@ -41,13 +41,13 @@ PACK(struct __dealign_uint32 { uint32_t datum; };)
 PACK(struct __dealign_uint64 { uint64_t datum; };)
 #endif
 
-#if defined(__GNUC__)
+#if defined(__GNUC__)  ||  defined(__clang__)
 struct __dealign_uint16 { uint16_t datum; } __attribute__((packed));
 struct __dealign_uint32 { uint32_t datum; } __attribute__((packed));
 struct __dealign_uint64 { uint64_t datum; } __attribute__((packed));
 #endif
 
-#if defined(__GNUC__)  ||  defined(_MSC_VER)
+#if defined(__GNUC__)  ||  defined(__clang__)  ||  defined(_MSC_VER)
 /* If we just tell GCC what's going on, we can trust it to behave optimally */
 static __inline__ uint64_t get_unaligned_uint64(const void *p)
 {
@@ -69,9 +69,9 @@ static __inline__ uint64_t get_net_unaligned_uint64(const void *p)
 {
     const struct __dealign_uint64 *pp = (const struct __dealign_uint64 *) p;
 
-#if BYTE_ORDER == BIG_ENDIAN
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
     return pp->datum;
-#elif BYTE_ORDER == LITTLE_ENDIAN
+#elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     return __builtin_bswap64(pp->datum);
 #endif
 }
@@ -81,9 +81,9 @@ static __inline__ void put_net_unaligned_uint64(void *p, uint64_t datum)
 {
     struct __dealign_uint64 *pp = (struct __dealign_uint64 *) p;
 
-#if BYTE_ORDER == BIG_ENDIAN
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
     pp->datum = datum;
-#elif BYTE_ORDER == LITTLE_ENDIAN
+#elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     pp->datum = __builtin_bswap64(datum);
 #endif
 }
@@ -109,9 +109,9 @@ static __inline__ uint32_t get_net_unaligned_uint32(const void *p)
 {
     const struct __dealign_uint32 *pp = (const struct __dealign_uint32 *) p;
 
-#if BYTE_ORDER == BIG_ENDIAN
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
     return pp->datum;
-#elif BYTE_ORDER == LITTLE_ENDIAN
+#elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     return __builtin_bswap32(pp->datum);
 #endif
 }
@@ -121,9 +121,9 @@ static __inline__ void put_net_unaligned_uint32(void *p, uint32_t datum)
 {
     struct __dealign_uint32 *pp = (struct __dealign_uint32 *) p;
 
-#if BYTE_ORDER == BIG_ENDIAN
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
     pp->datum = datum;
-#elif BYTE_ORDER == LITTLE_ENDIAN
+#elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     pp->datum = __builtin_bswap32(datum);
 #endif
 }
@@ -149,9 +149,9 @@ static __inline__ uint16_t get_net_unaligned_uint16(const void *p)
 {
     const struct __dealign_uint16 *pp = (const struct __dealign_uint16 *) p;
 
-#if BYTE_ORDER == BIG_ENDIAN
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
     return pp->datum;
-#elif BYTE_ORDER == LITTLE_ENDIAN
+#elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     return __builtin_bswap16(pp->datum);
 #endif
 }
@@ -161,9 +161,9 @@ static __inline__ void put_net_unaligned_uint16(void *p, uint16_t datum)
 {
     struct __dealign_uint16 *pp = (struct __dealign_uint16 *) p;
 
-#if BYTE_ORDER == BIG_ENDIAN
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
     pp->datum = datum;
-#elif BYTE_ORDER == LITTLE_ENDIAN
+#elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     pp->datum = __builtin_bswap16(datum);
 #endif
 }

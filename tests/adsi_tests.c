@@ -42,6 +42,7 @@ tests, these tests do not include line modelling.
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 #include <assert.h>
 #include <sndfile.h>
 

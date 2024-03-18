@@ -2120,13 +2120,13 @@ SPAN_DECLARE(float) dds_frequencyf(int32_t phase_rate)
 
 SPAN_DECLARE(float) dds_scaling_dbm0f(float level)
 {
-    return powf(10.0f, (level - DBM0_MAX_SINE_POWER)/20.0f)*32767.0f;
+    return db_to_amplitude_ratio(level - DBM0_MAX_SINE_POWER)*32767.0f;
 }
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(float) dds_scaling_dbovf(float level)
 {
-    return powf(10.0f, (level - DBOV_MAX_SINE_POWER)/20.0f)*32767.0f;
+    return db_to_amplitude_ratio(level - DBOV_MAX_SINE_POWER)*32767.0f;
 }
 /*- End of function --------------------------------------------------------*/
 

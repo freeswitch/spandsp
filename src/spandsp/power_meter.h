@@ -72,12 +72,20 @@ SPAN_DECLARE(int) power_meter_free(power_meter_t *s);
     \return The power meter context. */
 SPAN_DECLARE(power_meter_t *) power_meter_damping(power_meter_t *s, int shift);
 
-/*! Update a power meter.
+/*! Update a power meter with a signal sample.
     \brief Update a power meter.
     \param s The power meter context.
     \param amp The amplitude of the new audio sample.
     \return The current power meter reading. */
 SPAN_DECLARE(int32_t) power_meter_update(power_meter_t *s, int16_t amp);
+
+/*! Update a power meter with a block of samples.
+    \brief Update a power meter.
+    \param s The power meter context.
+    \param amp The amplitude of the new audio sample.
+    \param len The number of samples
+    \return The current power meter reading. */
+SPAN_DECLARE(int32_t) power_meter_rx(power_meter_t *s, int16_t amp[], int len);
 
 /*! Get the current power meter reading.
     \brief Get the current power meter reading.

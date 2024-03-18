@@ -68,7 +68,31 @@ static void make_shell_mapper_tables(void)
     int i;
     FILE *file;
 
-    for (M = 1;  M <= MAX_SHELL_RINGS;  M++)
+    /* V.34/9.4 doesn't quite describe the one ring case properly, so just output the
+       simple data needed for that as a special case */
+    printf("/* 1 rings deals with up to 0 bits */\n");
+    printf("static const uint32_t g2_1_rings[2] =\n");
+    printf("{\n");
+    printf("    1,\n");
+    printf("    0\n");
+    printf("};\n");
+    printf("\n");
+
+    printf("static const uint32_t g4_1_rings[2] =\n");
+    printf("{\n");
+    printf("    1,\n");
+    printf("    0\n");
+    printf("};\n");
+    printf("\n");
+
+    printf("static const uint32_t z8_1_rings[2] =\n");
+    printf("{\n");
+    printf("    0x00000000,\n");
+    printf("    0x00000001\n");
+    printf("};\n");
+    printf("\n");
+
+    for (M = 2;  M <= MAX_SHELL_RINGS;  M++)
     {
         /* Create the shell mapper tables - See V.34/9.4 */
         if (max_ring_bits[M] < 0)

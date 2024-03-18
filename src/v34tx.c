@@ -59,6 +59,7 @@
 #include "spandsp/complex_vector_float.h"
 #include "spandsp/vector_int.h"
 #include "spandsp/complex_vector_int.h"
+#include "spandsp/modem_echo.h"
 #include "spandsp/async.h"
 #include "spandsp/power_meter.h"
 #include "spandsp/arctan2.h"
@@ -72,6 +73,7 @@
 #include "spandsp/private/bitstream.h"
 #include "spandsp/private/logging.h"
 #include "spandsp/private/power_meter.h"
+#include "spandsp/private/modem_echo.h"
 #include "spandsp/private/v34.h"
 
 #include "v22bis_tx_rrc.h"
@@ -181,13 +183,13 @@ DUPLEX OPERATION
 
 Duplex caller
 -------------
-V.8 sequence  silence  INFO0c  B  !B  silence  B  !B  L1  L2  INFO1c  silence
-    S  !S  MD  S  !S  PP  TRN  J  J'  TRN  MP  MP  MP'  MP'  E  B1  Data
+V.8 sequence   | INFO0c |   B   |!B|                   |   B   |!B|L1|   L2   | INFO1c |                                        |S|!S|  MD  |S|!S| PP | TRN |  J  |J'|  TRN |MP |MP |MP'|MP'|E| B1 | Data
+---------------|XXXXXXXX|XXXXXXX|XX|-------------------|XXXXXXX|XX|XX|XXXXXXXX|XXXXXXXX|----------------------------------------|X|XX|XXXXXX|X|XX|XXXX|XXXXX|XXXXX|XX|XXXXXX|XXX|XXX|XXX|XXX|X|XXXX|XXXXXXXXXXXXX
 
 Duplex answerer
 ---------------
-V.8 sequence  silence  INFO0a  A  !A  L1  L2  A  !A  silence  A  INFO1a  silence
-    S  !S  MD  S  !S  PP  TRN  J  silence  S  !S  TRN  MP  MP  MP'  MP'  E  B1  Data
+V.8 sequence    | INFO0a  | A |  !A  | A |L1|   L2   | A |!A|               |     A    | INFO1a |  | S |!S| MD | S |!S| PP | TRN | J |                       | S |!S|  TRN |MP |MP |MP'|MP'|E| B1 |   Data
+----------------|XXXXXXXXX|XXX|XXXXXX|XXX|XX|XXXXXXXX|XXX|XX|---------------|XXXXXXXXXX|XXXXXXXX|--|XXX|XX|XXXX|XXX|XX|XXXX|XXXXX|XXX|-----------------------|XXX|XX|XXXXXX|XXX|XXX|XXX|XXX|X|XXXX|XXXXXXXXXXXXXXX
 
 J       Repetitions of 0x8990 for a 4 point constellation, or 0x89B0 for a 16 point constellation.
 J'      A single transmission of 0x899F.
@@ -435,7 +437,7 @@ static void prepare_info1c(v34_state_t *s)
     {
         s->tx.info1c.rate_data[i].use_high_carrier = false;
         s->tx.info1c.rate_data[i].pre_emphasis = 6;
-        s->tx.info1c.rate_data[i].max_data_rate = (s->tx.baud_rate >= i)  ?  s->tx.parms.max_bit_rate  :  0;
+        s->tx.info1c.rate_data[i].max_bit_rate = (s->tx.baud_rate >= i)  ?  ((s->tx.parms.max_bit_rate_code >> 1) + 1)  :  0;
     }
 }
 /*- End of function --------------------------------------------------------*/
@@ -449,7 +451,7 @@ static void prepare_info1a(v34_state_t *s)
 
     s->tx.info1a.use_high_carrier = false;
     s->tx.info1a.preemphasis_filter = 6;
-    s->tx.info1a.max_data_rate = s->tx.parms.max_bit_rate;
+    s->tx.info1a.max_data_rate = s->tx.parms.max_bit_rate_code;
 
     s->tx.info1a.baud_rate_a_to_c = s->tx.baud_rate;
     s->tx.info1a.baud_rate_c_to_a = s->tx.baud_rate;
@@ -498,16 +500,21 @@ static int info1c_sequence_tx(v34_tx_state_t *s, info1c_t *info1c)
                 (see Tables 3 and 4). */
     /* 30:33    Projected maximum data rate for a symbol rate of 2400. These bits form an integer between 0 and 14 which
                 gives the projected data rate as a multiple of 2400 bits/s. A 0 indicates the symbol rate cannot be used. */
+
     /* 34:42    Probing results pertaining to a final symbol rate selection of 2743 symbols per second. The coding of these
                 9 bits is identical to that for bits 25-33. */
+
     /* 43:51    Probing results pertaining to a final symbol rate selection of 2800 symbols per second. The coding of these
                 9 bits is identical to that for bits 25-33. */
+
     /* 52:60    Probing results pertaining to a final symbol rate selection of 3000 symbols per second. The coding of these
                 9 bits is identical to that for bits 25-33. Information in this field shall be consistent with the answer modem
                 capabilities indicated in INFO0a. */
+
     /* 61:69    Probing results pertaining to a final symbol rate selection of 3200 symbols per second. The coding of these
                 9 bits is identical to that for bits 25-33. Information in this field shall be consistent with the answer modem
                 capabilities indicated in INFO0a. */
+
     /* 70:78    Probing results pertaining to a final symbol rate selection of 3429 symbols per second. The coding of these
                 9 bits is identical to that for bits 25-33. Information in this field shall be consistent with the answer modem
                 capabilities indicated in INFO0a. */
@@ -515,7 +522,7 @@ static int info1c_sequence_tx(v34_tx_state_t *s, info1c_t *info1c)
     {
         bitstream_put(&bs, &t, info1c->rate_data[i].use_high_carrier, 1);
         bitstream_put(&bs, &t, info1c->rate_data[i].pre_emphasis, 4);
-        bitstream_put(&bs, &t, info1c->rate_data[i].max_data_rate, 4);
+        bitstream_put(&bs, &t, info1c->rate_data[i].max_bit_rate, 4);
     }
     /*endfor*/
     /* 79:88    Frequency offset of the probing tones as measured by the call modem receiver. The frequency offset number
@@ -666,10 +673,10 @@ static int mp_sequence_tx(v34_tx_state_t *s, mp_t *mp)
     bitstream_put(&bs, &t, 0, 1);
     /* 20:23    Maximum call modem to answer modem data signalling rate: Data rate = N * 2400
                 where N is a four-bit integer between 1 and 14. */
-    bitstream_put(&bs, &t, mp->baud_rate_c_to_a, 4);
+    bitstream_put(&bs, &t, mp->bit_rate_c_to_a, 4);
     /* 24:27    Maximum answer modem to call modem data signalling rate: Data rate = N * 2400
                 where N is a four-bit integer between 1 and 14. */
-    bitstream_put(&bs, &t, mp->baud_rate_a_to_c, 4);
+    bitstream_put(&bs, &t, mp->bit_rate_a_to_c, 4);
     /* 28       Auxiliary channel select bit. Set to 1 if modem is capable of supporting and
                 enables auxiliary channel. Auxiliary channel is used only if both modems set
                 this bit to 1. */
@@ -873,7 +880,6 @@ static void parse_primary_channel_bitstream(v34_tx_state_t *s)
     int bit;
     int bb;
     int kk;
-    bool hhh;
 
     /* Parse a series of input data bits into a set of S bits, Q bits, and I bits which we can
        feed into the modulation process. */
@@ -882,7 +888,8 @@ static void parse_primary_channel_bitstream(v34_tx_state_t *s)
     bb = s->parms.b;
     kk = s->parms.k;
     /* If there are S bits we switch between high mapping frames and low mapping frames based
-       on the SWP pattern. We derive SWP algorithmically. */
+       on the SWP pattern. We derive SWP algorithmically.  Note that high/low mapping is only
+       relevant when b >= 12. */
     s->s_bit_cnt += s->parms.r;
     if (s->s_bit_cnt >= s->parms.p)
     {
@@ -891,9 +898,13 @@ static void parse_primary_channel_bitstream(v34_tx_state_t *s)
     }
     else
     {
-        /* We need one less bit in a low mapping frame */
-        bb--;
-        kk--;
+        if (bb > 12)
+        {
+            /* We need one less bit in a low mapping frame */
+            bb--;
+            kk--;
+        }
+        /*endif*/
     }
     /*endif*/
     i = 0;
@@ -918,11 +929,7 @@ static void parse_primary_channel_bitstream(v34_tx_state_t *s)
         }
         /*endfor*/
         /* Auxiliary data bits are not scrambled (V.34/7) */
-        if (s->get_aux_bit)
-            bit = s->get_aux_bit(s->get_aux_bit_user_data);
-        else
-            bit = 0;
-        /*endif*/
+        bit = (s->get_aux_bit)  ?  s->get_aux_bit(s->get_aux_bit_user_data)  :  0;
         bitstream_put(&s->bs, &u, bit, 1);
         i++;
     }
@@ -945,6 +952,7 @@ static void parse_primary_channel_bitstream(v34_tx_state_t *s)
     t = s->txbuf;
     if (s->parms.k)
     {
+        /* V.34/9.3.1 */
         /* K is always < 32, so we always get the entire K bits from a single word */
         s->r0 = bitstream_get(&s->bs, &t, kk);
         for (i = 0;  i < 4;  i++)
@@ -968,6 +976,7 @@ static void parse_primary_channel_bitstream(v34_tx_state_t *s)
     }
     else
     {
+        /* V.34/9.3.2 */
         /* If K is zero (i.e. b = 8, 9, 11, or 12), things need slightly special treatment */
         /* Some I bits. These are always present, and may be 2 or 3 bits each. */
         /* Need to treat 8, 9, 11, and 12 individually */
@@ -1005,24 +1014,6 @@ static void parse_primary_channel_bitstream(v34_tx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-complexi16_t v34_non_linear_encoder(complexi16_t *pre)
-{
-    int32_t x;
-    int32_t xx;
-    complexi16_t post;
-
-    x = (pre->re*pre->re + pre->im*pre->im + 0x800) >> 12;
-    x = (x*341 + 0x800) >> 12;          /* Multiply by 1/6      (341/2048) */
-    xx = (x*x + 0x2000) >> 14;
-    xx = (xx*19661) >> 16;              /* Multiply by 6*6/120  (19661/65536) */
-    x = (x + xx + 0x4000)*15127;        /* Multiply by 0.92328  (15127/16384) */
-    x >>= 14;
-    post.re = (pre->re*x) >> 14;
-    post.im = (pre->im*x) >> 14;
-    return post;
-}
-/*- End of function --------------------------------------------------------*/
-
 static void shell_map(v34_tx_state_t *s)
 {
     int32_t a;
@@ -1034,6 +1025,8 @@ static void shell_map(v34_tx_state_t *s)
     int32_t g;
     int32_t h;
     int32_t r[6];
+    int32_t t1;
+    int32_t t2;
     const uint32_t *g2;
     const uint32_t *g4;
     const uint32_t *z8;
@@ -1056,56 +1049,72 @@ static void shell_map(v34_tx_state_t *s)
     z8 = z8s[s->parms.m];
 
     /* TODO: This code comes directly from the equations in V.34. Can it be made faster? */
-    for (a = 0;  z8[a] <= s->r0;  a++)
+
+    for (a = 1;  z8[a] <= s->r0;  a++)
         /*loop*/;
     /*endfor*/
     /* We are now at a ring which is too big, so step back one */
     a--;
 
-    r[1] = s->r0 - z8[a];
-
-    for (b = -1;  r[1] >= 0;  )
+    /* V.34/9-8 */
+    t2 = s->r0 - z8[a];
+    for (b = -1;  t2 >= 0;  )
     {
         b++;
-        r[1] -= g4[b]*g4[a - b];
+        t1 = g4[b]*g4[a - b];
+        t2 -= t1;
     }
     /*endfor*/
-    r[1] += g4[b]*g4[a - b];
+    r[1] = t2 + t1;
 
+    /* V.34/9-9 */
     r[2] = r[1]%g4[b];
+
+    /* V.34/9-10 */
     r[3] = (r[1] - r[2])/g4[b];
 
-    r[4] = r[2];
-    for (c = -1;  r[4] >= 0;  )
+    /* V.34/9-11 */
+    t2 = r[2];
+    for (c = -1;  t2 >= 0;  )
     {
         c++;
-        r[4] -= g2[c]*g2[b - c];
+        t1 = g2[c]*g2[b - c];
+        t2 -= t1;
     }
     /*endfor*/
-    r[4] += g2[c]*g2[b - c];
+    r[4] = t2 + t1;
 
-    r[5] = r[3];
-    for (d = -1;  r[5] >= 0;  )
+    /* V.34/9-12 */
+    t2 = r[3];
+    for (d = -1;  t2 >= 0;  )
     {
         d++;
-        r[5] -= g2[d]*g2[a - b - d];
+        t1 = g2[d]*g2[a - b - d];
+        t2 -= t1;
     }
     /*endfor*/
-    r[5] += g2[d]*g2[a - b - d];
+    r[5] = t2 + t1;
 
+    /* V.34/9-13 */
     e = r[4]%g2[c];
+    /* V.34/9-14 */
     f = (r[4] - e)/g2[c];
 
+    /* V.34/9-15 */
     g = r[5]%g2[d];
+    /* V.34/9-16 */
+
     h = (r[5] - g)/g2[d];
 
     if (c < s->parms.m)
     {
+        /* V.34/9-17 */
         s->mjk[0] = e;
         s->mjk[1] = c - s->mjk[0];
     }
     else
     {
+        /* V.34/9-18 */
         s->mjk[1] = s->parms.m - 1 - e;
         s->mjk[0] = c - s->mjk[1];
     }
@@ -1113,11 +1122,13 @@ static void shell_map(v34_tx_state_t *s)
 
     if (b - c < s->parms.m)
     {
+        /* V.34/9-19 */
         s->mjk[2] = f;
         s->mjk[3] = b - c - s->mjk[2];
     }
     else
     {
+        /* V.34/9-20 */
         s->mjk[3] = s->parms.m - 1 - f;
         s->mjk[2] = b - c - s->mjk[3];
     }
@@ -1125,11 +1136,13 @@ static void shell_map(v34_tx_state_t *s)
 
     if (d < s->parms.m)
     {
+        /* V.34/9-21 */
         s->mjk[4] = g;
         s->mjk[5] = d - s->mjk[4];
     }
     else
     {
+        /* V.34/9-22 */
         s->mjk[5] = s->parms.m - 1 - g;
         s->mjk[4] = d - s->mjk[5];
     }
@@ -1137,15 +1150,36 @@ static void shell_map(v34_tx_state_t *s)
 
     if (a - b - d < s->parms.m)
     {
+        /* V.34/9-23 */
         s->mjk[6] = h;
         s->mjk[7] = a - b - d - s->mjk[6];
     }
     else
     {
+        /* V.34/9-24 */
         s->mjk[7] = s->parms.m - 1 - h;
         s->mjk[6] = a - b - d - s->mjk[7];
     }
     /*endif*/
+}
+/*- End of function --------------------------------------------------------*/
+
+static complexi16_t v34_non_linear_encoder(complexi16_t *pre)
+{
+    int32_t zeta;
+    int32_t x;
+    complexi16_t post;
+
+    /* V.34/9.7 for the 0.3125 case */
+    /* 341/2048 is 1/6 */
+    zeta = ((((int32_t) pre->re*(int32_t) pre->re + (int32_t) pre->im*(int32_t) pre->im + 0x800) >> 12)*341 + 0x800) >> 12;
+    /* 15127/16384 is 0.92328 */
+    /* 19661/65536 is 6*6/120 */
+    x = (zeta*zeta + 0x2000) >> 14;
+    x = (zeta + ((x*19661) >> 16)*15127 + 0x4000) >> 14;
+    post.re = (int16_t) ((int32_t) pre->re*x >> 14);
+    post.im = (int16_t) ((int32_t) pre->im*x >> 14);
+    return post;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1195,21 +1229,23 @@ static int16_t get_binary_subset_label(complexi16_t *pos)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int quantize_tx(v34_tx_state_t *s, int value)
+static complexi16_t quantize_tx(v34_tx_state_t *s, complexi16_t *x)
 {
-    int valuex;
+    complexi16_t y;
 
     /* Value is stored in Q9.7 format. */
-    valuex = value;
-    value = labs(value);
+    y.re = abs(x->re);
+    y.im = abs(x->im);
     if (s->parms.b >= 56)
     {
         /* 2w is 4 */
         /* Output integer values. i.e. 16:0 */
         /* We must mask out the 1st and 2nd bits, because we are rounding to the 3rd bit.
            All numbers coming out of this routine should be multiples of 4. */
-        value = (value + 0x0FF) >> 7;
-        value &= ~0x03;
+        y.re = (y.re + 0x0FF) >> 7;
+        y.re &= ~0x03;
+        y.im = (y.im + 0x0FF) >> 7;
+        y.im &= ~0x03;
     }
     else
     {
@@ -1217,14 +1253,19 @@ static int quantize_tx(v34_tx_state_t *s, int value)
         /* Output integer values. i.e. Q16.0 */
         /* We must mask out the 1st bit because we are rounding to the 2nd bit
            All numbers coming out of this routine should be multiples of 2 (i.e. even). */
-        value = (value + 0x07F) >> 7;
-        value &= ~0x01;
+        y.re = (y.re + 0x07F) >> 7;
+        y.re &= ~0x01;
+        y.im = (y.im + 0x07F) >> 7;
+        y.im &= ~0x01;
     }
     /*endif*/
-    if (valuex < 0)
-        return -value;
+    if (x->re < 0)
+        y.re = -y.re;
     /*endif*/
-    return value;
+    if (x->im < 0)
+        y.im = -y.im;
+    /*endif*/
+    return y;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1265,11 +1306,11 @@ s->precoder_coeffs[2].re = 0xfe34;
     }
     /*endfor*/
     /* 9.6.2/V.34 item 2 - Round Q11.21 number format to Q9.7 */
-    p.re = (labs(sum.re) + 0x01FFFL) >> 14;
+    p.re = (abs(sum.re) + 0x01FFFL) >> 14;
     if (sum.re < 0)
         p.re = -p.re;
     /*endif*/
-    p.im = (labs(sum.im) + 0x01FFFL) >> 14;
+    p.im = (abs(sum.im) + 0x01FFFL) >> 14;
     if (sum.im < 0)
         p.im = -p.im;
     /*endif*/
@@ -1287,7 +1328,7 @@ static void qam_mod(v34_tx_state_t *s)
 //           FP_Q9_7_TO_F(s->x[V34_XOFF + s->step_2d].im),
 //           35.77*s->x[V34_XOFF + s->step_2d].re,
 //           35.77*s->x[V34_XOFF + s->step_2d].im);
-    fflush(stdout);
+//    fflush(stdout);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1297,6 +1338,7 @@ SPAN_DECLARE(int) v34_get_mapping_frame(v34_tx_state_t *s, int16_t bits[16])
     int len;
     int y4321;
     int c0;
+    int u0;
     int v0;
     int rot;
     int32_t sum1;
@@ -1306,7 +1348,6 @@ SPAN_DECLARE(int) v34_get_mapping_frame(v34_tx_state_t *s, int16_t bits[16])
     complexi16_t y;
     complexi16_t c_prev;
     int subsets[2];
-    int u0;
     int mapping_index;
 
     /* This gets the four 4D symbols (eight 2D symbols) of a mapping frame */
@@ -1362,10 +1403,12 @@ SPAN_DECLARE(int) v34_get_mapping_frame(v34_tx_state_t *s, int16_t bits[16])
 
         /* Table 11/V.34 step 3/8, 9.6.2/V.34 items 1 and 2 */
         s->p = precoder_tx_filter(s);
+        if (s->use_non_linear_encoder)
+            s->p = v34_non_linear_encoder(&s->p);
+        /*endif*/
         c_prev = s->c;
         /* Table 11/V.34 step 3/8, 9.6.2/V.34 item 3 */
-        s->c.re = quantize_tx(s, s->p.re);
-        s->c.im = quantize_tx(s, s->p.im);
+        s->c = quantize_tx(s, &s->p);
 
         if ((s->step_2d & 1) == 0)
         {
@@ -1379,14 +1422,12 @@ SPAN_DECLARE(int) v34_get_mapping_frame(v34_tx_state_t *s, int16_t bits[16])
             /* Inversions are applied to the first 4D symbol in each half data frame. If P
                is 12, 14 or 16, the inversion will be in the first 4D symbol of a mapping frame.
                If P is 15, the inversions will alternate between being in the first and third 4D
-               symbols of a mapping frame. */            
-            /* TODO: This is wrong */
-            if ((s->data_frame*8 + s->step_2d)%(s->parms.p*4) == 0)
-                v0 = (0x5FEE >> s->super_frame) & 1;
+               symbols of a mapping frame. */
+            if ((s->data_frame*8 + s->step_2d)%(4*s->parms.p) == 0)
+                v0 = (0x5FEE >> s->v0_pattern++) & 1;
             else
                 v0 = 0;
             /*endif*/
-span_log(s->logging, SPAN_LOG_FLOW, "Tx V0 = %d\n", v0);
             /* Table 11/V.34 step 5, 9.6.3/V.34 */
             u0 = (s->y0 ^ c0 ^ v0) & 1;
         }
@@ -1395,8 +1436,6 @@ span_log(s->logging, SPAN_LOG_FLOW, "Tx V0 = %d\n", v0);
             y4321 = conv_encode_input[subsets[0]][subsets[1]];
             /* Table 11/V.34 step 9, 9.6.3.1/V.34 and 9.6.3.2/V.34 */
             s->y0 = s->state & 1;
-            /* TODO: we only use the 16 state convolutional encoder right now */
-            v0 = s->state;
             s->state = (*s->conv_encode_table)[s->state][y4321];
 //printf("Y4321 %d %d - %d %d %d\n", subsets[0], subsets[1], y4321, s->y0, s->state);
 //printf("WWW 0x%x 0x%x -> 0x%x\n", v0, y4321, s->state);
@@ -1417,6 +1456,7 @@ span_log(s->logging, SPAN_LOG_FLOW, "Tx V0 = %d\n", v0);
         if (++s->super_frame >= s->parms.j)
         {
             s->super_frame = 0;
+            s->v0_pattern = 0;
         }
         /*endif*/
     }
@@ -1529,7 +1569,7 @@ static complex_sig_t get_initial_fdx_a_not_a_baud(v34_state_t *s)
     switch (s->tx.stage)
     {
     case V34_TX_STAGE_INITIAL_A:
-        /* Send pure tone (V.34/11.2.1.2.1) */
+        /* Send pure tone for at least 50ms (V.34/11.2.1.2.1) */
         if (++s->tx.tone_duration == 30)
         {
             /* 50ms minimum A period has passed - accept an incoming INFO0c */
@@ -1556,7 +1596,7 @@ static complex_sig_t get_initial_fdx_a_not_a_baud(v34_state_t *s)
         /*endif*/
         break;
     case V34_TX_STAGE_FIRST_NOT_A:
-        /* Send phase reversed pure tone until we see a phase reversal */
+        /* Send phase reversed pure tone until we see another phase reversal */
         if (s->rx.received_event == V34_EVENT_REVERSAL_1)
         {
             /* Second reversal seen - wait 40+=1ms */
@@ -1884,7 +1924,7 @@ static void initial_ab_not_ab_baud_init(v34_state_t *s)
         /*endif*/
     }
     /*endif*/
-    s->tx.fred2 = 0;
+    s->tx.persistence2 = 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -2309,17 +2349,17 @@ static complex_sig_t get_trn_baud(v34_state_t *s)
             (s->tx.duplex  &&  ++s->tx.tone_duration >= 512))
         {
             s->tx.stage = V34_TX_STAGE_J;
-            s->tx.fred2 = j_pattern[0];
+            s->tx.persistence2 = j_pattern[0];
             s->tx.tone_duration = 0;
         }
         /*endif*/
         break;
     case V34_TX_STAGE_J:
         /* Send the terminal J signal */
-        bit = scramble(&s->tx, (s->tx.fred2 & 1));
-        s->tx.fred2 >>= 1;
-        bit = (scramble(&s->tx, (s->tx.fred2 & 1)) << 1) | bit;
-        s->tx.fred2 >>= 1;
+        bit = scramble(&s->tx, (s->tx.persistence2 & 1));
+        s->tx.persistence2 >>= 1;
+        bit = (scramble(&s->tx, (s->tx.persistence2 & 1)) << 1) | bit;
+        s->tx.persistence2 >>= 1;
         if (++s->tx.tone_duration >= 16)
         {
             if (s->tx.duplex)
@@ -2330,7 +2370,7 @@ static complex_sig_t get_trn_baud(v34_state_t *s)
                     {
                         /* Change to J' */
                         s->tx.stage = V34_TX_STAGE_J_DASHED;
-                        s->tx.fred2 = j_pattern[0];
+                        s->tx.persistence2 = j_pattern[0];
                         s->tx.tone_duration = 0;
                     }
                     else
@@ -2342,7 +2382,7 @@ static complex_sig_t get_trn_baud(v34_state_t *s)
                 else
                 {
                     /* Continue with repeats of J */
-                    s->tx.fred2 = j_pattern[0];
+                    s->tx.persistence2 = j_pattern[0];
                     s->tx.tone_duration = 0;
                 }
                 /*endif*/
@@ -2357,10 +2397,10 @@ static complex_sig_t get_trn_baud(v34_state_t *s)
         break;
     case V34_TX_STAGE_J_DASHED:
         /* Send J' */
-        bit = scramble(&s->tx, (s->tx.fred2 & 1));
-        s->tx.fred2 >>= 1;
-        bit = (scramble(&s->tx, (s->tx.fred2 & 1)) << 1) | bit;
-        s->tx.fred2 >>= 1;
+        bit = scramble(&s->tx, (s->tx.persistence2 & 1));
+        s->tx.persistence2 >>= 1;
+        bit = (scramble(&s->tx, (s->tx.persistence2 & 1)) << 1) | bit;
+        s->tx.persistence2 >>= 1;
         if (++s->tx.tone_duration >= 16)
         {
         }
@@ -2727,7 +2767,6 @@ static int tx_cc_modulation(v34_state_t *s, int16_t amp[], int max_len)
     complexf_t z;
     float famp;
 #endif
-    int i;
     int sample;
 
     /* The V.22bis like split band modulator for configuration data and the
@@ -2841,8 +2880,13 @@ SPAN_DECLARE(int) v34_tx(v34_state_t *s, int16_t amp[], int max_len)
         }
         /*endswitch*/
         len += lenx;
+        /* Add step by step, so each segment is seen up to date */
+        s->tx.sample_time += lenx;
     }
     while (lenx > 0  &&  len < max_len);
+    /* If the transmission is short, this should be the end of operation of the modem,
+       so we don't really need to worry about the residue and keeping the sample time
+       current. */
     return len;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2852,14 +2896,14 @@ SPAN_DECLARE(void) v34_tx_power(v34_state_t *s, float power)
     /* The constellation design seems to keep the average power the same, regardless
        of which bit rate is in use. */
 #if defined(SPANDSP_USE_FIXED_POINT)
-    s->tx.gain = 0.223f*powf(10.0f, (power - DBM0_MAX_POWER)/20.0f)*16.0f*(32767.0f/30672.52f)*32768.0f/TX_PULSESHAPER_GAIN;
+    s->tx.gain = 0.223f*db_to_amplitude_ratio(power - DBM0_MAX_SINE_POWER)*16.0f*(32767.0f/30672.52f)*32768.0f/TX_PULSESHAPER_GAIN;
 #else
-    s->tx.gain = 0.223f*powf(10.0f, (power - DBM0_MAX_POWER)/20.0f)*32768.0f/TX_PULSESHAPER_GAIN;
+    s->tx.gain = 0.223f*db_to_amplitude_ratio(power - DBM0_MAX_SINE_POWER)*32768.0f/TX_PULSESHAPER_GAIN;
 #endif
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) v34_set_get_bit(v34_state_t *s, get_bit_func_t get_bit, void *user_data)
+SPAN_DECLARE(void) v34_set_get_bit(v34_state_t *s, span_get_bit_func_t get_bit, void *user_data)
 {
     if (s->tx.get_bit == s->tx.current_get_bit)
         s->tx.current_get_bit = get_bit;
@@ -2869,7 +2913,7 @@ SPAN_DECLARE(void) v34_set_get_bit(v34_state_t *s, get_bit_func_t get_bit, void 
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) v34_set_get_aux_bit(v34_state_t *s, get_bit_func_t get_bit, void *user_data)
+SPAN_DECLARE(void) v34_set_get_aux_bit(v34_state_t *s, span_get_bit_func_t get_bit, void *user_data)
 {
     s->tx.get_aux_bit = get_bit;
     s->tx.get_aux_bit_user_data = user_data;
@@ -2885,8 +2929,10 @@ SPAN_DECLARE(logging_state_t *) v34_get_logging_state(v34_state_t *s)
 void v34_set_working_parameters(v34_parameters_t *s, int baud_rate, int bit_rate, int expanded)
 {
     /* This should be one of the normal V.34 modes. Not a control channel mode. */
-    s->bit_rate = (bit_rate >> 1)*2400 + (bit_rate & 1)*200;
+    s->bit_rate = ((bit_rate >> 1) + 1)*2400 + (bit_rate & 1)*200;
+
     s->b = baud_rate_parameters[baud_rate].mappings[bit_rate].b;
+    /* V.34/9.2 */
     if (s->b <= 12)
     {
         /* There are so few bits per mapping frame, that there are only I bits */
@@ -2927,7 +2973,7 @@ void v34_set_working_parameters(v34_parameters_t *s, int baud_rate, int bit_rate
     /* V.34/8.2 */
     s->r = (s->bit_rate*28)/(s->j*100) - (s->b - 1)*s->p;
     
-    s->max_bit_rate = baud_rate_parameters[baud_rate].max_bit_rate;
+    s->max_bit_rate_code = baud_rate_parameters[baud_rate].max_bit_rate_code;
     /* The numerator of the number of samples per symbol ratio. */
     s->samples_per_symbol_numerator = baud_rate_parameters[baud_rate].samples_per_symbol_numerator;
     /* The denominator of the number of samples per symbol ratio. */
@@ -3019,6 +3065,7 @@ static int v34_tx_restart(v34_state_t *s, int baud_rate, int bit_rate, int high_
     s->tx.training_stage = 0x100;
     tx_silence_init(s, 75);
 
+    s->tx.v0_pattern = 0;
     s->tx.super_frame = 0;
     s->tx.data_frame = 0;
     s->tx.s_bit_cnt = 0;
@@ -3036,6 +3083,8 @@ static int bit_rate_to_code(int bit_rate)
     int code;
     int rate;
 
+    /* Translate between the bit rate as an integer and an internal code that
+       represents the N*2400 bps and the possible extra 200 bps for auxilliary data. */
     if (bit_rate > 36800)
         return -1;
     /*endif*/
@@ -3056,6 +3105,8 @@ static int baud_rate_to_code(int baud_rate)
 {
     int i;
 
+    /* Translate between the baud rate, as the integer nearest approaximation to the
+       actual baud rate, and a 0-5 code used internally */
     for (i = 0;  i < 6;  i++)
     {
         if (baud_rate_parameters[i].baud_rate == baud_rate)
@@ -3106,9 +3157,9 @@ SPAN_DECLARE(v34_state_t *) v34_init(v34_state_t *s,
                                      int bit_rate,
                                      bool calling_party,
                                      bool duplex,
-                                     get_bit_func_t get_bit,
+                                     span_get_bit_func_t get_bit,
                                      void *get_bit_user_data,
-                                     put_bit_func_t put_bit,
+                                     span_put_bit_func_t put_bit,
                                      void *put_bit_user_data)
 {
     int bit_rate_code;

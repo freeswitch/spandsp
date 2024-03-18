@@ -46,6 +46,8 @@ all the tests in G.168 are fully implemented at this time.
 #define ENABLE_GUI
 #endif
 
+#define _DEFAULT_SOURCE
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>

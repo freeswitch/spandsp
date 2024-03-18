@@ -361,7 +361,7 @@ SPAN_DECLARE(void) v27ter_tx_power(v27ter_tx_state_t *s, float power)
 {
     float gain;
 
-    gain = powf(10.0f, (power - DBM0_MAX_POWER)/20.0f)*32768.0f;
+    gain = db_to_amplitude_ratio(power - DBM0_MAX_SINE_POWER)*32768.0f;
 #if defined(SPANDSP_USE_FIXED_POINT)
     s->gain_2400 = (int16_t) (gain/TX_PULSESHAPER_2400_GAIN);
     s->gain_4800 = (int16_t) (gain/TX_PULSESHAPER_4800_GAIN);

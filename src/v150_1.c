@@ -3568,7 +3568,8 @@ static int v150_1_process_i_octet(v150_1_state_t *s, const uint8_t buf[], int le
            bit, allowing for a variable number of bytes. */
         if (len < 2)
         {
-            span_log(&s->logging, SPAN_LOG_WARNING, "I_OCTET with DLCI has no DLCI field\n"); 
+            span_log(&s->logging, SPAN_LOG_WARNING, "I_OCTET with DLCI has no DLCI field\n");
+            header = 1000;
         }
         else
         {

@@ -189,9 +189,9 @@ SPAN_DECLARE(v34_state_t *) v34_init(v34_state_t *s,
                                      int bit_rate,
                                      bool calling_party,
                                      bool duplex,
-                                     get_bit_func_t get_bit,
+                                     span_get_bit_func_t get_bit,
                                      void *get_bit_user_data,
-                                     put_bit_func_t put_bit,
+                                     span_put_bit_func_t put_bit,
                                      void *put_bit_user_data);
 
 /*! Release a V.34 modem receive context.
@@ -217,28 +217,28 @@ SPAN_DECLARE(logging_state_t *) v34_get_logging_state(v34_state_t *s);
     \param s The modem context.
     \param get_bit The callback routine used to get the data to be transmitted.
     \param user_data An opaque pointer. */
-SPAN_DECLARE(void) v34_set_get_bit(v34_state_t *s, get_bit_func_t get_bit, void *user_data);
+SPAN_DECLARE(void) v34_set_get_bit(v34_state_t *s, span_get_bit_func_t get_bit, void *user_data);
 
 /*! Change the get_aux_bit function associated with a V.34 modem context.
     \brief Change the get_aux_bit function associated with a V.34 modem context.
     \param s The modem context.
     \param get_bit The callback routine used to get the aux. data to be transmitted.
     \param user_data An opaque pointer. */
-SPAN_DECLARE(void) v34_set_get_aux_bit(v34_state_t *s, get_bit_func_t get_bit, void *user_data);
+SPAN_DECLARE(void) v34_set_get_aux_bit(v34_state_t *s, span_get_bit_func_t get_bit, void *user_data);
 
 /*! Change the put_bit function associated with a V.34 modem context.
     \brief Change the put_bit function associated with a V.34 modem context.
     \param s The modem context.
     \param put_bit The callback routine used to process the data received.
     \param user_data An opaque pointer. */
-SPAN_DECLARE(void) v34_set_put_bit(v34_state_t *s, put_bit_func_t put_bit, void *user_data);
+SPAN_DECLARE(void) v34_set_put_bit(v34_state_t *s, span_put_bit_func_t put_bit, void *user_data);
 
 /*! Change the put_aux_bit function associated with a V.34 modem context.
     \brief Change the put_aux_bit function associated with a V.34 modem context.
     \param s The modem context.
     \param put_bit The callback routine used to process the aux data received.
     \param user_data An opaque pointer. */
-SPAN_DECLARE(void) v34_set_put_aux_bit(v34_state_t *s, put_bit_func_t put_bit, void *user_data);
+SPAN_DECLARE(void) v34_set_put_aux_bit(v34_state_t *s, span_put_bit_func_t put_bit, void *user_data);
 
 #if defined(__cplusplus)
 }

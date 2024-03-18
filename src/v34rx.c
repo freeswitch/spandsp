@@ -50,6 +50,7 @@
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
@@ -59,6 +60,7 @@
 #include "spandsp/complex_vector_float.h"
 #include "spandsp/vector_int.h"
 #include "spandsp/complex_vector_int.h"
+#include "spandsp/modem_echo.h"
 #include "spandsp/async.h"
 #include "spandsp/power_meter.h"
 #include "spandsp/arctan2.h"
@@ -71,6 +73,7 @@
 
 #include "spandsp/private/bitstream.h"
 #include "spandsp/private/logging.h"
+#include "spandsp/private/modem_echo.h"
 #include "spandsp/private/power_meter.h"
 #include "spandsp/private/v34.h"
 
@@ -206,8 +209,9 @@ static void pack_output_bitstream(v34_rx_state_t *s)
     t = s->rxbuf;
     bb = s->parms.b;
     kk = s->parms.k;
-    /* If there are S bits we switch between high mapping frames and low mapping frames based
-       on the SWP pattern. We derive SWP algorithmically. */
+    /* If there are S bits, we switch between high mapping frames and low mapping frames based
+       on the SWP pattern. We derive SWP algorithmically. Note that high/low mapping is only
+       relevant when b >= 12. */
     s->s_bit_cnt += s->parms.r;
     if (s->s_bit_cnt >= s->parms.p)
     {
@@ -216,9 +220,13 @@ static void pack_output_bitstream(v34_rx_state_t *s)
     }
     else
     {
-        /* We need one less bit in a low mapping frame */
-        bb--;
-        kk--;
+        if (bb > 12)
+        {
+            /* We need one less bit in a low mapping frame */
+            bb--;
+            kk--;
+        }
+        /*endif*/
     }
     /*endif*/
     if (s->parms.k)
@@ -420,34 +428,42 @@ static int16_t get_binary_subset_label(complexi16_t *pos)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int16_t quantize_rx(v34_rx_state_t *s, int16_t value)
+static complexi16_t quantize_rx(v34_rx_state_t *s, complexi16_t *x)
 {
-    int16_t val;
+    complexi16_t y;
 
-    /* value is stored in Q9.7 format. */
+    /* Value is stored in Q9.7 format. */
     /* Output integer values. i.e. Q16.0 */
-    val = abs(value);
+    y.re = abs(x->re);
+    y.im = abs(x->im);
     if (s->parms.b >= 56)
     {
         /* 2w is 4 */
         /* We must mask out the 1st and 2nd bits, because we are rounding to the 3rd bit.
            All numbers coming out of this routine should be a multiple of 4. */
-        val = (val + 0x0FF) >> 7;
-        val &= ~0x03;
+        y.re = (y.re + 0x0FF) >> 7;
+        y.re &= ~0x03;
+        y.im = (y.im + 0x0FF) >> 7;
+        y.im &= ~0x03;
     }
     else
     {
         /* 2w is 2 */
         /* We must mask out the 1st bit, because we are rounding to the 2nd bit.
            All numbers coming out of this routine should be even. */
-        val = (val + 0x07F) >> 7;
-        val &= ~0x01;
+        y.re = (y.re + 0x07F) >> 7;
+        y.re &= ~0x01;
+        y.im = (y.im + 0x07F) >> 7;
+        y.im &= ~0x01;
     }
     /*endif*/
-    if (value < 0)
-        val = -val;
+    if (x->re < 0)
+        y.re = -y.re;
     /*endif*/
-    return val;
+    if (x->im < 0)
+        y.im = -y.im;
+    /*endif*/
+    return y;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -470,11 +486,11 @@ static complexi16_t precoder_rx_filter(v34_rx_state_t *s)
     }
     /*endfor*/
     /* Round Q11.21 number format to Q9.7 */
-    p.re = (labs(sum.re) + 0x01FFFL) >> 14;
+    p.re = (abs(sum.re) + 0x01FFFL) >> 14;
     if (sum.re < 0)
         p.re = -p.re;
     /*endif*/
-    p.im = (labs(sum.im) + 0x01FFFL) >> 14;
+    p.im = (abs(sum.im) + 0x01FFFL) >> 14;
     if (sum.im < 0)
         p.im = -p.im;
     /*endif*/
@@ -503,11 +519,11 @@ static complexi16_t prediction_error_filter(v34_rx_state_t *s)
         s->xt[i] = s->xt[i - 1];
     /*endfor*/
     /* Round Q11.21 number format to Q9.7 */
-    yt.re = (labs(sum.re) + 0x01FFFL) >> 14;
+    yt.re = (abs(sum.re) + 0x01FFFL) >> 14;
     if (sum.re < 0)
         yt.re = -yt.re;
     /*endif*/
-    yt.im = (labs(sum.im) + 0x01FFFL) >> 14;
+    yt.im = (abs(sum.im) + 0x01FFFL) >> 14;
     if (sum.im < 0)
         yt.im = -yt.im;
     /*endif*/
@@ -544,7 +560,7 @@ static void quantize_n_ways(complexi16_t xy[], complexi16_t *yt)
     xy[0].re += FP_Q9_7(1);
     xy[0].im += FP_Q9_7(1);
 
-    /* Subset 0 done. Figure out the rest as offsets from 0 */
+    /* Subset 0 done. Figure out the rest as offsets from subset 0 */
     xy[1].re = xy[0].re;
     if (yt->re < xy[0].re)
     {
@@ -611,6 +627,7 @@ static void viterbi_calculate_branch_errors(viterbi_t *s, complexi16_t xy[2][4],
     int inv;
     int error0;
     int error1;
+    int smaller;
     int k0;
     int k1;
 
@@ -622,21 +639,21 @@ static void viterbi_calculate_branch_errors(viterbi_t *s, complexi16_t xy[2][4],
         error1 = s->error[0][kk[n][2]] + s->error[1][kk[n][3]];
         if (error0 < error1)
         {
-            s->branch_error[br] = error0;
-            s->branch_error_x[s->ptr][br] = error0;
+            smaller = error0;
             k0 = kk[n][0];
             k1 = kk[n][1];
         }
         else
         {
-            s->branch_error[br] = error1;
-            s->branch_error_x[s->ptr][br] = error1;
+            smaller = error1;
             k0 = kk[n][2];
             k1 = kk[n][3];
         }
         /*endif*/
-        s->bb[0][s->ptr][br] = xy[0][k0];
-        s->bb[1][s->ptr][br] = xy[1][k1];
+        s->branch_error[br] = smaller;
+        s->vit[s->ptr].branch_error_x[br] = smaller;
+        s->vit[s->ptr].bb[0][br] = xy[0][k0];
+        s->vit[s->ptr].bb[1][br] = xy[1][k1];
     }
     /*endfor*/
 }
@@ -668,7 +685,7 @@ static void viterbi_update_path_metrics(viterbi_t *s)
         {
             prev_state = (*s->conv_decode_table)[i][j] >> 3;
             branch = (*s->conv_decode_table)[i][j] & 0x7;
-            metric = s->cumulative_path_metric[prev_ptr][prev_state] + s->branch_error[branch];
+            metric = s->vit[prev_ptr].cumulative_path_metric[prev_state] + s->branch_error[branch];
 
 //if (metric == 0)
 //    printf("HHH %p metric is zero - %2d %2d %2d %2d %2d\n", s, prev_ptr, i, j, prev_state, branch);
@@ -685,9 +702,9 @@ static void viterbi_update_path_metrics(viterbi_t *s)
             /*endif*/
         }
         /*endfor*/
-        s->cumulative_path_metric[s->ptr][i] = min_metric;
-        s->previous_path_ptr[s->ptr][i] = min_state;
-        s->pts[s->ptr][i] = min_branch;
+        s->vit[s->ptr].cumulative_path_metric[i] = min_metric;
+        s->vit[s->ptr].previous_path_ptr[i] = min_state;
+        s->vit[s->ptr].pts[i] = min_branch;
         if (min_metric < curr_min_metric)
         {
             curr_min_metric = min_metric;
@@ -700,7 +717,7 @@ static void viterbi_update_path_metrics(viterbi_t *s)
 //printf("JJJ %p ", s);
     for (i = 0;  i < 16;  i++)
     {
-        s->cumulative_path_metric[s->ptr][i] -= curr_min_metric;
+        s->vit[s->ptr].cumulative_path_metric[i] -= curr_min_metric;
 //printf("%4d ", s->cumulative_path_metric[s->ptr][i]);
     }
     /*endfor*/
@@ -720,24 +737,24 @@ static void viterbi_trace_back(viterbi_t *s, complexi16_t y[2])
 //printf("FFF %p %2d", s, next_state);
     for (i = s->ptr;  i != last_baud;  i = (i - 1) & 0xF)
     {
-        next_state = s->previous_path_ptr[i][next_state];
+        next_state = s->vit[i].previous_path_ptr[next_state];
 //printf(" %2d", next_state);
     }
     /*endfor*/
     for (i = 0;  i < 8;  i++)
     {
-        if (s->branch_error_x[last_baud][i] == 0)
+        if (s->vit[last_baud].branch_error_x[i] == 0)
         {
             branch = i;
             break;
         }
     }
     /*endfor*/
-    branch = s->pts[last_baud][next_state];
+    branch = s->vit[last_baud].pts[next_state];
 //printf(" (%d)\n", branch);
 
-    y[0] = s->bb[0][last_baud][branch];
-    y[1] = s->bb[1][last_baud][branch];
+    y[0] = s->vit[last_baud].bb[0][branch];
+    y[1] = s->vit[last_baud].bb[1][branch];
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -760,33 +777,6 @@ static __inline__ float carrier_frequency(int symbol_rate_code, int low_high)
     d = baud_rate_parameters[symbol_rate_code].low_high[low_high].d;
     e = baud_rate_parameters[symbol_rate_code].low_high[low_high].e;
     return exact_baud_rate(symbol_rate_code)*d/e;
-}
-/*- End of function --------------------------------------------------------*/
-
-static uint16_t crc_bit_block(const uint8_t buf[], int first_bit, int last_bit, uint16_t crc)
-{
-    int pre;
-    int post;
-
-    /* Calculate the CRC between first_bit and last_bit, inclusive, of buf */
-    last_bit++;
-    pre = first_bit & 0x7;
-    first_bit >>= 3;
-    if (pre)
-    {
-        crc = crc_itu16_bits(buf[first_bit] >> pre, (8 - pre), crc);
-        first_bit++;
-    }
-    /*endif*/
-    post = last_bit & 0x7;
-    last_bit >>= 3;
-    if ((last_bit - first_bit) != 0)
-        crc = crc_itu16_calc(buf + first_bit, last_bit - first_bit, crc);
-    /*endif*/
-    if (post)
-        crc = crc_itu16_bits(buf[last_bit], post, crc);
-    /*endif*/
-    return crc;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -849,16 +839,21 @@ static int process_rx_info1c(v34_rx_state_t *s, info1c_t *info1c, uint8_t buf[])
                 (see Tables 3 and 4). */
     /* 30:33    Projected maximum data rate for a symbol rate of 2400. These bits form an integer between 0 and 14 which
                 gives the projected data rate as a multiple of 2400 bits/s. A 0 indicates the symbol rate cannot be used. */
+
     /* 34:42    Probing results pertaining to a final symbol rate selection of 2743 symbols per second. The coding of these
                 9 bits is identical to that for bits 25-33. */
+
     /* 43:51    Probing results pertaining to a final symbol rate selection of 2800 symbols per second. The coding of these
                 9 bits is identical to that for bits 25-33. */
+
     /* 52:60    Probing results pertaining to a final symbol rate selection of 3000 symbols per second. The coding of these
                 9 bits is identical to that for bits 25-33. Information in this field shall be consistent with the answer modem
                 capabilities indicated in INFO0a. */
+
     /* 61:69    Probing results pertaining to a final symbol rate selection of 3200 symbols per second. The coding of these
                 9 bits is identical to that for bits 25-33. Information in this field shall be consistent with the answer modem
                 capabilities indicated in INFO0a. */
+
     /* 70:78    Probing results pertaining to a final symbol rate selection of 3429 symbols per second. The coding of these
                 9 bits is identical to that for bits 25-33. Information in this field shall be consistent with the answer modem
                 capabilities indicated in INFO0a. */
@@ -866,7 +861,7 @@ static int process_rx_info1c(v34_rx_state_t *s, info1c_t *info1c, uint8_t buf[])
     {
         info1c->rate_data[i].use_high_carrier = bitstream_get(&bs, &t, 1);
         info1c->rate_data[i].pre_emphasis = bitstream_get(&bs, &t, 4);
-        info1c->rate_data[i].max_data_rate = bitstream_get(&bs, &t, 4);
+        info1c->rate_data[i].max_bit_rate = bitstream_get(&bs, &t, 4);
     }
     /*endfor*/
     /* 79:88    Frequency offset of the probing tones as measured by the call modem receiver. The frequency offset number
@@ -988,10 +983,10 @@ static int process_rx_mp(v34_rx_state_t *s, mp_t *mp, uint8_t buf[])
     bitstream_get(&bs, &t, 1);
     /* 20:23    Maximum call modem to answer modem data signalling rate: Data rate = N * 2400
                 where N is a four-bit integer between 1 and 14. */
-    mp->baud_rate_c_to_a = bitstream_get(&bs, &t, 4);
+    mp->bit_rate_c_to_a = bitstream_get(&bs, &t, 4);
     /* 24:27    Maximum answer modem to call modem data signalling rate: Data rate = N * 2400
                 where N is a four-bit integer between 1 and 14. */
-    mp->baud_rate_a_to_c = bitstream_get(&bs, &t, 4);
+    mp->bit_rate_a_to_c = bitstream_get(&bs, &t, 4);
     /* 28       Auxiliary channel select bit. Set to 1 if modem is capable of supporting and
                 enables auxiliary channel. Auxiliary channel is used only if both modems set
                 this bit to 1. */
@@ -1148,7 +1143,7 @@ static int process_rx_mph(v34_rx_state_t *s, mph_t *mph, uint8_t buf[])
 }
 /*- End of function --------------------------------------------------------*/
 
-static void put_info_bit(v34_rx_state_t *s, int bit)
+static void put_info_bit(v34_rx_state_t *s, int bit, int time_offset)
 {
     /* Put info0, info1, tone A or tone B bits */
     printf("Rx bit = %d\n", bit);
@@ -1157,12 +1152,12 @@ static void put_info_bit(v34_rx_state_t *s, int bit)
     {
     case V34_RX_STAGE_TONE_A:
         /* Calling side */
-        if (++s->fred1 < 10)
+        if (++s->persistence1 < 10)
             break;
         /*endif*/
         if (bit == 0)
         {
-            if (++s->fred2 == 20)
+            if (++s->persistence2 == 20)
             {
                 //s->received_event = V34_EVENT_TONE_SEEN;
             }
@@ -1171,23 +1166,25 @@ static void put_info_bit(v34_rx_state_t *s, int bit)
         }
         /*endif*/
         if (!s->signal_present)
-            s->fred2 = 0;
+            s->persistence2 = 0;
         /*endif*/
         /* We have a reversal, but we should only recognise it if it has been
            a little while since the last one */
-        if (s->fred2 > 20)
+        if (s->persistence2 > 20)
         {
             printf("Rx bit reversal in tone A\n");
             switch (s->received_event)
             {
             case V34_EVENT_REVERSAL_1:
                 span_log(s->logging, SPAN_LOG_FLOW, "Rx - reversal 2 in tone A\n");
+                s->tone_ab_hop_time = s->sample_time + time_offset;
                 s->received_event = V34_EVENT_REVERSAL_2;
                 l1_l2_analysis_init(s);
                 break;
             case V34_EVENT_REVERSAL_2:
             case V34_EVENT_L2_SEEN:
                 span_log(s->logging, SPAN_LOG_FLOW, "Rx - reversal 3 in tone A\n");
+                s->tone_ab_hop_time = s->sample_time + time_offset;
                 s->received_event = V34_EVENT_REVERSAL_3;
                 /* The next info message will be INFO1a */
                 s->target_bits = 70 - (4 + 8 + 4);
@@ -1195,23 +1192,24 @@ static void put_info_bit(v34_rx_state_t *s, int bit)
                 break;
             default:
                 span_log(s->logging, SPAN_LOG_FLOW, "Rx - reversal 1 in tone A\n");
+                s->tone_ab_hop_time = s->sample_time + time_offset;
                 s->received_event = V34_EVENT_REVERSAL_1;
                 break;
             }
             /*endswitch*/
-            s->fred1 = 0;
+            s->persistence1 = 0;
         }
         /*endif*/
-        s->fred2 = 0;
+        s->persistence2 = 0;
         break;
     case V34_RX_STAGE_TONE_B:
         /* Answering side */
-        if (++s->fred1 < 10)
+        if (++s->persistence1 < 10)
             break;
         /*endif*/
         if (bit == 0)
         {
-            if (++s->fred2 == 20)
+            if (++s->persistence2 == 20)
             {
                 //s->received_event = V34_EVENT_TONE_SEEN;
             }
@@ -1220,22 +1218,24 @@ static void put_info_bit(v34_rx_state_t *s, int bit)
         }
         /*endif*/
         if (!s->signal_present)
-            s->fred2 = 0;
+            s->persistence2 = 0;
         /*endif*/
         /* We have a reversal, but we should only recognise it if it has been
            a little while since the last one */
-        if (s->fred2 > 20)
+        if (s->persistence2 > 20)
         {
             printf("Rx bit reversal in tone B\n");
             switch (s->received_event)
             {
             case V34_EVENT_REVERSAL_2:
                 span_log(s->logging, SPAN_LOG_FLOW, "Rx - reversal 3 in tone B\n");
+                s->tone_ab_hop_time = s->sample_time + time_offset;
                 s->received_event = V34_EVENT_REVERSAL_3;
                 break;
             case V34_EVENT_REVERSAL_1:
                 /* TODO: Need to avoid getting here falsely, just because the tone has resumed */
                 span_log(s->logging, SPAN_LOG_FLOW, "Rx - reversal 2 in tone B\n");
+                s->tone_ab_hop_time = s->sample_time + time_offset;
                 s->received_event = V34_EVENT_REVERSAL_2;
                 /* The next info message will be INFO1c */
                 s->target_bits = 109 - (4 + 8 + 4);
@@ -1243,14 +1243,15 @@ static void put_info_bit(v34_rx_state_t *s, int bit)
                 break;
             default:
                 span_log(s->logging, SPAN_LOG_FLOW, "Rx - reversal 1 in tone B\n");
+                s->tone_ab_hop_time = s->sample_time + time_offset;
                 s->received_event = V34_EVENT_REVERSAL_1;
                 break;
             }
             /*endswitch*/
-            s->fred1 = 0;
+            s->persistence1 = 0;
         }
         /*endif*/
-        s->fred2 = 0;
+        s->persistence2 = 0;
         break;
     }
     /* Search for INFO0, INFOh, INFO1a or INFO1c messages. */
@@ -1362,7 +1363,7 @@ static int info_rx(v34_rx_state_t *s, const int16_t amp[], int len)
             {
 span_log(s->logging, SPAN_LOG_FLOW, "Signal down\n");
                 s->signal_present = false;
-                s->fred2 = 0;
+                s->persistence2 = 0;
             }
             /*endif*/
         }
@@ -1372,7 +1373,7 @@ span_log(s->logging, SPAN_LOG_FLOW, "Signal down\n");
             {
 span_log(s->logging, SPAN_LOG_FLOW, "Signal up\n");
                 s->signal_present = true;
-                s->fred2 = 0;
+                s->persistence2 = 0;
             }
             /*endif*/
         }
@@ -1412,7 +1413,7 @@ span_log(s->logging, SPAN_LOG_FLOW, "Signal up\n");
         printf("XXX%d, %7d, %f, %f, 0x%08X, %d\n", s->calling_party, amp[i], zz.re, zz.im, angle, angle);
         if (abs(angle - s->last_angles[1]) > DDS_PHASE(90.0f)  &&  s->blip_duration > 3)
         {
-            put_info_bit(s, 1);
+            put_info_bit(s, 1, i);
             s->duration = 0;
             s->blip_duration = 0;
         }
@@ -1420,8 +1421,9 @@ span_log(s->logging, SPAN_LOG_FLOW, "Signal up\n");
         {
             if (s->blip_duration > 60)
             {
-                /* We are getting rather late for a transtion */
-                put_info_bit(s, 0);
+                /* We are getting rather late for a transition. This must be a zero bit. */
+                put_info_bit(s, 0, i);
+                /* Step on by one bit time. */
                 s->blip_duration -= 40;
             }
             /*endif*/
@@ -1929,6 +1931,7 @@ static int perform_l1_l2_analysis(v34_rx_state_t *s)
     }
     /*endfor*/
     //straight_line_fit(&slope, &intercept, x, y, data_points);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -2368,7 +2371,7 @@ static int primary_channel_rx(v34_rx_state_t *s, const int16_t amp[], int len)
     float ii;
     float qq;
     float v;
-    /* The following lead to integer values for the rx increments per symbol. with each of the 6 baud rates */
+    /* The following lead to integer values for the rx increments per symbol, for each of the 6 baud rates */
     static const int steps_per_baud[6] =
     {
         192*8000/2400,
@@ -2516,8 +2519,8 @@ SPAN_DECLARE(void) v34_put_mapping_frame(v34_rx_state_t *s, int16_t bits[16])
         if ((i & 1))
         {
             /* Deal with super-frame sync inversion */
-            if ((s->data_frame*8 + s->step_2d)%(s->parms.p*4) == 0)
-                invert = (0x5FEE >> s->super_frame) & 1;
+            if ((s->data_frame*8 + s->step_2d)%(4*s->parms.p) == 0)
+                invert = (0x5FEE >> s->v0_pattern++) & 1;
             else
                 invert = false;
             /*endif*/
@@ -2557,8 +2560,7 @@ SPAN_DECLARE(void) v34_put_mapping_frame(v34_rx_state_t *s, int16_t bits[16])
                 {
                     p = precoder_rx_filter(s);
 
-                    c.re = quantize_rx(s, p.re);
-                    c.im = quantize_rx(s, p.im);
+                    c = quantize_rx(s, &p);
                     s->x[0].re = y[j].re - p.re;
                     s->x[0].im = y[j].im - p.im;
                     u.re = (y[j].re >> 7) - c.re;
@@ -2586,7 +2588,10 @@ SPAN_DECLARE(void) v34_put_mapping_frame(v34_rx_state_t *s, int16_t bits[16])
                     {
                         s->data_frame = 0;
                         if (++s->super_frame >= s->parms.j)
+                        {
                             s->super_frame = 0;
+                            s->v0_pattern = 0;
+                        }
                         /*endif*/
                     }
                     /*endif*/
@@ -2650,8 +2655,12 @@ SPAN_DECLARE(int) v34_rx(v34_state_t *s, const int16_t amp[], int len)
         }
         /*endswitch*/
         leny += lenx;
+        /* Add step by step, so each segment is seen up to date */
+        s->rx.sample_time += lenx;
     }
     while (lenx > 0  &&  leny < len);
+    /* If there is any residue, this should be the end of operation of the modem,
+       so we don't really need to add that residue to the sample time. */
     return leny;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2664,14 +2673,14 @@ SPAN_DECLARE(void) v34_rx_set_signal_cutoff(v34_state_t *s, float cutoff)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) v34_set_put_bit(v34_state_t *s, put_bit_func_t put_bit, void *user_data)
+SPAN_DECLARE(void) v34_set_put_bit(v34_state_t *s, span_put_bit_func_t put_bit, void *user_data)
 {
     s->rx.put_bit = put_bit;
     s->rx.put_bit_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) v34_set_put_aux_bit(v34_state_t *s, put_bit_func_t put_bit, void *user_data)
+SPAN_DECLARE(void) v34_set_put_aux_bit(v34_state_t *s, span_put_bit_func_t put_bit, void *user_data)
 {
     s->rx.put_aux_bit = put_bit;
     s->rx.put_aux_bit_user_data = user_data;
@@ -2776,6 +2785,7 @@ int v34_rx_restart(v34_state_t *s, int baud_rate, int bit_rate, int high_carrier
     s->rx.current_demodulator = V34_MODULATION_TONES;
     s->rx.viterbi.conv_decode_table = v34_conv16_decode_table;
 
+    s->rx.v0_pattern = 0;
     s->rx.super_frame = 0;
     s->rx.data_frame = 0;
     s->rx.s_bit_cnt = 0;

@@ -206,21 +206,33 @@ static char socotel_mf_tone_codes[] = "1234567890ABCDEFG";
 #define R2_MF_SAMPLES_PER_BLOCK                 133
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-static const int bell_mf_threshold              = goertzel_threshold_dbm0(BELL_MF_SAMPLES_PER_BLOCK, -30.5f);
-static const float bell_mf_twist                = db_to_power_ratio(6.0f);
-static const float bell_mf_relative_peak        = db_to_power_ratio(11.0f);
+//static const int bell_mf_threshold              = goertzel_threshold_dbm0(BELL_MF_SAMPLES_PER_BLOCK, -30.5f);
+static const int bell_mf_threshold              = 204089;             /* -30.5dBm0 */
+//static const float bell_mf_twist                = db_to_power_ratio(6.0f);
+static const float bell_mf_twist                = 3.981f;             /* 6dB */
+//static const float bell_mf_relative_peak        = db_to_power_ratio(11.0f);
+static const float bell_mf_relative_peak        = 12.589f;            /* 11dB */
 
-static const int r2_mf_threshold                = goertzel_threshold_dbm0(R2_MF_SAMPLES_PER_BLOCK, -36.5f);
-static const float r2_mf_twist                  = db_to_power_ratio(7.0f);
-static const float r2_mf_relative_peak          = db_to_power_ratio(11.0f);
+//static const int r2_mf_threshold                = goertzel_threshold_dbm0(R2_MF_SAMPLES_PER_BLOCK, -36.5f);
+static const int r2_mf_threshold                = 62974;              /* -36.5dBm0 */
+//static const float r2_mf_twist                  = db_to_power_ratio(7.0f);
+static const float r2_mf_twist                  = 5.012f;             /* 7dB */
+//static const float r2_mf_relative_peak          = db_to_power_ratio(11.0f);
+static const float r2_mf_relative_peak          = 12.589f;            /* 11dB */
 #else
-static const float bell_mf_threshold            = goertzel_threshold_dbm0(BELL_MF_SAMPLES_PER_BLOCK, -30.5f);
-static const float bell_mf_twist                = db_to_power_ratio(6.0f);
-static const float bell_mf_relative_peak        = db_to_power_ratio(11.0f);
+//static const float bell_mf_threshold            = goertzel_threshold_dbm0(BELL_MF_SAMPLES_PER_BLOCK, -30.5f);
+static const float bell_mf_threshold            = 3343803100.0f;      /* -30.5dBm0 */
+//static const float bell_mf_twist                = db_to_power_ratio(6.0f);
+static const float bell_mf_twist                = 3.981f;             /* 6dB */
+//static const float bell_mf_relative_peak        = db_to_power_ratio(11.0f);
+static const float bell_mf_relative_peak        = 12.589f;            /* 11dB */
 
-static const float r2_mf_threshold              = goertzel_threshold_dbm0(R2_MF_SAMPLES_PER_BLOCK, -36.5f);
-static const float r2_mf_twist                  = db_to_power_ratio(7.0f);
-static const float r2_mf_relative_peak          = db_to_power_ratio(11.0f);
+//static const float r2_mf_threshold              = goertzel_threshold_dbm0(R2_MF_SAMPLES_PER_BLOCK, -36.5f);
+static const float r2_mf_threshold              = 1031766650.0f;      /* -36.5dBm0 */
+//static const float r2_mf_twist                  = db_to_power_ratio(7.0f);
+static const float r2_mf_twist                  = 5.012f;             /* 7dB */
+//static const float r2_mf_relative_peak          = db_to_power_ratio(11.0f);
+static const float r2_mf_relative_peak          = 12.589f;            /* 11dB */
 #endif
 
 static goertzel_descriptor_t bell_mf_detect_desc[6];

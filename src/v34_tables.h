@@ -36,6 +36,7 @@ static const int8_t conv_encode_input[8][8] =
     {14, 15, 15, 14,  6,  7,  7,  6}    /* 7 */
 };
 
+#if 0
 static const uint8_t v34_conv16_decode_table[16][16] =
 {
     {0x00, 0x12, 0x64, 0x76},
@@ -55,6 +56,7 @@ static const uint8_t v34_conv16_decode_table[16][16] =
     {0x29, 0x3B, 0x4D, 0x5F},
     {0x39, 0x2B, 0x5D, 0x4F}
 };
+#endif
 
 enum
 {
@@ -87,6 +89,7 @@ typedef struct
 {
     /* The number of bits in a high mapping frame */
     uint8_t b;
+    /* The minimum and expanded values for M */
     uint8_t m[2];
 } mapping_t;
 
@@ -110,22 +113,22 @@ static const mapping_t mappings_2400[] =
     {65, {13, 15}},     /* 19400bps */
     {72, {12, 14}},     /* 21600bps */
     {73, {13, 15}},     /* 21800bps */
-    { 0, { 0,  0}},     /* 24000bps */
-    { 0, { 0,  0}},     /* 24200bps */
-    { 0, { 0,  0}},     /* 26400bps */
-    { 0, { 0,  0}},     /* 26600bps */
-    { 0, { 0,  0}},     /* 28800bps */
-    { 0, { 0,  0}},     /* 29000bps */
-    { 0, { 0,  0}},     /* 31200bps */
-    { 0, { 0,  0}},     /* 31400bps */
-    { 0, { 0,  0}},     /* 33600bps */
-    { 0, { 0,  0}}      /* 33800bps */
+    { 0, { 0,  0}},     /* 24000bps - invalid */
+    { 0, { 0,  0}},     /* 24200bps - invalid */
+    { 0, { 0,  0}},     /* 26400bps - invalid */
+    { 0, { 0,  0}},     /* 26600bps - invalid */
+    { 0, { 0,  0}},     /* 28800bps - invalid */
+    { 0, { 0,  0}},     /* 29000bps - invalid */
+    { 0, { 0,  0}},     /* 31200bps - invalid */
+    { 0, { 0,  0}},     /* 31400bps - invalid */
+    { 0, { 0,  0}},     /* 33600bps - invalid */
+    { 0, { 0,  0}}      /* 33800bps - invalid */
 };
 
 static const mapping_t mappings_2743[] =
 {
-    { 0, { 0,  0}},     /*  2400bps */
-    { 0, { 0,  0}},     /*  2600bps */
+    { 0, { 0,  0}},     /*  2400bps - invalid */
+    { 0, { 0,  0}},     /*  2600bps - invalid */
     {14, { 2,  2}},     /*  4800bps */
     {15, { 2,  2}},     /*  5000bps */
     {21, { 3,  3}},     /*  7200bps */
@@ -146,18 +149,18 @@ static const mapping_t mappings_2743[] =
     {71, {11, 13}},     /* 24200bps */
     {77, { 9, 11}},     /* 26400bps */
     {78, {10, 12}},     /* 26600bps */
-    { 0, { 0,  0}},     /* 28800bps */
-    { 0, { 0,  0}},     /* 29000bps */
-    { 0, { 0,  0}},     /* 31200bps */
-    { 0, { 0,  0}},     /* 31400bps */
-    { 0, { 0,  0}},     /* 33600bps */
-    { 0, { 0,  0}}      /* 33800bps */
+    { 0, { 0,  0}},     /* 28800bps - invalid */
+    { 0, { 0,  0}},     /* 29000bps - invalid */
+    { 0, { 0,  0}},     /* 31200bps - invalid */
+    { 0, { 0,  0}},     /* 31400bps - invalid */
+    { 0, { 0,  0}},     /* 33600bps - invalid */
+    { 0, { 0,  0}}      /* 33800bps - invalid */
 };
 
 static const mapping_t mappings_2800[] =
 {
-    { 0, { 0,  0}},     /*  2400bps */
-    { 0, { 0,  0}},     /*  2600bps */
+    { 0, { 0,  0}},     /*  2400bps - invalid */
+    { 0, { 0,  0}},     /*  2600bps - invalid */
     {14, { 2,  2}},     /*  4800bps */
     {15, { 2,  2}},     /*  5000bps */
     {21, { 3,  3}},     /*  7200bps */
@@ -178,18 +181,18 @@ static const mapping_t mappings_2800[] =
     {70, {10, 12}},     /* 24200bps */
     {76, { 8, 10}},     /* 26400bps */
     {76, { 8, 10}},     /* 26600bps */
-    { 0, { 0,  0}},     /* 28800bps */
-    { 0, { 0,  0}},     /* 29000bps */
-    { 0, { 0,  0}},     /* 31200bps */
-    { 0, { 0,  0}},     /* 31400bps */
-    { 0, { 0,  0}},     /* 33600bps */
-    { 0, { 0,  0}}      /* 33800bps */
+    { 0, { 0,  0}},     /* 28800bps - invalid */
+    { 0, { 0,  0}},     /* 29000bps - invalid */
+    { 0, { 0,  0}},     /* 31200bps - invalid */
+    { 0, { 0,  0}},     /* 31400bps - invalid */
+    { 0, { 0,  0}},     /* 33600bps - invalid */
+    { 0, { 0,  0}}      /* 33800bps - invalid */
 };
 
 static const mapping_t mappings_3000[] =
 {
-    { 0, { 0,  0}},     /*  2400bps */
-    { 0, { 0,  0}},     /*  2600bps */
+    { 0, { 0,  0}},     /*  2400bps - invalid */
+    { 0, { 0,  0}},     /*  2600bps - invalid */
     {13, { 2,  2}},     /*  4800bps */
     {14, { 2,  2}},     /*  5000bps */
     {20, { 2,  3}},     /*  7200bps */
@@ -212,16 +215,16 @@ static const mapping_t mappings_3000[] =
     {71, {11, 13}},     /* 26600bps */
     {77, { 9, 11}},     /* 28800bps */
     {78, {10, 12}},     /* 29000bps */
-    { 0, { 0,  0}},     /* 31200bps */
-    { 0, { 0,  0}},     /* 31400bps */
-    { 0, { 0,  0}},     /* 33600bps */
-    { 0, { 0,  0}}      /* 33800bps */
+    { 0, { 0,  0}},     /* 31200bps - invalid */
+    { 0, { 0,  0}},     /* 31400bps - invalid */
+    { 0, { 0,  0}},     /* 33600bps - invalid */
+    { 0, { 0,  0}}      /* 33800bps - invalid */
 };
 
 static const mapping_t mappings_3200[] =
 {
-    { 0, { 0,  0}},     /*  2400bps */
-    { 0, { 0,  0}},     /*  2600bps */
+    { 0, { 0,  0}},     /*  2400bps - invalid */
+    { 0, { 0,  0}},     /*  2600bps - invalid */
     {12, { 1,  1}},     /*  4800bps */
     {13, { 2,  2}},     /*  5000bps */
     {18, { 2,  2}},     /*  7200bps */
@@ -246,14 +249,14 @@ static const mapping_t mappings_3200[] =
     {73, {13, 15}},     /* 29000bps */
     {78, {10, 12}},     /* 31200bps */
     {79, {11, 13}},     /* 31400bps */
-    { 0, { 0,  0}},     /* 33600bps */
-    { 0, { 0,  0}}      /* 33800bps */
+    { 0, { 0,  0}},     /* 33600bps - invalid */
+    { 0, { 0,  0}}      /* 33800bps - invalid */
 };
 
 static const mapping_t mappings_3429[] =
 {
-    { 0, { 0,  0}},     /*  2400bps */
-    { 0, { 0,  0}},     /*  2600bps */
+    { 0, { 0,  0}},     /*  2400bps - invalid */
+    { 0, { 0,  0}},     /*  2600bps - invalid */
     {12, { 1,  1}},     /*  4800bps */
     {12, { 1,  1}},     /*  5000bps */
     {17, { 2,  2}},     /*  7200bps */
@@ -287,7 +290,8 @@ typedef struct
 {
     /*! Approximate baud rate (i.e. nearest integer value). */
     int baud_rate;
-    int max_bit_rate;
+    /*! The internal code for the maximum bit rate (0-26, ((bit_rate/2400) - 1) << 1) */
+    int max_bit_rate_code;
     int a;
     int c;
     /*! The numerator of the number of samples per symbol ratio. */
@@ -306,12 +310,12 @@ typedef struct
 
 static const baud_rate_parameters_t baud_rate_parameters[] =
 {
-    {2400, 21600/2400,  1, 1, 10,  3, {{2, 3}, {3, 4}}, 7, 12, mappings_2400}, /*  2400 baud */
-    {2743, 26400/2400,  8, 7, 35, 12, {{3, 5}, {2, 3}}, 8, 12, mappings_2743}, /* ~2743 baud */
-    {2800, 26400/2400,  7, 6, 20,  7, {{3, 5}, {2, 3}}, 7, 14, mappings_2800}, /*  2800 baud */
-    {3000, 28800/2400,  5, 4,  8,  3, {{3, 5}, {2, 3}}, 7, 15, mappings_3000}, /*  3000 baud */
-    {3200, 31200/2400,  4, 3,  5,  2, {{4, 7}, {3, 5}}, 7, 16, mappings_3200}, /*  3200 baud */
-    {3429, 33600/2400, 10, 7,  7,  3, {{4, 7}, {4, 7}}, 8, 15, mappings_3429}  /* ~3429 baud */
+    {2400, (21600/2400 - 1) << 1,  1, 1, 10,  3, {{2, 3}, {3, 4}}, 7, 12, mappings_2400}, /*  2400 baud */
+    {2743, (26400/2400 - 1) << 1,  8, 7, 35, 12, {{3, 5}, {2, 3}}, 8, 12, mappings_2743}, /* ~2743 baud */
+    {2800, (26400/2400 - 1) << 1,  7, 6, 20,  7, {{3, 5}, {2, 3}}, 7, 14, mappings_2800}, /*  2800 baud */
+    {3000, (28800/2400 - 1) << 1,  5, 4,  8,  3, {{3, 5}, {2, 3}}, 7, 15, mappings_3000}, /*  3000 baud */
+    {3200, (31200/2400 - 1) << 1,  4, 3,  5,  2, {{4, 7}, {3, 5}}, 7, 16, mappings_3200}, /*  3200 baud */
+    {3429, (33600/2400 - 1) << 1, 10, 7,  7,  3, {{4, 7}, {4, 7}}, 8, 15, mappings_3429}  /* ~3429 baud */
 };
 
 #if defined(SPANDSP_USE_FIXED_POINT)

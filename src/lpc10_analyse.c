@@ -486,7 +486,7 @@ static void invert(int32_t order, float phi[], float psi[], float rc[])
         for (k = 0;  k < j;  k++)
         {
             r1 = v[k][j]*v[k][k];
-            for (i = j;  i <= order;  i++)
+            for (i = j;  i < order;  i++)
                 v[j][i] -= v[k][i]*r1;
             /*endfor*/
         }

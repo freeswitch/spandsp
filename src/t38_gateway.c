@@ -63,6 +63,7 @@
 #include "spandsp/bit_operations.h"
 #include "spandsp/power_meter.h"
 #include "spandsp/complex.h"
+#include "spandsp/modem_echo.h"
 #include "spandsp/tone_detect.h"
 #include "spandsp/tone_generate.h"
 #include "spandsp/async.h"
@@ -104,6 +105,7 @@
 
 #include "spandsp/private/logging.h"
 #include "spandsp/private/ssl_fax.h"
+#include "spandsp/private/modem_echo.h"
 #include "spandsp/private/silence_gen.h"
 #include "spandsp/private/power_meter.h"
 #include "spandsp/private/fsk.h"

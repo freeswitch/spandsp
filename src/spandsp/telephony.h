@@ -132,13 +132,13 @@ typedef int (*span_tx_handler_t)(void *s, int16_t amp[], int max_len);
 #define FP_Q1_31(x)  ((int32_t) (65536.0*32768.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-#define db_to_power_ratio(val)                  powf(10.0f, val/10.0f)
-#define db_to_amplitude_ratio(val)              powf(10.0f, val/20.0f)
+#define db_to_power_ratio(val)                  powf(10.0f, (val)/10.0f)
+#define db_to_amplitude_ratio(val)              powf(10.0f, (val)/20.0f)
 #define power_ratio_to_db(val)                  (10.0f*log10f(val))
 #define amplitude_ratio_to_db(val)              (20.0f*log10f(val))
 #else
-#define db_to_power_ratio(val)                  powf(10.0f, val/10.0f)
-#define db_to_amplitude_ratio(val)              powf(10.0f, val/20.0f)
+#define db_to_power_ratio(val)                  powf(10.0f, (val)/10.0f)
+#define db_to_amplitude_ratio(val)              powf(10.0f, (val)/20.0f)
 #define power_ratio_to_db(val)                  (10.0f*log10f(val))
 #define amplitude_ratio_to_db(val)              (20.0f*log10f(val))
 #endif

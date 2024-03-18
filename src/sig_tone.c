@@ -717,7 +717,7 @@ SPAN_DECLARE(sig_tone_rx_state_t *) sig_tone_rx_init(sig_tone_rx_state_t *s, int
 
     s->flat_detection_threshold = power_meter_level_dbm0(s->desc->flat_detection_threshold);
     s->sharp_detection_threshold = power_meter_level_dbm0(s->desc->sharp_detection_threshold);
-    s->detection_ratio = powf(10.0f, s->desc->detection_ratio/10.0f) + 1.0f;
+    s->detection_ratio = db_to_power_ratio(s->desc->detection_ratio) + 1.0f;
 
     return s;
 }

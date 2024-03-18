@@ -67,6 +67,7 @@ The T.31 and TSB85 parts are incomplete right now.
 #include <stdio.h>
 #include <fcntl.h>
 #include <string.h>
+#include <strings.h>
 #include <assert.h>
 #include <errno.h>
 #include <sndfile.h>

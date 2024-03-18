@@ -73,6 +73,7 @@
 #if defined(SPANDSP_USE_FIXED_POINT)
 /* The fixed point version scales the 16 bit signal down by 7 bits, so the Goertzels will fit in a 32 bit word */
 #define FP_SCALE(x)                             ((int16_t) (x/128.0 + ((x >= 0.0)  ?  0.5  :  -0.5)))
+#if 0
 static const float dtmf_threshold               = goertzel_threshold_dbm0(DTMF_SAMPLES_PER_BLOCK, -42.0f);
 static const float dtmf_normal_twist            = db_to_power_ratio(8.0f);
 static const float dtmf_reverse_twist           = db_to_power_ratio(4.0f);
@@ -81,7 +82,17 @@ static const float dtmf_relative_peak_col       = db_to_power_ratio(8.0f);
 static const float dtmf_to_total_energy         = DTMF_SAMPLES_PER_BLOCK*db_to_power_ratio(-0.85f);
 static const float dtmf_power_offset            = (power_ratio_to_db(256.0f*256.0f*DTMF_SAMPLES_PER_BLOCK) - DBM0_MAX_SINE_POWER);
 #else
+static const float dtmf_threshold               = 10438;          /* -42dBm0 */
+static const float dtmf_normal_twist            = 6.309f;         /* 8dB */
+static const float dtmf_reverse_twist           = 2.512f;         /* 4dB */
+static const float dtmf_relative_peak_row       = 6.309f;         /* 8dB */
+static const float dtmf_relative_peak_col       = 6.309f;         /* 8dB */
+static const float dtmf_to_total_energy         = 83.868f;        /* -0.85dB */
+static const float dtmf_power_offset            = 65.251f;
+#endif
+#else
 #define FP_SCALE(x)                             (x)
+#if 0
 static const float dtmf_threshold               = goertzel_threshold_dbm0(DTMF_SAMPLES_PER_BLOCK, -42.0f);
 static const float dtmf_normal_twist            = db_to_power_ratio(8.0f);
 static const float dtmf_reverse_twist           = db_to_power_ratio(4.0f);
@@ -89,6 +100,15 @@ static const float dtmf_relative_peak_row       = db_to_power_ratio(8.0f);
 static const float dtmf_relative_peak_col       = db_to_power_ratio(8.0f);
 static const float dtmf_to_total_energy         = DTMF_SAMPLES_PER_BLOCK*db_to_power_ratio(-0.85f);
 static const float dtmf_power_offset            = (power_ratio_to_db(32768.0f*32768.0f*DTMF_SAMPLES_PER_BLOCK) - DBM0_MAX_SINE_POWER);
+#else
+static const float dtmf_threshold               = 171029200.0f;   /* -42dBm0 */
+static const float dtmf_normal_twist            = 6.309f;         /* 8dB */
+static const float dtmf_reverse_twist           = 2.512f;         /* 4dB */
+static const float dtmf_relative_peak_row       = 6.309f;         /* 8dB */
+static const float dtmf_relative_peak_col       = 6.309f;         /* 8dB */
+static const float dtmf_to_total_energy         = 83.868f;        /* -0.85dB */
+static const float dtmf_power_offset            = 107.255f;
+#endif
 #endif
 
 static const float dtmf_row[] =

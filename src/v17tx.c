@@ -376,7 +376,7 @@ SPAN_DECLARE(void) v17_tx_power(v17_tx_state_t *s, float power)
 
     /* The constellation design seems to keep the average power the same, regardless
        of which bit rate is in use. */
-    gain = 0.223f*powf(10.0f, (power - DBM0_MAX_POWER)/20.0f)*32768.0f/TX_PULSESHAPER_GAIN;
+    gain = 0.223f*db_to_amplitude_ratio(power - DBM0_MAX_SINE_POWER)*32768.0f/TX_PULSESHAPER_GAIN;
 #if defined(SPANDSP_USE_FIXED_POINT)
     s->gain = (int16_t) gain;
 #else

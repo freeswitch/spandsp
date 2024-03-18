@@ -55,9 +55,10 @@ enum
 enum
 {
     V22BIS_TX_TRAINING_STAGE_NORMAL_OPERATION = 0,
-    V22BIS_TX_TRAINING_STAGE_INITIAL_TIMED_SILENCE,
-    V22BIS_TX_TRAINING_STAGE_INITIAL_SILENCE,
+    V22BIS_TX_TRAINING_STAGE_INITIAL_SILENCE,           /* Initial calling side state */
+    V22BIS_TX_TRAINING_STAGE_INITIAL_TIMED_SILENCE,     /* Initial V,22bis answering side state */
     V22BIS_TX_TRAINING_STAGE_U11,
+    V22BIS_TX_TRAINING_STAGE_U00,                       /* A special feature for testing purposes. */
     V22BIS_TX_TRAINING_STAGE_U0011,
     V22BIS_TX_TRAINING_STAGE_S11,
     V22BIS_TX_TRAINING_STAGE_TIMED_S11,
@@ -79,7 +80,9 @@ struct v22bis_state_s
 {
     /*! \brief The maximum permitted bit rate of the modem. Valid values are 1200 and 2400. */
     int bit_rate;
-    /*! \brief True is this is the calling side modem. */
+    /*! \brief Guard tone and sundry flags */
+    int options;
+    /*! \brief True if this is the calling side modem. */
     bool calling_party;
     /*! \brief The callback function used to get the next bit to be transmitted. */
     span_get_bit_func_t get_bit;

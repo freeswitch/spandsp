@@ -187,17 +187,18 @@ int main(int argc, char *argv[])
     }
     /*endif*/
 
-    printf("Test with 123.456789Hz at -7dBm0/-13.22dBov.\n");
+    printf("Test with 123.456789Hz at -10dBm0.\n");
     power_meter_init(&meter_i, 7);
     power_meter_init(&meter_q, 7);
+    scale = dds_scaling_dbm0(-10.0f);
 
     phase = 0;
     phase_inc = dds_phase_ratef(123.456789f);
     for (i = 0;  i < SAMPLES_PER_CHUNK;  i++)
     {
         camp = dds_complexf(&phase, phase_inc);
-        buf[2*i] = camp.re*10000.0f;
-        buf[2*i + 1] = camp.im*10000.0f;
+        buf[2*i] = camp.re*scale;
+        buf[2*i + 1] = camp.im*scale;
         power_meter_update(&meter_i, buf[2*i]);
         power_meter_update(&meter_q, buf[2*i + 1]);
     }
@@ -214,9 +215,45 @@ int main(int argc, char *argv[])
            power_meter_current_dbm0(&meter_i),
            power_meter_current_dbov(&meter_q),
            power_meter_current_dbm0(&meter_q));
-    if (fabs(power_meter_current_dbov(&meter_i) + 13.42f) > 0.2f
+    if (fabs(power_meter_current_dbm0(&meter_i) + 10.0f) > 0.2f
         ||
-        fabs(power_meter_current_dbov(&meter_q) + 13.42f) > 0.2f)
+        fabs(power_meter_current_dbm0(&meter_q) + 10.0f) > 0.2f)
+    {
+        printf("Test failed.\n");
+        exit(2);
+    }
+    /*endif*/
+
+    printf("Test with 123.456789Hz at full scale.\n");
+    power_meter_init(&meter_i, 7);
+    power_meter_init(&meter_q, 7);
+
+    phase = 0;
+    phase_inc = dds_phase_ratef(123.456789f);
+    for (i = 0;  i < SAMPLES_PER_CHUNK;  i++)
+    {
+        camp = dds_complexf(&phase, phase_inc);
+        buf[2*i] = camp.re*32768.0f;
+        buf[2*i + 1] = camp.im*32768.0f;
+        power_meter_update(&meter_i, buf[2*i]);
+        power_meter_update(&meter_q, buf[2*i + 1]);
+    }
+    /*endfor*/
+    outframes = sf_writef_short(outhandle, buf, SAMPLES_PER_CHUNK);
+    if (outframes != SAMPLES_PER_CHUNK)
+    {
+        fprintf(stderr, "    Error writing audio file\n");
+        exit(2);
+    }
+    /*endif*/
+    printf("Level is %fdBOv/%fdBm0, %fdBOv/%fdBm0\n",
+           power_meter_current_dbov(&meter_i),
+           power_meter_current_dbm0(&meter_i),
+           power_meter_current_dbov(&meter_q),
+           power_meter_current_dbm0(&meter_q));
+    if (fabs(power_meter_current_dbov(&meter_i) - DBOV_MAX_SINE_POWER) > 0.2f
+        ||
+        fabs(power_meter_current_dbov(&meter_q) - DBOV_MAX_SINE_POWER) > 0.2f)
     {
         printf("Test failed.\n");
         exit(2);

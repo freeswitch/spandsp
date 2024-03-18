@@ -327,7 +327,7 @@ SPAN_DECLARE(void) v29_tx_power(v29_tx_state_t *s, float power)
     /* The constellation does not maintain constant average power as we change bit rates.
        We need to scale the gain we get here by a bit rate specific scaling factor each
        time we restart the modem. */
-    gain = powf(10.0f, (power - DBM0_MAX_POWER)/20.0f)*32768.0f/TX_PULSESHAPER_GAIN;
+    gain = db_to_amplitude_ratio(power - DBM0_MAX_SINE_POWER)*32768.0f/TX_PULSESHAPER_GAIN;
 #if defined(SPANDSP_USE_FIXED_POINT)
     s->base_gain = (int16_t) gain;
 #else

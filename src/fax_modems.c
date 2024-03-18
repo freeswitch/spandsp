@@ -61,6 +61,7 @@
 #include "spandsp/queue.h"
 #include "spandsp/power_meter.h"
 #include "spandsp/complex.h"
+#include "spandsp/modem_echo.h"
 #include "spandsp/tone_detect.h"
 #include "spandsp/tone_generate.h"
 #include "spandsp/async.h"
@@ -85,6 +86,7 @@
 #include "spandsp/private/bitstream.h"
 #include "spandsp/private/silence_gen.h"
 #include "spandsp/private/power_meter.h"
+#include "spandsp/private/modem_echo.h"
 #include "spandsp/private/fsk.h"
 #if defined(SPANDSP_SUPPORT_V34)
 #include "spandsp/private/v34.h"

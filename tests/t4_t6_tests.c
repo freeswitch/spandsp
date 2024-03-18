@@ -341,6 +341,11 @@ int main(int argc, char *argv[])
                 compression = T4_COMPRESSION_T6;
                 compression_step = -1;
             }
+            else
+            {
+                fprintf(stderr, "Unrecognised compression type %s\n", optarg);
+                exit(2);
+            }
             /*endif*/
             break;
         case 'm':

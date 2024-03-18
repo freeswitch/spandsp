@@ -54,8 +54,8 @@ typedef float v34_rx_shaper_t[V34_RX_PULSESHAPER_COEFF_SETS][V34_RX_FILTER_STEPS
 typedef float cc_rx_shaper_t[V34_RX_CC_PULSESHAPER_COEFF_SETS][V34_RX_FILTER_STEPS];
 #endif
 
-typedef uint8_t conv_encode_table_t[64][16];
-typedef uint8_t conv_decode_table_t[16][16];
+typedef const uint8_t conv_encode_table_t[64][16];
+typedef const uint8_t conv_decode_table_t[16][16];
 
 enum
 {
@@ -192,9 +192,9 @@ typedef struct
 
 typedef struct
 {
-    int use_high_carrier;
+    bool use_high_carrier;
     int pre_emphasis;
-    int max_data_rate;
+    int max_bit_rate;
 } info1c_baud_rate_parms_t;
 
 typedef struct
@@ -212,7 +212,7 @@ typedef struct
     int additional_power_reduction;
     int md;
     int freq_offset;
-    int use_high_carrier;
+    bool use_high_carrier;
     int preemphasis_filter;
     int max_data_rate;
     int baud_rate_a_to_c;
@@ -223,7 +223,7 @@ typedef struct
 {
     int power_reduction;
     int length_of_trn;
-    int use_high_carrier;
+    bool use_high_carrier;
     int preemphasis_filter;
     int baud_rate;
     bool trn16;
@@ -232,15 +232,15 @@ typedef struct
 typedef struct
 {
     int type;
-    int baud_rate_a_to_c;
-    int baud_rate_c_to_a;
+    int bit_rate_a_to_c;
+    int bit_rate_c_to_a;
     int aux_channel_supported;
     int trellis_size;
-    int use_non_linear_encoder;
-    int expanded_shaping;
-    int mp_acknowledged;
+    bool use_non_linear_encoder;
+    bool expanded_shaping;
+    bool mp_acknowledged;
     int signalling_rate_mask;
-    int asymmetric_rates_allowed;
+    bool asymmetric_rates_allowed;
     /*! \brief Only in an MP1 message */
     complexi16_t precoder_coeffs[3];
 } mp_t;
@@ -251,10 +251,10 @@ typedef struct
     int max_data_rate;
     int control_channel_2400;
     int trellis_size;
-    int use_non_linear_encoder;
-    int expanded_shaping;
+    bool use_non_linear_encoder;
+    bool expanded_shaping;
     int signalling_rate_mask;
-    int asymmetric_rates_allowed;
+    bool asymmetric_rates_allowed;
     /*! \brief Only in an MPH1 message */
     complexi16_t precoder_coeffs[3];
 } mph_t;
@@ -262,7 +262,8 @@ typedef struct
 /*! The set of working parameters, which defines operation at the current settings */
 typedef struct
 {
-    int max_bit_rate;
+    /*! \brief The code (0-16) for the maximum bit rate */
+    int max_bit_rate_code;
     /*! \brief Parameters for the current bit rate and baud rate */
     int bit_rate;
     /*! \brief Bits per high mapping frame. A low mapping frame is one bit less. */
@@ -298,12 +299,12 @@ typedef struct
     /*! \brief */
     int bit_rate;
     /*! \brief The callback function used to get the next bit to be transmitted. */
-    get_bit_func_t get_bit;
+    span_get_bit_func_t get_bit;
     /*! \brief A user specified opaque pointer passed to the get_bit function. */
     void *get_bit_user_data;
 
     /*! \brief The callback function used to get the next aux channel bit to be transmitted. */
-    get_bit_func_t get_aux_bit;
+    span_get_bit_func_t get_aux_bit;
     /*! \brief A user specified opaque pointer passed to the get_aux_bit function. */
     void *get_aux_bit_user_data;
 
@@ -316,6 +317,8 @@ typedef struct
     uint32_t scramble_reg;
     /*! \brief The scrambler tap which selects between the caller and answerer scramblers */
     int scrambler_tap;
+
+    bool use_non_linear_encoder;
 
 #if defined(SPANDSP_USE_FIXED_POINT)
     complexi16_t (*current_getbaud)(v34_state_t *s);
@@ -406,6 +409,8 @@ typedef struct
     int s_bit_cnt;
     int aux_bit_cnt;
 
+    uint16_t v0_pattern;
+
     uint8_t txbuf[50];
     int txbits;
     int txptr;
@@ -425,11 +430,15 @@ typedef struct
         mph_t mph;
     };
 
-    int fred1;
-    int fred2;
+    int persistence2;
 
     /*! \brief The get_bit function in use at any instant. */
-    get_bit_func_t current_get_bit;
+    span_get_bit_func_t current_get_bit;
+
+    /*! \brief Used to align the transmit and receive positions, to ensure things like
+               round trip delay are properly handled. */
+    span_sample_timer_t sample_time;
+
     logging_state_t *logging;
 } v34_tx_state_t;
 
@@ -476,11 +485,19 @@ typedef struct
                16 4D symbols deep, with 16 states each
                Each state has 4 entries: cumulative path metric, and prev. path pointer, x, y
                circularly addressed */
-    /*! \brief Cumulative path metric */
-    uint32_t cumulative_path_metric[16][16];
-    /*! \brief Previous path pointer */
-    uint16_t previous_path_ptr[16][16];
-    uint16_t pts[16][16];
+    struct
+    {
+        /*! \brief Cumulative path metric */
+        uint32_t cumulative_path_metric[16];
+        /*! \brief Previous path pointer */
+        uint16_t previous_path_ptr[16];
+        uint16_t pts[16];
+        uint16_t branch_error_x[8];
+        /*! \brief Branches of the x and y coords of the points in the eight 4D subsets
+                   to which a sequence of 2D points has been sliced.
+                   indexed from 0 to 15 --> 8 points for 16 past 4D symbols */
+        complexi16_t bb[2][8];
+    } vit[16];
     /*! \brief Latest viterbi table slot. */
     int ptr;
     /*! \brief Countdown to the first data being available from the viterbi pipeline */
@@ -492,12 +509,6 @@ typedef struct
     /*! \brief Eight 4D squared branch errors for each of 8 4D subsets.
                Indexed array for indexing from viterbi lookup table */
     uint16_t branch_error[8];
-    uint16_t branch_error_x[16][8];
-
-    /*! \brief Branches of the x and y coords of the points in the eight 4D subsets
-               to which a sequence of 2D points has been sliced.
-               indexed from 0 to 15 --> 8 points for 16 past 4D symbols */
-    complexi16_t bb[2][16][8];
 
     const conv_decode_table_t *conv_decode_table;
 } viterbi_t;
@@ -515,12 +526,12 @@ typedef struct
     /*! \brief */
     int bit_rate;
     /*! \brief The callback function used to put each bit received. */
-    put_bit_func_t put_bit;
+    span_put_bit_func_t put_bit;
     /*! \brief A user specified opaque pointer passed to the put_bit routine. */
     void *put_bit_user_data;
 
     /*! \brief The callback function used to put each aux bit received. */
-    put_bit_func_t put_aux_bit;
+    span_put_bit_func_t put_aux_bit;
     /*! \brief A user specified opaque pointer passed to the put_aux_bit routine. */
     void *put_aux_bit_user_data;
 
@@ -543,6 +554,8 @@ typedef struct
     uint32_t scramble_reg;
     /*! \brief The scrambler tap which selects between the caller and answerer scramblers */
     int scrambler_tap;
+
+    uint16_t v0_pattern;
 
     /*! \brief A power meter, to measure the HPF'ed signal power in the channel. */
     power_meter_t power;
@@ -685,8 +698,8 @@ typedef struct
     };
 
     int step;
-    int fred1;
-    int fred2;
+    int persistence1;
+    int persistence2;
 
     /* MP or MPh receive tracking data */
     int mp_count;
@@ -712,6 +725,12 @@ typedef struct
 
     int current_demodulator;
 
+    /*! \brief Used to align the transmit and receive positions, to ensure things like
+               round trip delay are properly handled. */
+    span_sample_timer_t sample_time;
+
+    span_sample_timer_t tone_ab_hop_time;
+
     logging_state_t *logging;
 } v34_rx_state_t;
 
@@ -729,11 +748,12 @@ struct v34_state_s
     bool half_duplex_source;
     /*! The current operating state when in half-duplex mode */
     bool half_duplex_state;
-    /*! \brief The bit rate of the modem. Valid values are 1200 and 2400. */
+    /*! \brief The bit rate of the modem. */
     int bit_rate;
 
     v34_tx_state_t tx;
     v34_rx_state_t rx;
+    modem_echo_can_state_t *ec;
 
     /*! \brief Error and flow logging control */
     logging_state_t logging;

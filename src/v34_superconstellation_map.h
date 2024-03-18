@@ -74,6 +74,7 @@
       -43 -39 -35 -31 -27 -23 -19 -15 -11  -7  -3   1   5  9   13  17  21  25  29  33  37  41  45
 */
 
+/* This is actually one quarter of the super-constellation */
 static const int8_t v34_superconstellation[1664/4][2] =
 {
     {  1,   1},   /*    0 */

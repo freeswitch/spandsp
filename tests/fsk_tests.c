@@ -486,14 +486,14 @@ static void cutoff_level_tests(int modem_under_test_1,
                                  0,
                                  true);
         tone_gen_init(&tone_tx, &tone_desc);
-        for (j = 0;  j < 10;  j++)
+        for (j = 0;  j < 100;  j++)
         {
             samples = tone_gen(&tone_tx, amp, 160);
             fsk_rx(rx, amp, samples);
         }
         /*endfor*/
         if (cutoff_test_carrier)
-           break;
+            break;
         /*endif*/
     }
     /*endfor*/
@@ -512,7 +512,7 @@ static void cutoff_level_tests(int modem_under_test_1,
                                  0,
                                  true);
         tone_gen_init(&tone_tx, &tone_desc);
-        for (j = 0;  j < 10;  j++)
+        for (j = 0;  j < 100;  j++)
         {
             samples = tone_gen(&tone_tx, amp, 160);
             fsk_rx(rx, amp, samples);

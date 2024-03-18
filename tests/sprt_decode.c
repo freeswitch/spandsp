@@ -40,6 +40,7 @@
 #if !defined(_WIN32)
 #include <unistd.h>
 #endif
+#include <sys/time.h>
 #include <arpa/inet.h>
 
 #include "spandsp.h"
