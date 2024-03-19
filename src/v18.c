@@ -179,12 +179,18 @@ When answering the DCE should prepare to detect:
 #if defined(SPANDSP_USE_FIXED_POINTx)
 /* The fixed point version scales the 16 bit signal down by 7 bits, so the Goertzels will fit in a 32 bit word */
 #define FP_SCALE(x)                         ((int16_t) (x/128.0 + ((x >= 0.0)  ?  0.5  :  -0.5)))
-//static const float tone_to_total_energy     = GOERTZEL_SAMPLES_PER_BLOCK*db_to_power_ratio(-0.85f);
+#if defined(SPANDSP_USE_INTRINSICS_IN_INITIALIZERS)
+static const float tone_to_total_energy     = GOERTZEL_SAMPLES_PER_BLOCK*db_to_power_ratio(-0.85f);
+#else
 static const float tone_to_total_energy     = 83.868f           /* -0.85dB */
+#endif
 #else
 #define FP_SCALE(x)                         (x)
-//static const float tone_to_total_energy     = GOERTZEL_SAMPLES_PER_BLOCK*db_to_power_ratio(-0.85f);
+#if defined(SPANDSP_USE_INTRINSICS_IN_INITIALIZERS)
+static const float tone_to_total_energy     = GOERTZEL_SAMPLES_PER_BLOCK*db_to_power_ratio(-0.85f);
+#else
 static const float tone_to_total_energy     = 83.868f;          /* -0.85dB */
+#endif
 #endif
 
 static void v18_set_modem(v18_state_t *s, int mode);

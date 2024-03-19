@@ -446,15 +446,21 @@ static const struct ademco_code_s ademco_codes[] =
 #define GOERTZEL_SAMPLES_PER_BLOCK              55                  /* We need to detect over a +-5% range */
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-//static const int detection_threshold            = goertzel_threshold_dbm0(GOERTZEL_SAMPLES_PER_BLOCK, -42.0f);
-static const int detection_threshold            = 3035;         /* -42dBm0 */
-//static const float tone_to_total_energy         = GOERTZEL_SAMPLES_PER_BLOCK*db_to_power_ratio(-0.85f);
-static const float tone_to_total_energy         = 45.2233f      /* -0.85dB */
+#if defined(SPANDSP_USE_INTRINSICS_IN_INITIALIZERS)
+static const int detection_threshold            = goertzel_threshold_dbm0(GOERTZEL_SAMPLES_PER_BLOCK, -42.0f);
+static const float tone_to_total_energy         = GOERTZEL_SAMPLES_PER_BLOCK*db_to_power_ratio(-0.85f);
 #else
-//static const float detection_threshold          = goertzel_threshold_dbm0(GOERTZEL_SAMPLES_PER_BLOCK, -42.0f);
-static const float detection_threshold          = 49728296.6f;  /* -42dBm0 */
-//static const float tone_to_total_energy         = GOERTZEL_SAMPLES_PER_BLOCK*db_to_power_ratio(-0.85f);
+static const int detection_threshold            = 3035;         /* -42dBm0 */
 static const float tone_to_total_energy         = 45.2233f;     /* -0.85dB */
+#endif
+#else
+#if defined(SPANDSP_USE_INTRINSICS_IN_INITIALIZERS)
+static const float detection_threshold          = goertzel_threshold_dbm0(GOERTZEL_SAMPLES_PER_BLOCK, -42.0f);
+static const float tone_to_total_energy         = GOERTZEL_SAMPLES_PER_BLOCK*db_to_power_ratio(-0.85f);
+#else
+static const float detection_threshold          = 49728296.6f;  /* -42dBm0 */
+static const float tone_to_total_energy         = 45.2233f;     /* -0.85dB */
+#endif
 #endif
 
 static int tone_rx_init = false;

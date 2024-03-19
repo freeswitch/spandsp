@@ -73,7 +73,7 @@
 #if defined(SPANDSP_USE_FIXED_POINT)
 /* The fixed point version scales the 16 bit signal down by 7 bits, so the Goertzels will fit in a 32 bit word */
 #define FP_SCALE(x)                             ((int16_t) (x/128.0 + ((x >= 0.0)  ?  0.5  :  -0.5)))
-#if 0
+#if defined(SPANDSP_USE_INTRINSICS_IN_INITIALIZERS)
 static const float dtmf_threshold               = goertzel_threshold_dbm0(DTMF_SAMPLES_PER_BLOCK, -42.0f);
 static const float dtmf_normal_twist            = db_to_power_ratio(8.0f);
 static const float dtmf_reverse_twist           = db_to_power_ratio(4.0f);
@@ -92,7 +92,7 @@ static const float dtmf_power_offset            = 65.251f;
 #endif
 #else
 #define FP_SCALE(x)                             (x)
-#if 0
+#if defined(SPANDSP_USE_INTRINSICS_IN_INITIALIZERS)
 static const float dtmf_threshold               = goertzel_threshold_dbm0(DTMF_SAMPLES_PER_BLOCK, -42.0f);
 static const float dtmf_normal_twist            = db_to_power_ratio(8.0f);
 static const float dtmf_reverse_twist           = db_to_power_ratio(4.0f);
