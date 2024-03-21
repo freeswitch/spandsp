@@ -366,8 +366,19 @@ SPAN_DECLARE(void) t38_non_ecm_buffer_report_output_status(t38_non_ecm_buffer_st
 
 SPAN_DECLARE(void) t38_non_ecm_buffer_set_mode(t38_non_ecm_buffer_state_t *s, bool image_mode, int min_bits_per_row)
 {
+    bool old_mode;
+
+    old_mode = s->image_data_mode;
     s->image_data_mode = image_mode;
     s->min_bits_per_row = min_bits_per_row;
+
+    /* If we are changing modes, we need to restart the buffer to initialise the new mode. Usually the buffer will 
+       restart as it empties at the end of a TCF or image operation. However, something like a change of page size,
+       which will cause a new DCS and TCF sequence, will only detect the need for a mode change from image to
+       TCF after the buffer has reset automatically at the end of the last image. */
+    if (image_mode != old_mode)
+        restart_buffer(s);
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
