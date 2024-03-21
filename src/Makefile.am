@@ -386,44 +386,46 @@ noinst_HEADERS = cielab_luts.h \
                  v34_tx_pre_emphasis_filters.h \
                  v34_tables.h
 
-make_at_dictionary$(EXEEXT): $(top_srcdir)/src/make_at_dictionary.c
-	$(CC_FOR_BUILD) -o make_at_dictionary$(EXEEXT) $(top_srcdir)/src/make_at_dictionary.c -DHAVE_CONFIG_H -I$(top_builddir)/src
+LINK_FOR_BUILD.c = $(CC_FOR_BUILD) -DHAVE_CONFIG_H -I$(top_builddir)/src $(CFLAGS_FOR_BUILD) $(CPPFLAGS_FOR_BUILD) $(LDFLAGS_FOR_BUILD) $(TARGET_ARCH_FOR_BUILD)
 
-make_cielab_luts$(EXEEXT): $(top_srcdir)/src/make_cielab_luts.c
-	$(CC_FOR_BUILD) -o make_cielab_luts$(EXEEXT) $(top_srcdir)/src/make_cielab_luts.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
+make_at_dictionary$(BUILD_EXEEXT): $(top_srcdir)/src/make_at_dictionary.c
+	$(LINK_FOR_BUILD.c) -o $@ $^
 
-make_math_fixed_tables$(EXEEXT): $(top_srcdir)/src/make_math_fixed_tables.c
-	$(CC_FOR_BUILD) -o make_math_fixed_tables$(EXEEXT) $(top_srcdir)/src/make_math_fixed_tables.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
+make_cielab_luts$(BUILD_EXEEXT): $(top_srcdir)/src/make_cielab_luts.c
+	$(LINK_FOR_BUILD.c) -o $@ $^ -lm
 
-make_modem_filter$(EXEEXT): $(top_srcdir)/src/make_modem_filter.c $(top_srcdir)/src/filter_tools.c
-	$(CC_FOR_BUILD) -o make_modem_filter$(EXEEXT) $(top_srcdir)/src/make_modem_filter.c $(top_srcdir)/src/filter_tools.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
+make_math_fixed_tables$(BUILD_EXEEXT): $(top_srcdir)/src/make_math_fixed_tables.c
+	$(LINK_FOR_BUILD.c) -o $@ $^ -lm
 
-make_modem_godard_coefficients$(EXEEXT): $(top_srcdir)/src/make_modem_godard_coefficients.c $(top_srcdir)/src/filter_tools.c
-	$(CC_FOR_BUILD) -o make_modem_godard_coefficients$(EXEEXT) $(top_srcdir)/src/make_modem_godard_coefficients.c $(top_srcdir)/src/filter_tools.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
+make_modem_filter$(BUILD_EXEEXT): $(top_srcdir)/src/make_modem_filter.c $(top_srcdir)/src/filter_tools.c
+	$(LINK_FOR_BUILD.c) -o $@ $^ -lm
 
-make_t43_gray_code_tables$(EXEEXT): $(top_srcdir)/src/make_t43_gray_code_tables.c
-	$(CC_FOR_BUILD) -o make_t43_gray_code_tables$(EXEEXT) $(top_srcdir)/src/make_t43_gray_code_tables.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
+make_modem_godard_coefficients$(BUILD_EXEEXT): $(top_srcdir)/src/make_modem_godard_coefficients.c $(top_srcdir)/src/filter_tools.c
+	$(LINK_FOR_BUILD.c) -o $@ $^ -lm
 
-make_v17_v32_constellation_map$(EXEEXT): $(top_srcdir)/src/make_v17_v32_constellation_map.c $(top_srcdir)/src/g711.c $(top_srcdir)/src/alloc.c
-	$(CC_FOR_BUILD) -o make_v17_v32_constellation_map$(EXEEXT) $(top_srcdir)/src/make_v17_v32_constellation_map.c $(top_srcdir)/src/g711.c $(top_srcdir)/src/alloc.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
+make_t43_gray_code_tables$(BUILD_EXEEXT): $(top_srcdir)/src/make_t43_gray_code_tables.c
+	$(LINK_FOR_BUILD.c) -o $@ $^ -lm
 
-make_v17_v32_convolutional_encoder$(EXEEXT): $(top_srcdir)/src/make_v17_v32_convolutional_encoder.c $(top_srcdir)/src/g711.c $(top_srcdir)/src/alloc.c
-	$(CC_FOR_BUILD) -o make_v17_v32_convolutional_encoder$(EXEEXT) $(top_srcdir)/src/make_v17_v32_convolutional_encoder.c $(top_srcdir)/src/g711.c $(top_srcdir)/src/alloc.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
+make_v17_v32_constellation_map$(BUILD_EXEEXT): $(top_srcdir)/src/make_v17_v32_constellation_map.c $(top_srcdir)/src/g711.c $(top_srcdir)/src/alloc.c
+	$(LINK_FOR_BUILD.c) -o $@ $^ -lm
 
-make_v29_constellation_map$(EXEEXT): $(top_srcdir)/src/make_v29_constellation_map.c $(top_srcdir)/src/g711.c $(top_srcdir)/src/alloc.c
-	$(CC_FOR_BUILD) -o make_v29_constellation_map$(EXEEXT) $(top_srcdir)/src/make_v29_constellation_map.c $(top_srcdir)/src/g711.c $(top_srcdir)/src/alloc.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
+make_v17_v32_convolutional_encoder$(BUILD_EXEEXT): $(top_srcdir)/src/make_v17_v32_convolutional_encoder.c $(top_srcdir)/src/g711.c $(top_srcdir)/src/alloc.c
+	$(LINK_FOR_BUILD.c) -o $@ $^ -lm
 
-make_v34_convolutional_coders$(EXEEXT): $(top_srcdir)/src/make_v34_convolutional_coders.c
-	$(CC_FOR_BUILD) -o make_v34_convolutional_coders$(EXEEXT) $(top_srcdir)/src/make_v34_convolutional_coders.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
+make_v29_constellation_map$(BUILD_EXEEXT): $(top_srcdir)/src/make_v29_constellation_map.c $(top_srcdir)/src/g711.c $(top_srcdir)/src/alloc.c
+	$(LINK_FOR_BUILD.c) -o $@ $^ -lm
 
-make_v34_probe_signals$(EXEEXT): $(top_srcdir)/src/make_v34_probe_signals.c $(top_srcdir)/src/g711.c $(top_srcdir)/src/alloc.c
-	$(CC_FOR_BUILD) -o make_v34_probe_signals$(EXEEXT) $(top_srcdir)/src/make_v34_probe_signals.c $(top_srcdir)/src/g711.c $(top_srcdir)/src/alloc.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
+make_v34_convolutional_coders$(BUILD_EXEEXT): $(top_srcdir)/src/make_v34_convolutional_coders.c
+	$(LINK_FOR_BUILD.c) -o $@ $^ -lm
 
-make_v34_shell_map$(EXEEXT): $(top_srcdir)/src/make_v34_shell_map.c
-	$(CC_FOR_BUILD) -o make_v34_shell_map$(EXEEXT) $(top_srcdir)/src/make_v34_shell_map.c -DHAVE_CONFIG_H -I$(top_builddir)/src
+make_v34_probe_signals$(BUILD_EXEEXT): $(top_srcdir)/src/make_v34_probe_signals.c $(top_srcdir)/src/g711.c $(top_srcdir)/src/alloc.c
+	$(LINK_FOR_BUILD.c) -o $@ $^ -I$(top_srcdir)/src -lm
 
-make_v34_tx_pre_emphasis_filters$(EXEEXT): $(top_srcdir)/src/make_v34_tx_pre_emphasis_filters.c $(top_srcdir)/tools/meteor-engine.c
-	$(CC_FOR_BUILD) -o make_v34_tx_pre_emphasis_filters$(EXEEXT) $(top_srcdir)/src/make_v34_tx_pre_emphasis_filters.c $(top_srcdir)/tools/meteor-engine.c -DHAVE_CONFIG_H -I$(top_builddir)/src -I$(top_builddir)/tools -lm
+make_v34_shell_map$(BUILD_EXEEXT): $(top_srcdir)/src/make_v34_shell_map.c
+	$(LINK_FOR_BUILD.c) -o $@ $^
+
+make_v34_tx_pre_emphasis_filters$(BUILD_EXEEXT): $(top_srcdir)/src/make_v34_tx_pre_emphasis_filters.c $(top_srcdir)/tools/meteor-engine.c
+	$(LINK_FOR_BUILD.c) -o $@ $^ -I$(top_srcdir)/tools -lm
 
 # We need to run make_at_dictionary, so it generates the
 # at_interpreter_dictionary.h file
