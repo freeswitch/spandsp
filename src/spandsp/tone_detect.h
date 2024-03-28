@@ -60,21 +60,11 @@ struct goertzel_state_s
 /* Convert a power level in dBm0 or dBov to the equivalent result from a Goertzel filter. This is len*len times the actual power, since
    the DFT calculation accumulates at the square of the number of samples. */
 #if defined(SPANDSP_USE_FIXED_POINT)
-#define goertzel_threshold_dbm0(len,thresh)     (int) ((len*len*256.0*256.0/2.0)*pow(10.0, (thresh - DBM0_MAX_SINE_POWER)/10.0))
-#define goertzel_threshold_dbmov(len,thresh)    (int) ((len*len*256.0*256.0/2.0)*pow(10.0, (thresh - DBMOV_MAX_SINE_POWER)/10.0))
+#define goertzel_threshold_dbm0(len,thresh)     (int) ((len*len*256.0f*256.0f/2.0f)*powf(10.0f, (thresh - DBM0_MAX_SINE_POWER)/10.0f))
+#define goertzel_threshold_dbmov(len,thresh)    (int) ((len*len*256.0f*256.0f/2.0f)*powf(10.0f, (thresh - DBMOV_MAX_SINE_POWER)/10.0f))
 #else
-#define goertzel_threshold_dbm0(len,thresh)     (float) ((len*len*32768.0*32768.0/2.0)*pow(10.0, (thresh - DBM0_MAX_SINE_POWER)/10.0))
-#define goertzel_threshold_dbmov(len,thresh)    (float) ((len*len*32768.0*32768.0/2.0)*pow(10.0, (thresh - DBMOV_MAX_SINE_POWER)/10.0))
-#endif
-
-/* Convert a power level in dBm0 or dBov to the equivalent energy to expect from an integration over len samples. So, this is len
-   times the actual power. */
-#if defined(SPANDSP_USE_FIXED_POINT)
-#define energy_threshold_dbm0(len,thresh)       (int) ((len*256.0*256.0/2.0)*pow(10.0, (thresh - DBM0_MAX_SINE_POWER)/10.0))
-#define energy_threshold_dbmov(len,thresh)      (int) ((len*256.0*256.0/2.0)*pow(10.0, (thresh - DBMOV_MAX_SINE_POWER)/10.0))
-#else
-#define energy_threshold_dbm0(len,thresh)       (float) ((len*32768.0*32768.0/2.0)*pow(10.0, (thresh - DBM0_MAX_SINE_POWER)/10.0))
-#define energy_threshold_dbmov(len,thresh)      (float) ((len*32768.0*32768.0/2.0)*pow(10.0, (thresh - DBMOV_MAX_SINE_POWER)/10.0))
+#define goertzel_threshold_dbm0(len,thresh)     (float) ((len*len*32768.0f*32768.0f/2.0f)*powf(10.0f, (thresh - DBM0_MAX_SINE_POWER)/10.0f))
+#define goertzel_threshold_dbmov(len,thresh)    (float) ((len*len*32768.0f*32768.0f/2.0f)*powf(10.0f, (thresh - DBMOV_MAX_SINE_POWER)/10.0f))
 #endif
 
 /*!

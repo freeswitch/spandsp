@@ -79,6 +79,7 @@ endif
 
 noinst_PROGRAMS =   ademco_contactid_tests \
                     adsi_tests \
+                    agc_float_tests \
                     alloc_tests \
                     async_tests \
                     at_interpreter_tests \
@@ -185,6 +186,9 @@ ademco_contactid_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(BAS
 
 adsi_tests_SOURCES = adsi_tests.c
 adsi_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(BASE_LIBS)
+
+agc_float_tests_SOURCES = agc_float_tests.c
+agc_float_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(BASE_LIBS)
 
 alloc_tests_SOURCES = alloc_tests.c
 alloc_tests_LDADD = $(BASE_LIBS)

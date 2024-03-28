@@ -48,13 +48,6 @@
 
 #define SAMPLE_RATE                 8000
 
-/* This is based on A-law, but u-law is only 0.03dB different */
-#define DBM0_MAX_POWER              (3.14f + 3.02f)
-#define DBM0_MAX_SINE_POWER         (3.14f)
-/* This is based on the ITU definition of dbOv in G.100.1 */
-#define DBOV_MAX_POWER              (0.0f)
-#define DBOV_MAX_SINE_POWER         (-3.02f)
-
 /*! \brief A timer variable large enough that when in microseconds it just
            won't overflow. Most things in spandsp are timed by audio samples,
            but some things need access to global timers. */
@@ -131,6 +124,13 @@ typedef int (*span_tx_handler_t)(void *s, int16_t amp[], int max_len);
 #define FP_Q2_30(x)  ((int32_t) (65536.0*16384.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
 #define FP_Q1_31(x)  ((int32_t) (65536.0*32768.0*(x) + (((x) >= 0.0)  ?  0.5  :  -0.5)))
 
+/* This is based on A-law, but u-law is only 0.03dB different */
+#define DBM0_MAX_POWER              (3.14f + 3.02f)
+#define DBM0_MAX_SINE_POWER         (3.14f)
+/* This is based on the ITU definition of dbOv in G.100.1 */
+#define DBOV_MAX_POWER              (0.0f)
+#define DBOV_MAX_SINE_POWER         (-3.02f)
+
 #if defined(SPANDSP_USE_FIXED_POINT)
 #define db_to_power_ratio(val)                  powf(10.0f, (val)/10.0f)
 #define db_to_amplitude_ratio(val)              powf(10.0f, (val)/20.0f)
@@ -141,6 +141,16 @@ typedef int (*span_tx_handler_t)(void *s, int16_t amp[], int max_len);
 #define db_to_amplitude_ratio(val)              powf(10.0f, (val)/20.0f)
 #define power_ratio_to_db(val)                  (10.0f*log10f(val))
 #define amplitude_ratio_to_db(val)              (20.0f*log10f(val))
+#endif
+
+/* Convert a power level in dBm0 or dBov to the equivalent energy to expect from an integration over len samples. So, this is len
+   times the actual power. */
+#if defined(SPANDSP_USE_FIXED_POINT)
+#define energy_threshold_dbm0(len,thresh)       (int) (((len)*256.0f*256.0f/2.0f)*powf(10.0f, ((thresh) - DBM0_MAX_SINE_POWER)/10.0f))
+#define energy_threshold_dbmov(len,thresh)      (int) (((len)*256.0f*256.0f/2.0f)*powf(10.0f, ((thresh) - DBMOV_MAX_SINE_POWER)/10.0f))
+#else
+#define energy_threshold_dbm0(len,thresh)       (float) (((len)*32768.0f*32768.0f/2.0f)*powf(10.0f, ((thresh) - DBM0_MAX_SINE_POWER)/10.0f))
+#define energy_threshold_dbmov(len,thresh)      (float) (((len)*32768.0f*32768.0f/2.0f)*powf(10.0f, ((thresh) - DBMOV_MAX_SINE_POWER)/10.0f))
 #endif
 
 #if defined(__cplusplus)

@@ -23,6 +23,7 @@ DISTCLEANFILES = $(srcdir)/at_interpreter_dictionary.h \
                  $(srcdir)/cielab_luts.h \
                  $(srcdir)/math_fixed_tables.h \
                  $(srcdir)/v17_v32bis_rx_rrc.h \
+                 $(srcdir)/v17_v32bis_rx_godard.h \
                  $(srcdir)/v17_v32bis_tx_rrc.h \
                  $(srcdir)/v22bis_rx_1200_rrc.h \
                  $(srcdir)/v22bis_rx_2400_rrc.h \
@@ -32,6 +33,7 @@ DISTCLEANFILES = $(srcdir)/at_interpreter_dictionary.h \
                  $(srcdir)/v27ter_tx_2400_rrc.h \
                  $(srcdir)/v27ter_tx_4800_rrc.h \
                  $(srcdir)/v29rx_rrc.h \
+                 $(srcdir)/v29rx_godard.h \
                  $(srcdir)/v29tx_rrc.h
 
 CLEANFILES = ${DISTCLEANFILES}
@@ -87,6 +89,7 @@ endif
 
 libspandsp_la_SOURCES = ademco_contactid.c \
                         adsi.c \
+                        agc_float.c \
                         alloc.c \
                         async.c \
                         at_interpreter.c \
@@ -110,6 +113,7 @@ libspandsp_la_SOURCES = ademco_contactid.c \
                         g711.c \
                         g722.c \
                         g726.c \
+                        godard.c \
                         gsm0610_decode.c \
                         gsm0610_encode.c \
                         gsm0610_long_term.c \
@@ -190,6 +194,7 @@ libspandsp_la_LDFLAGS = -version-info @SPANDSP_LT_CURRENT@:@SPANDSP_LT_REVISION@
 
 nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/adsi.h \
+                         spandsp/agc_float.h \
                          spandsp/alloc.h \
                          spandsp/async.h \
                          spandsp/arctan2.h \
@@ -219,6 +224,7 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/g711.h \
                          spandsp/g722.h \
                          spandsp/g726.h \
+                         spandsp/godard.h \
                          spandsp/gsm0610.h \
                          spandsp/hdlc.h \
                          spandsp/ima_adpcm.h \
@@ -290,6 +296,7 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/version.h \
                          spandsp/private/ademco_contactid.h \
                          spandsp/private/adsi.h \
+                         spandsp/private/agc_float.h \
                          spandsp/private/async.h \
                          spandsp/private/at_interpreter.h \
                          spandsp/private/awgn.h \
@@ -305,6 +312,7 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/private/g711.h \
                          spandsp/private/g722.h \
                          spandsp/private/g726.h \
+                         spandsp/private/godard.h \
                          spandsp/private/gsm0610.h \
                          spandsp/private/hdlc.h \
                          spandsp/private/ima_adpcm.h \
@@ -398,8 +406,8 @@ make_math_fixed_tables$(EXEEXT): $(top_srcdir)/src/make_math_fixed_tables.c
 make_modem_filter$(EXEEXT): $(top_srcdir)/src/make_modem_filter.c $(top_srcdir)/src/filter_tools.c
 	$(CC_FOR_BUILD) -o make_modem_filter$(EXEEXT) $(top_srcdir)/src/make_modem_filter.c $(top_srcdir)/src/filter_tools.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
 
-make_modem_godard_coefficients$(EXEEXT): $(top_srcdir)/src/make_modem_godard_coefficients.c $(top_srcdir)/src/filter_tools.c
-	$(CC_FOR_BUILD) -o make_modem_godard_coefficients$(EXEEXT) $(top_srcdir)/src/make_modem_godard_coefficients.c $(top_srcdir)/src/filter_tools.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
+make_modem_godard_descriptor$(EXEEXT): $(top_srcdir)/src/make_modem_godard_descriptor.c $(top_srcdir)/src/filter_tools.c
+	$(CC_FOR_BUILD) -o make_modem_godard_descriptor$(EXEEXT) $(top_srcdir)/src/make_modem_godard_descriptor.c $(top_srcdir)/src/filter_tools.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
 
 make_t43_gray_code_tables$(EXEEXT): $(top_srcdir)/src/make_t43_gray_code_tables.c
 	$(CC_FOR_BUILD) -o make_t43_gray_code_tables$(EXEEXT) $(top_srcdir)/src/make_t43_gray_code_tables.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
@@ -470,7 +478,7 @@ t43_gray_code_tables.h: make_t43_gray_code_tables$(EXEEXT)
 # We need to run make_modem_filter, so it generates the
 # filter coefficient files
 
-V17_V32BIS_RX_INCL = v17_v32bis_rx_rrc.h
+V17_V32BIS_RX_INCL = v17_v32bis_rx_rrc.h v17_v32bis_rx_godard.h
 
 v17rx.$(OBJEXT): ${V17_V32BIS_RX_INCL}
 
@@ -478,6 +486,9 @@ v17rx.lo: ${V17_V32BIS_RX_INCL}
 
 v17_v32bis_rx_rrc.h: make_modem_filter$(EXEEXT)
 	./make_modem_filter$(EXEEXT) -m V.17 -r >v17_v32bis_rx_rrc.h
+
+v17_v32bis_rx_godard.h: make_modem_godard_descriptor$(EXEEXT)
+	./make_modem_godard_descriptor$(EXEEXT) 1800.0 2400.0 0.99 1000.0 100.0 15 1 >v17_v32bis_rx_godard.h
 
 V17_V32BIS_TX_INCL = v17_v32bis_tx_rrc.h
 
@@ -536,7 +547,7 @@ v27ter_tx_2400_rrc.h: make_modem_filter$(EXEEXT)
 v27ter_tx_4800_rrc.h: make_modem_filter$(EXEEXT)
 	./make_modem_filter$(EXEEXT) -m V.27ter4800 -t >v27ter_tx_4800_rrc.h
 
-V29_RX_INCL = v29rx_rrc.h
+V29_RX_INCL = v29rx_rrc.h v29rx_godard.h
 
 v29rx.$(OBJEXT): ${V29_RX_INCL}
 
@@ -544,6 +555,9 @@ v29rx.lo: ${V29_RX_INCL}
 
 v29rx_rrc.h: make_modem_filter$(EXEEXT)
 	./make_modem_filter$(EXEEXT) -m V.29 -r >v29rx_rrc.h
+
+v29rx_godard.h: make_modem_godard_descriptor$(EXEEXT)
+	./make_modem_godard_descriptor$(EXEEXT) 1700.0 2400.0 0.99 1000.0 30.0 5 1 >v29rx_godard.h
 
 V29_TX_INCL = v29tx_rrc.h
 

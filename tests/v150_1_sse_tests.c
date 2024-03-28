@@ -119,9 +119,8 @@ static void terminal_callback(void *user_data, const uint8_t msg[], int len)
 
     printf("terminal callback %d\n", len);
     for (i = 0;  i < len;  i++)
-    {
         printf("0x%x ", msg[i]);
-    }
+    /*endfor*/
     printf("\n");
     /* TODO: connect AT input to V.150.1 SSE */
 }

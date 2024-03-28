@@ -37,8 +37,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#if defined(HAVE_PCAP_H)
 #include <sys/types.h>
+#if defined(HAVE_PCAP_H)
 #include <pcap.h>
 #include <pcap/sll.h>
 #endif

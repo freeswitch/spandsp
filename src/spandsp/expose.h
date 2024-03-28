@@ -37,6 +37,7 @@
 #include <spandsp/private/schedule.h>
 #include <spandsp/private/bitstream.h>
 #include <spandsp/private/queue.h>
+#include <spandsp/private/agc_float.h>
 #include <spandsp/private/awgn.h>
 #include <spandsp/private/noise.h>
 #include <spandsp/private/bert.h>
@@ -67,6 +68,7 @@
 #include <spandsp/private/modem_connect_tones.h>
 #include <spandsp/private/v8.h>
 #include <spandsp/private/v80.h>
+#include <spandsp/private/godard.h>
 #include <spandsp/private/v17rx.h>
 #include <spandsp/private/v17tx.h>
 #include <spandsp/private/v22bis.h>

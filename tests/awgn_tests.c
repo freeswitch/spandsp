@@ -63,15 +63,13 @@ int main(int argc, char *argv[])
     double error;
     int bins[65536];
     awgn_state_t *noise_source;
-    power_meter_t meter;
 
-    /* Generate noise at several RMS levels between -50dBm0 and 0dBm0. Noise is
+    /* Generate noise at several RMS levels between -50dBm and 0dBm. Noise is
        generated for a large number of samples (1,000,000), and the RMS value
        of the noise is calculated along the way. If the resulting level is
        close to the requested RMS level, at least the scaling of the noise
-       should be OK. At high level some clipping may distort the result a
+       should be Ok. At high level some clipping may distort the result a
        little. */
-    power_meter_init(&meter, 10);
     for (j = -50;  j <= 0;  j += 5)
     {
         clip_high = 0;
@@ -92,7 +90,6 @@ int main(int argc, char *argv[])
             else if (value == -32768)
                 clip_low++;
             /*endif*/
-            power_meter_update(&meter, value);
             total += ((double) value)*((double) value);
         }
         /*endfor*/
@@ -103,8 +100,6 @@ int main(int argc, char *argv[])
                error,
                clip_low,
                clip_high);
-        printf("Power meter says %fdBOv/%fdBm0\n", power_meter_current_dbov(&meter), power_meter_current_dbm0(&meter));
-
         /* We don't check the result at 0dBm0, as there will definitely be a lot of error due to clipping */
         if (j < 0  &&  fabs(error) > 0.2)
         {

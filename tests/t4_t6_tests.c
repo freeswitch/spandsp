@@ -464,6 +464,12 @@ int main(int argc, char *argv[])
     t4_t6_encode_free(send_state);
     t4_t6_decode_free(receive_state);
 #endif
+    if (tests_failed > 0)
+    {
+        printf("%d tests failed\n", tests_failed);
+        return 2;
+    }
+    /*endif*/
     printf("Tests passed\n");
     return 0;
 }

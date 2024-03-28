@@ -23,7 +23,7 @@ run_fax_test()
     RETVAL=$?
     if [ $RETVAL != 0 ]
     then
-        echo fax_tests failed!
+        echo fax_tests processing failed!
         exit $RETVAL
     fi
     # Now use tiffcmp to check the results. It will return non-zero if any page images differ. The -t
@@ -32,7 +32,7 @@ run_fax_test()
     RETVAL=$?
     if [ $RETVAL != 0 ]
     then
-        echo fax_tests failed!
+        echo fax_tests image compare failed!
         exit $RETVAL
     fi
     rm -f fax_tests.tif
@@ -48,7 +48,7 @@ run_fax_squash_test()
     RETVAL=$?
     if [ $RETVAL != 0 ]
     then
-        echo fax_tests failed!
+        echo fax_tests processing failed!
         exit $RETVAL
     fi
     # Now use tiffcmp to check the results. It will return non-zero if any page images differ. The -t
@@ -57,7 +57,7 @@ run_fax_squash_test()
     RETVAL=$?
     if [ $RETVAL != 0 ]
     then
-        echo fax_tests failed!
+        echo fax_tests image compare failed!
         exit $RETVAL
     fi
     rm -f fax_tests.tif
@@ -72,7 +72,7 @@ run_colour_fax_test()
     RETVAL=$?
     if [ $RETVAL != 0 ]
     then
-        echo fax_tests failed!
+        echo fax_tests processing failed!
         exit $RETVAL
     fi
     # Now use tiffcmp to check the results. It will return non-zero if any page images differ. The -t
@@ -81,7 +81,7 @@ run_colour_fax_test()
     RETVAL=$?
     if [ $RETVAL != 0 ]
     then
-        echo fax_tests failed!
+        echo fax_tests image compare failed!
         exit $RETVAL
     fi
     rm -f fax_tests.tif
@@ -140,105 +140,6 @@ TIFFCMP=tiffcmp
 #    OUT_FILE="${TIFFFX_DIR}/l04x_02x.tif"
 #    run_colour_fax_test
 #done
-
-# Bi-level tests with image squashing
-for OPTS in "-p FAX-FAX" "-p FAX-FAX -e" "-p T38-T38" "-p T38-T38 -e" "-p FAX-T38gateway-T38gateway-FAX" "-p FAX-T38gateway-T38gateway-FAX -e" "-p T38-T38gateway-FAX" "-p T38-T38gateway-FAX -e" "-p FAX-T38gateway-T38" "-p FAX-T38gateway-T38 -e"
-do
-    IN_FILE="${ITUTESTS_DIR}/bilevel_R8_77_A4.tif"
-    OUT_FILE="${ITUTESTS_DIR}/bilevel_R8_77SQ_A4.tif"
-    SQ=4
-    run_fax_squash_test
-
-    IN_FILE="${ITUTESTS_DIR}/bilevel_R8_77_B4.tif"
-    OUT_FILE="${ITUTESTS_DIR}/bilevel_R8_77SQ_B4.tif"
-    SQ=4
-    run_fax_squash_test
-
-    IN_FILE="${ITUTESTS_DIR}/bilevel_R8_77_A3.tif"
-    OUT_FILE="${ITUTESTS_DIR}/bilevel_R8_77SQ_A3.tif"
-    SQ=4
-    run_fax_squash_test
-
-
-    IN_FILE="${ITUTESTS_DIR}/bilevel_R8_154_A4.tif"
-    OUT_FILE="${ITUTESTS_DIR}/bilevel_R8_154SQ_A4.tif"
-    SQ=3
-    run_fax_squash_test
-
-    IN_FILE="${ITUTESTS_DIR}/bilevel_R8_154_B4.tif"
-    OUT_FILE="${ITUTESTS_DIR}/bilevel_R8_154SQ_B4.tif"
-    SQ=3
-    run_fax_squash_test
-
-    IN_FILE="${ITUTESTS_DIR}/bilevel_R8_154_A3.tif"
-    OUT_FILE="${ITUTESTS_DIR}/bilevel_R8_154SQ_A3.tif"
-    SQ=3
-    run_fax_squash_test
-
-
-    IN_FILE="${ITUTESTS_DIR}/bilevel_R8_154_A4.tif"
-    OUT_FILE="${ITUTESTS_DIR}/bilevel_R8_154SQSQ_A4.tif"
-    SQ=4
-    run_fax_squash_test
-
-    IN_FILE="${ITUTESTS_DIR}/bilevel_R8_154_B4.tif"
-    OUT_FILE="${ITUTESTS_DIR}/bilevel_R8_154SQSQ_B4.tif"
-    SQ=4
-    run_fax_squash_test
-
-    IN_FILE="${ITUTESTS_DIR}/bilevel_R8_154_A3.tif"
-    OUT_FILE="${ITUTESTS_DIR}/bilevel_R8_154SQSQ_A3.tif"
-    SQ=4
-    run_fax_squash_test
-
-
-    IN_FILE="${ITUTESTS_DIR}/bilevel_200_200_A4.tif"
-    OUT_FILE="${ITUTESTS_DIR}/bilevel_200_200SQ_A4.tif"
-    SQ=4
-    run_fax_squash_test
-
-    IN_FILE="${ITUTESTS_DIR}/bilevel_200_200_B4.tif"
-    OUT_FILE="${ITUTESTS_DIR}/bilevel_200_200SQ_B4.tif"
-    SQ=4
-    run_fax_squash_test
-
-    IN_FILE="${ITUTESTS_DIR}/bilevel_200_200_A3.tif"
-    OUT_FILE="${ITUTESTS_DIR}/bilevel_200_200SQ_A3.tif"
-    SQ=4
-    run_fax_squash_test
-
-
-    IN_FILE="${ITUTESTS_DIR}/bilevel_200_400_A4.tif"
-    OUT_FILE="${ITUTESTS_DIR}/bilevel_200_400SQ_A4.tif"
-    SQ=3
-    run_fax_squash_test
-
-    IN_FILE="${ITUTESTS_DIR}/bilevel_200_400_B4.tif"
-    OUT_FILE="${ITUTESTS_DIR}/bilevel_200_400SQ_B4.tif"
-    SQ=3
-    run_fax_squash_test
-
-    IN_FILE="${ITUTESTS_DIR}/bilevel_200_400_A3.tif"
-    OUT_FILE="${ITUTESTS_DIR}/bilevel_200_400SQ_A3.tif"
-    SQ=3
-    run_fax_squash_test
-
-
-    IN_FILE="${ITUTESTS_DIR}/bilevel_200_400_A4.tif"
-    OUT_FILE="${ITUTESTS_DIR}/bilevel_200_400SQSQ_A4.tif"
-    SQ=4
-    run_fax_squash_test
-
-    IN_FILE="${ITUTESTS_DIR}/bilevel_200_400_B4.tif"
-    OUT_FILE="${ITUTESTS_DIR}/bilevel_200_400SQSQ_B4.tif"
-    SQ=4
-    run_fax_squash_test
-
-    IN_FILE="${ITUTESTS_DIR}/bilevel_200_400_A3.tif"
-    OUT_FILE="${ITUTESTS_DIR}/bilevel_200_400SQSQ_A3.tif"
-    SQ=4
-    run_fax_squash_test
-done
 
 # Bi-level tests
 for OPTS in "-p FAX-FAX" "-p FAX-FAX -e" "-p T38-T38" "-p T38-T38 -e" "-p FAX-T38gateway-T38gateway-FAX" "-p FAX-T38gateway-T38gateway-FAX -e" "-p T38-T38gateway-FAX" "-p T38-T38gateway-FAX -e" "-p FAX-T38gateway-T38" "-p FAX-T38gateway-T38 -e"
@@ -396,6 +297,104 @@ do
     run_fax_test
 done
 
+# Bi-level tests with image squashing
+for OPTS in "-p FAX-FAX" "-p FAX-FAX -e" "-p T38-T38" "-p T38-T38 -e" "-p FAX-T38gateway-T38gateway-FAX" "-p FAX-T38gateway-T38gateway-FAX -e" "-p T38-T38gateway-FAX" "-p T38-T38gateway-FAX -e" "-p FAX-T38gateway-T38" "-p FAX-T38gateway-T38 -e"
+do
+    IN_FILE="${ITUTESTS_DIR}/bilevel_R8_77_A4.tif"
+    OUT_FILE="${ITUTESTS_DIR}/bilevel_R8_77SQ_A4.tif"
+    SQ=4
+    run_fax_squash_test
+
+    IN_FILE="${ITUTESTS_DIR}/bilevel_R8_77_B4.tif"
+    OUT_FILE="${ITUTESTS_DIR}/bilevel_R8_77SQ_B4.tif"
+    SQ=4
+    run_fax_squash_test
+
+    IN_FILE="${ITUTESTS_DIR}/bilevel_R8_77_A3.tif"
+    OUT_FILE="${ITUTESTS_DIR}/bilevel_R8_77SQ_A3.tif"
+    SQ=4
+    run_fax_squash_test
+
+
+    IN_FILE="${ITUTESTS_DIR}/bilevel_R8_154_A4.tif"
+    OUT_FILE="${ITUTESTS_DIR}/bilevel_R8_154SQ_A4.tif"
+    SQ=3
+    run_fax_squash_test
+
+    IN_FILE="${ITUTESTS_DIR}/bilevel_R8_154_B4.tif"
+    OUT_FILE="${ITUTESTS_DIR}/bilevel_R8_154SQ_B4.tif"
+    SQ=3
+    run_fax_squash_test
+
+    IN_FILE="${ITUTESTS_DIR}/bilevel_R8_154_A3.tif"
+    OUT_FILE="${ITUTESTS_DIR}/bilevel_R8_154SQ_A3.tif"
+    SQ=3
+    run_fax_squash_test
+
+
+    IN_FILE="${ITUTESTS_DIR}/bilevel_R8_154_A4.tif"
+    OUT_FILE="${ITUTESTS_DIR}/bilevel_R8_154SQSQ_A4.tif"
+    SQ=4
+    run_fax_squash_test
+
+    IN_FILE="${ITUTESTS_DIR}/bilevel_R8_154_B4.tif"
+    OUT_FILE="${ITUTESTS_DIR}/bilevel_R8_154SQSQ_B4.tif"
+    SQ=4
+    run_fax_squash_test
+
+    IN_FILE="${ITUTESTS_DIR}/bilevel_R8_154_A3.tif"
+    OUT_FILE="${ITUTESTS_DIR}/bilevel_R8_154SQSQ_A3.tif"
+    SQ=4
+    run_fax_squash_test
+
+
+    IN_FILE="${ITUTESTS_DIR}/bilevel_200_200_A4.tif"
+    OUT_FILE="${ITUTESTS_DIR}/bilevel_200_200SQ_A4.tif"
+    SQ=4
+    run_fax_squash_test
+
+    IN_FILE="${ITUTESTS_DIR}/bilevel_200_200_B4.tif"
+    OUT_FILE="${ITUTESTS_DIR}/bilevel_200_200SQ_B4.tif"
+    SQ=4
+    run_fax_squash_test
+
+    IN_FILE="${ITUTESTS_DIR}/bilevel_200_200_A3.tif"
+    OUT_FILE="${ITUTESTS_DIR}/bilevel_200_200SQ_A3.tif"
+    SQ=4
+    run_fax_squash_test
+
+
+    IN_FILE="${ITUTESTS_DIR}/bilevel_200_400_A4.tif"
+    OUT_FILE="${ITUTESTS_DIR}/bilevel_200_400SQ_A4.tif"
+    SQ=3
+    run_fax_squash_test
+
+    IN_FILE="${ITUTESTS_DIR}/bilevel_200_400_B4.tif"
+    OUT_FILE="${ITUTESTS_DIR}/bilevel_200_400SQ_B4.tif"
+    SQ=3
+    run_fax_squash_test
+
+    IN_FILE="${ITUTESTS_DIR}/bilevel_200_400_A3.tif"
+    OUT_FILE="${ITUTESTS_DIR}/bilevel_200_400SQ_A3.tif"
+    SQ=3
+    run_fax_squash_test
+
+
+    IN_FILE="${ITUTESTS_DIR}/bilevel_200_400_A4.tif"
+    OUT_FILE="${ITUTESTS_DIR}/bilevel_200_400SQSQ_A4.tif"
+    SQ=4
+    run_fax_squash_test
+
+    IN_FILE="${ITUTESTS_DIR}/bilevel_200_400_B4.tif"
+    OUT_FILE="${ITUTESTS_DIR}/bilevel_200_400SQSQ_B4.tif"
+    SQ=4
+    run_fax_squash_test
+
+    IN_FILE="${ITUTESTS_DIR}/bilevel_200_400_A3.tif"
+    OUT_FILE="${ITUTESTS_DIR}/bilevel_200_400SQSQ_A3.tif"
+    SQ=4
+    run_fax_squash_test
+done
+
 echo
 echo All fax tests successfully completed
-

@@ -67,6 +67,7 @@ int main(int argc, char *argv[])
         printf("Failed\n");
         exit(2);
     }
+    /*endif*/
     a = span_aligned_alloc(8, 42);
     b = span_alloc(42);
     c = span_realloc(NULL, 42);
