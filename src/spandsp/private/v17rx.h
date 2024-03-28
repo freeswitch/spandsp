@@ -86,15 +86,6 @@ struct v17_rx_state_s
     /*! \brief The equalizer signal buffer. */
     complexi16_t eq_buf[V17_EQUALIZER_LEN];
 
-    /*! Low band edge filter for symbol sync. */
-    int32_t symbol_sync_low[2];
-    /*! High band edge filter for symbol sync. */
-    int32_t symbol_sync_high[2];
-    /*! DC filter for symbol sync. */
-    int32_t symbol_sync_dc_filter[2];
-    /*! Baud phase for symbol sync. */
-    int32_t baud_phase;
-
     /*! \brief A measure of how much mismatch there is between the real constellation,
         and the decoded symbol positions. */
     int64_t training_error;
@@ -123,15 +114,6 @@ struct v17_rx_state_s
     /*! \brief The equalizer signal buffer. */
     complexf_t eq_buf[V17_EQUALIZER_LEN];
 
-    /*! Low band edge filter for symbol sync. */
-    float symbol_sync_low[2];
-    /*! High band edge filter for symbol sync. */
-    float symbol_sync_high[2];
-    /*! DC filter for symbol sync. */
-    float symbol_sync_dc_filter[2];
-    /*! Baud phase for symbol sync. */
-    float baud_phase;
-
     /*! \brief A measure of how much mismatch there is between the real constellation,
         and the decoded symbol positions. */
     float training_error;
@@ -146,6 +128,8 @@ struct v17_rx_state_s
     /*! \brief A pointer to the current constellation. */
     const complexf_t *constellation;
 #endif
+    godard_ted_state_t godard;
+
     /*! \brief Current offset into the RRC pulse shaping filter buffer. */
     int rrc_filter_step;
 
@@ -196,10 +180,6 @@ struct v17_rx_state_s
 
     /*! \brief The current half of the baud. */
     int baud_half;
-
-    /*! \brief The total symbol timing correction since the carrier came up.
-               This is only for performance analysis purposes. */
-    int total_baud_timing_correction;
 
     /*! \brief The previous symbol phase angles for the coarse carrier aquisition step. */
     int32_t last_angles[2];

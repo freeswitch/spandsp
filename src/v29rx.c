@@ -64,10 +64,12 @@
 #include "spandsp/dds.h"
 #include "spandsp/complex_filters.h"
 
+#include "spandsp/godard.h"
 #include "spandsp/v29rx.h"
 
 #include "spandsp/private/logging.h"
 #include "spandsp/private/power_meter.h"
+#include "spandsp/private/godard.h"
 #include "spandsp/private/v29rx.h"
 
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -78,15 +80,6 @@
 #define FP_SCALE(x)                     (x)
 #endif
 
-#if defined(SPANDSP_USE_FIXED_POINT)
-#define FP_SYNC_SCALE(x)                FP_Q6_10(x)
-#define FP_SYNC_SCALE_32(x)             FP_Q22_10(x)
-#define FP_SYNC_SHIFT_FACTOR            10
-#else
-#define FP_SYNC_SCALE(x)                (x)
-#define FP_SYNC_SCALE_32(x)             (x)
-#endif
-
 #define FP_CONSTELLATION_SCALE(x)       FP_SCALE(x)
 #if defined(SPANDSP_USE_FIXED_POINT)
 #define FP_CONSTELLATION_SHIFT_FACTOR   FP_SHIFT_FACTOR
@@ -94,6 +87,7 @@
 
 #include "v29tx_constellation_maps.h"
 #include "v29rx_rrc.h"
+#include "v29rx_godard.h"
 
 /*! The nominal frequency of the carrier, in Hertz */
 #define CARRIER_NOMINAL_FREQ            1700.0f
@@ -109,23 +103,6 @@
 #define V29_TRAINING_SEG_3_LEN          384
 /*! The length of training segment 4, in symbols */
 #define V29_TRAINING_SEG_4_LEN          48
-
-/* Coefficients for the band edge symbol timing synchroniser (alpha = 0.99) */
-/* low_edge = 2.0f*M_PI*(CARRIER_NOMINAL_FREQ - BAUD_RATE/2.0f)/SAMPLE_RATE; */
-/* high_edge = 2.0f*M_PI*(CARRIER_NOMINAL_FREQ + BAUD_RATE/2.0f)/SAMPLE_RATE; */
-#define SIN_LOW_BAND_EDGE               0.382683432f
-#define COS_LOW_BAND_EDGE               0.923879533f
-#define SIN_HIGH_BAND_EDGE              0.760405966f
-#define COS_HIGH_BAND_EDGE             -0.649448048f
-#define ALPHA                           0.99f
-
-#define SYNC_LOW_BAND_EDGE_COEFF_0      FP_SYNC_SCALE(2.0f*ALPHA*COS_LOW_BAND_EDGE)
-#define SYNC_LOW_BAND_EDGE_COEFF_1      FP_SYNC_SCALE(-ALPHA*ALPHA)
-#define SYNC_LOW_BAND_EDGE_COEFF_2      FP_SYNC_SCALE(-ALPHA*SIN_LOW_BAND_EDGE)
-#define SYNC_HIGH_BAND_EDGE_COEFF_0     FP_SYNC_SCALE(2.0f*ALPHA*COS_HIGH_BAND_EDGE)
-#define SYNC_HIGH_BAND_EDGE_COEFF_1     FP_SYNC_SCALE(-ALPHA*ALPHA)
-#define SYNC_HIGH_BAND_EDGE_COEFF_2     FP_SYNC_SCALE(-ALPHA*SIN_HIGH_BAND_EDGE)
-#define SYNC_MIXED_EDGES_COEFF_3        FP_SYNC_SCALE(-ALPHA*ALPHA*(SIN_HIGH_BAND_EDGE*COS_LOW_BAND_EDGE - SIN_LOW_BAND_EDGE*COS_HIGH_BAND_EDGE))
 
 enum
 {
@@ -173,7 +150,7 @@ SPAN_DECLARE(float) v29_rx_carrier_frequency(v29_rx_state_t *s)
 
 SPAN_DECLARE(float) v29_rx_symbol_timing_correction(v29_rx_state_t *s)
 {
-    return (float) s->total_baud_timing_correction/((float) RX_PULSESHAPER_COEFF_SETS*10.0f/3.0f);
+    return (float) godard_ted_correction(&s->godard)/((float) RX_PULSESHAPER_COEFF_SETS*10.0f/3.0f);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -503,64 +480,6 @@ static void decode_baud(v29_rx_state_t *s, complexf_t *z)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void symbol_sync(v29_rx_state_t *s)
-{
-    int i;
-#if defined(SPANDSP_USE_FIXED_POINT)
-    int32_t v;
-    int32_t p;
-#else
-    float v;
-    float p;
-#endif
-
-    /* This routine adapts the position of the half baud samples entering the equalizer. */
-
-    /* This symbol sync scheme is based on the technique first described by Dominique Godard in
-        Passband Timing Recovery in an All-Digital Modem Receiver
-        IEEE TRANSACTIONS ON COMMUNICATIONS, VOL. COM-26, NO. 5, MAY 1978 */
-
-    /* This is slightly rearranged from figure 3b of the Godard paper, as this saves a couple of
-       maths operations */
-#if defined(SPANDSP_USE_FIXED_POINT)
-    /* TODO: The scalings used here need more thorough evaluation, to see if overflows are possible. */
-    /* Cross correlate */
-    v = (((s->symbol_sync_low[1] >> (FP_SYNC_SHIFT_FACTOR/2))*(s->symbol_sync_high[0] >> (FP_SYNC_SHIFT_FACTOR/2))) >> 14)*SYNC_LOW_BAND_EDGE_COEFF_2
-      - (((s->symbol_sync_low[0] >> (FP_SYNC_SHIFT_FACTOR/2))*(s->symbol_sync_high[1] >> (FP_SYNC_SHIFT_FACTOR/2))) >> 14)*SYNC_HIGH_BAND_EDGE_COEFF_2
-      + (((s->symbol_sync_low[1] >> (FP_SYNC_SHIFT_FACTOR/2))*(s->symbol_sync_high[1] >> (FP_SYNC_SHIFT_FACTOR/2))) >> 14)*SYNC_MIXED_EDGES_COEFF_3;
-    /* Filter away any DC component */
-    p = v - s->symbol_sync_dc_filter[1];
-    s->symbol_sync_dc_filter[1] = s->symbol_sync_dc_filter[0];
-    s->symbol_sync_dc_filter[0] = v;
-    /* A little integration will now filter away much of the HF noise */
-    s->baud_phase -= p;
-    v = labs(s->baud_phase);
-#else
-    /* Cross correlate */
-    v = s->symbol_sync_low[1]*s->symbol_sync_high[0]*SYNC_LOW_BAND_EDGE_COEFF_2
-      - s->symbol_sync_low[0]*s->symbol_sync_high[1]*SYNC_HIGH_BAND_EDGE_COEFF_2
-      + s->symbol_sync_low[1]*s->symbol_sync_high[1]*SYNC_MIXED_EDGES_COEFF_3;
-    /* Filter away any DC component */
-    p = v - s->symbol_sync_dc_filter[1];
-    s->symbol_sync_dc_filter[1] = s->symbol_sync_dc_filter[0];
-    s->symbol_sync_dc_filter[0] = v;
-    /* A little integration will now filter away much of the HF noise */
-    s->baud_phase -= p;
-    v = fabsf(s->baud_phase);
-#endif
-    if (v > FP_SYNC_SCALE_32(30.0f))
-    {
-        i = (v > FP_SYNC_SCALE_32(1000.0f))  ?  5  :  1;
-        if (s->baud_phase < FP_SYNC_SCALE_32(0.0f))
-            i = -i;
-        /*endif*/
-        s->eq_put_step += i;
-        s->total_baud_timing_correction += i;
-    }
-    /*endif*/
-}
-/*- End of function --------------------------------------------------------*/
-
 #if defined(SPANDSP_USE_FIXED_POINT)
 static void process_half_baud(v29_rx_state_t *s, complexi16_t *sample)
 #else
@@ -606,7 +525,7 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
     /*endif*/
 
     /* Symbol timing synchronisation */
-    symbol_sync(s);
+    s->eq_put_step += godard_ted_per_baud(&s->godard);
 
     z = equalizer_get(s);
 
@@ -991,36 +910,11 @@ SPAN_DECLARE(int) v29_rx(v29_rx_state_t *s, const int16_t amp[], int len)
 #if defined(SPANDSP_USE_FIXED_POINT)
         v = vec_circular_dot_prodi16(s->rrc_filter, rx_pulseshaper_re[step], V29_RX_FILTER_STEPS, s->rrc_filter_step) >> 15;
         sample.re = (v*s->agc_scaling) >> 10;
-        /* Symbol timing synchronisation band edge filters */
-        /* Low Nyquist band edge filter */
-        v = ((s->symbol_sync_low[0]*SYNC_LOW_BAND_EDGE_COEFF_0) >> FP_SYNC_SHIFT_FACTOR)
-          + ((s->symbol_sync_low[1]*SYNC_LOW_BAND_EDGE_COEFF_1) >> FP_SYNC_SHIFT_FACTOR)
-          + sample.re;
-        s->symbol_sync_low[1] = s->symbol_sync_low[0];
-        s->symbol_sync_low[0] = v;
-        /* High Nyquist band edge filter */
-        v = ((s->symbol_sync_high[0]*SYNC_HIGH_BAND_EDGE_COEFF_0) >> FP_SYNC_SHIFT_FACTOR)
-          + ((s->symbol_sync_high[1]*SYNC_HIGH_BAND_EDGE_COEFF_1) >> FP_SYNC_SHIFT_FACTOR)
-          + sample.re;
-        s->symbol_sync_high[1] = s->symbol_sync_high[0];
-        s->symbol_sync_high[0] = v;
 #else
         v = vec_circular_dot_prodf(s->rrc_filter, rx_pulseshaper_re[step], V29_RX_FILTER_STEPS, s->rrc_filter_step);
         sample.re = v*s->agc_scaling;
-        /* Symbol timing synchronisation band edge filters */
-        /* Low Nyquist band edge filter */
-        v = s->symbol_sync_low[0]*SYNC_LOW_BAND_EDGE_COEFF_0
-          + s->symbol_sync_low[1]*SYNC_LOW_BAND_EDGE_COEFF_1
-          + sample.re;
-        s->symbol_sync_low[1] = s->symbol_sync_low[0];
-        s->symbol_sync_low[0] = v;
-        /* High Nyquist band edge filter */
-        v = s->symbol_sync_high[0]*SYNC_HIGH_BAND_EDGE_COEFF_0
-          + s->symbol_sync_high[1]*SYNC_HIGH_BAND_EDGE_COEFF_1
-          + sample.re;
-        s->symbol_sync_high[1] = s->symbol_sync_high[0];
-        s->symbol_sync_high[0] = v;
 #endif
+        godard_ted_rx(&s->godard, sample.re);
         /* Put things into the equalization buffer at T/2 rate. The symbol synchronisation
            will fiddle the step to align this with the symbols. */
         if (s->eq_put_step <= 0)
@@ -1124,8 +1018,6 @@ SPAN_DECLARE(logging_state_t *) v29_rx_get_logging_state(v29_rx_state_t *s)
 
 SPAN_DECLARE(int) v29_rx_restart(v29_rx_state_t *s, int bit_rate, bool old_train)
 {
-    int i;
-
     switch (bit_rate)
     {
     case 9600:
@@ -1197,18 +1089,10 @@ SPAN_DECLARE(int) v29_rx_restart(v29_rx_state_t *s, int bit_rate, bool old_train
     s->last_sample = 0;
     s->eq_skip = 0;
 
-    /* Initialise the working data for symbol timing synchronisation */
-    for (i = 0;  i < 2;  i++)
-    {
-        s->symbol_sync_low[i] = FP_SCALE(0.0f);
-        s->symbol_sync_high[i] = FP_SCALE(0.0f);
-        s->symbol_sync_dc_filter[i] = FP_SCALE(0.0f);
-    }
-    /*endfor*/
-    s->baud_phase = FP_SCALE(0.0f);
+    godard_ted_init(&s->godard, &godard_desc);
+
     s->baud_half = 0;
 
-    s->total_baud_timing_correction = 0;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

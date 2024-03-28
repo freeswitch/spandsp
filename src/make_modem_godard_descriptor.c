@@ -1,10 +1,10 @@
 /*
  * SpanDSP - a series of DSP components for telephony
  *
- * make_modem_godard_coefficients.c - Create coefficient sets for Godard
- *                                    symbol sync. filters as a pair of 
- *                                    fixed and floating point descriptor
- *                                    structures for spandsp.
+ * make_modem_godard_descriptor.c - Create coefficient sets for Godard
+ *                                  symbol sync. filters as a pair of 
+ *                                  fixed and floating point descriptor
+ *                                  structures for spandsp.
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
@@ -154,7 +154,7 @@ int main(int argc, char **argv)
     printf("   FILE MAY BE OVERWRITTEN DURING FUTURE BUILDS OF THE SOFTWARE */\n");
     printf("\n");
     printf("\n");
-    printf("static const godard_timing_sync_descriptor_t godard_desc =\n");
+    printf("static const godard_ted_descriptor_t godard_desc =\n");
     printf("{\n");
     printf("    /* %.1f samples/second , %.1fHz carrier, %.1f baud, %.3f alpha */\n",
            sample_rate,

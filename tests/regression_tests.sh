@@ -43,6 +43,15 @@ then
 fi
 echo adsi_tests completed OK
 
+./agc_float_tests >$STDOUT_DEST 2>$STDERR_DEST
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo agc_float_tests failed!
+    exit $RETVAL
+fi
+echo agc_float_tests completed OK
+
 ./alloc_tests >$STDOUT_DEST 2>$STDERR_DEST
 RETVAL=$?
 if [ $RETVAL != 0 ]

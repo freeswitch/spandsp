@@ -75,6 +75,7 @@
 #include "spandsp/super_tone_rx.h"
 #include "spandsp/fsk.h"
 #include "spandsp/modem_connect_tones.h"
+#include "spandsp/godard.h"
 #include "spandsp/v8.h"
 #include "spandsp/v29tx.h"
 #include "spandsp/v29rx.h"
@@ -106,6 +107,7 @@
 #include "spandsp/private/fsk.h"
 #include "spandsp/private/modem_connect_tones.h"
 #include "spandsp/private/v8.h"
+#include "spandsp/private/godard.h"
 #if defined(SPANDSP_SUPPORT_V34)
 #include "spandsp/private/v34.h"
 #endif
