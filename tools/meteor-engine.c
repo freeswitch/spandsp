@@ -976,7 +976,7 @@ static int vet_data(struct meteor_working_data_s *s)
             scanf("%*[^\n]");
             getchar();
 
-            printf("Pushing band edges right\n", (s->which_way == rr)  ?  "right"  :  "left");
+            printf("Pushing band edges %s\n", (s->which_way == rr)  ?  "right"  :  "left");
 
             printf("Constraint numbers: ");
             for (i = 0;  i < s->num_pushed;  i++)
