@@ -7,10 +7,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>make_cielab_luts</ProjectName>
-    <ProjectGuid>{85F0CF8C-C7AB-48F6-BA19-CC94CF87F981}</ProjectGuid>
-    <RootNamespace>make_cielab_luts</RootNamespace>
+    <ProjectName>make_v34_probe_signals</ProjectName>
+    <RootNamespace>make_v34_probe_signals</RootNamespace>
     <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{D33E088B-0A1A-498E-B825-9E49040E28DF}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='All|Win32'" Label="Configuration">
@@ -32,7 +32,7 @@
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='All|Win32'">$(PlatformName)\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='All|Win32'">$(PlatformName)\make_cielab_luts\$(Configuration)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='All|Win32'">$(PlatformName)\make_v34_probe_signals\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='All|Win32'">false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='All|Win32'">
@@ -41,7 +41,7 @@
     </BuildLog>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;HAVE_CONFIG_H;LIBSPANDSP_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -57,11 +57,13 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>"$(TargetPath)" &gt;"$(SolutionDir)\..\src\cielab_luts.h"</Command>
+      <Command>"$(TargetPath)" &gt;"$(SolutionDir)\..\src\v34_probe_signals.h"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\src\make_cielab_luts.c" />
+    <ClCompile Include="$(SolutionDir)\..\src\make_v34_probe_signals.c" />
+    <ClCompile Include="$(SolutionDir)\..\src\g711.c" />
+    <ClCompile Include="$(SolutionDir)\..\src\alloc.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
