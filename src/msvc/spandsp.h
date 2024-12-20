@@ -54,12 +54,14 @@
 #endif
 #include <spandsp/telephony.h>
 #include <spandsp/alloc.h>
+#include <spandsp/unaligned.h>
 #include <spandsp/fast_convert.h>
 #include <spandsp/logging.h>
 #include <spandsp/complex.h>
 #include <spandsp/bit_operations.h>
 #include <spandsp/bitstream.h>
 #include <spandsp/queue.h>
+#include <spandsp/agc_float.h>
 #include <spandsp/schedule.h>
 #include <spandsp/g711.h>
 #include <spandsp/timing.h>
@@ -97,6 +99,8 @@
 #include <spandsp/modem_connect_tones.h>
 #include <spandsp/silence_gen.h>
 #include <spandsp/v8.h>
+#include <spandsp/v80.h>
+#include <spandsp/godard.h>
 #include <spandsp/v29rx.h>
 #include <spandsp/v29tx.h>
 #include <spandsp/v17rx.h>
@@ -114,6 +118,7 @@
 #include <spandsp/v42bis.h>
 #include <spandsp/v18.h>
 #include <spandsp/timezone.h>
+#include <spandsp/ssl_fax.h>
 #include <spandsp/t4_rx.h>
 #include <spandsp/t4_tx.h>
 #include <spandsp/image_translate.h>

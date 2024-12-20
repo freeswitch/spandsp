@@ -7,10 +7,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>make_cielab_luts</ProjectName>
-    <ProjectGuid>{85F0CF8C-C7AB-48F6-BA19-CC94CF87F981}</ProjectGuid>
-    <RootNamespace>make_cielab_luts</RootNamespace>
+    <ProjectName>make_modem_godard_descriptor</ProjectName>
+    <RootNamespace>make_modem_godard_descriptor</RootNamespace>
     <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{C8EA4AD3-3EDD-4DD1-9D63-4BE22585AA14}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='All|Win32'" Label="Configuration">
@@ -32,7 +32,7 @@
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='All|Win32'">$(PlatformName)\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='All|Win32'">$(PlatformName)\make_cielab_luts\$(Configuration)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='All|Win32'">$(PlatformName)\make_modem_godard_descriptor\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='All|Win32'">false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='All|Win32'">
@@ -57,11 +57,17 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>"$(TargetPath)" &gt;"$(SolutionDir)\..\src\cielab_luts.h"</Command>
+      <Command>"$(TargetPath)" 1800.0 2400.0 0.99 1000.0 100.0 15 1 &gt;"$(SolutionDir)\..\src\v17_v32bis_rx_godard.h"
+"$(TargetPath)" 1700.0 2400.0 0.99 1000.0 30.0 5 1 &gt;"$(SolutionDir)\..\src\v29rx_godard.h"
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\src\make_cielab_luts.c" />
+    <ClCompile Include="$(SolutionDir)\..\src\filter_tools.c" />
+    <ClCompile Include="$(SolutionDir)\..\src\make_modem_godard_descriptor.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\src\filter_tools.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

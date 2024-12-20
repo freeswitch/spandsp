@@ -38,6 +38,10 @@
 #if defined(__sunos)  ||  defined(__solaris)  ||  defined(__sun)
 #include <getopt.h>
 #endif
+#if _MSC_VER
+#include <config.h>
+#include <getopt.c>
+#endif
 
 #include "spandsp/telephony.h"
 #include "spandsp/complex.h"

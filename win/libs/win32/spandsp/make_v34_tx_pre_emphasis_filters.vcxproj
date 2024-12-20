@@ -7,10 +7,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>make_cielab_luts</ProjectName>
-    <ProjectGuid>{85F0CF8C-C7AB-48F6-BA19-CC94CF87F981}</ProjectGuid>
-    <RootNamespace>make_cielab_luts</RootNamespace>
+    <ProjectName>make_v34_tx_pre_emphasis_filters</ProjectName>
+    <RootNamespace>make_v34_tx_pre_emphasis_filters</RootNamespace>
     <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{97035E2A-392E-40D1-B27D-DA700A1FDB49}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='All|Win32'" Label="Configuration">
@@ -32,7 +32,7 @@
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='All|Win32'">$(PlatformName)\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='All|Win32'">$(PlatformName)\make_cielab_luts\$(Configuration)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='All|Win32'">$(PlatformName)\make_v34_tx_pre_emphasis_filters\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='All|Win32'">false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='All|Win32'">
@@ -40,8 +40,9 @@
       <Path>$(IntDir)BuildLog $(ProjectName).htm</Path>
     </BuildLog>
     <ClCompile>
+      <AdditionalIncludeDirectories>.;$(SolutionDir)..\tools;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;HAVE_CONFIG_H;_USE_MATH_DEFINES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -57,11 +58,12 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>"$(TargetPath)" &gt;"$(SolutionDir)\..\src\cielab_luts.h"</Command>
+      <Command>"$(TargetPath)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\src\make_cielab_luts.c" />
+    <ClCompile Include="$(SolutionDir)\..\src\make_v34_tx_pre_emphasis_filters.c" />
+    <ClCompile Include="$(SolutionDir)\..\tools\meteor-engine.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

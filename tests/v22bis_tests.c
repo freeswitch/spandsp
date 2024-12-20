@@ -244,9 +244,9 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
 #else
                 printf("%3d (%15.5f, %15.5f) -> %15.5f\n", i, coeffs[i].re, coeffs[i].im, powerf(&coeffs[i]));
 #endif
-#if defined(ENABLE_GUI)
             }
             /*endfor*/
+#if defined(ENABLE_GUI)
             if (use_gui)
             {
 #if defined(SPANDSP_USE_FIXED_POINT)

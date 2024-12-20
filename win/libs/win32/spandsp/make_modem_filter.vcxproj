@@ -5,10 +5,6 @@
       <Configuration>All</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Debug-static|Win32">
-      <Configuration>Debug-static</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>make_modem_filter</ProjectName>
@@ -18,11 +14,6 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='All|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-static|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
@@ -37,18 +28,12 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='All|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug-static|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='All|Win32'">$(PlatformName)\$(Configuration)\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug-static|Win32'">$(PlatformName)\$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='All|Win32'">$(PlatformName)\make_modem_filter\$(Configuration)\</IntDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug-static|Win32'">$(PlatformName)\make_modem_filter\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='All|Win32'">false</LinkIncremental>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug-static|Win32'">false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='All|Win32'">
     <BuildLog>
@@ -98,57 +83,23 @@
 "$(TargetPath)" -m V.29 -r &gt;"$(SolutionDir)\..\src\v29rx_floating_rrc.h"
 "$(TargetPath)" -m V.29 -t &gt;"$(SolutionDir)\..\src\v29tx_rrc.h"
 "$(TargetPath)" -m V.29 -t &gt;"$(SolutionDir)\..\src\v29tx_floating_rrc.h"
-</Command>
-    </PostBuildEvent>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-static|Win32'">
-    <BuildLog>
-      <Path>$(IntDir)BuildLog $(ProjectName).htm</Path>
-    </BuildLog>
-    <ClCompile>
-      <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MinimalRebuild>true</MinimalRebuild>
-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
-      <WarningLevel>Level3</WarningLevel>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-    </ClCompile>
-    <Link>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <SubSystem>Console</SubSystem>
-      <TargetMachine>MachineX86</TargetMachine>
-    </Link>
-    <PostBuildEvent>
-      <Command>"$(TargetPath)" -m V.17 -r &gt;"$(SolutionDir)\..\src\v17_v32bis_rx_rrc.h"
-"$(TargetPath)" -m V.17 -r &gt;$(SolutionDir)\..\src\v17_v32bis_rx_floating_rrc.h"
 
-"$(TargetPath)" -m V.17 -t &gt;"$(SolutionDir)\..\src\v17_v32bis_tx_rrc.h"
-"$(TargetPath)" -m V.17 -t &gt;"$(SolutionDir)\..\src\v17_v32bis_tx_floating_rrc.h"
-
-"$(TargetPath)" -m V.22bis1200 -r &gt;"$(SolutionDir)\..\src\v22bis_rx_1200_rrc.h"
-"$(TargetPath)" -m V.22bis2400 -r &gt;"$(SolutionDir)\..\src\v22bis_rx_2400_rrc.h"
-"$(TargetPath)" -m V.22bis1200 -r &gt;"$(SolutionDir)\..\src\v22bis_rx_1200_floating_rrc.h"
-"$(TargetPath)" -m V.22bis2400 -r &gt;"$(SolutionDir)\..\src\v22bis_rx_2400_floating_rrc.h"
-"$(TargetPath)" -m V.22bis -t &gt;"$(SolutionDir)\..\src\v22bis_tx_rrc.h"
-"$(TargetPath)" -m V.22bis -t &gt;"$(SolutionDir)\..\src\v22bis_tx_floating_rrc.h"
-
-"$(TargetPath)" -m V.27ter2400 -r &gt;"$(SolutionDir)\..\src\v27ter_rx_2400_rrc.h"
-"$(TargetPath)" -m V.27ter4800 -r &gt;"$(SolutionDir)\..\src\v27ter_rx_4800_rrc.h"
-"$(TargetPath)" -m V.27ter2400 -r &gt;"$(SolutionDir)\..\src\v27ter_rx_2400_floating_rrc.h"
-"$(TargetPath)" -m V.27ter4800 -r &gt;"$(SolutionDir)\..\src\v27ter_rx_4800_floating_rrc.h"
-"$(TargetPath)" -m V.27ter2400 -t &gt;"$(SolutionDir)\..\src\v27ter_tx_2400_rrc.h"
-"$(TargetPath)" -m V.27ter4800 -t &gt;"$(SolutionDir)\..\src\v27ter_tx_4800_rrc.h"
-"$(TargetPath)" -m V.27ter2400 -t &gt;"$(SolutionDir)\..\src\v27ter_tx_2400_floating_rrc.h"
-"$(TargetPath)" -m V.27ter4800 -t &gt;"$(SolutionDir)\..\src\v27ter_tx_4800_floating_rrc.h"
-
-"$(TargetPath)" -m V.29 -r &gt;"$(SolutionDir)\..\src\v29rx_rrc.h"
-"$(TargetPath)" -m V.29 -r &gt;"$(SolutionDir)\..\src\v29rx_floating_rrc.h"
-"$(TargetPath)" -m V.29 -t &gt;"$(SolutionDir)\..\src\v29tx_rrc.h"
-"$(TargetPath)" -m V.29 -t &gt;"$(SolutionDir)\..\src\v29tx_floating_rrc.h"
+"$(TargetPath)" -m V.34_2400 -r &gt;"$(SolutionDir)\..\src\v34_rx_2400_low_carrier_rrc.h"
+"$(TargetPath)" -m V.34_2400_high -r &gt;"$(SolutionDir)\..\src\v34_rx_2400_high_carrier_rrc.h"
+"$(TargetPath)" -m V.34_2743 -r &gt;"$(SolutionDir)\..\src\v34_rx_2743_low_carrier_rrc.h"
+"$(TargetPath)" -m V.34_2743_high -r &gt;"$(SolutionDir)\..\src\v34_rx_2743_high_carrier_rrc.h"
+"$(TargetPath)" -m V.34_2800 -r &gt;"$(SolutionDir)\..\src\v34_rx_2800_low_carrier_rrc.h"
+"$(TargetPath)" -m V.34_2800_high -r &gt;"$(SolutionDir)\..\src\v34_rx_2800_high_carrier_rrc.h"
+"$(TargetPath)" -m V.34_3000 -r &gt;"$(SolutionDir)\..\src\v34_rx_3000_low_carrier_rrc.h"
+"$(TargetPath)" -m V.34_3000_high -r &gt;"$(SolutionDir)\..\src\v34_rx_3000_high_carrier_rrc.h"
+"$(TargetPath)" -m V.34_3200 -r &gt;"$(SolutionDir)\..\src\v34_rx_3200_low_carrier_rrc.h"
+"$(TargetPath)" -m V.34_3200_high -r &gt;"$(SolutionDir)\..\src\v34_rx_3200_high_carrier_rrc.h"
+"$(TargetPath)" -m V.34_2400   -t &gt;"$(SolutionDir)\..\src\v34_tx_2400_rrc.h"
+"$(TargetPath)" -m V.34_2743   -t &gt;"$(SolutionDir)\..\src\v34_tx_2743_rrc.h"
+"$(TargetPath)" -m V.34_2800   -t &gt;"$(SolutionDir)\..\src\v34_tx_2800_rrc.h"
+"$(TargetPath)" -m V.34_3000   -t &gt;"$(SolutionDir)\..\src\v34_tx_3000_rrc.h"
+"$(TargetPath)" -m V.34_3200   -t &gt;"$(SolutionDir)\..\src\v34_tx_3200_rrc.h"
+"$(TargetPath)" -m V.34_3429   -t &gt;"$(SolutionDir)\..\src\v34_tx_3429_rrc.h"
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>

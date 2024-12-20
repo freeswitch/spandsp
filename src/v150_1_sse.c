@@ -1350,7 +1350,7 @@ SPAN_DECLARE(int) v150_1_tx_sse_packet(v150_1_state_t *s, int event, int ric, in
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) v150_1_sse_timer_expired(v150_1_state_t *s, span_timestamp_t now)
+int v150_1_sse_timer_expired(v150_1_state_t *s, span_timestamp_t now)
 {
     v150_1_sse_state_t *sse;
 

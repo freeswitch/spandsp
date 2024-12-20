@@ -331,6 +331,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\g711.c" />
     <ClCompile Include="$(SolutionDir)\..\src\g722.c" />
     <ClCompile Include="$(SolutionDir)\..\src\g726.c" />
+    <ClCompile Include="$(SolutionDir)\..\src\godard.c" />
     <ClCompile Include="$(SolutionDir)\..\src\gsm0610_decode.c" />
     <ClCompile Include="$(SolutionDir)\..\src\gsm0610_encode.c" />
     <ClCompile Include="$(SolutionDir)\..\src\gsm0610_long_term.c" />
@@ -400,11 +401,16 @@
     <ClCompile Include="$(SolutionDir)\..\src\v42.c" />
     <ClCompile Include="$(SolutionDir)\..\src\v42bis.c" />
     <ClCompile Include="$(SolutionDir)\..\src\v8.c" />
+    <ClCompile Include="$(SolutionDir)\..\src\v80.c" />
     <ClCompile Include="$(SolutionDir)\..\src\vector_float.c" />
     <ClCompile Include="$(SolutionDir)\..\src\vector_int.c" />
     <ClCompile Include="$(SolutionDir)\..\src\msvc\gettimeofday.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\src\spandsp\v34_local.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\spandsp\v34_tables.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\spandsp\v34_superconstellation_map.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\spandsp\v150_1_local.h" />
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\ademco_contactid.h" />
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\adsi.h" />
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\alloc.h" />
@@ -436,6 +442,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\g711.h" />
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\g722.h" />
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\g726.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\spandsp\godard.h" />
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\gsm0610.h" />
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\hdlc.h" />
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\ima_adpcm.h" />
@@ -456,6 +463,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\sig_tone.h" />
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\silence_gen.h" />
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\sprt.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\spandsp\stdbool.h" />
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\super_tone_rx.h" />
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\super_tone_tx.h" />
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\swept_tone.h" />
@@ -482,6 +490,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\timing.h" />
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\tone_detect.h" />
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\tone_generate.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\spandsp\unaligned.h" />
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\v150_1.h" />
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\v150_1_sse.h" />
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\v17rx.h" />
@@ -495,6 +504,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\v42.h" />
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\v42bis.h" />
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\v8.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\spandsp\v80.h" />
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\vector_float.h" />
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\vector_int.h" />
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\version.h" />
@@ -568,6 +578,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\private\v42.h" />
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\private\v42bis.h" />
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\private\v8.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\spandsp\private\v80.h" />
     <ClInclude Include="$(SolutionDir)\..\src\spandsp\expose.h" />
     <ClInclude Include="$(SolutionDir)\..\src\spandsp.h" />
     <CustomBuild Include="$(SolutionDir)\..\src\msvc\spandsp.h">
@@ -612,9 +623,24 @@
       <Project>{329a6fa0-0fcc-4435-a950-e670aefa9838}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+    <ProjectReference Include="make_modem_godard_descriptor.vcxproj">
+      <Project>{c8ea4ad3-3edd-4dd1-9d63-4be22585aa14}</Project>
+    </ProjectReference>
     <ProjectReference Include="make_t43_gray_code_tables.vcxproj">
       <Project>{eddb8ab9-c53e-44c0-a620-0e86c2cbd5d5}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="make_v34_convolutional_coders.vcxproj">
+      <Project>{368924d6-ac75-42ae-9d64-7e3eb3fd109c}</Project>
+    </ProjectReference>
+    <ProjectReference Include="make_v34_probe_signals.vcxproj">
+      <Project>{d33e088b-0a1a-498e-b825-9e49040e28df}</Project>
+    </ProjectReference>
+    <ProjectReference Include="make_v34_shell_map.vcxproj">
+      <Project>{4a1ca87f-32ef-428e-8d55-7f0d6d91516b}</Project>
+    </ProjectReference>
+    <ProjectReference Include="make_v34_tx_pre_emphasis_filters.vcxproj">
+      <Project>{97035e2a-392e-40d1-b27d-da700a1fdb49}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
