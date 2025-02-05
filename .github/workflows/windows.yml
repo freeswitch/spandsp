@@ -1,0 +1,50 @@
+name: Windows Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    branches:
+      - master
+
+jobs:
+  build:
+    name: Build Windows
+    runs-on: windows-2019
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # https://learn.microsoft.com/en-us/visualstudio/releases/2019/history
+      - name: Check available VS versions
+        shell: cmd
+        run: |
+          where vswhere.exe
+          vswhere.exe -all -prerelease -format json
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v2
+        with:
+          msbuild-architecture: x64
+          # https://github.com/microsoft/setup-msbuild?tab=readme-ov-file#specifying-specific-versions-of-visual-studio-optional
+          # vs-version: "[16.11,16.12)"
+
+      - name: Build [x86-64]
+        shell: cmd
+        working-directory: win
+        run: |
+          msbuild SpanDSP.sln -t:build -verbosity:minimal -property:Configuration=Release -property:Platform=x64
+
+      - name: Build [x86]
+        shell: cmd
+        working-directory: win
+        run: |
+          msbuild SpanDSP.sln -t:build -verbosity:minimal -property:Configuration=Release -property:Platform=Win32
