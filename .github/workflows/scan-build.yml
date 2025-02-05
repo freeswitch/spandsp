@@ -1,0 +1,101 @@
+name: Scan build (Static Analysis)
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    types:
+      - opened
+      - synchronize
+  workflow_dispatch:
+
+jobs:
+  scan-build:
+    runs-on: ubuntu-latest
+    container:
+      image: signalwire/freeswitch-public-ci-base:bookworm-amd64
+      options: --privileged
+    env:
+      DEBIAN_FRONTEND: noninteractive
+
+    steps:
+      - name: Checkout SpanDSP
+        uses: actions/checkout@v4
+        with:
+          repository: freeswitch/spandsp
+          path: spandsp
+
+      # - name: Install dependencies
+      #   shell: bash
+      #   working-directory: spandsp
+      #   run: |
+      #     apt-get update && \
+      #     apt-get install -y \
+      #         autotools-dev \
+      #         doxygen \
+      #         dpatch \
+      #         libjpeg-dev \
+      #         libtiff-dev \
+      #         xsltproc
+
+      - name: Bootstrap
+        shell: bash
+        working-directory: spandsp
+        run: |
+          ./bootstrap.sh
+
+      - name: Configure
+        shell: bash
+        working-directory: spandsp
+        run: |
+          - ./configure --with-pic
+
+      - name: Run and Check scan-build analysis
+        shell: bash
+        working-directory: spandsp
+        run: |
+          if ! command -v scan-build-14 > /dev/null 2>&1; then
+            echo "Error: scan-build-14 command not found. Please ensure clang static analyzer is installed." >&2
+            exit 1
+          fi
+
+          mkdir -p scan-build
+
+          scan-build-14 \
+            --force-analyze-debug-code \
+            --status-bugs \
+            -o ./scan-build/ \
+            make --no-keep-going -j$(nproc --all) |& tee ./scan-build-result.txt
+          build_status=${PIPESTATUS[0]}
+
+          if ! grep -siq "scan-build: No bugs found" ./scan-build-result.txt; then
+            echo "scan-build: bugs found!"
+            exit 1
+          fi
+
+          if [[ $build_status != "0" ]]; then
+            echo "scan-build: compilation failed!"
+            exit $build_status
+          fi
+
+      - name: Upload Scan-Build logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scan-build-logs
+          path: spandsp/scan-build
+          if-no-files-found: ignore
+          compression-level: 9
+
+      - name: Notify run tests result to slack
+        if: |
+          failure() &&
+          github.event_name == 'push' &&
+          (github.ref == 'refs/heads/master')
+        uses: signalwire/actions-template/.github/actions/slack@main
+        with:
+          CHANNEL: ${{ secrets.SLACK_DEVOPS_CI_CHANNEL }}
+          MESSAGE: Scan-Build ${{ github.repository }} > <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.run_id }}>. Static analysis failed.
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
