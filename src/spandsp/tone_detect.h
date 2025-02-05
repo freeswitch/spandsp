@@ -106,7 +106,7 @@ SPAN_DECLARE(void) goertzel_reset(goertzel_state_t *s);
     \param s The Goertzel context.
     \param amp The samples to be transformed.
     \param samples The number of samples.
-    \return The number of samples unprocessed */
+    \return The number of samples processed */
 SPAN_DECLARE(int) goertzel_update(goertzel_state_t *s,
                                   const int16_t amp[],
                                   int samples);
