@@ -68,6 +68,8 @@ RUN apt-get -q update \
 
 ENV DEB_BUILD_OPTIONS="parallel=1"
 
+RUN dpkg-buildflags --export=sh
+
 RUN . ~/.env \
     && dch \
         --controlmaint \
