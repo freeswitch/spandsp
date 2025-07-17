@@ -64,6 +64,10 @@
 #include "spandsp/dds.h"
 #include "spandsp/complex_filters.h"
 
+#if defined(SPANDSP_USE_FIXED_POINT)
+#define SPANDSP_USE_FIXED_POINTx
+#endif
+
 #include "spandsp/v29rx.h"
 #include "spandsp/v17tx.h"
 #include "spandsp/v17rx.h"
@@ -389,7 +393,7 @@ static __inline__ void put_bit(v17_rx_state_t *s, int bit)
 /*- End of function --------------------------------------------------------*/
 
 #if defined(SPANDSP_USE_FIXED_POINTx)
-static __inline__ uint32_t dist_sq(const complexi16_t *x, const complexi16_t *y)
+static __inline__ uint32_t dist_sq(const complexi32_t *x, const complexi32_t *y)
 {
     return (int32_t) (x->re - y->re)*(x->re - y->re) + (int32_t) (x->im - y->im)*(x->im - y->im);
 }
