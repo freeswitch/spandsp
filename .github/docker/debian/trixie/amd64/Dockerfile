@@ -1,12 +1,11 @@
-ARG BUILDER_IMAGE=arm32v7/debian:bullseye-20240513
+ARG BUILDER_IMAGE=debian:trixie-20250630
 
-FROM --platform=linux/arm/v7 ${BUILDER_IMAGE} AS builder
-
+FROM ${BUILDER_IMAGE} AS builder
 ARG MAINTAINER_NAME="Andrey Volk"
 ARG MAINTAINER_EMAIL="andrey@signalwire.com"
 
-ARG CODENAME=bullseye
-ARG ARCH=arm32
+ARG CODENAME=trixie
+ARG ARCH=amd64
 
 ARG BUILD_NUMBER=42
 ARG GIT_SHA=0000000000
