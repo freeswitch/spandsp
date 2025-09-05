@@ -262,7 +262,7 @@ static int tx_supervisory_frame(lapm_state_t *s, uint8_t addr, uint8_t ctrl, uin
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int set_param(int param, int value, int def)
+static inline int set_param(int param, int value, int def)
 {
     if ((value < def  &&  param >= def)  ||  (value >= def  &&  param < def))
         return def;
@@ -507,14 +507,14 @@ static void t400_expired(v42_state_t *ss)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void t400_start(v42_state_t *s)
+static inline void t400_start(v42_state_t *s)
 {
     s->bit_timer = ms_to_bits(s, T_400);
     s->bit_timer_func = t400_expired;
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void t400_stop(v42_state_t *s)
+static inline void t400_stop(v42_state_t *s)
 {
     s->bit_timer = 0;
 }
@@ -567,7 +567,7 @@ static void t401_expired(v42_state_t *ss)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void t401_start(v42_state_t *s)
+static inline void t401_start(v42_state_t *s)
 {
     s->bit_timer = ms_to_bits(s, T_401);
     s->bit_timer_func = t401_expired;
@@ -575,7 +575,7 @@ static __inline__ void t401_start(v42_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void t401_stop(v42_state_t *s)
+static inline void t401_stop(v42_state_t *s)
 {
     s->bit_timer = 0;
     s->lapm.retry_count = 0;
@@ -596,7 +596,7 @@ static void t403_expired(v42_state_t *ss)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void t401_stop_t403_start(v42_state_t *s)
+static inline void t401_stop_t403_start(v42_state_t *s)
 {
     s->bit_timer = ms_to_bits(s, T_403);
     s->bit_timer_func = t403_expired;

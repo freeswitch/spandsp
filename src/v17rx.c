@@ -266,7 +266,7 @@ static void equalizer_reset(v17_rx_state_t *s)
 /*- End of function --------------------------------------------------------*/
 
 #if defined(SPANDSP_USE_FIXED_POINTx)
-static __inline__ complexi16_t equalizer_get(v17_rx_state_t *s)
+static inline complexi16_t equalizer_get(v17_rx_state_t *s)
 {
     complexi32_t zz;
     complexi16_t z;
@@ -278,7 +278,7 @@ static __inline__ complexi16_t equalizer_get(v17_rx_state_t *s)
     return z;
 }
 #else
-static __inline__ complexf_t equalizer_get(v17_rx_state_t *s)
+static inline complexf_t equalizer_get(v17_rx_state_t *s)
 {
     /* Get the next equalized value. */
     return cvec_circular_dot_prodf(s->eq_buf, s->eq_coeff, V17_EQUALIZER_LEN, s->eq_step);
@@ -313,9 +313,9 @@ static void tune_equalizer(v17_rx_state_t *s, const complexf_t *z, const complex
 /*- End of function --------------------------------------------------------*/
 
 #if defined(SPANDSP_USE_FIXED_POINTx)
-static __inline__ void track_carrier(v17_rx_state_t *s, const complexi16_t *z, const complexi16_t *target)
+static inline void track_carrier(v17_rx_state_t *s, const complexi16_t *z, const complexi16_t *target)
 #else
-static __inline__ void track_carrier(v17_rx_state_t *s, const complexf_t *z, const complexf_t *target)
+static inline void track_carrier(v17_rx_state_t *s, const complexf_t *z, const complexf_t *target)
 #endif
 {
 #if defined(SPANDSP_USE_FIXED_POINTx)
@@ -356,7 +356,7 @@ static int descramble(v17_rx_state_t *s, int in_bit)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void put_bit(v17_rx_state_t *s, int bit)
+static inline void put_bit(v17_rx_state_t *s, int bit)
 {
     int out_bit;
 
@@ -379,13 +379,13 @@ static __inline__ void put_bit(v17_rx_state_t *s, int bit)
 /*- End of function --------------------------------------------------------*/
 
 #if defined(SPANDSP_USE_FIXED_POINTx)
-static __inline__ uint32_t dist_sq(const complexi32_t *x, const complexi32_t *y)
+static inline uint32_t dist_sq(const complexi32_t *x, const complexi32_t *y)
 {
     return (int32_t) (x->re - y->re)*(x->re - y->re) + (int32_t) (x->im - y->im)*(x->im - y->im);
 }
 /*- End of function --------------------------------------------------------*/
 #else
-static __inline__ float dist_sq(const complexf_t *x, const complexf_t *y)
+static inline float dist_sq(const complexf_t *x, const complexf_t *y)
 {
     return (x->re - y->re)*(x->re - y->re) + (x->im - y->im)*(x->im - y->im);
 }
@@ -1133,7 +1133,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int signal_detect(v17_rx_state_t *s, int16_t amp)
+static inline int signal_detect(v17_rx_state_t *s, int16_t amp)
 {
     int16_t diff;
     int16_t x;

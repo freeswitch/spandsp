@@ -161,7 +161,7 @@ static int free_buffers(t4_t6_decode_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void add_run_to_row(t4_t6_decode_state_t *s)
+static inline void add_run_to_row(t4_t6_decode_state_t *s)
 {
     if (s->run_length >= 0)
     {
@@ -176,7 +176,7 @@ static __inline__ void add_run_to_row(t4_t6_decode_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void update_row_bit_info(t4_t6_decode_state_t *s)
+static inline void update_row_bit_info(t4_t6_decode_state_t *s)
 {
     if (s->row_bits > s->max_row_bits)
         s->max_row_bits = s->row_bits;
@@ -332,7 +332,7 @@ static int put_decoded_row(t4_t6_decode_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void drop_rx_bits(t4_t6_decode_state_t *s, int bits)
+static inline void drop_rx_bits(t4_t6_decode_state_t *s, int bits)
 {
     /* Only remove one bit right now. The rest need to be removed step by step,
        checking for a misaligned EOL along the way. This is time consuming, but
@@ -344,7 +344,7 @@ static __inline__ void drop_rx_bits(t4_t6_decode_state_t *s, int bits)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void force_drop_rx_bits(t4_t6_decode_state_t *s, int bits)
+static inline void force_drop_rx_bits(t4_t6_decode_state_t *s, int bits)
 {
     /* This should only be called to drop the bits of an EOL, as that is the
        only place where it is safe to drop them all at once. */

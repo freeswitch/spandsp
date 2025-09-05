@@ -165,7 +165,7 @@ SPAN_DECLARE(complexf_t) complexify(complexify_state_t *s, int16_t amp)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ complex_t expj(double theta)
+static inline complex_t expj(double theta)
 {
     return complex_set(cos(theta), sin(theta));
 }

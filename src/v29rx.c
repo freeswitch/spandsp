@@ -246,7 +246,7 @@ static void equalizer_reset(v29_rx_state_t *s)
 /*- End of function --------------------------------------------------------*/
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-static __inline__ complexi16_t equalizer_get(v29_rx_state_t *s)
+static inline complexi16_t equalizer_get(v29_rx_state_t *s)
 {
     complexi32_t zz;
     complexi16_t z;
@@ -258,7 +258,7 @@ static __inline__ complexi16_t equalizer_get(v29_rx_state_t *s)
     return z;
 }
 #else
-static __inline__ complexf_t equalizer_get(v29_rx_state_t *s)
+static inline complexf_t equalizer_get(v29_rx_state_t *s)
 {
     /* Get the next equalized value. */
     return cvec_circular_dot_prodf(s->eq_buf, s->eq_coeff, V29_EQUALIZER_LEN, s->eq_step);
@@ -292,9 +292,9 @@ static void tune_equalizer(v29_rx_state_t *s, const complexf_t *z, const complex
 /*- End of function --------------------------------------------------------*/
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-static __inline__ void track_carrier(v29_rx_state_t *s, const complexi16_t *z, const complexi16_t *target)
+static inline void track_carrier(v29_rx_state_t *s, const complexi16_t *z, const complexi16_t *target)
 #else
-static __inline__ void track_carrier(v29_rx_state_t *s, const complexf_t *z, const complexf_t *target)
+static inline void track_carrier(v29_rx_state_t *s, const complexf_t *z, const complexf_t *target)
 #endif
 {
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -332,9 +332,9 @@ static __inline__ void track_carrier(v29_rx_state_t *s, const complexf_t *z, con
 /*- End of function --------------------------------------------------------*/
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-static __inline__ int find_quadrant(const complexi16_t *z)
+static inline int find_quadrant(const complexi16_t *z)
 #else
-static __inline__ int find_quadrant(const complexf_t *z)
+static inline int find_quadrant(const complexf_t *z)
 #endif
 {
     int b1;
@@ -362,7 +362,7 @@ static int scrambled_training_bit(v29_rx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int descramble(v29_rx_state_t *s, int in_bit)
+static inline int descramble(v29_rx_state_t *s, int in_bit)
 {
     int out_bit;
 
@@ -375,7 +375,7 @@ static __inline__ int descramble(v29_rx_state_t *s, int in_bit)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void put_bit(v29_rx_state_t *s, int bit)
+static inline void put_bit(v29_rx_state_t *s, int bit)
 {
     int out_bit;
 
@@ -785,7 +785,7 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int signal_detect(v29_rx_state_t *s, int16_t amp)
+static inline int signal_detect(v29_rx_state_t *s, int16_t amp)
 {
     int16_t diff;
     int16_t x;

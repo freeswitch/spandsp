@@ -61,7 +61,7 @@ lab_params_t lab_param;
 
 int write_row = 0;
 
-static __inline__ uint16_t pack_16(uint8_t *s)
+static inline uint16_t pack_16(uint8_t *s)
 {
     uint16_t value;
 
@@ -70,7 +70,7 @@ static __inline__ uint16_t pack_16(uint8_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ uint32_t pack_32(uint8_t *s)
+static inline uint32_t pack_32(uint8_t *s)
 {
     uint32_t value;
 

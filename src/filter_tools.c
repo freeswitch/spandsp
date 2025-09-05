@@ -59,13 +59,13 @@
 
 static complex_t circle[MAX_FFT_LEN/2];
 
-static __inline__ complex_t expj(double theta)
+static inline complex_t expj(double theta)
 {
     return complex_set(cos(theta), sin(theta));
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ double fix(double x)
+static inline double fix(double x)
 {
     /* Nearest integer */
     return (x >= 0.0)  ?  floor(0.5 + x)  :  -floor(0.5 - x);

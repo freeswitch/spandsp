@@ -86,7 +86,7 @@ enum
     V42BIS_RESET = 2        /* Force reinitialisation */
 };
 
-static __inline__ void push_octet(v42bis_comp_state_t *s, int octet)
+static inline void push_octet(v42bis_comp_state_t *s, int octet)
 {
     s->output_buf[s->output_octet_count++] = (uint8_t) octet;
     if (s->output_octet_count >= s->max_output_len)
@@ -97,7 +97,7 @@ static __inline__ void push_octet(v42bis_comp_state_t *s, int octet)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void push_octets(v42bis_comp_state_t *s, const uint8_t buf[], int len)
+static inline void push_octets(v42bis_comp_state_t *s, const uint8_t buf[], int len)
 {
     int i;
     int chunk;
@@ -120,7 +120,7 @@ static __inline__ void push_octets(v42bis_comp_state_t *s, const uint8_t buf[], 
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void push_compressed_code(v42bis_comp_state_t *s, int code)
+static inline void push_compressed_code(v42bis_comp_state_t *s, int code)
 {
     s->bit_buffer |= code << s->bit_count;
     s->bit_count += s->v42bis_parm_c2;
@@ -133,7 +133,7 @@ static __inline__ void push_compressed_code(v42bis_comp_state_t *s, int code)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void push_octet_alignment(v42bis_comp_state_t *s)
+static inline void push_octet_alignment(v42bis_comp_state_t *s)
 {
     if ((s->bit_count & 7))
     {
@@ -148,7 +148,7 @@ static __inline__ void push_octet_alignment(v42bis_comp_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void flush_octets(v42bis_comp_state_t *s)
+static inline void flush_octets(v42bis_comp_state_t *s)
 {
     if (s->output_octet_count > 0)
     {

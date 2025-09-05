@@ -63,7 +63,7 @@
     OverLap and Add (PICOLA) method, developed by Morita Naotaka.
  */
 
-static __inline__ int amdf_pitch(int min_pitch, int max_pitch, int16_t amp[], int len)
+static inline int amdf_pitch(int min_pitch, int max_pitch, int16_t amp[], int len)
 {
     int i;
     int j;
@@ -91,7 +91,7 @@ static __inline__ int amdf_pitch(int min_pitch, int max_pitch, int16_t amp[], in
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void overlap_add(int16_t amp1[], int16_t amp2[], int len)
+static inline void overlap_add(int16_t amp1[], int16_t amp2[], int len)
 {
     int i;
     float weight;

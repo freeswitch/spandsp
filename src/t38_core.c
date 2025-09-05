@@ -309,7 +309,7 @@ SPAN_DECLARE(int) t38_v34rate_to_bps(const uint8_t *data, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int classify_seq_no_offset(int expected, int actual)
+static inline int classify_seq_no_offset(int expected, int actual)
 {
     /* Classify the mismatch between expected and actual sequence numbers
        according to whether the actual is a little in the past (late), a

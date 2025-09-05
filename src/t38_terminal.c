@@ -135,7 +135,7 @@ enum
     T38_TIMED_STEP_NO_SIGNAL = 0x60
 };
 
-static __inline__ int front_end_status(t38_terminal_state_t *s, int status)
+static inline int front_end_status(t38_terminal_state_t *s, int status)
 {
     t30_front_end_status(&s->t30, status);
     if (s->t38_fe.timed_step == T38_TIMED_STEP_NONE)
@@ -144,7 +144,7 @@ static __inline__ int front_end_status(t38_terminal_state_t *s, int status)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void hdlc_accept_frame(t38_terminal_state_t *s, const uint8_t *msg, int len, int ok)
+static inline void hdlc_accept_frame(t38_terminal_state_t *s, const uint8_t *msg, int len, int ok)
 {
     t30_hdlc_accept(&s->t30, msg, len, ok);
 }
@@ -633,7 +633,7 @@ static void send_hdlc(void *user_data, const uint8_t *msg, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int bits_to_microseconds(t38_terminal_state_t *s, int bits)
+static inline int bits_to_microseconds(t38_terminal_state_t *s, int bits)
 {
     if (!s->t38_fe.t38.pace_transmission  ||  s->t38_fe.tx_bit_rate == 0)
         return 0;
