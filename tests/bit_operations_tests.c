@@ -288,19 +288,19 @@ int main(int argc, char *argv[])
     }
     /*endfor*/
 
-    for (i = -1;  i < 32;  i++)
+    for (i = 0;  i < 32;  i++)
     {
         ax32 = most_significant_one32(1U << i);
         if (ax32 != (1U << i))
         {
-            printf("Test failed: most significant one 32 - %x %" PRIx32 " %x\n", i, ax32, (1 << i));
+            printf("Test failed: most significant one 32 - %x %" PRIx32 " %x\n", i, ax32, (1U << i));
             exit(2);
         }
         /*endif*/
         ax32 = least_significant_one32(1U << i);
         if (ax32 != (1U << i))
         {
-            printf("Test failed: least significant one 32 - %x %" PRIx32 " %x\n", i, ax32, (1 << i));
+            printf("Test failed: least significant one 32 - %x %" PRIx32 " %x\n", i, ax32, (1U << i));
             exit(2);
         }
         /*endif*/
