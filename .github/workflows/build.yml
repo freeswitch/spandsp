@@ -54,7 +54,7 @@ jobs:
 
   deb-mirror:
     name: 'DEB-MIRROR'
-    if: ${{ github.event_name != 'pull_request' }}
+    if: ${{ github.event_name != 'pull_request' && github.repository == 'freeswitch/spandsp' }}
     needs:
       - deb
     runs-on: ubuntu-latest
@@ -117,7 +117,7 @@ jobs:
 
   meta:
     name: 'Publish build data to meta-repo'
-    if: ${{ github.event_name != 'pull_request' }}
+    if: ${{ github.event_name != 'pull_request' && github.repository == 'freeswitch/spandsp' }}
     needs:
       - deb
       - deb-mirror
