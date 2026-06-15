@@ -44,7 +44,7 @@ jobs:
       META_FILE_PATH_PREFIX: /var/www/spandsp/public/unstable/${{ github.ref_name }}/${{ github.run_id }}-${{ github.run_number }}
       PLATFORM: ${{ matrix.platform.name }}
       TARGET_ARTIFACT_NAME: ${{ matrix.os }}-${{ matrix.version }}-${{ matrix.platform.name }}-public-unstable-artifact
-      UPLOAD_BUILD_ARTIFACTS: ${{ github.event_name != 'pull_request' }}
+      UPLOAD_BUILD_ARTIFACTS: ${{ github.event_name != 'pull_request' && github.repository == 'freeswitch/spandsp' }}
     secrets:
       GH_BOT_DEPLOY_TOKEN: ${{ secrets.PAT }}
       HOSTNAME: ${{ secrets.HOSTNAME }}
