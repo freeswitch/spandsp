@@ -314,7 +314,7 @@ extern "C"
         };
         return i;
     }
-#elif defined(_M_X64)
+#elif defined(_M_X64) || defined(_M_ARM64)
     /* Visual Studio x86_64 */
     /* x86_64 machines will do best with a simple assignment. */
 #include <intrin.h>
