@@ -240,7 +240,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <libxml/xmlmemory.h>]], [[int a = 
 # Hunt through several possible directories to find the includes for libxml2
 if test "x$XML2_INCLUDE" = "x"; then
     old_CPPFLAGS="$CPPFLAGS"
-    for i in $xml2_include_dir /usr/include /usr/local/include /usr/include/libxml2 /usr/local/include/libxml2 ; do
+     for i in $xml2_include_dir ${prefix}/usr/include ${prefix}/usr/local/include ${prefix}/usr/include/libxml2 ${prefix}/usr/local/include/libxml2 ; do
         CPPFLAGS="$old_CPPFLAGS -I$i"
         AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <libxml/xmlmemory.h>]], [[int a = 1;]])],[XML2_INCLUDE="-I$i"],[XML2_INCLUDE=
         ])
