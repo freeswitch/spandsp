@@ -61,7 +61,7 @@ then
     # are not the same, we set reasonable default values for the tools.
 
     CC_FOR_BUILD=${CC_FOR_BUILD-gcc}
-    CPPFLAGS_FOR_BUILD="\$(CPPFLAGS)"
+    CPPFLAGS_FOR_BUILD=${CPPFLAGS_FOR_BUILD-"\$(CPPFLAGS)"}
     CC=${CC-${host_alias}-gcc}
     CFLAGS=${CFLAGS-"-g -O2"}
     CXX=${CXX-${host_alias}-c++}
