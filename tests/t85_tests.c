@@ -55,7 +55,7 @@ in ITU specifications T.85.
 #include "spandsp.h"
 
 #define TESTBUF_SIZE        400000
-#define TEST_IMAGE_SIZE     (1951*1960/8)
+#define TEST_IMAGE_SIZE     (1952*1960/8)
 
 uint8_t testbuf[TESTBUF_SIZE];
 uint8_t test_image[TEST_IMAGE_SIZE];
