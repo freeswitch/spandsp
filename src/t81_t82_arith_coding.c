@@ -181,7 +181,7 @@ static const struct probability_estimation_s
     {0x59EB, 112 + 128, 111}
 };
 
-static __inline__ void output_stuffed_byte(t81_t82_arith_encode_state_t *s, int byte)
+static inline void output_stuffed_byte(t81_t82_arith_encode_state_t *s, int byte)
 {
     s->output_byte_handler(s->user_data, byte);
     if (byte == T81_T82_ESC)
@@ -190,7 +190,7 @@ static __inline__ void output_stuffed_byte(t81_t82_arith_encode_state_t *s, int 
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void byteout(t81_t82_arith_encode_state_t *s)
+static inline void byteout(t81_t82_arith_encode_state_t *s)
 {
     uint32_t temp;
 
@@ -232,7 +232,7 @@ static __inline__ void byteout(t81_t82_arith_encode_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void renorme(t81_t82_arith_encode_state_t *s)
+static inline void renorme(t81_t82_arith_encode_state_t *s)
 {
     /* T.82 figure 25 - RENORME */
     do

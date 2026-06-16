@@ -331,7 +331,7 @@ static void first_alt_baud_init(v34_state_t *s);
 static void second_alt_baud_init(v34_state_t *s);
 static void sh_baud_init(v34_state_t *s);
 
-static __inline__ int scramble(v34_tx_state_t *s, int in_bit)
+static inline int scramble(v34_tx_state_t *s, int in_bit)
 {
     int out_bit;
 
@@ -1468,7 +1468,7 @@ SPAN_DECLARE(int) v34_get_mapping_frame(v34_tx_state_t *s, int16_t bits[16])
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ float exact_baud_rate(int symbol_rate_code)
+static inline float exact_baud_rate(int symbol_rate_code)
 {
     float a;
     float c;
@@ -1479,7 +1479,7 @@ static __inline__ float exact_baud_rate(int symbol_rate_code)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ float carrier_frequency(int symbol_rate_code, int low_high)
+static inline float carrier_frequency(int symbol_rate_code, int low_high)
 {
     float d;
     float e;
@@ -2657,26 +2657,26 @@ static void sh_baud_init(v34_state_t *s)
 /*- End of function --------------------------------------------------------*/
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-static __inline__ uint32_t dist_sq(const complexi_t *x, const complexi_t *y)
+static inline uint32_t dist_sq(const complexi_t *x, const complexi_t *y)
 {
     return (x->re - y->re)*(x->re - y->re) + (x->im - y->im)*(x->im - y->im);
 }
 /*- End of function --------------------------------------------------------*/
 #else
-static __inline__ float dist_sq(const complexf_t *x, const complexf_t *y)
+static inline float dist_sq(const complexf_t *x, const complexf_t *y)
 {
     return (x->re - y->re)*(x->re - y->re) + (x->im - y->im)*(x->im - y->im);
 }
 /*- End of function --------------------------------------------------------*/
 #endif
 
-static __inline__ complex_sig_t training_get(v34_tx_state_t *s)
+static inline complex_sig_t training_get(v34_tx_state_t *s)
 {
     return zero;
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ complex_sig_t connect_sequence_get(v34_tx_state_t *s)
+static inline complex_sig_t connect_sequence_get(v34_tx_state_t *s)
 {
     return zero;
 }

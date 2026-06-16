@@ -399,7 +399,7 @@ static int free_buffers(t4_t6_encode_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int put_encoded_bits(t4_t6_encode_state_t *s, uint32_t bits, int length)
+static inline int put_encoded_bits(t4_t6_encode_state_t *s, uint32_t bits, int length)
 {
     /* We might be called with a large length value, to spew out a mass of zero bits for
        minimum row length padding. */
@@ -421,7 +421,7 @@ static __inline__ int put_encoded_bits(t4_t6_encode_state_t *s, uint32_t bits, i
  * Write the sequence of codes that describes the specified span of zero's or one's.
  * The appropriate table that holds the make-up and terminating codes is supplied.
  */
-static __inline__ int put_1d_span(t4_t6_encode_state_t *s, int32_t span, const t4_run_table_entry_t *tab)
+static inline int put_1d_span(t4_t6_encode_state_t *s, int32_t span, const t4_run_table_entry_t *tab)
 {
     const t4_run_table_entry_t *te;
 

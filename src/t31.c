@@ -195,7 +195,7 @@ static int non_ecm_get(void *user_data, uint8_t buf[], int len);
 static void non_ecm_rx_status(void *user_data, int status);
 static void hdlc_rx_status(void *user_data, int status);
 
-static __inline__ void t31_set_at_rx_mode(t31_state_t *s, int new_mode)
+static inline void t31_set_at_rx_mode(t31_state_t *s, int new_mode)
 {
     s->at_state.at_rx_mode = new_mode;
 }
@@ -782,7 +782,7 @@ static void send_hdlc(void *user_data, const uint8_t *msg, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int bits_to_us(t31_state_t *s, int bits)
+static inline int bits_to_us(t31_state_t *s, int bits)
 {
     if (!s->t38_fe.t38.pace_transmission  ||  s->t38_fe.tx_bit_rate == 0)
         return 0;
@@ -2286,7 +2286,7 @@ static int restart_modem(t31_state_t *s, int new_modem)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void dle_unstuff_hdlc(t31_state_t *s, const char *stuffed, int len)
+static inline void dle_unstuff_hdlc(t31_state_t *s, const char *stuffed, int len)
 {
     int i;
 
@@ -2334,7 +2334,7 @@ static __inline__ void dle_unstuff_hdlc(t31_state_t *s, const char *stuffed, int
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void dle_unstuff_fake_hdlc(t31_state_t *s, const char *stuffed, int len)
+static inline void dle_unstuff_fake_hdlc(t31_state_t *s, const char *stuffed, int len)
 {
     int i;
 
@@ -2374,7 +2374,7 @@ static __inline__ void dle_unstuff_fake_hdlc(t31_state_t *s, const char *stuffed
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void dle_unstuff(t31_state_t *s, const char *stuffed, int len)
+static inline void dle_unstuff(t31_state_t *s, const char *stuffed, int len)
 {
     int i;
 

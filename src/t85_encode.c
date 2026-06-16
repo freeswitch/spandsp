@@ -98,7 +98,7 @@ static void output_byte(void *user_data, int byte)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void output_esc_code(t85_encode_state_t *s, int code)
+static inline void output_esc_code(t85_encode_state_t *s, int code)
 {
     uint8_t buf[2];
 
@@ -108,7 +108,7 @@ static __inline__ void output_esc_code(t85_encode_state_t *s, int code)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void output_newlen(t85_encode_state_t *s)
+static inline void output_newlen(t85_encode_state_t *s)
 {
     uint8_t buf[6];
 
@@ -130,7 +130,7 @@ static __inline__ void output_newlen(t85_encode_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void output_comment(t85_encode_state_t *s)
+static inline void output_comment(t85_encode_state_t *s)
 {
     uint8_t buf[6];
 
@@ -148,7 +148,7 @@ static __inline__ void output_comment(t85_encode_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void output_atmove(t85_encode_state_t *s)
+static inline void output_atmove(t85_encode_state_t *s)
 {
     uint8_t buf[8];
 

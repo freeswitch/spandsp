@@ -44,7 +44,7 @@ extern "C"
 #endif
 
 /* This returns its answer as a signed 32 bit integer phase value. */
-static __inline__ int32_t arctan2(float y, float x)
+static inline int32_t arctan2(float y, float x)
 {
     float abs_y;
     float angle;
@@ -81,7 +81,7 @@ static __inline__ int32_t arctan2(float y, float x)
 
 #if 0
 /* This returns its answer in radians, in the range +-pi. */
-static __inline__ float arctan2f(float y, float x)
+static inline float arctan2f(float y, float x)
 {
     float angle;
     float fx;

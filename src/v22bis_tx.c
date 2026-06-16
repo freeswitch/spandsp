@@ -410,7 +410,7 @@ static int fake_get_bit(void *user_data)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int scramble(v22bis_state_t *s, int bit)
+static inline int scramble(v22bis_state_t *s, int bit)
 {
     int out_bit;
 
@@ -432,7 +432,7 @@ static __inline__ int scramble(v22bis_state_t *s, int bit)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int get_scrambled_bit(v22bis_state_t *s)
+static inline int get_scrambled_bit(v22bis_state_t *s)
 {
     int bit;
 

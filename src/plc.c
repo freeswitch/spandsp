@@ -80,7 +80,7 @@ static void save_history(plc_state_t *s, int16_t *buf, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void normalise_history(plc_state_t *s)
+static inline void normalise_history(plc_state_t *s)
 {
     int16_t tmp[PLC_HISTORY_LEN];
 
@@ -94,7 +94,7 @@ static __inline__ void normalise_history(plc_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int amdf_pitch(int min_pitch, int max_pitch, int16_t amp[], int len)
+static inline int amdf_pitch(int min_pitch, int max_pitch, int16_t amp[], int len)
 {
     int i;
     int j;

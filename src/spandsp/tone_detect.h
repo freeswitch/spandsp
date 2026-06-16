@@ -126,7 +126,7 @@ SPAN_DECLARE(float) goertzel_result(goertzel_state_t *s);
 /*! \brief Update the state of a Goertzel transform.
     \param s The Goertzel context.
     \param amp The sample to be transformed. */
-static __inline__ void goertzel_sample(goertzel_state_t *s, int16_t amp)
+static inline void goertzel_sample(goertzel_state_t *s, int16_t amp)
 {
 #if defined(SPANDSP_USE_FIXED_POINT)
     int16_t x;
@@ -169,9 +169,9 @@ static __inline__ void goertzel_sample(goertzel_state_t *s, int16_t amp)
     \param s The Goertzel context.
     \param amp The adjusted sample to be transformed. */
 #if defined(SPANDSP_USE_FIXED_POINT)
-static __inline__ void goertzel_samplex(goertzel_state_t *s, int16_t amp)
+static inline void goertzel_samplex(goertzel_state_t *s, int16_t amp)
 #else
-static __inline__ void goertzel_samplex(goertzel_state_t *s, float amp)
+static inline void goertzel_samplex(goertzel_state_t *s, float amp)
 #endif
 {
 #if defined(SPANDSP_USE_FIXED_POINT)
