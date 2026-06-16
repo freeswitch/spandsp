@@ -327,7 +327,7 @@ struct v150_1_state_s
 
     struct
     {
-        v150_1_near_far_t parms;
+        v150_1_near_far_t near_parms;
 
         int8_t info_msg_preferences[10];
 
@@ -342,7 +342,7 @@ struct v150_1_state_s
     } near;
     struct
     {
-        v150_1_near_far_t parms;
+        v150_1_near_far_t far_parms;
 
         int break_source;
         int break_type;
