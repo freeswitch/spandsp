@@ -173,6 +173,7 @@ fi
 AX_C99_FLEXIBLE_ARRAY
 
 AX_FUNC_ALIGNED_ALLOC
+AC_CHECK_FUNCS([feenableexcept])
 AC_CHECK_FUNCS([memalign])
 AC_CHECK_FUNCS([posix_memalign])
 AC_CHECK_FUNCS([memmove])
@@ -209,7 +210,6 @@ AC_CHECK_HEADERS([sys/select.h])
 AC_CHECK_HEADERS([sys/ioctl.h])
 AC_CHECK_HEADERS([sys/fcntl.h])
 AC_CHECK_HEADERS([sndfile.h])
-AC_CHECK_HEADERS([fenv.h])
 AC_CHECK_HEADERS([fftw3.h], , [AC_CHECK_HEADERS([fftw.h])])
 AC_CHECK_HEADERS([pcap.h])
 AC_CHECK_HEADERS([pthread.h])
