@@ -106,7 +106,7 @@ version_compare()
 
 # Check for required version and die if unhappy
 
-mkdir config
+mkdir -p config
 
 if [ "x$UNAME" = "xDarwin" ]; then
 version_compare glibtoolize 1 5 16 || exit 1
