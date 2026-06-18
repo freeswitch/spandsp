@@ -309,10 +309,25 @@ static void super_tone_chunk(super_tone_rx_state_t *s)
     }
     else
     {
-        if (s->desc->monitored_frequencies < 2)
+        if (s->desc->monitored_frequencies < 1)
         {
-            k1 =
-            k2 = 0;
+            k1 = -1;
+            k2 = -1;
+        }
+        else if (s->desc->monitored_frequencies < 2)
+        {
+            res[0] = goertzel_result(&s->state[0]);
+            if (res[0] < tone_to_total_energy*s->energy)
+            {
+                k1 = -1;
+                k2 = -1;
+            }
+            else
+            {
+                k1 = 0;
+                k2 = -1;
+            }
+            /*endif*/
         }
         else
         {
