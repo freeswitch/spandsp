@@ -56,6 +56,14 @@
 
 #include "v150_1_local.h"
 
+#if defined(_WIN32)
+/* See the note in spandsp/private/v150_1.h. The near and far members of
+   v150_1_state_t are referenced by name throughout this file, so the
+   <windows.h> macros of those names must not be in effect here. */
+#undef near
+#undef far
+#endif
+
 /* Terminology
 
     V.150.1 has several components. The terms used for these are:

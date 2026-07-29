@@ -26,6 +26,20 @@
 #if !defined(_SPANDSP_PRIVATE_V150_1_H_)
 #define _SPANDSP_PRIVATE_V150_1_H_
 
+#if defined(_WIN32)
+/* <windows.h> (minwindef.h) defines the legacy 16 bit memory model keywords
+   "near" and "far" as empty macros. Left in place, they strip the names from
+   the near and far members of v150_1_state_s, making them anonymous structs.
+   MSVC then flattens their contents into the enclosing struct, where the two
+   "parms" members collide (error C2020: 'parms': 'struct' member
+   redefinition). Both macros are restored at the end of this header, so an
+   including application keeps whatever it had. */
+#pragma push_macro("near")
+#pragma push_macro("far")
+#undef near
+#undef far
+#endif
+
 /*
                telephone network
                       ^
@@ -360,6 +374,11 @@ struct v150_1_state_s
     /*! \brief Error and flow logging control */
     logging_state_t logging;
 };
+
+#if defined(_WIN32)
+#pragma pop_macro("far")
+#pragma pop_macro("near")
+#endif
 
 #endif
 /*- End of file ------------------------------------------------------------*/
