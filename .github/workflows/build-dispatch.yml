@@ -1,0 +1,220 @@
+name: Build and Distribute
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch, tag, or commit SHA to build'
+        required: false
+        default: master
+        type: string
+      trixie:
+        description: 'Build Debian trixie'
+        required: false
+        default: true
+        type: boolean
+      bookworm:
+        description: 'Build Debian bookworm'
+        required: false
+        default: true
+        type: boolean
+      bullseye:
+        description: 'Build Debian bullseye'
+        required: false
+        default: true
+        type: boolean
+      amd64:
+        description: 'Build amd64'
+        required: false
+        default: true
+        type: boolean
+      arm32v7:
+        description: 'Build arm32v7'
+        required: false
+        default: false
+        type: boolean
+      arm64v8:
+        description: 'Build arm64v8'
+        required: false
+        default: true
+        type: boolean
+      upload:
+        description: 'Upload build artifacts to the artifact server'
+        required: false
+        default: false
+        type: boolean
+      publish:
+        description: 'Publish artifacts (mirror to remote + meta-repo update)'
+        required: false
+        default: false
+        type: boolean
+      release:
+        description: 'Also mirror artifacts to the release channel (unstable is always mirrored)'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: ${{ github.head_ref || github.ref }}
+
+jobs:
+  prepare:
+    name: 'Prepare Matrix'
+    runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.versions.outputs.versions }}
+      platforms: ${{ steps.platforms.outputs.platforms }}
+      releases: ${{ steps.releases.outputs.releases }}
+    steps:
+      - name: Compute Debian versions to build
+        id: versions
+        shell: bash
+        env:
+          TRIXIE: ${{ github.event_name != 'workflow_dispatch' || inputs.trixie }}
+          BOOKWORM: ${{ github.event_name != 'workflow_dispatch' || inputs.bookworm }}
+          BULLSEYE: ${{ github.event_name != 'workflow_dispatch' || inputs.bullseye }}
+        run: |
+          versions=$(jq -nc \
+            --argjson trixie "${TRIXIE}" \
+            --argjson bookworm "${BOOKWORM}" \
+            --argjson bullseye "${BULLSEYE}" \
+            '[
+              {name: "trixie", enabled: $trixie},
+              {name: "bookworm", enabled: $bookworm},
+              {name: "bullseye", enabled: $bullseye}
+            ] | map(select(.enabled) | .name)')
+          echo "versions=${versions}" >> "$GITHUB_OUTPUT"
+
+      - name: Compute platforms to build
+        id: platforms
+        shell: bash
+        env:
+          AMD64: ${{ github.event_name != 'workflow_dispatch' || inputs.amd64 }}
+          ARM32V7: ${{ github.event_name != 'workflow_dispatch' || inputs.arm32v7 }}
+          ARM64V8: ${{ github.event_name != 'workflow_dispatch' || inputs.arm64v8 }}
+        run: |
+          platforms=$(jq -nc \
+            --argjson amd64 "${AMD64}" \
+            --argjson arm32v7 "${ARM32V7}" \
+            --argjson arm64v8 "${ARM64V8}" \
+            '[
+              {name: "amd64", runner: "ubuntu-latest", enabled: $amd64},
+              {name: "arm32v7", runner: "ubuntu-24.04-arm", enabled: $arm32v7},
+              {name: "arm64v8", runner: "ubuntu-24.04-arm", enabled: $arm64v8}
+            ] | map(select(.enabled) | {name, runner})')
+          echo "platforms=${platforms}" >> "$GITHUB_OUTPUT"
+
+      - name: Compute release channels to mirror
+        id: releases
+        shell: bash
+        env:
+          RELEASE: ${{ github.event_name == 'workflow_dispatch' && inputs.release }}
+        run: |
+          releases=$(jq -nc \
+            --argjson release "${RELEASE}" \
+            '["unstable"] + (if $release then ["release"] else [] end)')
+          echo "releases=${releases}" >> "$GITHUB_OUTPUT"
+
+  deb:
+    name: 'DEB'
+    needs:
+      - prepare
+    permissions:
+      id-token: write
+      contents: read
+    uses: signalwire/actions-template/.github/workflows/cicd-docker-build-and-distribute.yml@main
+    strategy:
+      # max-parallel: 1
+      fail-fast: false
+      matrix:
+        os:
+          - debian
+        version: ${{ fromJson(needs.prepare.outputs.versions) }}
+        platform: ${{ fromJson(needs.prepare.outputs.platforms) }}
+    with:
+      REF: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || '' }}
+      RUNNER: ${{ matrix.platform.runner }}
+      ARTIFACTS_PATTERN: '.*\.(deb)$'
+      DOCKERFILE: .github/docker/${{ matrix.os }}/${{ matrix.version }}/${{ matrix.platform.name }}/Dockerfile
+      MAINTAINER: 'Andrey Volk <andrey@signalwire.com>'
+      META_FILE_PATH_PREFIX: /var/www/spandsp/public/unstable/${{ github.ref_name }}/${{ github.run_id }}-${{ github.run_number }}
+      PLATFORM: ${{ matrix.platform.name }}
+      TARGET_ARTIFACT_NAME: ${{ matrix.os }}-${{ matrix.version }}-${{ matrix.platform.name }}-public-unstable-artifact
+      UPLOAD_BUILD_ARTIFACTS: ${{ github.event_name == 'workflow_dispatch' && inputs.upload }}
+    secrets:
+      GH_BOT_DEPLOY_TOKEN: ${{ secrets.PAT }}
+      HOSTNAME: ${{ secrets.HOSTNAME }}
+      PROXY_URL: ${{ secrets.PROXY_URL }}
+      USERNAME: ${{ secrets.USERNAME }}
+      TELEPORT_TOKEN: ${{ secrets.TELEPORT_TOKEN }}
+
+  deb-mirror:
+    name: 'DEB-MIRROR'
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.upload && inputs.publish }}
+    needs:
+      - prepare
+      - deb
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    strategy:
+      # max-parallel: 1
+      fail-fast: false
+      matrix:
+        os:
+          - debian
+        version: ${{ fromJson(needs.prepare.outputs.versions) }}
+        platform: ${{ fromJson(needs.prepare.outputs.platforms) }}
+        release: ${{ fromJson(needs.prepare.outputs.releases) }}
+    steps:
+      - name: Checkout reusable actions
+        uses: actions/checkout@v7
+        with:
+          repository: signalwire/actions-template
+          ref: main
+          fetch-depth: 1
+          path: actions
+          sparse-checkout: |
+            .github/actions/teleport-local-copy/action.yml
+          sparse-checkout-cone-mode: false
+
+      - name: Mirror artifacts on remote server behind Teleport (public)
+        uses: ./actions/.github/actions/teleport-local-copy
+        with:
+          SRC: '/var/www/spandsp/public/unstable/${{ github.ref_name }}/${{ github.run_id }}-${{ github.run_number }}/${{ matrix.os }}-${{ matrix.version }}-${{ matrix.platform.name }}-public-unstable-artifact.tar.gz'
+          DST: '/var/www/spandsp/public/${{ matrix.release }}/${{ github.ref_name }}/${{ github.run_id }}-${{ github.run_number }}/${{ matrix.os }}-${{ matrix.version }}-${{ matrix.platform.name }}-public-${{ matrix.release }}-artifact.tar.gz'
+        env:
+          HOSTNAME: ${{ secrets.HOSTNAME }}
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          TOKEN: ${{ secrets.TELEPORT_TOKEN }}
+          USERNAME: ${{ secrets.USERNAME }}
+
+      - name: Mirror artifacts on remote server behind Teleport (fsa)
+        uses: ./actions/.github/actions/teleport-local-copy
+        with:
+          SRC: '/var/www/spandsp/public/unstable/${{ github.ref_name }}/${{ github.run_id }}-${{ github.run_number }}/${{ matrix.os }}-${{ matrix.version }}-${{ matrix.platform.name }}-public-unstable-artifact.tar.gz'
+          DST: '/var/www/spandsp/fsa/${{ matrix.release }}/${{ github.ref_name }}/${{ github.run_id }}-${{ github.run_number }}/${{ matrix.os }}-${{ matrix.version }}-${{ matrix.platform.name }}-fsa-${{ matrix.release }}-artifact.tar.gz'
+        env:
+          HOSTNAME: ${{ secrets.HOSTNAME }}
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          TOKEN: ${{ secrets.TELEPORT_TOKEN }}
+          USERNAME: ${{ secrets.USERNAME }}
+
+  meta:
+    name: 'Publish build data to meta-repo'
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.upload && inputs.publish }}
+    needs:
+      - deb
+      - deb-mirror
+    permissions:
+      id-token: write
+      contents: read
+    uses: signalwire/actions-template/.github/workflows/meta-repo-content.yml@main
+    with:
+      META_CONTENT: '/var/www/spandsp/{fsa,public}/{release,unstable}/${{ github.ref_name }}/${{ github.run_id }}-${{ github.run_number }}'
+      META_REPO: signalwire/bamboo_gha_trigger
+      META_REPO_BRANCH: trigger/spandsp/${{ github.ref_name }}
+    secrets:
+      GH_BOT_DEPLOY_TOKEN: ${{ secrets.PAT }}
