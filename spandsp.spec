@@ -4,7 +4,7 @@
 
 Summary: A DSP library for telephony.
 Name: spandsp3
-Version: 3.0.0
+Version: 3.1.0
 Release: 1
 License: LGPLv2 and GPLv2
 Group: System Environment/Libraries
@@ -92,5 +92,8 @@ rm -rf %{buildroot}
 %postun -p /sbin/ldconfig
 
 %changelog
+* Thu Jul 30 2026 FreeSWITCH Solutions <packages@freeswitch.com> 3.1.0-1
+- Release for RPM based distros
+
 * Fri Aug 14 2020 FreeSWITCH Solutions <packages@freeswitch.com> 3.0.0-1
 - Initial release for RPM based distros
