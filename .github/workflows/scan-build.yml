@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - name: Checkout SpanDSP
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: freeswitch/spandsp
           path: spandsp

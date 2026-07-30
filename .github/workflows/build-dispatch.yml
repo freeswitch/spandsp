@@ -4,11 +4,6 @@ on:
   pull_request:
   workflow_dispatch:
     inputs:
-      ref:
-        description: 'Branch, tag, or commit SHA to build'
-        required: false
-        default: master
-        type: string
       trixie:
         description: 'Build Debian trixie'
         required: false
@@ -67,6 +62,13 @@ jobs:
       platforms: ${{ steps.platforms.outputs.platforms }}
       releases: ${{ steps.releases.outputs.releases }}
     steps:
+      - name: Restrict manual dispatch to the master branch
+        if: ${{ github.event_name == 'workflow_dispatch' && github.ref_name != 'master' }}
+        shell: bash
+        run: |
+          echo "::error::workflow_dispatch is only permitted from the master branch (dispatched from '${{ github.ref_name }}')."
+          exit 1
+
       - name: Compute Debian versions to build
         id: versions
         shell: bash
@@ -84,6 +86,10 @@ jobs:
               {name: "bookworm", enabled: $bookworm},
               {name: "bullseye", enabled: $bullseye}
             ] | map(select(.enabled) | .name)')
+          if [ "$(jq 'length' <<<"${versions}")" -eq 0 ]; then
+            echo "::error::No Debian versions selected — enable at least one of trixie/bookworm/bullseye."
+            exit 1
+          fi
           echo "versions=${versions}" >> "$GITHUB_OUTPUT"
 
       - name: Compute platforms to build
@@ -103,6 +109,10 @@ jobs:
               {name: "arm32v7", runner: "ubuntu-24.04-arm", enabled: $arm32v7},
               {name: "arm64v8", runner: "ubuntu-24.04-arm", enabled: $arm64v8}
             ] | map(select(.enabled) | {name, runner})')
+          if [ "$(jq 'length' <<<"${platforms}")" -eq 0 ]; then
+            echo "::error::No platforms selected — enable at least one of amd64/arm32v7/arm64v8."
+            exit 1
+          fi
           echo "platforms=${platforms}" >> "$GITHUB_OUTPUT"
 
       - name: Compute release channels to mirror
@@ -115,6 +125,11 @@ jobs:
             --argjson release "${RELEASE}" \
             '["unstable"] + (if $release then ["release"] else [] end)')
           echo "releases=${releases}" >> "$GITHUB_OUTPUT"
+
+      - name: Warn on inconsistent upload/publish selection
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish && !inputs.upload }}
+        shell: bash
+        run: echo "::warning::publish was requested without upload — deb-mirror and meta will be skipped since there's nothing uploaded to mirror or publish."
 
   deb:
     name: 'DEB'
@@ -133,7 +148,6 @@ jobs:
         version: ${{ fromJson(needs.prepare.outputs.versions) }}
         platform: ${{ fromJson(needs.prepare.outputs.platforms) }}
     with:
-      REF: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || '' }}
       RUNNER: ${{ matrix.platform.runner }}
       ARTIFACTS_PATTERN: '.*\.(deb)$'
       DOCKERFILE: .github/docker/${{ matrix.os }}/${{ matrix.version }}/${{ matrix.platform.name }}/Dockerfile
@@ -141,7 +155,7 @@ jobs:
       META_FILE_PATH_PREFIX: /var/www/spandsp/public/unstable/${{ github.ref_name }}/${{ github.run_id }}-${{ github.run_number }}
       PLATFORM: ${{ matrix.platform.name }}
       TARGET_ARTIFACT_NAME: ${{ matrix.os }}-${{ matrix.version }}-${{ matrix.platform.name }}-public-unstable-artifact
-      UPLOAD_BUILD_ARTIFACTS: ${{ github.event_name == 'workflow_dispatch' && inputs.upload }}
+      UPLOAD_BUILD_ARTIFACTS: ${{ github.event_name == 'workflow_dispatch' && inputs.upload && github.repository == 'freeswitch/spandsp' }}
     secrets:
       GH_BOT_DEPLOY_TOKEN: ${{ secrets.PAT }}
       HOSTNAME: ${{ secrets.HOSTNAME }}
@@ -151,7 +165,7 @@ jobs:
 
   deb-mirror:
     name: 'DEB-MIRROR'
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.upload && inputs.publish }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.upload && inputs.publish && github.repository == 'freeswitch/spandsp' }}
     needs:
       - prepare
       - deb
@@ -204,7 +218,7 @@ jobs:
 
   meta:
     name: 'Publish build data to meta-repo'
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.upload && inputs.publish }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.upload && inputs.publish && github.repository == 'freeswitch/spandsp' }}
     needs:
       - deb
       - deb-mirror
