@@ -44,7 +44,9 @@ jobs:
       META_FILE_PATH_PREFIX: /var/www/spandsp/public/unstable/${{ github.ref_name }}/${{ github.run_id }}-${{ github.run_number }}
       PLATFORM: ${{ matrix.platform.name }}
       TARGET_ARTIFACT_NAME: ${{ matrix.os }}-${{ matrix.version }}-${{ matrix.platform.name }}-public-unstable-artifact
-      UPLOAD_BUILD_ARTIFACTS: ${{ github.event_name != 'pull_request' && github.repository == 'freeswitch/spandsp' }}
+      # TODO: re-enable upload once deploy-on-merge is ready; build-only for now
+      # UPLOAD_BUILD_ARTIFACTS: ${{ github.event_name != 'pull_request' && github.repository == 'freeswitch/spandsp' }}
+      UPLOAD_BUILD_ARTIFACTS: false
     secrets:
       GH_BOT_DEPLOY_TOKEN: ${{ secrets.PAT }}
       HOSTNAME: ${{ secrets.HOSTNAME }}
@@ -54,7 +56,9 @@ jobs:
 
   deb-mirror:
     name: 'DEB-MIRROR'
-    if: ${{ github.event_name != 'pull_request' && github.repository == 'freeswitch/spandsp' }}
+    # TODO: re-enable once deploy-on-merge is ready; build-only for now
+    # if: ${{ github.event_name != 'pull_request' && github.repository == 'freeswitch/spandsp' }}
+    if: false
     needs:
       - deb
     runs-on: ubuntu-latest
@@ -117,7 +121,9 @@ jobs:
 
   meta:
     name: 'Publish build data to meta-repo'
-    if: ${{ github.event_name != 'pull_request' && github.repository == 'freeswitch/spandsp' }}
+    # TODO: re-enable once deploy-on-merge is ready; build-only for now
+    # if: ${{ github.event_name != 'pull_request' && github.repository == 'freeswitch/spandsp' }}
+    if: false
     needs:
       - deb
       - deb-mirror
