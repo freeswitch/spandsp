@@ -1,16 +1,15 @@
 # BUILD using: rpmbuild -ba spandsp.spec
 # DOC: https://fedoraproject.org/wiki/Packaging:SourceURL
-%global commit f995f452ee79d03c4afa90b10e86a5f9c553920c
 
 Summary: A DSP library for telephony.
-Name: spandsp3
-Version: 3.1.0
+Name: spandsp4
+Version: 3.1.1
 Release: 1
 License: LGPLv2 and GPLv2
 Group: System Environment/Libraries
 URL: http://www.soft-switch.org
 %undefine _disable_source_fetch
-Source0: https://github.com/freeswitch/spandsp/archive/%{commit}.tar.gz
+Source0: https://github.com/freeswitch/spandsp/archive/refs/tags/v%{version}.tar.gz
 BuildRoot: %{_tmppath}/spandsp-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires: libtiff-devel%{?_isa}
@@ -35,7 +34,7 @@ information about these intellectual property issues.
 Summary: SpanDSP development files
 Group: Development/Libraries
 Conflicts: spandsp-devel
-Requires: spandsp3%{?_isa} = %{version}-%{release}
+Requires: spandsp4%{?_isa} = %{version}-%{release}
 Requires: libtiff-devel%{?_isa}
 Requires: libjpeg-turbo-devel%{?_isa}
 
@@ -50,7 +49,7 @@ Group: Development/Libraries
 SpanDSP API documentation.
 
 %prep
-%autosetup -n spandsp-%{commit}
+%autosetup -n spandsp-%{version}
 
 %build
 autoreconf -i
@@ -92,6 +91,9 @@ rm -rf %{buildroot}
 %postun -p /sbin/ldconfig
 
 %changelog
+* Fri Jul 31 2026 FreeSWITCH Solutions <packages@freeswitch.com> 3.1.1-1
+- Rename package to spandsp4 (SONAME bump)
+
 * Thu Jul 30 2026 FreeSWITCH Solutions <packages@freeswitch.com> 3.1.0-1
 - Release for RPM based distros
 

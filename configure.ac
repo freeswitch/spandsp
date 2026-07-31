@@ -19,7 +19,7 @@
 # @start 1
 
 AC_PREREQ([2.69])
-AC_INIT([spandsp],[3.1.0])
+AC_INIT([spandsp],[3.1.1])
 
 CFLAGS="$CFLAGS $CONFIGURE_CFLAGS"
 CXXFLAGS="$CXXFLAGS $CONFIGURE_CXXFLAGS"
@@ -27,7 +27,7 @@ LDFLAGS="$LDFLAGS $CONFIGURE_LDFLAGS"
 
 SPANDSP_LT_CURRENT=4
 SPANDSP_LT_REVISION=0
-SPANDSP_LT_AGE=1
+SPANDSP_LT_AGE=0
 
 m4_include(m4/ax_compiler_vendor.m4)
 m4_include(m4/ax_check_real_file.m4)

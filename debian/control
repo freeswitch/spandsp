@@ -5,7 +5,7 @@ Maintainer: FreeSWITCH Solutions <packages@freeswitch.com>
 Build-Depends: debhelper (>= 9), libtiff-dev, libjpeg-dev, doxygen, autotools-dev, docbook-xsl, xsltproc
 Standards-Version: 3.9.6
 
-Package: libspandsp3
+Package: libspandsp4
 Architecture: any
 Depends: ${shlibs:Depends}
 Description: Telephony signal processing library
@@ -15,10 +15,10 @@ Description: Telephony signal processing library
  .
  This package contains the shared library.
 
-Package: libspandsp3-dev
+Package: libspandsp4-dev
 Section: libdevel
 Architecture: any
-Depends: libspandsp3 (= ${binary:Version}), libtiff-dev, libjpeg-dev
+Depends: libspandsp4 (= ${binary:Version}), libtiff-dev, libjpeg-dev
 Conflicts: libspandsp-dev
 Provides: libspandsp-dev
 Description: Telephony signal processing library
@@ -28,7 +28,7 @@ Description: Telephony signal processing library
  .
  This package contains the static library and development headers.
 
-Package: libspandsp3-doc
+Package: libspandsp4-doc
 Section: doc
 Architecture: all
 Description: Documentation for the spandsp signal processing library
