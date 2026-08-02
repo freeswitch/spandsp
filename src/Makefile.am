@@ -686,7 +686,7 @@ $(VCPROJ12): msvc/vc12proj.head msvc/vc12proj.foot Makefile.am
 
 $(srcdir)/msvc/spandsp.h: spandsp.h.in
 	echo "creating $(srcdir)/msvc/spandsp.h"
-	@sed -e "s/#define _SPANDSP_H_/#define _SPANDSP_H_\n\n#define __inline__ __inline\n#pragma warning(disable:4200)/" \
+	@sed -e "s/#define _SPANDSP_H_/#define _SPANDSP_H_\n\n#pragma warning(disable:4200)/" \
 	     -e "s/\@SPANDSP_USE_FIXED_POINT\@/#undef SPANDSP_USE_FIXED_POINT/" \
 	     -e "s/\@SPANDSP_MISALIGNED_ACCESS_FAILS\@/#undef SPANDSP_MISALIGNED_ACCESS_FAILS/" \
 	     -e "s/\@SPANDSP_USE_EXPORT_CAPABILITY\@/#define SPANDSP_USE_EXPORT_CAPABILITY 1/" \

@@ -46,7 +46,7 @@ their operation with very dumb brute force versions of the same functionality.
 uint8_t from[1000000];
 uint8_t to[1000000];
 
-static __inline__ int top_bit_dumb(unsigned int data)
+static inline int top_bit_dumb(unsigned int data)
 {
     int i;
 
@@ -64,7 +64,7 @@ static __inline__ int top_bit_dumb(unsigned int data)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int bottom_bit_dumb(unsigned int data)
+static inline int bottom_bit_dumb(unsigned int data)
 {
     int i;
 
@@ -82,7 +82,7 @@ static __inline__ int bottom_bit_dumb(unsigned int data)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ uint8_t bit_reverse8_dumb(uint8_t data)
+static inline uint8_t bit_reverse8_dumb(uint8_t data)
 {
     int i;
     int result;
@@ -98,7 +98,7 @@ static __inline__ uint8_t bit_reverse8_dumb(uint8_t data)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ uint32_t bit_reverse_4bytes_dumb(uint32_t data)
+static inline uint32_t bit_reverse_4bytes_dumb(uint32_t data)
 {
     int i;
     uint32_t result;
@@ -114,7 +114,7 @@ static __inline__ uint32_t bit_reverse_4bytes_dumb(uint32_t data)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ uint16_t bit_reverse16_dumb(uint16_t data)
+static inline uint16_t bit_reverse16_dumb(uint16_t data)
 {
     int i;
     uint16_t result;
@@ -130,7 +130,7 @@ static __inline__ uint16_t bit_reverse16_dumb(uint16_t data)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ uint32_t bit_reverse32_dumb(uint32_t data)
+static inline uint32_t bit_reverse32_dumb(uint32_t data)
 {
     int i;
     uint32_t result;
@@ -146,7 +146,7 @@ static __inline__ uint32_t bit_reverse32_dumb(uint32_t data)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int parity8_dumb(uint8_t x)
+static inline int parity8_dumb(uint8_t x)
 {
     uint8_t y;
     int i;
@@ -161,7 +161,7 @@ static __inline__ int parity8_dumb(uint8_t x)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int one_bits32_dumb(uint32_t x)
+static inline int one_bits32_dumb(uint32_t x)
 {
     int i;
     int bits;

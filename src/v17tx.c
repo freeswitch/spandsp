@@ -106,7 +106,7 @@
 /*! The 16 bit pattern used in the bridge section of the training sequence */
 #define V17_BRIDGE_WORD                 0x8880
 
-static __inline__ int scramble(v17_tx_state_t *s, int in_bit)
+static inline int scramble(v17_tx_state_t *s, int in_bit)
 {
     int out_bit;
 
@@ -119,9 +119,9 @@ static __inline__ int scramble(v17_tx_state_t *s, int in_bit)
 /*- End of function --------------------------------------------------------*/
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-static __inline__ complexi16_t training_get(v17_tx_state_t *s)
+static inline complexi16_t training_get(v17_tx_state_t *s)
 #else
-static __inline__ complexf_t training_get(v17_tx_state_t *s)
+static inline complexf_t training_get(v17_tx_state_t *s)
 #endif
 {
     static const int cdba_to_abcd[4] =
@@ -184,7 +184,7 @@ static __inline__ complexf_t training_get(v17_tx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int diff_and_convolutional_encode(v17_tx_state_t *s, int q)
+static inline int diff_and_convolutional_encode(v17_tx_state_t *s, int q)
 {
     static const uint8_t v32bis_4800_differential_encoder[4][4] =
     {
@@ -239,9 +239,9 @@ static int fake_get_bit(void *user_data)
 /*- End of function --------------------------------------------------------*/
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-static __inline__ complexi16_t getbaud(v17_tx_state_t *s)
+static inline complexi16_t getbaud(v17_tx_state_t *s)
 #else
-static __inline__ complexf_t getbaud(v17_tx_state_t *s)
+static inline complexf_t getbaud(v17_tx_state_t *s)
 #endif
 {
     int i;

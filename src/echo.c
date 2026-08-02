@@ -174,7 +174,7 @@ static int narrowband_detect(echo_can_state_t *ec)
     return score;
 }
 
-static __inline__ void lms_adapt(echo_can_state_t *ec, int factor)
+static inline void lms_adapt(echo_can_state_t *ec, int factor)
 {
     int i;
 
@@ -379,7 +379,7 @@ SPAN_DECLARE(void) echo_can_snapshot(echo_can_state_t *ec)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int16_t echo_can_hpf(int32_t coeff[2], int16_t amp)
+static inline int16_t echo_can_hpf(int32_t coeff[2], int16_t amp)
 {
     int32_t z;
 

@@ -59,7 +59,7 @@ extern "C"
 {
 #endif
 
-static __inline__ void biquad2_init(biquad2_state_t *bq,
+static inline void biquad2_init(biquad2_state_t *bq,
                                     int32_t gain,
                                     int32_t a1,
                                     int32_t a2,
@@ -84,7 +84,7 @@ static __inline__ void biquad2_init(biquad2_state_t *bq,
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int16_t biquad2(biquad2_state_t *bq, int16_t sample)
+static inline int16_t biquad2(biquad2_state_t *bq, int16_t sample)
 {
     int32_t y;
     int32_t z0;

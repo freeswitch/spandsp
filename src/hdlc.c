@@ -85,7 +85,7 @@ static void rx_special_condition(hdlc_rx_state_t *s, int status)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void octet_set_and_count(hdlc_rx_state_t *s)
+static inline void octet_set_and_count(hdlc_rx_state_t *s)
 {
     if (s->octet_count_report_interval == 0)
         return;
@@ -111,7 +111,7 @@ static __inline__ void octet_set_and_count(hdlc_rx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void octet_count(hdlc_rx_state_t *s)
+static inline void octet_count(hdlc_rx_state_t *s)
 {
     if (s->octet_count_report_interval == 0)
         return;
@@ -245,7 +245,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void hdlc_rx_put_bit_core(hdlc_rx_state_t *s)
+static inline void hdlc_rx_put_bit_core(hdlc_rx_state_t *s)
 {
     if ((s->raw_bit_stream & 0x3E00) == 0x3E00)
     {

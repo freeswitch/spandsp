@@ -430,7 +430,7 @@ void set_gamut_from_code(logging_state_t *logging, lab_params_t *s, const uint8_
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void itu_to_lab(lab_params_t *s, cielab_t *lab, const uint8_t in[3])
+static inline void itu_to_lab(lab_params_t *s, cielab_t *lab, const uint8_t in[3])
 {
     uint8_t a;
     uint8_t b;
@@ -450,7 +450,7 @@ static __inline__ void itu_to_lab(lab_params_t *s, cielab_t *lab, const uint8_t 
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void lab_to_itu(lab_params_t *s, uint8_t out[3], const cielab_t *lab)
+static inline void lab_to_itu(lab_params_t *s, uint8_t out[3], const cielab_t *lab)
 {
     /* T.4 E.6.4 */
     out[0] = saturateu8(floorf(lab->L/s->range_L + s->offset_L));

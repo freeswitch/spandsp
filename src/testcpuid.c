@@ -57,7 +57,7 @@ enum
 };
 
 /* Standard macro to see if a specific flag is changeable */
-static __inline__ int flag_is_changeable_p(uint32_t flag)
+static inline int flag_is_changeable_p(uint32_t flag)
 {
     uint32_t f1;
     uint32_t f2;

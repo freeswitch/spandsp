@@ -519,7 +519,7 @@ static int image_resize_row(image_translate_state_t *s, uint8_t buf[])
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ uint8_t find_closest_palette_color(int in)
+static inline uint8_t find_closest_palette_color(int in)
 {
     return (in >= 128)  ?  255  :  0;
 }

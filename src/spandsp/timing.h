@@ -43,7 +43,7 @@ __declspec(naked) unsigned __int64 __cdecl rdtscll(void)
 /*- End of function --------------------------------------------------------*/
 #elif defined(__GNUC__)
 #if defined(__i386__)
-static __inline__ uint64_t rdtscll(void)
+static inline uint64_t rdtscll(void)
 {
     uint64_t now;
 
@@ -52,7 +52,7 @@ static __inline__ uint64_t rdtscll(void)
 }
 /*- End of function --------------------------------------------------------*/
 #elif defined(__x86_64__)
-static __inline__ uint64_t rdtscll(void)
+static inline uint64_t rdtscll(void)
 {
     uint32_t a;
     uint32_t d;
@@ -64,7 +64,7 @@ static __inline__ uint64_t rdtscll(void)
 }
 /*- End of function --------------------------------------------------------*/
 #else
-static __inline__ uint64_t rdtscll(void)
+static inline uint64_t rdtscll(void)
 {
     /* This architecture doesn't have a suitable timer */
     return 0llu;

@@ -900,32 +900,32 @@ g1050_model_t g1050_standard_models[9] =
 };
 
 #if defined(HAVE_DRAND48)
-static __inline__ void q1050_rand_init(void)
+static inline void q1050_rand_init(void)
 {
     srand48(time(NULL));
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ double q1050_rand(void)
+static inline double q1050_rand(void)
 {
     return drand48();
 }
 /*- End of function --------------------------------------------------------*/
 #else
-static __inline__ void q1050_rand_init(void)
+static inline void q1050_rand_init(void)
 {
     srand(time(NULL));
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ double q1050_rand(void)
+static inline double q1050_rand(void)
 {
     return (double) rand()/(double) RAND_MAX;
 }
 /*- End of function --------------------------------------------------------*/
 #endif
 
-static __inline__ double scale_probability(double prob, double scale)
+static inline double scale_probability(double prob, double scale)
 {
     /* Re-calculate probability based on a different time interval */
     return 1.0 - pow(1.0 - prob, scale);

@@ -31,7 +31,7 @@ extern "C"
 {
 #endif
 
-static __inline__ void cvec_copyf(complexf_t z[], const complexf_t x[], int n)
+static inline void cvec_copyf(complexf_t z[], const complexf_t x[], int n)
 {
     int i;
 
@@ -40,7 +40,7 @@ static __inline__ void cvec_copyf(complexf_t z[], const complexf_t x[], int n)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void cvec_copy(complex_t z[], const complex_t x[], int n)
+static inline void cvec_copy(complex_t z[], const complex_t x[], int n)
 {
     int i;
 
@@ -50,7 +50,7 @@ static __inline__ void cvec_copy(complex_t z[], const complex_t x[], int n)
 /*- End of function --------------------------------------------------------*/
 
 #if defined(HAVE_LONG_DOUBLE)
-static __inline__ void cvec_copyl(complexl_t z[], const complexl_t x[], int n)
+static inline void cvec_copyl(complexl_t z[], const complexl_t x[], int n)
 {
     int i;
 
@@ -60,7 +60,7 @@ static __inline__ void cvec_copyl(complexl_t z[], const complexl_t x[], int n)
 /*- End of function --------------------------------------------------------*/
 #endif
 
-static __inline__ void cvec_zerof(complexf_t z[], int n)
+static inline void cvec_zerof(complexf_t z[], int n)
 {
     int i;
 
@@ -69,7 +69,7 @@ static __inline__ void cvec_zerof(complexf_t z[], int n)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void cvec_zero(complex_t z[], int n)
+static inline void cvec_zero(complex_t z[], int n)
 {
     int i;
 
@@ -79,7 +79,7 @@ static __inline__ void cvec_zero(complex_t z[], int n)
 /*- End of function --------------------------------------------------------*/
 
 #if defined(HAVE_LONG_DOUBLE)
-static __inline__ void cvec_zerol(complexl_t z[], int n)
+static inline void cvec_zerol(complexl_t z[], int n)
 {
     int i;
 
@@ -89,7 +89,7 @@ static __inline__ void cvec_zerol(complexl_t z[], int n)
 /*- End of function --------------------------------------------------------*/
 #endif
 
-static __inline__ void cvec_setf(complexf_t z[], complexf_t *x, int n)
+static inline void cvec_setf(complexf_t z[], complexf_t *x, int n)
 {
     int i;
 
@@ -98,7 +98,7 @@ static __inline__ void cvec_setf(complexf_t z[], complexf_t *x, int n)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void cvec_set(complex_t z[], complex_t *x, int n)
+static inline void cvec_set(complex_t z[], complex_t *x, int n)
 {
     int i;
 
@@ -108,7 +108,7 @@ static __inline__ void cvec_set(complex_t z[], complex_t *x, int n)
 /*- End of function --------------------------------------------------------*/
 
 #if defined(HAVE_LONG_DOUBLE)
-static __inline__ void cvec_setl(complexl_t z[], complexl_t *x, int n)
+static inline void cvec_setl(complexl_t z[], complexl_t *x, int n)
 {
     int i;
 

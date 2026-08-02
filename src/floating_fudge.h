@@ -35,42 +35,42 @@ extern "C"
 #endif
 
 #if !defined(HAVE_SINF)
-static __inline__ float sinf(float x)
+static inline float sinf(float x)
 {
     return (float) sin((double) x);
 }
 #endif
 
 #if !defined(HAVE_COSF)
-static __inline__ float cosf(float x)
+static inline float cosf(float x)
 {
     return (float) cos((double) x);
 }
 #endif
 
 #if !defined(HAVE_TANF)
-static __inline__ float tanf(float x)
+static inline float tanf(float x)
 {
     return (float) tan((double) x);
 }
 #endif
 
 #if !defined(HAVE_ASINF)
-static __inline__ float asinf(float x)
+static inline float asinf(float x)
 {
     return (float) asin((double) x);
 }
 #endif
 
 #if !defined(HAVE_ACOSF)
-static __inline__ float acosf(float x)
+static inline float acosf(float x)
 {
     return (float) acos((double) x);
 }
 #endif
 
 #if !defined(HAVE_ATANF)
-static __inline__ float atanf(float x)
+static inline float atanf(float x)
 {
     return (float) atan((double) x);
 }
@@ -78,7 +78,7 @@ static __inline__ float atanf(float x)
 #endif
 
 #if !defined(HAVE_ATAN2F)
-static __inline__ float atan2f(float y, float x)
+static inline float atan2f(float y, float x)
 {
     return (float) atan2((double) y, (double) x);
 }
@@ -86,14 +86,14 @@ static __inline__ float atan2f(float y, float x)
 #endif
 
 #if !defined(HAVE_CEILF)
-static __inline__ float ceilf(float x)
+static inline float ceilf(float x)
 {
     return (float) ceil((double) x);
 }
 #endif
 
 #if !defined(HAVE_FLOORF)
-static __inline__ float floorf(float x)
+static inline float floorf(float x)
 {
     return (float) floor((double) x);
 }
@@ -101,28 +101,28 @@ static __inline__ float floorf(float x)
 #endif
 
 #if !defined(HAVE_POWF)
-static __inline__ float powf(float x, float y)
+static inline float powf(float x, float y)
 {
     return (float) pow((double) x, (double) y);
 }
 #endif
 
 #if !defined(HAVE_EXPF)
-static __inline__ float expf(float x)
+static inline float expf(float x)
 {
     return (float) expf((double) x);
 }
 #endif
 
 #if !defined(HAVE_LOGF)
-static __inline__ float logf(float x)
+static inline float logf(float x)
 {
     return (float) logf((double) x);
 }
 #endif
 
 #if !defined(HAVE_LOG10F)
-static __inline__ float log10f(float x)
+static inline float log10f(float x)
 {
     return (float) log10((double) x);
 }

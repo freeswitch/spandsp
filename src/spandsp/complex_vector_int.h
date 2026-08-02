@@ -31,43 +31,43 @@ extern "C"
 {
 #endif
 
-static __inline__ void cvec_copyi(complexi_t z[], const complexi_t x[], int n)
+static inline void cvec_copyi(complexi_t z[], const complexi_t x[], int n)
 {
     memcpy(z, x, n*sizeof(z[0]));
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void cvec_copyi16(complexi16_t z[], const complexi16_t x[], int n)
+static inline void cvec_copyi16(complexi16_t z[], const complexi16_t x[], int n)
 {
     memcpy(z, x, n*sizeof(z[0]));
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void cvec_copyi32(complexi32_t z[], const complexi32_t x[], int n)
+static inline void cvec_copyi32(complexi32_t z[], const complexi32_t x[], int n)
 {
     memcpy(z, x, n*sizeof(z[0]));
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void cvec_zeroi(complexi_t z[], int n)
+static inline void cvec_zeroi(complexi_t z[], int n)
 {
     memset(z, 0, n*sizeof(z[0]));
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void cvec_zeroi16(complexi16_t z[], int n)
+static inline void cvec_zeroi16(complexi16_t z[], int n)
 {
     memset(z, 0, n*sizeof(z[0]));
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void cvec_zeroi32(complexi32_t z[], int n)
+static inline void cvec_zeroi32(complexi32_t z[], int n)
 {
     memset(z, 0, n*sizeof(z[0]));
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void cvec_seti(complexi_t z[], complexi_t *x, int n)
+static inline void cvec_seti(complexi_t z[], complexi_t *x, int n)
 {
     int i;
 
@@ -76,7 +76,7 @@ static __inline__ void cvec_seti(complexi_t z[], complexi_t *x, int n)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void cvec_seti16(complexi16_t z[], complexi16_t *x, int n)
+static inline void cvec_seti16(complexi16_t z[], complexi16_t *x, int n)
 {
     int i;
 
@@ -85,7 +85,7 @@ static __inline__ void cvec_seti16(complexi16_t z[], complexi16_t *x, int n)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void cvec_seti32(complexi32_t z[], complexi32_t *x, int n)
+static inline void cvec_seti32(complexi32_t z[], complexi32_t *x, int n)
 {
     int i;
 

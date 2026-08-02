@@ -2130,7 +2130,7 @@ SPAN_DECLARE(float) dds_scaling_dbovf(float level)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ float dds_lookupx(uint32_t phase)
+static inline float dds_lookupx(uint32_t phase)
 {
     return sine_table[phase >> (32 - SLENK)];
 }

@@ -31,61 +31,61 @@ extern "C"
 {
 #endif
 
-static __inline__ void vec_copyi(int z[], const int x[], int n)
+static inline void vec_copyi(int z[], const int x[], int n)
 {
     memcpy(z, x, n*sizeof(z[0]));
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void vec_copyi16(int16_t z[], const int16_t x[], int n)
+static inline void vec_copyi16(int16_t z[], const int16_t x[], int n)
 {
     memcpy(z, x, n*sizeof(z[0]));
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void vec_copyi32(int32_t z[], const int32_t x[], int n)
+static inline void vec_copyi32(int32_t z[], const int32_t x[], int n)
 {
     memcpy(z, x, n*sizeof(z[0]));
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void vec_movei(int z[], const int x[], int n)
+static inline void vec_movei(int z[], const int x[], int n)
 {
     memmove(z, x, n*sizeof(z[0]));
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void vec_movei16(int16_t z[], const int16_t x[], int n)
+static inline void vec_movei16(int16_t z[], const int16_t x[], int n)
 {
     memmove(z, x, n*sizeof(z[0]));
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void vec_movei32(int32_t z[], const int32_t x[], int n)
+static inline void vec_movei32(int32_t z[], const int32_t x[], int n)
 {
     memmove(z, x, n*sizeof(z[0]));
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void vec_zeroi(int z[], int n)
+static inline void vec_zeroi(int z[], int n)
 {
     memset(z, 0, n*sizeof(z[0]));
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void vec_zeroi16(int16_t z[], int n)
+static inline void vec_zeroi16(int16_t z[], int n)
 {
     memset(z, 0, n*sizeof(z[0]));
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void vec_zeroi32(int32_t z[], int n)
+static inline void vec_zeroi32(int32_t z[], int n)
 {
     memset(z, 0, n*sizeof(z[0]));
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void vec_seti(int z[], int x, int n)
+static inline void vec_seti(int z[], int x, int n)
 {
     int i;
 
@@ -94,7 +94,7 @@ static __inline__ void vec_seti(int z[], int x, int n)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void vec_seti16(int16_t z[], int16_t x, int n)
+static inline void vec_seti16(int16_t z[], int16_t x, int n)
 {
     int i;
 
@@ -103,7 +103,7 @@ static __inline__ void vec_seti16(int16_t z[], int16_t x, int n)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void vec_seti32(int32_t z[], int32_t x, int n)
+static inline void vec_seti32(int32_t z[], int32_t x, int n)
 {
     int i;
 
@@ -143,7 +143,7 @@ SPAN_DECLARE(void) vec_circular_lmsi16(const int16_t x[], int16_t y[], int n, in
             than the ones being searched. */
 SPAN_DECLARE(int32_t) vec_min_maxi16(const int16_t x[], int n, int16_t out[]);
 
-static __inline__ int vec_norm2i16(const int16_t *vec, int len)
+static inline int vec_norm2i16(const int16_t *vec, int len)
 {
     int i;
     int sum;
@@ -155,7 +155,7 @@ static __inline__ int vec_norm2i16(const int16_t *vec, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void vec_sari16(int16_t *vec, int len, int shift)
+static inline void vec_sari16(int16_t *vec, int len, int shift)
 {
     int i;
 
@@ -164,7 +164,7 @@ static __inline__ void vec_sari16(int16_t *vec, int len, int shift)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int vec_max_bitsi16(const int16_t *vec, int len)
+static inline int vec_max_bitsi16(const int16_t *vec, int len)
 {
     int i;
     int max;

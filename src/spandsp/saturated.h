@@ -42,7 +42,7 @@ extern "C"
 {
 #endif
 
-static __inline__ int16_t saturate16(int32_t amp)
+static inline int16_t saturate16(int32_t amp)
 {
 #if defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
     int16_t z;
@@ -68,7 +68,7 @@ static __inline__ int16_t saturate16(int32_t amp)
 /*- End of function --------------------------------------------------------*/
 
 /*! Saturate to 15 bits, rather than the usual 16 bits. This is often a useful function. */
-static __inline__ int16_t saturate15(int32_t amp)
+static inline int16_t saturate15(int32_t amp)
 {
 #if defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
     int16_t z;
@@ -89,7 +89,7 @@ static __inline__ int16_t saturate15(int32_t amp)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ uint16_t saturateu16(int32_t amp)
+static inline uint16_t saturateu16(int32_t amp)
 {
 #if defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
     uint16_t z;
@@ -114,7 +114,7 @@ static __inline__ uint16_t saturateu16(int32_t amp)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ uint8_t saturateu8(int32_t amp)
+static inline uint8_t saturateu8(int32_t amp)
 {
 #if defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
     uint8_t z;
@@ -139,7 +139,7 @@ static __inline__ uint8_t saturateu8(int32_t amp)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int16_t fsaturatef(float famp)
+static inline int16_t fsaturatef(float famp)
 {
     if (famp > (float) INT16_MAX)
         return INT16_MAX;
@@ -149,7 +149,7 @@ static __inline__ int16_t fsaturatef(float famp)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int16_t fsaturate(double damp)
+static inline int16_t fsaturate(double damp)
 {
     if (damp > (double) INT16_MAX)
         return INT16_MAX;
@@ -160,7 +160,7 @@ static __inline__ int16_t fsaturate(double damp)
 /*- End of function --------------------------------------------------------*/
 
 /* Saturate to a 16 bit integer, using the fastest float to int conversion */
-static __inline__ int16_t ffastsaturatef(float famp)
+static inline int16_t ffastsaturatef(float famp)
 {
     if (famp > (float) INT16_MAX)
         return INT16_MAX;
@@ -171,7 +171,7 @@ static __inline__ int16_t ffastsaturatef(float famp)
 /*- End of function --------------------------------------------------------*/
 
 /* Saturate to a 16 bit integer, using the fastest double to int conversion */
-static __inline__ int16_t ffastsaturate(double damp)
+static inline int16_t ffastsaturate(double damp)
 {
     if (damp > (double) INT16_MAX)
         return INT16_MAX;
@@ -182,7 +182,7 @@ static __inline__ int16_t ffastsaturate(double damp)
 /*- End of function --------------------------------------------------------*/
 
 /* Saturate to a 16 bit integer, using the closest float to int conversion */
-static __inline__ float ffsaturatef(float famp)
+static inline float ffsaturatef(float famp)
 {
     if (famp > (float) INT16_MAX)
         return (float) INT16_MAX;
@@ -193,7 +193,7 @@ static __inline__ float ffsaturatef(float famp)
 /*- End of function --------------------------------------------------------*/
 
 /* Saturate to a 16 bit integer, using the closest double to int conversion */
-static __inline__ double ffsaturate(double famp)
+static inline double ffsaturate(double famp)
 {
     if (famp > (double) INT16_MAX)
         return (double) INT16_MAX;
@@ -203,7 +203,7 @@ static __inline__ double ffsaturate(double famp)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int16_t sat_add16(int16_t x, int16_t y)
+static inline int16_t sat_add16(int16_t x, int16_t y)
 {
 #if defined(__GNUC__)  &&  (defined(__i386__)  ||  defined(__x86_64__))
     __asm__ __volatile__(" addw %[y],%[x];\n"
@@ -231,7 +231,7 @@ static __inline__ int16_t sat_add16(int16_t x, int16_t y)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int32_t sat_add32(int32_t x, int32_t y)
+static inline int32_t sat_add32(int32_t x, int32_t y)
 {
 #if defined(__GNUC__)  &&  (defined(__i386__)  ||  defined(__x86_64__))
     __asm__ __volatile__(" addl %[y],%[x];\n"
@@ -265,7 +265,7 @@ static __inline__ int32_t sat_add32(int32_t x, int32_t y)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int16_t sat_sub16(int16_t x, int16_t y)
+static inline int16_t sat_sub16(int16_t x, int16_t y)
 {
 #if defined(__GNUC__)  &&  (defined(__i386__)  ||  defined(__x86_64__))
     __asm__ __volatile__(" subw %[y],%[x];\n"
@@ -291,7 +291,7 @@ static __inline__ int16_t sat_sub16(int16_t x, int16_t y)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int32_t sat_sub32(int32_t x, int32_t y)
+static inline int32_t sat_sub32(int32_t x, int32_t y)
 {
 #if defined(__GNUC__)  &&  (defined(__i386__)  ||  defined(__x86_64__))
     __asm__ __volatile__(" subl %[y],%[x];\n"
@@ -325,7 +325,7 @@ static __inline__ int32_t sat_sub32(int32_t x, int32_t y)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int16_t sat_mul16(int16_t x, int16_t y)
+static inline int16_t sat_mul16(int16_t x, int16_t y)
 {
     int32_t z;
 
@@ -346,7 +346,7 @@ static __inline__ int16_t sat_mul16(int16_t x, int16_t y)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int32_t sat_mul32_16(int16_t x, int16_t y)
+static inline int32_t sat_mul32_16(int16_t x, int16_t y)
 {
     int32_t z;
 
@@ -365,7 +365,7 @@ static __inline__ int32_t sat_mul32_16(int16_t x, int16_t y)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int32_t sat_mac32_16(int32_t z, int16_t x, int16_t y)
+static inline int32_t sat_mac32_16(int32_t z, int16_t x, int16_t y)
 {
 #if defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
     int32_t product;
@@ -381,7 +381,7 @@ static __inline__ int32_t sat_mac32_16(int32_t z, int16_t x, int16_t y)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int32_t sat_msu32_16(int32_t z, int16_t x, int16_t y)
+static inline int32_t sat_msu32_16(int32_t z, int16_t x, int16_t y)
 {
 #if defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
     int32_t product;
@@ -397,7 +397,7 @@ static __inline__ int32_t sat_msu32_16(int32_t z, int16_t x, int16_t y)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int16_t sat_abs16(int16_t x)
+static inline int16_t sat_abs16(int16_t x)
 {
     if (x == INT16_MIN)
         return INT16_MAX;
@@ -405,7 +405,7 @@ static __inline__ int16_t sat_abs16(int16_t x)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int32_t sat_abs32(int32_t x)
+static inline int32_t sat_abs32(int32_t x)
 {
     if (x == INT32_MIN)
         return INT32_MAX;

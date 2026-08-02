@@ -89,7 +89,7 @@ extern "C"
      *    These replacement functions (pulled from the Public Domain MinGW
      *    math.h header) replace the native versions.
      */
-    static __inline__ long int lrint(double x)
+    static inline long int lrint(double x)
     {
         long int retval;
 
@@ -104,7 +104,7 @@ extern "C"
         return retval;
     }
 
-    static __inline__ long int lrintf(float x)
+    static inline long int lrintf(float x)
     {
         long int retval;
 
@@ -120,7 +120,7 @@ extern "C"
 #endif
 
     /* The fastest way to convert is the equivalent of lrint() */
-    static __inline__ long int lfastrint(double x)
+    static inline long int lfastrint(double x)
     {
         long int retval;
 
@@ -135,7 +135,7 @@ extern "C"
         return retval;
     }
 
-    static __inline__ long int lfastrintf(float x)
+    static inline long int lfastrintf(float x)
     {
         long int retval;
 
@@ -154,7 +154,7 @@ extern "C"
     /* These routines are guaranteed fast on an i386 machine. Using the built in
        lrint() and lrintf() should be similar, but they may not always be enabled.
        Sometimes, especially with "-O0", you might get slow calls to routines. */
-    static __inline__ long int lfastrint(double x)
+    static inline long int lfastrint(double x)
     {
         long int retval;
 
@@ -169,7 +169,7 @@ extern "C"
         return retval;
     }
 
-    static __inline__ long int lfastrintf(float x)
+    static inline long int lfastrintf(float x)
     {
         long int retval;
 
@@ -186,17 +186,17 @@ extern "C"
     /* On an x86_64 machine, the fastest thing seems to be a pure assignment from a
        double or float to an int. It looks like the design on the x86_64 took account
        of the default behaviour specified for C. */
-    static __inline__ long int lfastrint(double x)
+    static inline long int lfastrint(double x)
     {
         return (long int) (x);
     }
 
-    static __inline__ long int lfastrintf(float x)
+    static inline long int lfastrintf(float x)
     {
         return (long int) (x);
     }
 #elif (defined(__ppc__)  ||  defined(__powerpc__))  &&  !defined(__NO_FPRS__)
-    static __inline__ long int lfastrint(register double x)
+    static inline long int lfastrint(register double x)
     {
         int res[2];
 
@@ -212,7 +212,7 @@ extern "C"
         return res[1];
     }
 
-    static __inline__ long int lfastrintf(register float x)
+    static inline long int lfastrintf(register float x)
     {
         int res[2];
 
@@ -229,12 +229,12 @@ extern "C"
     }
 #else
     /* Fallback routines, for unrecognised platforms */
-    static __inline__ long int lfastrint(double x)
+    static inline long int lfastrint(double x)
     {
         return (long int) x;
     }
 
-    static __inline__ long int lfastrintf(float x)
+    static inline long int lfastrintf(float x)
     {
         return (long int) x;
     }
@@ -343,7 +343,7 @@ extern "C"
 #elif defined(__MWERKS__)  &&  defined(macintosh)
     /* This MacOS 9 solution was provided by Stephane Letz */
 
-    long int __inline__ lfastrint(register double x)
+    long int inline lfastrint(register double x)
     {
         long int res[2];
 
@@ -355,7 +355,7 @@ extern "C"
         return res[1];
     }
 
-    long int __inline__ lfastrintf(register float x)
+    long int inline lfastrintf(register float x)
     {
         long int res[2];
 
@@ -369,7 +369,7 @@ extern "C"
 #elif defined(__MACH__)  &&  defined(__APPLE__)  &&  (defined(__ppc__)  ||  defined(__powerpc__))
     /* For Apple Mac OS/X - do recent versions still need this? */
 
-    static __inline__ long int lfastrint(register double x)
+    static inline long int lfastrint(register double x)
     {
         int res[2];
 
@@ -385,7 +385,7 @@ extern "C"
         return res[1];
     }
 
-    static __inline__ long int lfastrintf(register float x)
+    static inline long int lfastrintf(register float x)
     {
         int res[2];
 
@@ -411,22 +411,22 @@ extern "C"
         #warning "Replacing these functions with a simple C cast."
     #endif
 
-    static __inline__ long int lrint(double x)
+    static inline long int lrint(double x)
     {
         return (long int) (x);
     }
 
-    static __inline__ long int lrintf(float x)
+    static inline long int lrintf(float x)
     {
         return (long int) (x);
     }
 
-    static __inline__ long int lfastrint(double x)
+    static inline long int lfastrint(double x)
     {
         return (long int) (x);
     }
 
-    static __inline__ long int lfastrintf(float x)
+    static inline long int lfastrintf(float x)
     {
         return (long int) (x);
     }

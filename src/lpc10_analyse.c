@@ -54,7 +54,7 @@
 
 #include "lpc10_encdecs.h"
 
-static __inline__ float energyf(float amp[], int len)
+static inline float energyf(float amp[], int len)
 {
     int i;
     float rms;

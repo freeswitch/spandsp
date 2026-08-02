@@ -68,7 +68,7 @@ void lpc10_voicing(lpc10_encode_state_t *st,
 
 void lpc10_analyse(lpc10_encode_state_t *st, float *speech, int32_t *voice, int32_t *pitch, float *rms, float rc[]);
 
-static __inline__ int32_t pow_ii(int32_t x, int32_t n)
+static inline int32_t pow_ii(int32_t x, int32_t n)
 {
     int32_t pow;
     uint32_t u;
@@ -94,7 +94,7 @@ static __inline__ int32_t pow_ii(int32_t x, int32_t n)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ float r_sign(float a, float b)
+static inline float r_sign(float a, float b)
 {
     float x;
 

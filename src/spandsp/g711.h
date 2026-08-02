@@ -121,7 +121,7 @@ extern "C"
     \param linear The sample to encode.
     \return The u-law value.
 */
-static __inline__ uint8_t linear_to_ulaw(int linear)
+static inline uint8_t linear_to_ulaw(int linear)
 {
     uint8_t u_val;
     int mask;
@@ -162,7 +162,7 @@ static __inline__ uint8_t linear_to_ulaw(int linear)
     \param ulaw The u-law sample to decode.
     \return The linear value.
 */
-static __inline__ int16_t ulaw_to_linear(uint8_t ulaw)
+static inline int16_t ulaw_to_linear(uint8_t ulaw)
 {
     int t;
 
@@ -199,7 +199,7 @@ static __inline__ int16_t ulaw_to_linear(uint8_t ulaw)
     \param linear The sample to encode.
     \return The A-law value.
 */
-static __inline__ uint8_t linear_to_alaw(int linear)
+static inline uint8_t linear_to_alaw(int linear)
 {
     uint8_t a_val;
     int mask;
@@ -236,7 +236,7 @@ static __inline__ uint8_t linear_to_alaw(int linear)
     \param alaw The A-law sample to decode.
     \return The linear value.
 */
-static __inline__ int16_t alaw_to_linear(uint8_t alaw)
+static inline int16_t alaw_to_linear(uint8_t alaw)
 {
     int i;
     int seg;

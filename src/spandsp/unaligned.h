@@ -49,7 +49,7 @@ struct __dealign_uint64 { uint64_t datum; } __attribute__((packed));
 
 #if defined(__GNUC__)  ||  defined(__clang__)  ||  defined(_MSC_VER)
 /* If we just tell GCC what's going on, we can trust it to behave optimally */
-static __inline__ uint64_t get_unaligned_uint64(const void *p)
+static inline uint64_t get_unaligned_uint64(const void *p)
 {
     const struct __dealign_uint64 *pp = (const struct __dealign_uint64 *) p;
 
@@ -57,7 +57,7 @@ static __inline__ uint64_t get_unaligned_uint64(const void *p)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void put_unaligned_uint64(void *p, uint32_t datum)
+static inline void put_unaligned_uint64(void *p, uint32_t datum)
 {
     struct __dealign_uint64 *pp = (struct __dealign_uint64 *) p;
 
@@ -65,7 +65,7 @@ static __inline__ void put_unaligned_uint64(void *p, uint32_t datum)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ uint64_t get_net_unaligned_uint64(const void *p)
+static inline uint64_t get_net_unaligned_uint64(const void *p)
 {
     const struct __dealign_uint64 *pp = (const struct __dealign_uint64 *) p;
 
@@ -77,7 +77,7 @@ static __inline__ uint64_t get_net_unaligned_uint64(const void *p)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void put_net_unaligned_uint64(void *p, uint64_t datum)
+static inline void put_net_unaligned_uint64(void *p, uint64_t datum)
 {
     struct __dealign_uint64 *pp = (struct __dealign_uint64 *) p;
 
@@ -89,7 +89,7 @@ static __inline__ void put_net_unaligned_uint64(void *p, uint64_t datum)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ uint32_t get_unaligned_uint32(const void *p)
+static inline uint32_t get_unaligned_uint32(const void *p)
 {
     const struct __dealign_uint32 *pp = (const struct __dealign_uint32 *) p;
 
@@ -97,7 +97,7 @@ static __inline__ uint32_t get_unaligned_uint32(const void *p)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void put_unaligned_uint32(void *p, uint32_t datum)
+static inline void put_unaligned_uint32(void *p, uint32_t datum)
 {
     struct __dealign_uint32 *pp = (struct __dealign_uint32 *) p;
 
@@ -105,7 +105,7 @@ static __inline__ void put_unaligned_uint32(void *p, uint32_t datum)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ uint32_t get_net_unaligned_uint32(const void *p)
+static inline uint32_t get_net_unaligned_uint32(const void *p)
 {
     const struct __dealign_uint32 *pp = (const struct __dealign_uint32 *) p;
 
@@ -117,7 +117,7 @@ static __inline__ uint32_t get_net_unaligned_uint32(const void *p)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void put_net_unaligned_uint32(void *p, uint32_t datum)
+static inline void put_net_unaligned_uint32(void *p, uint32_t datum)
 {
     struct __dealign_uint32 *pp = (struct __dealign_uint32 *) p;
 
@@ -129,7 +129,7 @@ static __inline__ void put_net_unaligned_uint32(void *p, uint32_t datum)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ uint16_t get_unaligned_uint16(const void *p)
+static inline uint16_t get_unaligned_uint16(const void *p)
 {
     const struct __dealign_uint16 *pp = (const struct __dealign_uint16 *) p;
 
@@ -137,7 +137,7 @@ static __inline__ uint16_t get_unaligned_uint16(const void *p)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void put_unaligned_uint16(void *p, uint16_t datum)
+static inline void put_unaligned_uint16(void *p, uint16_t datum)
 {
     struct __dealign_uint16 *pp = (struct __dealign_uint16 *) p;
 
@@ -145,7 +145,7 @@ static __inline__ void put_unaligned_uint16(void *p, uint16_t datum)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ uint16_t get_net_unaligned_uint16(const void *p)
+static inline uint16_t get_net_unaligned_uint16(const void *p)
 {
     const struct __dealign_uint16 *pp = (const struct __dealign_uint16 *) p;
 
@@ -157,7 +157,7 @@ static __inline__ uint16_t get_net_unaligned_uint16(const void *p)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void put_net_unaligned_uint16(void *p, uint16_t datum)
+static inline void put_net_unaligned_uint16(void *p, uint16_t datum)
 {
     struct __dealign_uint16 *pp = (struct __dealign_uint16 *) p;
 
@@ -171,7 +171,7 @@ static __inline__ void put_net_unaligned_uint16(void *p, uint16_t datum)
 
 #elif defined(SOLARIS)  &&  defined(__sparc__)
 
-static __inline__ uint64_t get_unaligned_uint64(const void *p)
+static inline uint64_t get_unaligned_uint64(const void *p)
 {
     const uint8_t *cp = p;
 
@@ -179,7 +179,7 @@ static __inline__ uint64_t get_unaligned_uint64(const void *p)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void put_unaligned_uint64(void *p, uint64_t datum)
+static inline void put_unaligned_uint64(void *p, uint64_t datum)
 {
     const uint8_t *cp = p;
 
@@ -194,7 +194,7 @@ static __inline__ void put_unaligned_uint64(void *p, uint64_t datum)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ uint32_t get_unaligned_uint32(const void *p)
+static inline uint32_t get_unaligned_uint32(const void *p)
 {
     const uint8_t *cp = p;
 
@@ -202,7 +202,7 @@ static __inline__ uint32_t get_unaligned_uint32(const void *p)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void put_unaligned_uint32(void *p, uint32_t datum)
+static inline void put_unaligned_uint32(void *p, uint32_t datum)
 {
     const uint8_t *cp = p;
 
@@ -213,7 +213,7 @@ static __inline__ void put_unaligned_uint32(void *p, uint32_t datum)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ uint16_t get_unaligned_uint16(const void *p)
+static inline uint16_t get_unaligned_uint16(const void *p)
 {
     const uint8_t *cp = p;
 
@@ -221,7 +221,7 @@ static __inline__ uint16_t get_unaligned_uint16(const void *p)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void put_unaligned_uint16(void *p, uint16_t datum)
+static inline void put_unaligned_uint16(void *p, uint16_t datum)
 {
     uint8_t *cp = p;
 

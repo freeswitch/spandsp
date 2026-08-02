@@ -242,7 +242,7 @@ static int16_t fmult(int16_t an, int16_t srn)
 /*
  * Compute the estimated signal from the 6-zero predictor.
  */
-static __inline__ int16_t predictor_zero(g726_state_t *s)
+static inline int16_t predictor_zero(g726_state_t *s)
 {
     int i;
     int sezi;
@@ -259,7 +259,7 @@ static __inline__ int16_t predictor_zero(g726_state_t *s)
 /*
  * Computes the estimated signal from the 2-pole predictor.
  */
-static __inline__ int16_t predictor_pole(g726_state_t *s)
+static inline int16_t predictor_pole(g726_state_t *s)
 {
     return (fmult(s->a[1] >> 2, s->sr[1]) + fmult(s->a[0] >> 2, s->sr[0]));
 }

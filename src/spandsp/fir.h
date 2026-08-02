@@ -80,7 +80,7 @@ extern "C"
 {
 #endif
 
-static __inline__ const int16_t *fir16_create(fir16_state_t *fir,
+static inline const int16_t *fir16_create(fir16_state_t *fir,
                                               const int16_t *coeffs,
                                               int taps)
 {
@@ -98,7 +98,7 @@ static __inline__ const int16_t *fir16_create(fir16_state_t *fir,
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void fir16_flush(fir16_state_t *fir)
+static inline void fir16_flush(fir16_state_t *fir)
 {
 #if defined(USE_MMX)  ||  defined(USE_SSE2)
     memset(fir->history, 0, 2*fir->taps*sizeof(int16_t));
@@ -108,13 +108,13 @@ static __inline__ void fir16_flush(fir16_state_t *fir)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void fir16_free(fir16_state_t *fir)
+static inline void fir16_free(fir16_state_t *fir)
 {
     span_free(fir->history);
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int16_t fir16(fir16_state_t *fir, int16_t sample)
+static inline int16_t fir16(fir16_state_t *fir, int16_t sample)
 {
     int i;
     int32_t y;
@@ -203,7 +203,7 @@ static __inline__ int16_t fir16(fir16_state_t *fir, int16_t sample)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ const int16_t *fir32_create(fir32_state_t *fir,
+static inline const int16_t *fir32_create(fir32_state_t *fir,
                                               const int32_t *coeffs,
                                               int taps)
 {
@@ -217,19 +217,19 @@ static __inline__ const int16_t *fir32_create(fir32_state_t *fir,
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void fir32_flush(fir32_state_t *fir)
+static inline void fir32_flush(fir32_state_t *fir)
 {
     memset(fir->history, 0, fir->taps*sizeof(int16_t));
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void fir32_free(fir32_state_t *fir)
+static inline void fir32_free(fir32_state_t *fir)
 {
     span_free(fir->history);
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int16_t fir32(fir32_state_t *fir, int16_t sample)
+static inline int16_t fir32(fir32_state_t *fir, int16_t sample)
 {
     int i;
     int32_t y;
@@ -251,7 +251,7 @@ static __inline__ int16_t fir32(fir32_state_t *fir, int16_t sample)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ const float *fir_float_create(fir_float_state_t *fir,
+static inline const float *fir_float_create(fir_float_state_t *fir,
                                                 const float *coeffs,
                                                 int taps)
 {
@@ -268,13 +268,13 @@ static __inline__ const float *fir_float_create(fir_float_state_t *fir,
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void fir_float_free(fir_float_state_t *fir)
+static inline void fir_float_free(fir_float_state_t *fir)
 {
     span_free(fir->history);
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int16_t fir_float(fir_float_state_t *fir, int16_t sample)
+static inline int16_t fir_float(fir_float_state_t *fir, int16_t sample)
 {
     int i;
     float y;

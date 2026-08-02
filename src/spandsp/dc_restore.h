@@ -64,20 +64,20 @@ extern "C"
 {
 #endif
 
-static __inline__ void dc_restore_init(dc_restore_state_t *dc)
+static inline void dc_restore_init(dc_restore_state_t *dc)
 {
     dc->state = 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int16_t dc_restore(dc_restore_state_t *dc, int16_t sample)
+static inline int16_t dc_restore(dc_restore_state_t *dc, int16_t sample)
 {
     dc->state += ((((int32_t) sample << 15) - dc->state) >> 14);
     return (int16_t) (sample - (dc->state >> 15));
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int16_t dc_restore_estimate(dc_restore_state_t *dc)
+static inline int16_t dc_restore_estimate(dc_restore_state_t *dc)
 {
     return (int16_t) (dc->state >> 15);
 }

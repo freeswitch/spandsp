@@ -28,7 +28,6 @@
 #if !defined(_SPANDSP_H_)
 #define _SPANDSP_H_
 
-#define __inline__ __inline
 #pragma warning(disable:4200)
 
 #undef SPANDSP_USE_FIXED_POINT
