@@ -99,7 +99,7 @@ static char *make_message(const char *format, ...)
     va_start(arg_ptr, format);
     len = vsnprintf(NULL, 0, format, arg_ptr);
     va_end(arg_ptr);
-    if ((buf = malloc(len)) != NULL)
+    if ((buf = malloc(len + 1)) != NULL)
     {
         va_start(arg_ptr, format);
         vsprintf(buf, format, arg_ptr);
