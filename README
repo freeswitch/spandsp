@@ -13,6 +13,14 @@ The library is licenced under the LGPL 2.1 licence. The test suite, and some sup
 programs are licenced under the GPL 2 licence. The full text of these licences can
 be found in the file COPYING.
 
+Build and Install
+------------
+https://www.soft-switch.org/installing-spandsp.html
+./configure --prefix=/usr
+make
+make install
+
+
 Dependencies
 ------------
 
