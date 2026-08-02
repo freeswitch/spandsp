@@ -55,54 +55,7 @@ AC_LANG([C])
 
 AX_COMPILER_VENDOR
 
-if test "${build}" != "${host}"
-then
-    # If we are doing a Canadian Cross, in which the host and build systems
-    # are not the same, we set reasonable default values for the tools.
-
-    CC_FOR_BUILD=${CC_FOR_BUILD-gcc}
-    CPPFLAGS_FOR_BUILD="\$(CPPFLAGS)"
-    CC=${CC-${host_alias}-gcc}
-    CFLAGS=${CFLAGS-"-g -O2"}
-    CXX=${CXX-${host_alias}-c++}
-    CXXFLAGS=${CXXFLAGS-"-g -O2"}
-else
-    # Set reasonable default values for some tools even if not Canadian.
-    # Of course, these are different reasonable default values, originally
-    # specified directly in the Makefile.
-    # We don't export, so that autoconf can do its job.
-    # Note that all these settings are above the fragment inclusion point
-    # in Makefile.in, so can still be overridden by fragments.
-    # This is all going to change when we autoconfiscate...
-    CC_FOR_BUILD="\$(CC)"
-    CPPFLAGS_FOR_BUILD="\$(CPPFLAGS)"
-    AC_PROG_CC
-
-    # We must set the default linker to the linker used by gcc for the correct
-    # operation of libtool.  If LD is not defined and we are using gcc, try to
-    # set the LD default to the ld used by gcc.
-    if test -z "$LD"
-    then
-        if test "$GCC" = yes
-        then
-            case $build in
-            *-*-mingw*)
-                gcc_prog_ld=`$CC -print-prog-name=ld 2>&1 | tr -d '\015'` ;;
-            *)
-                gcc_prog_ld=`$CC -print-prog-name=ld 2>&1` ;;
-            esac
-            case $gcc_prog_ld in
-            # Accept absolute paths.
-            [[\\/]* | [A-Za-z]:[\\/]*)]
-                LD="$gcc_prog_ld" ;;
-            esac
-        fi
-    fi
-
-    CXX=${CXX-"c++"}
-    CFLAGS=${CFLAGS-"-g -O2"}
-    CXXFLAGS=${CXXFLAGS-"-g -O2"}
-fi
+AX_PROG_CC_FOR_BUILD
 
 AC_DEFUN([REMOVE_FROM_VAR],[
     new_val=""
@@ -232,23 +185,11 @@ then
 fi
 
 # Determine XML2 include path
-AC_MSG_CHECKING(for libxml/xmlmemory.h)
-
-# Can we include headers using system include dirs?
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <libxml/xmlmemory.h>]], [[int a = 1;]])],[XML2_INCLUDE=" "],[XML2_INCLUDE=])
-
-# Hunt through several possible directories to find the includes for libxml2
-if test "x$XML2_INCLUDE" = "x"; then
-    old_CPPFLAGS="$CPPFLAGS"
-    for i in $xml2_include_dir /usr/include /usr/local/include /usr/include/libxml2 /usr/local/include/libxml2 ; do
-        CPPFLAGS="$old_CPPFLAGS -I$i"
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <libxml/xmlmemory.h>]], [[int a = 1;]])],[XML2_INCLUDE="-I$i"],[XML2_INCLUDE=
-        ])
-        if test "x$XML2_INCLUDE" != "x"; then
-            break;
-        fi
-    done
-    CPPFLAGS="$old_CPPFLAGS $XML2_INCLUDE"
+AC_CHECK_LIB([xml2], [xmlParseFile], [libxml2_found=yes])
+if test "$libxml2_found" = "yes" ; then
+    AC_DEFINE(HAVE_LIBXML2,1,[defined when libxml2 is available])
+else
+    AC_MSG_WARN([libxml2 not found. Disabling cache.])
 fi
 
 AC_CHECK_HEADERS([libxml/xmlmemory.h])
