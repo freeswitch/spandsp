@@ -58,7 +58,7 @@ display of modem status is maintained.
 #include <string.h>
 #include <sndfile.h>
 #include <signal.h>
-#if defined(HAVE_FENV_H)
+#if defined(HAVE_FEENABLEEXCEPT)
 #define __USE_GNU
 #include <fenv.h>
 #endif
@@ -257,7 +257,7 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
 }
 /*- End of function --------------------------------------------------------*/
 
-#if defined(HAVE_FENV_H)
+#if defined(HAVE_FEENABLEEXCEPT)
 static void sigfpe_handler(int sig_num, siginfo_t *info, void *data)
 {
     switch (sig_num)
@@ -410,7 +410,7 @@ int main(int argc, char *argv[])
     inhandle = NULL;
     outhandle = NULL;
 
-#if defined(HAVE_FENV_H)
+#if defined(HAVE_FEENABLEEXCEPT)
     fpe_trap_setup();
 #endif
 
