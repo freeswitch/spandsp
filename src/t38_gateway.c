@@ -1308,8 +1308,10 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         /*endif*/
         /* Some T.38 implementations send multiple T38_FIELD_HDLC_SIG_END messages, in IFP packets with
            incrementing sequence numbers, which are actually repeats. They get through to this point because
-           of the incrementing sequence numbers. We need to filter them here in a context sensitive manner. */
-        if (t->current_rx_data_type != data_type  ||  t->current_rx_field_type != field_type)
+           of the incrementing sequence numbers. Some others send T38_FIELD_HDLC_SIG_END following a
+           T38_FIELD_HDLC_FCS_OK_SIG_END or T38_FIELD_HDLC_FCS_BAD_SIG_END. We need to filter them here
+           in a context sensitive manner. */
+        if (t->current_rx_data_type != data_type  ||  (t->current_rx_field_type != field_type && t->current_rx_field_type != T38_FIELD_HDLC_FCS_OK_SIG_END && t->current_rx_field_type != T38_FIELD_HDLC_FCS_BAD_SIG_END))
         {
             if (hdlc_buf->contents != (data_type | FLAG_DATA))
             {
