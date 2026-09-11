@@ -571,7 +571,7 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
         /* Look for the initial ABAB sequence to display a phase reversal, which will
            signal the start of the scrambled CDCD segment */
         i = s->training_count + 1;
-        ang = angle - s->last_angles[i & 1];
+        ang = (int32_t) ((uint32_t) angle - (uint32_t) s->last_angles[i & 1]);
         s->last_angles[i & 1] = angle;
         s->diff_angles[i & 0xF] = s->diff_angles[(i - 2) & 0xF] + (ang >> 4);
         if ((ang > DDS_PHASE(45.0f)  ||  ang < DDS_PHASE(-45.0f))  &&  s->training_count >= 13)

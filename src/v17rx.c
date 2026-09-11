@@ -679,7 +679,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
                out is the phase. */
             /* Check if we just saw A or B */
             /* atan(1/3) = 18.433 degrees */
-            if ((uint32_t) (angle - s->last_angles[0]) < (uint32_t) DDS_PHASE(180.0f))
+            if (((uint32_t) angle - (uint32_t) s->last_angles[0]) < (uint32_t) DDS_PHASE(180.0f))
             {
                 angle = s->last_angles[0];
                 s->last_angles[0] = DDS_PHASE(270.0f + 18.433f);
@@ -694,7 +694,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
             /* Make a step shift in the phase, to pull it into line. We need to rotate the equalizer
                buffer, as well as the carrier phase, for this to play out nicely. */
             /* angle is now the difference between where A is, and where it should be */
-            phase_step = angle - DDS_PHASE(180.0f + 18.433f);
+            phase_step = (uint32_t) angle - (uint32_t) DDS_PHASE(180.0f + 18.433f);
 #if defined(SPANDSP_USE_FIXED_POINTx)
             ip = phase_step >> 16;
             span_log(&s->logging, SPAN_LOG_FLOW, "Spin (short) by %d\n", ip);
@@ -728,7 +728,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
         /* Look for the initial ABAB sequence to display a phase reversal, which will
            signal the start of the scrambled CDBA segment */
         i = s->training_count + 1;
-        ang = angle - s->last_angles[i & 1];
+        ang = (int32_t) ((uint32_t) angle - (uint32_t) s->last_angles[i & 1]);
         s->last_angles[i & 1] = angle;
         s->diff_angles[i & 0xF] = s->diff_angles[(i - 2) & 0xF] + (ang >> 4);
         if ((ang > DDS_PHASE(90.0f)  ||  ang < DDS_PHASE(-90.0f))  &&  s->training_count >= 13)
@@ -767,7 +767,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
             /* Make a step shift in the phase, to pull it into line. We need to rotate the equalizer buffer,
                as well as the carrier phase, for this to play out nicely. */
             /* angle is now the difference between where C is, and where it should be */
-            phase_step = angle - DDS_PHASE(18.433f);
+            phase_step = (uint32_t) angle - (uint32_t) DDS_PHASE(18.433f);
 #if defined(SPANDSP_USE_FIXED_POINTx)
             ip = phase_step >> 16;
             span_log(&s->logging, SPAN_LOG_FLOW, "Spin (long) by %d\n", ip);
@@ -936,7 +936,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
         /* Look for the initial ABAB sequence to display a phase reversal, which will
            signal the start of the scrambled CDBA segment */
         angle = arctan2(z.im, z.re);
-        ang = angle - s->last_angles[s->training_count & 1];
+        ang = (int32_t) ((uint32_t) angle - (uint32_t) s->last_angles[s->training_count & 1]);
         if (ang > DDS_PHASE(90.0f)  ||  ang < DDS_PHASE(-90.0f))
         {
             /* We seem to have a phase reversal */
