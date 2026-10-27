@@ -1326,21 +1326,42 @@ static int tiff_row_write_handler(void *user_data, const uint8_t buf[], size_t l
 {
     t4_rx_state_t *s;
     uint8_t *t;
+    int growth;
 
     s = (t4_rx_state_t *) user_data;
     if (buf  &&  len > 0)
     {
-        if (s->tiff.image_size + len >= s->tiff.image_buffer_size)
+        if (s->tiff.image_size < 0  ||  s->tiff.image_buffer_size < 0  ||  len > INT_MAX)
+            return -1;
+        /*endif*/
+        if ((int) len > INT_MAX - s->tiff.image_size)
         {
-            if ((t = span_realloc(s->tiff.image_buffer, s->tiff.image_buffer_size + 100*len)) == NULL)
+            span_log(&s->logging, SPAN_LOG_WARNING, "Fax image reached %d bytes. Ending page.\n", s->tiff.image_size);
+            return -1;
+        }
+        /*endif*/
+        if (s->tiff.image_size + (int) len >= s->tiff.image_buffer_size)
+        {
+            if ((int) len > INT_MAX/100)
+                growth = (int) len;
+            else
+                growth = 100*(int) len;
+            /*endif*/
+            if (growth > INT_MAX - s->tiff.image_buffer_size)
+                growth = INT_MAX - s->tiff.image_buffer_size;
+            /*endif*/
+            if (s->tiff.image_buffer_size + growth < s->tiff.image_size + (int) len)
                 return -1;
             /*endif*/
-            s->tiff.image_buffer_size += 100*len;
+            if ((t = span_realloc(s->tiff.image_buffer, s->tiff.image_buffer_size + growth)) == NULL)
+                return -1;
+            /*endif*/
+            s->tiff.image_buffer_size += growth;
             s->tiff.image_buffer = t;
         }
         /*endif*/
         memcpy(&s->tiff.image_buffer[s->tiff.image_size], buf, len);
-        s->tiff.image_size += len;
+        s->tiff.image_size += (int) len;
     }
     /*endif*/
     return 0;
